@@ -224,6 +224,27 @@ contains
 
   end subroutine core_assign_potential_indices
 
+  !!!!! Empty method, to be implemented !!!!!
+  subroutine core_calculate_coordinations(n_atoms,cutoffs,coordinations)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(in) :: cutoffs(2)
+    double precision, intent(out) :: coordinations(n_atoms)
+    
+    coordinations = 0.d0
+
+  end subroutine core_calculate_coordinations
+
+  !!!!! Empty method, to be implemented !!!!!
+  subroutine core_calculate_bond_orders(n_atoms,cutoffs,bond_params,bond_orders)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(in) :: cutoffs(2), bond_params(7)
+    double precision, intent(out) :: bond_orders(n_atoms)
+    
+    bond_orders = 0.d0
+
+  end subroutine core_calculate_bond_orders
 
 
   subroutine core_calculate_forces(n_atoms,total_forces)

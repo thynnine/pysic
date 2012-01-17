@@ -42,6 +42,28 @@ class InvalidPotentialError(Exception):
             return self.messsage + " - the Potential: " + repr(potential)
 
 
+class InvalidCoordinatorError(Exception):
+    """An error raised when an invalid coordination calculator is about to be created or used.
+
+    Parameters:
+
+    message: string
+        information describing why the error occurred
+    coordinator: :class:`~pysic.Coordinator`
+        the errorneous coordinator
+    """
+    def __init__(self,message='',coordinator=None):
+        self.message = message
+        self.coordinator = coordinator
+
+    def __str__(self):
+        if(self.coordinator == None):
+            return self.message
+        else:
+            return self.messsage + " - the Coordinator: " + repr(coordinator)
+
+
+
 class MissingAtomsError(Exception):
     """An error raised when the core is being updated with per atom information before updating the atoms.
 
@@ -319,7 +341,7 @@ parameters ({n_par}):
     print message
 
 
-class CoordinationCalculator:
+class Coordinator:
     """Class for representing a calculator for atomic coordination numbers.
 
     Pysic can utilise 'Tersoff-like' potentials which are locally scaled according to the
@@ -330,14 +352,14 @@ class CoordinationCalculator:
     This leads to effective three-body interactions since moving one atom may affect the
     coordination of another and thus the forces between two other atoms.
 
-    Coordination numbers are used repeatedly when calculating energies and forces, even within
+    Coordination numbers may be used repeatedly when calculating energies and forces even within
     one evaluation of the forces and therefore they are stored by the calculator. Derivatives
     are not stored since they are only needed once per force evaluation and storing them could
     potentially require an N x N matrix, where N is the number of particles.
 
     The calculation of coordination is an operation on the geometry, not the complete physical
     system including the interactions, and so one can define coordination calculators as
-    standalone objects as well.
+    standalone objects as well. They always operate on the geometry currently allocated in the core.
 
     Parameters:
 
@@ -349,28 +371,125 @@ class CoordinationCalculator:
         Any atom closer than this is considered (at least) a partial neighbor
         and will give a fractional contribution to the total coordination.
         Any atom farther than this will not contribute to the neighbor count.
-    atoms: `ASE Atoms`_ object
-        the system for which the coordination is calculated
     """
 
-    def __init__(self,soft_cut,hard_cut,atoms=None):
-        self.coordinations = []
+    def __init__(self,soft_cut,hard_cut,bond_order_params=None):
+        self.coordinations = None
+        self.bond_orders = None
+        self.bond_order_params = bond_order_params
+        if(self.bond_order_params != None):
+            if(len(self.bond_order_params) != 7):
+                raise InvalidCoordinatorError(
+                    'Invalid number of parameters for the bond order calculator: {npar} (7 required)'.format(
+                        npar = str(len(self.bond_order_params))) )
         if(soft_cut < 0.0):
-            raise InvalidPotentialError(
-                'Invalid cutoff for the coordination calculator: soft={soft} must be greater than 0.'.format(
-                    soft=soft_cut) )
+            raise InvalidCoordinatorError(
+                'Invalid cutoff for the coordination calculator: soft={soft} (must be greater than 0).'.format(
+                    soft=str(soft_cut)) )
         if(hard_cut < 0.0):
-            raise InvalidPotentialError(
-                'Invalid cutoff for the coordination calculator: hard={hard} must be greater than 0.'.format(
-                    hard=hard_cut) )
+            raise InvalidCoordinatorError(
+                'Invalid cutoff for the coordination calculator: hard={hard} (must be greater than 0).'.format(
+                    hard=str(hard_cut)) )
         if(soft_cut > hard_cut):
-            raise InvalidPotentialError(
-                'Invalid cutoff for the coordination calculator: hard={hard} must be greater than soft={soft}.'.format(
-                    hard=hard_cut,soft=soft_cut) )
+            raise InvalidCoordinatorError(
+                'Invalid cutoff for the coordination calculator: hard={hard} (must be greater than soft={soft}).'.format(
+                    hard=str(hard_cut),soft=str(soft_cut)) )
         self.soft_cut = soft_cut
         self.hard_cut = hard_cut
-        self.atoms = atoms
 
+
+    def __eq__(self,other):
+        try:
+            if other == None:
+                return False
+            if self.soft_cut != other.soft_cut:
+                return False
+            if self.hard_cut != other.hard_cut:
+                return False
+            if self.bond_order_params != other.bond_order_params:
+                return False
+        except:
+            return False
+
+        return True
+
+
+    def get_soft_cutoff(self):
+        """Returns the soft cutoff.
+        """
+        return self.soft_cut
+
+    def get_hard_cutoff(self):
+        """Returns the hard cutoff.
+        """
+        return self.hard_cut
+
+    def set_soft_cutoff(self,new_soft):
+        """Assigns a value for the soft cutoff.
+
+        Parameters:
+
+        new_soft: double
+            the new soft cutoff
+        """
+        self.soft_cut = new_soft
+
+    def set_hard_cutoff(self,new_hard):
+        """Assigns a value for the hard cutoff.
+
+        Parameters:
+
+        new_hard: double
+            the new hard cutoff
+        """
+        self.hard_cut = new_hard
+
+
+    def calculate_coordination(self):
+        """Recalculates the coordination numbers for all atoms and stores them.
+
+        This method does not return anything. It merely tells the
+        :class:`~pysic.Coordinator` to update its internal array of
+        coordination numbers.
+
+        To access the array, use :meth:`~pysic.Coordinator.get_coordination`.
+
+        The calculation and access of the results are separated in this way because
+        for a large system the calculation is a relatively heavy procedure yet the
+        results may be needed several times during one force and energy evaluation.
+
+        Also note that the coordination calculator does not keep track of whether it
+        is up-to-date with the geometry, and it is the responsibility of the host
+        to call this method when needed. In practice, :class:`~pysic.Pysic` does make sure
+        that coordination is updated at the start of each force evaluation.
+        """
+        pass
+
+    def get_coordination(self):
+        """Returns an array containing the coordination numbers of all atoms.
+
+        This method does not calculate the coordination but returns the precalculated array.
+        """
+        return self.coordinations
+
+    def calculate_bond_order(self):
+        """Recalculates the bond order factors for all atoms and stores them.
+
+        Similarly to coordination numbers (:meth:`~pysic.Coordinator.calculate_coordination`),
+        this method only calculates the factors and stroes them but does not return them.
+        """
+        pass
+
+    def get_bond_order(self):
+        """Returns an array containing the bond order factors of all atoms.
+
+        This method does not calculate the bond order factors but returns the
+        precalculated array.
+        """
+        return self.bond_order_factors
+
+
+    
 
 class Potential:
     """Class for representing a potential.

@@ -270,6 +270,28 @@ contains
   end subroutine create_potential_list
 
 
+  subroutine calculate_coordinations(n_atoms,cutoffs,coordinations)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(in) :: cutoffs(2)
+    double precision, intent(out) :: coordinations(n_atoms)
+
+    call core_calculate_coordinations(n_atoms,cutoffs,coordinations)
+
+  end subroutine calculate_coordinations
+
+
+  subroutine calculate_bond_orders(n_atoms,cutoffs,bond_params,bond_orders)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(in) :: cutoffs(2), bond_params(7)
+    double precision, intent(out) :: bond_orders(n_atoms)
+
+    call core_calculate_bond_orders(n_atoms,cutoffs,bond_params,bond_orders)
+
+  end subroutine calculate_bond_orders
+
+
   ! Calculates the total energy of the system
   subroutine calculate_energy(energy)
     implicit none
