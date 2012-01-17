@@ -146,6 +146,11 @@ def get_cpu_id():
 #    pf.pysic_interface.distribute_mpi(pysic_calculator.get_atoms().get_number_of_atoms())
 
 
+def list_potentials():
+    """Same as :meth:`~pysic.list_valid_potentials`
+    """
+    list_valid_potentials()
+
 def list_valid_potentials():
     """A list of names of potentials currently known by the core.
 
@@ -160,6 +165,13 @@ def list_valid_potentials():
         pot_names.append(pu.ints2str(code))
 
     return pot_names
+
+
+def is_potential(potential_name):
+    """Same as :meth:`~pysic.is_valid_potential`
+    """
+    return pf.pysic_interface.is_potential(potential_name)
+
 
 # Checks if the given keyword defines a potential
 def is_valid_potential(potential_name):
@@ -307,6 +319,58 @@ parameters ({n_par}):
     print message
 
 
+class CoordinationCalculator:
+    """Class for representing a calculator for atomic coordination numbers.
+
+    Pysic can utilise 'Tersoff-like' potentials which are locally scaled according to the
+    number of neighbors of each atom. The coordination calculator keeps track of updating
+    the number of neighbors and holds the parameters for calculating the values.
+
+    When calculating forces also the derivatives of the coordination numbers are needed.
+    This leads to effective three-body interactions since moving one atom may affect the
+    coordination of another and thus the forces between two other atoms.
+
+    Coordination numbers are used repeatedly when calculating energies and forces, even within
+    one evaluation of the forces and therefore they are stored by the calculator. Derivatives
+    are not stored since they are only needed once per force evaluation and storing them could
+    potentially require an N x N matrix, where N is the number of particles.
+
+    The calculation of coordination is an operation on the geometry, not the complete physical
+    system including the interactions, and so one can define coordination calculators as
+    standalone objects as well.
+
+    Parameters:
+
+    soft_cut: double
+        The soft cutoff for calculating partial coordination.
+        Any atom closer than this is considered a full neighbor.
+    hard_cut: double
+        The hard cutoff for calculating partial coordination.
+        Any atom closer than this is considered (at least) a partial neighbor
+        and will give a fractional contribution to the total coordination.
+        Any atom farther than this will not contribute to the neighbor count.
+    atoms: `ASE Atoms`_ object
+        the system for which the coordination is calculated
+    """
+
+    def __init__(self,soft_cut,hard_cut,atoms=None):
+        self.coordinations = []
+        if(soft_cut < 0.0):
+            raise InvalidPotentialError(
+                'Invalid cutoff for the coordination calculator: soft={soft} must be greater than 0.'.format(
+                    soft=soft_cut) )
+        if(hard_cut < 0.0):
+            raise InvalidPotentialError(
+                'Invalid cutoff for the coordination calculator: hard={hard} must be greater than 0.'.format(
+                    hard=hard_cut) )
+        if(soft_cut > hard_cut):
+            raise InvalidPotentialError(
+                'Invalid cutoff for the coordination calculator: hard={hard} must be greater than soft={soft}.'.format(
+                    hard=hard_cut,soft=soft_cut) )
+        self.soft_cut = soft_cut
+        self.hard_cut = hard_cut
+        self.atoms = atoms
+
 
 class Potential:
     """Class for representing a potential.
@@ -404,7 +468,7 @@ class Potential:
                                                                                                                       params=str(self.parameters),
                                                                                                                       cut=str(self.cutoff),
                                                                                                                       marg=str(self.cutoff_margin))
-            
+    
 
     def get_symbols(self):
         """Return a list of the chemical symbols (elements) on which the potential
