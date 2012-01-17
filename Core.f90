@@ -235,6 +235,7 @@ contains
 
   end subroutine core_calculate_coordinations
 
+
   !!!!! Empty method, to be implemented !!!!!
   subroutine core_calculate_bond_orders(n_atoms,cutoffs,bond_params,bond_orders)
     implicit none

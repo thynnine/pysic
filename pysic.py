@@ -42,6 +42,7 @@ class InvalidPotentialError(Exception):
             return self.messsage + " - the Potential: " + repr(potential)
 
 
+
 class InvalidCoordinatorError(Exception):
     """An error raised when an invalid coordination calculator is about to be created or used.
 

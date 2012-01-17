@@ -281,6 +281,7 @@ contains
   end subroutine calculate_coordinations
 
 
+
   subroutine calculate_bond_orders(n_atoms,cutoffs,bond_params,bond_orders)
     implicit none
     integer, intent(in) :: n_atoms
