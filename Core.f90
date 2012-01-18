@@ -224,14 +224,66 @@ contains
 
   end subroutine core_assign_potential_indices
 
-  !!!!! Empty method, to be implemented !!!!!
-  subroutine core_calculate_coordinations(n_atoms,cutoffs,coordinations)
+
+  ! calculates the number of neighbors for each atom
+  subroutine core_calculate_coordinations(n_atoms,cutoffs,total_coordinations)
     implicit none
     integer, intent(in) :: n_atoms
     double precision, intent(in) :: cutoffs(2)
-    double precision, intent(out) :: coordinations(n_atoms)
-    
+    double precision, intent(out) :: total_coordinations(n_atoms)
+    double precision :: coordinations(n_atoms), distance, separation(3), proximity_factor
+    integer :: index1, index2, j
+    type(atom) :: atom1, atom2
+    type(neighbor_list) :: nbors1
+
     coordinations = 0.d0
+    total_coordinations = 0.d0
+
+    ! loop over atoms
+    do index1 = 1, size(atoms)
+       
+       ! in MPI, only consider the atoms of this cpu
+       if(is_my_atom(index1))then
+
+          atom1 = atoms(index1)
+          nbors1 = atom1%neighbor_list
+
+          ! loop over neighbors
+          do j = 1, nbors1%n_neighbors
+             
+             index2 = nbors1%neighbors(j)
+             if(index2 > index1)then ! do not double count
+
+                atom2 = atoms(index2)
+                call separation_vector(atom1%position, &
+                     atom2%position, &
+                     nbors1%pbc_offsets(1:3,j), &
+                     cell, &
+                     separation)
+                distance = .norm.(separation)
+
+                call smoothening_factor(distance,&
+                     cutoffs(2),cutoffs(1),&
+                     proximity_factor)
+
+                coordinations(index1) = coordinations(index1) + proximity_factor
+                coordinations(index2) = coordinations(index2) + proximity_factor
+
+             end if ! index2 > index1
+
+          end do ! j = 1, nbors1%n_neighbors
+
+       end if ! is_my_atom(index1)
+
+    end do ! index1 = 1, size(atoms)
+
+
+#ifdef MPI
+    call mpi_allreduce(coordinations,total_coordinations,size(coordinations),mpi_double_precision,&
+         mpi_sum,mpi_comm_world,mpistat)
+#else
+    total_coordinations = coordinations
+#endif
 
   end subroutine core_calculate_coordinations
 

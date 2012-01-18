@@ -342,8 +342,42 @@ parameters ({n_par}):
     print message
 
 
+class BondOrderParameters:
+    """Class for representing a collection of parameters for bond order calculations.
+
+    Calculating bond order factors using the Tersoff-like method defined in
+    :class:`~pysic.Coordinator` requires three parameters per element and four per
+    element pair. To facilitate the handling of all these parameters, they are
+    wrapped in a BondOrderParameters object.
+    """
+
+    # Needed:
+    # add element parameter,
+    # add pair parameter,
+    # lists storing these,
+    # possibility for turning off some pairs,
+    # update Coordinator to handle this class,
+    # reading routines in the core (should not be stored, just read by the routine
+    #    for calculating the bond order factors)
+    
+    def __init__(self):
+        pass
+
+    def get_element_parameters(self):
+        pass
+
+    def set_element_parameters(self):
+        pass
+
+    def get_pair_parameters(self):
+        pass
+
+    def set_pair_parameters(self):
+        pass
+
+
 class Coordinator:
-    """Class for representing a calculator for atomic coordination numbers.
+    """Class for representing a calculator for atomic coordination numbers and bond order factors.
 
     Pysic can utilise 'Tersoff-like' potentials which are locally scaled according to the
     number of neighbors of each atom. The coordination calculator keeps track of updating

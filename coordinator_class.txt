@@ -1,0 +1,115 @@
+
+============================
+Coordinator class
+============================
+
+Coordinator is short for 'Coordination Calculator'.
+
+This class provides a utility for calculating and storing atomic
+coordination numbers, i.e., the number of neighbors each atom has.
+The coordination is needed for bond-order or Tersoff-like potentials,
+and so the :class:`~pysic.Potential` entities, which need the coordination
+number, have to be joint with a Coordinator.
+
+The Coordinator can be used as a standalone as well for analysis
+purposes. However, note that it always operates on the core and so
+one must make sure the correct geometry is allocated in the core
+through :class:`~pysic.Pysic`.
+
+Coordination and bond order
+---------------------------
+
+In principle, coordination is calculated by checking all atom pairs
+and counting which ones are closer to each other than a predefined
+limit. However, in order to make the coordination a continuous and 
+differentiable function, a continuous cutoff has to be applied.
+This is done similarly to the smooth cutoffs used in :class:`~pysic.Potential`
+by defining a proximity function which is 1 for small separations and
+0 for large distances.
+
+.. math::
+
+   f(r) = \begin{cases} 1, & r < r_\mathrm{soft} \\ \frac{1}{2}\left(1+\cos \pi\frac{r-r_\mathrm{soft}}{r_\mathrm{hard}-r_\mathrm{soft}}\right), & r_\mathrm{soft} < r < r_\mathrm{hard} \\ 0, & r > r_\mathrm{hard} \end{cases}.
+
+.. plot::
+   
+   import matplotlib.pyplot as plt
+   from math import cos, pi
+   x = []; y = []
+   start = 0.0
+   end = 2.0
+   steps = 100
+   margin = 0.4
+   dx = (end-start)/steps
+   for i in range(steps+1):
+       xval = start + i*dx
+       x.append( xval )
+       if xval < 1.0 - margin/2:
+           y.append( 1.0 )
+       elif xval > 1.0 + margin/2:
+           y.append( 0.0 )
+       else:
+           y.append( 0.5*(1.0 + cos(pi*(xval - 1.0 + margin/2)/margin) ) )
+   plt.plot(x,y)
+   plt.plot(0)
+   plt.xlim(0.0,2.0)
+   plt.ylim(-0.1,1.1)
+   plt.title(r'Proximity function: $r_\mathrm{soft} = 0.8$, $r_\mathrm{hard} = 1.2$')
+   plt.show()
+
+Then the coordination of an atom is simply the sum of the proximity functions.
+
+.. math::
+
+   c_i = \sum_{j \ne i} f(r_{ij}).
+
+In addition to the simple coordination, also more complicated bond order terms can be defined.
+The Tersoff-like bond order factor for atom i is given by
+
+.. math::
+
+    b_i = \left[ 1 + \left( \beta_i \sum_{j \ne i} \sum_{k \ne i,j} \xi_{ijk} g_{ijk}  \right)^{\eta_i} \right]^{-\frac{1}{2 \eta_i}}
+
+.. math::
+
+    \xi_{ijk} = f(r_{ik}) \exp\left[a_{ij}^{m_i} (r_{ij} - r_{ik})^{m_i} \right]
+
+.. math::
+
+    g_{ijk} = 1 + \frac{c_{ij}^2}{d_{ij}^2} - \frac{c_{ij}^2}{d_{ij}^2 + (h_{ij} - \cos \theta_{ijk})^2}
+
+where r and theta are distances and angles between the atoms.
+
+The parameters alpha, beta, and eta are defined per element. The parameters a, c, d, and h are defined per element pair. To facilitate the handling of all these parameters for the various elements in the system, a wrapper class :class:`~pysic.BondOrderParameters` is used.
+
+
+List of methods
+---------------
+
+Below is a list of methods in :class:`~pysic.Coordinator`, grouped according to
+the type of functionality.
+
+Parameter handling
+__________________
+
+- :meth:`~pysic.Coordinator.get_soft_cutoff`
+- :meth:`~pysic.Coordinator.get_hard_cutoff`
+- :meth:`~pysic.Coordinator.set_soft_cutoff`
+- :meth:`~pysic.Coordinator.set_hard_cutoff`
+
+
+Coordination and bond order
+___________________________
+
+- :meth:`~pysic.Coordinator.calculate_coordination`
+- :meth:`~pysic.Coordinator.get_coordination`
+- :meth:`~pysic.Coordinator.calculate_bond_order`
+- :meth:`~pysic.Coordinator.get_bond_order`
+
+Full documentation of the Coordinator class
+-------------------------------------------
+
+.. currentmodule:: pysic
+.. autoclass:: Coordinator
+   :members:
+   :undoc-members:
