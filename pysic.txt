@@ -53,6 +53,7 @@ Classes of the pysic module
    pysic_class
    potential_class
    coordinator_class
+   bondorderparameters_class
 
 
 

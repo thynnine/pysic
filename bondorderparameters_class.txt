@@ -1,0 +1,31 @@
+
+============================
+BondOrderParameters class
+============================
+
+This class is a wrapper for storing parameters.
+
+
+
+
+List of methods
+---------------
+
+Below is a list of methods in :class:`~pysic.BondOrderParameters`, grouped according to
+the type of functionality.
+
+Parameter handling
+__________________
+
+- :meth:`~pysic.BondOrderParameters.get_element_paramters`
+- :meth:`~pysic.BondOrderParameters.set_element_paramters`
+- :meth:`~pysic.BondOrderParameters.get_pair_paramters`
+- :meth:`~pysic.BondOrderParameters.set_pair_paramters`
+
+Full documentation of the BondOrderParameters class
+---------------------------------------------------
+
+.. currentmodule:: pysic
+.. autoclass:: BondOrderParameters
+   :members:
+   :undoc-members:
