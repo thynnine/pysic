@@ -65,6 +65,28 @@ class InvalidCoordinatorError(Exception):
 
 
 
+
+class InvalidParametersError(Exception):
+    """An error raised when an invalid set of parameters is about to be created.
+
+    Parameters:
+
+    message: string
+        information describing why the error occurred
+    coordinator: :class:`~pysic.BondOrderParameters`
+        the errorneous parameters
+    """
+    def __init__(self,message='',params=None):
+        self.message = message
+        self.params = params
+
+    def __str__(self):
+        if(self.params == None):
+            return self.message
+        else:
+            return self.messsage + " - the Parameters: " + repr(params)
+
+
 class MissingAtomsError(Exception):
     """An error raised when the core is being updated with per atom information before updating the atoms.
 
@@ -349,6 +371,22 @@ class BondOrderParameters:
     :class:`~pysic.Coordinator` requires three parameters per element and four per
     element pair. To facilitate the handling of all these parameters, they are
     wrapped in a BondOrderParameters object.
+
+    For a single element, the bond order factor calculation requires four parameters:
+    alpha, beta, eta, and m.
+    For a pair of elements, also four parameters are required:
+    a, c, d, and h.
+    The meaning of these parameters is explained in the documentation of the
+    :class:`~pysic.Coordinator` class.
+
+    The object can be created empty and filled later with the parameters. Alternatively,
+    a list of parameters can be given upon initialization in which case it is passed
+    to the :meth:`~pysic.BondOrderParameter.set_parameters` method.
+
+    Parameters:
+
+    param_set: list of strings and doubles
+        a list of parameters to be contained in the parameter object
     """
 
     # Needed:
@@ -360,20 +398,216 @@ class BondOrderParameters:
     # reading routines in the core (should not be stored, just read by the routine
     #    for calculating the bond order factors)
     
-    def __init__(self):
-        pass
+    def __init__(self,param_set=None):
+        self.params = []
+        if param_set != None:
+            self.set_parameters(param_set)
 
-    def get_element_parameters(self):
-        pass
+    def __repr__(self):
+        return "please implement __repr__"
 
-    def set_element_parameters(self):
-        pass
+    def __eq__(self,other):
+        return False
 
-    def get_pair_parameters(self):
-        pass
+    def get_parameters(self):
+        """Returns all parameters stored.
+        """
+        return self.params
 
-    def set_pair_parameters(self):
-        pass
+    def set_parameters(self,param_set):
+        """Sets the parameters stored in the object to equal the given list.
+
+        Parameters:
+
+        param_set: list of strings and doubles
+            the new list of parameters
+        """
+        self.params = []
+        self.add_parameters(param_set)
+
+    def remove(self,targets):
+        """Removes the parameters of the given element or pair.
+        """
+        set_target = targets
+        if not isinstance(targets,list):
+            set_target = [targets]
+        self.params.remove(set_target,get_parameters_of(set_target))
+
+    def set_parameters_of(self,targets,param_set):
+        """Sets the parameters of the given element or pair of elements to the given values.
+        """
+        index = self.index_of(targets)
+
+        if index == None: # the parameters are not yet set
+            self.add_parameter(targets,param_set)
+        else:
+            self.add_parameter(targets,param_set)            
+            self.remove(targets)
+            
+
+    def get_parameters_of(self,targets):
+        """Returns the parameters associated with the given element or pair of elements.
+
+        This method allows the user to inquire the parameters of any element. If the given
+        element or pair has no parameters attached to it, the method returns None.
+
+        Parameters:
+
+        targets: string or a list of strings
+            the name(s) of the element(s) whose parameters are requested
+        """
+        for pars in self.params:
+            targ = pars[0]
+            if(targ == targets or targ == [targets]):
+                return pars[1]
+        return None
+
+    def index_of(self,targets):
+        """Returns the index of the given element in the internal list of parameters.
+
+        If the given element has no parameters, None is returned.
+
+        Parameters:
+
+        targets: string or list of strings
+            name of the element or pair of elements to be searched for
+        """
+        for index in len(self.params):
+            pars = self.params[index]
+            targ = pars[0]
+            if(targ == targets or targ == [targets]):
+                return index
+        return None
+
+
+    #
+    # Incomplete, continue here!
+    #
+    def set_parameter(self,targets,param_name,value):
+        """Resets the value of a specific parameter.
+
+        This allows the user to inquire the value of a single parameter by giving the
+        names of an element or pair and the parameter. If the given element(s) do not
+        have associated parameters, the specified parameter is set to the given value
+        while the other parameters of the element are set to zero.
+        If the name of the parameter is invalid, an Error is raised.
+
+        Parameters:
+        targets: string or a list of strings
+            the name(s) of the element(s) whose parameters are requested
+        param_name: string
+            The name of the parameter.
+            For a single element, the valid parameters are: alpha, beta, eta, m.
+            For a pair of elements, the valid parameters are: a, c, d, h.
+        value: double
+            new value for the parameter
+        """
+        n_targets = 0
+        try:
+            assert isinstance(targets,list)                
+            n_target = len(targets)
+        except:
+            n_target = 1
+
+        the_pars = get_parameters_of(targets)
+
+    def get_parameter(self,targets,param_name):
+        """Returns the value of a specific parameter.
+
+        This allows the user to inquire the value of a single parameter by giving the
+        names of an element or pair and the parameter. If the given element(s) do not
+        have associated parameters, or if the name of the parameter is invalid, None
+        is returned.
+
+        Parameters:
+        targets: string or a list of strings
+            the name(s) of the element(s) whose parameters are requested
+        param_name: string
+            The name of the parameter.
+            For a single element, the valid parameters are: alpha, beta, eta, m.
+            For a pair of elements, the valid parameters are: a, c, d, h.
+        """
+        n_targets = 0
+        try:
+            assert isinstance(targets,list)
+            n_target = len(targets)
+        except:
+            n_target = 1
+
+        the_pars = get_parameters_of(targets)
+
+        if n_target == 1:
+            if param_name.lowercase().strip() == "alpha":
+                return the_pars[0]
+            elif param_name.lowercase().strip() == "beta":
+                return the_pars[1]
+            elif param_name.lowercase().strip() == "eta":
+                return the_pars[2]
+            elif param_name.lowercase().strip() == "m":
+                return the_pars[3]
+
+        if n_target == 2:
+            if param_name.lowercase().strip() == "a":
+                return the_pars[0]
+            elif param_name.lowercase().strip() == "c":
+                return the_pars[1]
+            elif param_name.lowercase().strip() == "d":
+                return the_pars[2]
+            elif param_name.lowercase().strip() == "h":
+                return the_pars[3]
+
+        return None
+
+    def add_parameters(self,param_set):
+        """Adds the given set of parameters.
+
+        The set of parameters must be a list of the format::
+
+            param_set = [[["H"], [1.0, 2.0, 3.0, 4.0]], ..., [["H", "He"], [5.0, 6.0, 7.0, 8.0]]]
+
+        i.e., a triple nested list.
+        For each element or pair, there is a double list where the first list contains the element symbols
+        and the second the numeric values of the parameters.
+        
+        Parameters:
+
+        param_set: list of strings and doubles
+            list of parameters to add
+        """
+        for index in len(param_set):
+            self.add_parameter(param_set[index][0],param_set[index][1])
+
+    def add_parameter(self,targets,new_params):
+        """Associates new parameters to the given element or pair.
+
+        Parameters:
+
+        targets: list of strings
+            either one element or a pair of elements
+        new_params: list of doubles
+            a list of four numbers
+        """
+        n_targets = 0
+        set_target = targets
+        try:
+            assert isinstance(targets,list)               
+            n_target = len(targets)
+        except:
+            set_target = [targets]
+            n_target = 1
+
+        if(n_target == 1):
+            if(len(new_params) != 4):
+                raise InvalidParametersError("An element requires a set of 4 parameters.",self)
+            newpar = [ set_target, new_params ]
+            self.params.append(newpar)
+        elif(n_target == 2):
+            if(len(new_params) != 4):
+                raise InvalidParametersError("A pair requires a set of 4 parameters.",self)
+            newpar = [ set_target, new_params ]
+            self.params.append(newpar)
+        else:
+            raise InvalidParametersError("Bond order factors only have parameters for single or paired elements.",self)
 
 
 class Coordinator:

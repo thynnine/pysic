@@ -80,7 +80,7 @@ The Tersoff-like bond order factor for atom i is given by
 
 where r and theta are distances and angles between the atoms.
 
-The parameters alpha, beta, and eta are defined per element. The parameters a, c, d, and h are defined per element pair. To facilitate the handling of all these parameters for the various elements in the system, a wrapper class :class:`~pysic.BondOrderParameters` is used.
+The parameters alpha, beta, eta, and m are defined per element (index i). The parameters a, c, d, and h are defined per element pair (indices i and j). To facilitate the handling of all these parameters for the various elements in the system, a wrapper class :class:`~pysic.BondOrderParameters` is used.
 
 
 List of methods
