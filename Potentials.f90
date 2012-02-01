@@ -10,6 +10,7 @@ module potentials
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
        n_potential_types = 4, &
+       n_bond_order_types = 2, &
        n_max_params = 3, &
        pot_note_length = 500, &
        param_note_length = 100
@@ -19,8 +20,11 @@ module potentials
        mono_const_index = 3, &
        tri_bend_index = 4
 
+  integer, parameter :: coordination_index = 1, &
+       tersoff_index = 2
+
   character(len=label_length), parameter :: no_name = "xx"
-  logical :: descriptors_created = .false.
+  logical :: descriptors_created = .false., bond_descriptors_created = .false.
 
   ! Contains a description of a type of a potential.
   ! The type contains the name and description of the potential
@@ -33,7 +37,17 @@ module potentials
      character(len=param_note_length), pointer :: parameter_notes(:)
   end type potential_descriptor
 
+  type bond_order_descriptor
+     character(len=pot_name_length) :: name
+     character(len=param_name_length), pointer :: parameter_names(:,:)
+     integer :: n_targets, type_index
+     integer, pointer :: n_parameters(:)
+     character(len=pot_note_length) :: description
+     character(len=param_note_length), pointer :: parameter_notes(:,:)
+  end type bond_order_descriptor
+
   type(potential_descriptor), pointer :: potential_descriptors(:)
+  type(bond_order_descriptor), pointer :: bond_order_descriptors(:)
 
   ! Defines a particular potential.
   ! The potential should correspond to the description of some
@@ -50,6 +64,15 @@ module potentials
      integer, pointer :: original_tags(:), original_indices(:)
      logical :: filter_elements, filter_tags, filter_indices, smoothened
   end type potential
+
+  ! Defines parameters for bond order factor calculation.
+  type bond_order_parameters
+     integer :: type_index
+     double precision, pointer :: parameters(:), derived_parameters(:)
+     double precision :: cutoff, soft_cutoff
+     character(len=2), pointer :: apply_elements(:) ! label_length
+     character(len=2), pointer :: original_elements(:) ! label_length
+  end type bond_order_parameters
   
 contains
 
@@ -371,9 +394,22 @@ contains
     else
        nullify(potential_descriptors)
     end if
+    descriptors_created = .false.
 
   end subroutine clear_potential_characterizers
 
+
+  subroutine clear_bond_order_characterizers()
+    implicit none
+
+    if(bond_descriptors_created)then
+       deallocate(bond_order_descriptors)
+    else
+       nullify(bond_order_descriptors)
+    end if
+    bond_descriptors_created = .false.
+
+  end subroutine clear_bond_order_characterizers
 
 
   subroutine initialize_potential_characterizers()
@@ -387,7 +423,7 @@ contains
     ! Lennard-Jones potential
     index = index+1
     if(pair_lj_index /= index)then
-       write(*,*) "Potential indices in the core no not match!"
+       write(*,*) "Potential indices in the core do not match!"
     end if
     potential_descriptors(index)%type_index = index
     call pad_string('pair_LJ', pot_name_length,potential_descriptors(index)%name)
@@ -405,7 +441,7 @@ contains
     ! spring potential
     index = index+1
     if(pair_spring_index /= index)then
-       write(*,*) "Potential indices in the core no not match!"
+       write(*,*) "Potential indices in the core do not match!"
     end if
     potential_descriptors(index)%type_index = index
     call pad_string('pair_spring', pot_name_length,potential_descriptors(index)%name)
@@ -423,7 +459,7 @@ contains
     ! constant force potential
     index = index+1
     if(mono_const_index /= index)then
-       write(*,*) "Potential indices in the core no not match!"
+       write(*,*) "Potential indices in the core do not match!"
     end if
     potential_descriptors(index)%type_index = index
     call pad_string('mono_const', pot_name_length,potential_descriptors(index)%name)
@@ -443,7 +479,7 @@ contains
     ! bond-bending potential
     index = index+1
     if(tri_bend_index /= index)then
-       write(*,*) "Potential indices in the core no not match!"
+       write(*,*) "Potential indices in the core do not match!"
     end if
     potential_descriptors(index)%type_index = index
     call pad_string('tri_bend', pot_name_length,potential_descriptors(index)%name)
@@ -476,6 +512,77 @@ contains
   end subroutine initialize_potential_characterizers
   
 
+  subroutine initialize_bond_order_descriptors()
+    implicit none
+    integer :: index
+
+    call clear_bond_order_characterizers()
+    allocate(bond_order_descriptors(0:n_bond_order_types))
+    index = 0
+
+    ! Coordination
+    index = index+1
+    if(coordination_index /= index)then
+       write(*,*) "Bond-order indices in the core do not match!"
+    end if
+    bond_order_descriptors(index)%type_index = index
+    call pad_string('neighbors',pot_name_length,bond_order_descriptors(index)%name)
+    bond_order_descriptors(index)%n_parameters(1) = 1
+    allocate(bond_order_descriptors(index)%parameter_names(bond_order_descriptors(index)%n_parameters(1),1))
+    allocate(bond_order_descriptors(index)%parameter_notes(bond_order_descriptors(index)%n_parameters(1),1))
+    call pad_string('none',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
+    call pad_string('no parameters',param_name_length,bond_order_descriptors(index)%parameter_notes(1,1))
+    call pad_string('Counter for the number of neighbors: b_i = sum f(r_ij)', &
+         pot_note_length,bond_order_descriptors(index)%description)
+
+    ! Tersoff bond-order factor
+    index = index+1
+    if(tersoff_index /= index)then
+       write(*,*) "Bond-order indices in the core do not match!"
+    end if
+    bond_order_descriptors(index)%type_index = index
+    call pad_string('tersoff',pot_name_length,bond_order_descriptors(index)%name)
+    bond_order_descriptors(index)%n_parameters(1) = 3
+    bond_order_descriptors(index)%n_parameters(2) = 4
+    allocate(bond_order_descriptors(index)%parameter_names(bond_order_descriptors(index)%n_parameters(1),1))
+    allocate(bond_order_descriptors(index)%parameter_names(bond_order_descriptors(index)%n_parameters(2),2))
+    allocate(bond_order_descriptors(index)%parameter_notes(bond_order_descriptors(index)%n_parameters(1),1))
+    allocate(bond_order_descriptors(index)%parameter_notes(bond_order_descriptors(index)%n_parameters(2),2))
+    call pad_string('beta',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
+    call pad_string('prefactor',param_name_length,bond_order_descriptors(index)%parameter_notes(1,1))
+    call pad_string('eta',param_name_length,bond_order_descriptors(index)%parameter_names(2,1))
+    call pad_string('overall exponent',param_name_length,bond_order_descriptors(index)%parameter_notes(2,1))
+    call pad_string('m',param_name_length,bond_order_descriptors(index)%parameter_names(3,1))
+    call pad_string('distance exponent',param_name_length,bond_order_descriptors(index)%parameter_notes(3,1))
+    call pad_string('alpha',param_name_length,bond_order_descriptors(index)%parameter_names(1,2))
+    call pad_string('distance prefactor',param_name_length,bond_order_descriptors(index)%parameter_notes(1,2))
+    call pad_string('c',param_name_length,bond_order_descriptors(index)%parameter_names(2,2))
+    call pad_string('angle term nominator',param_name_length,bond_order_descriptors(index)%parameter_notes(2,2))
+    call pad_string('d',param_name_length,bond_order_descriptors(index)%parameter_names(3,2))
+    call pad_string('angle term denominator 1',param_name_length,bond_order_descriptors(index)%parameter_notes(3,2))
+    call pad_string('h',param_name_length,bond_order_descriptors(index)%parameter_names(4,2))
+    call pad_string('angle term denominator 2',param_name_length,bond_order_descriptors(index)%parameter_notes(4,2))
+    call pad_string('Tersoff bond-order: b_i = [ 1+( beta_i sum xi_ijk*g_ijk)^eta_i ]^(-1/eta_i), '//&
+         'xi_ijk = f(r_ik)*exp(alpha_ij^m_i (r_ij-r_ik)^m_i), '// &
+         'g_ijk = 1+c_ij^2/d_ij^2-c_ij^2/(d_ij^2+(h_ij^2-cos theta_ijk))', &
+         pot_note_length,bond_order_descriptors(index)%description)
+    
+    ! null, for error inquiries
+    index = 0
+    bond_order_descriptors(index)%type_index = index
+    call pad_string('null',pot_name_length,bond_order_descriptors(index)%name)
+    bond_order_descriptors(index)%n_parameters(1) = 1
+    allocate(bond_order_descriptors(index)%parameter_names(bond_order_descriptors(index)%n_parameters(1),1))
+    allocate(bond_order_descriptors(index)%parameter_notes(bond_order_descriptors(index)%n_parameters(1),1))
+    call pad_string('null',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
+    call pad_string('a dummy parameter',param_name_length,bond_order_descriptors(index)%parameter_notes(1,1))
+    call pad_string('No such bond-order factor is available', &
+         pot_note_length,bond_order_descriptors(index)%description)
+    
+    bond_descriptors_created = .true.
+
+  end subroutine initialize_bond_order_descriptors
+
 
   subroutine get_number_of_potentials(n_pots)
     implicit none
@@ -485,6 +592,14 @@ contains
 
   end subroutine get_number_of_potentials
 
+
+  subroutine get_number_of_bond_order_factors(n_bond)
+    implicit none
+    integer, intent(out) :: n_bond
+
+    n_bond = n_bond_order_types
+
+  end subroutine get_number_of_bond_order_factors
 
 
   subroutine list_potentials(pots)
@@ -498,6 +613,16 @@ contains
 
   end subroutine list_potentials
 
+  subroutine list_bond_order_factors(bonds)
+    implicit none
+    character(len=pot_name_length), dimension(n_bond_order_types), intent(out) :: bonds
+    integer :: i
+
+    do i = 1, n_bond_order_types
+       bonds(i) = bond_order_descriptors(i)%name
+    end do
+
+  end subroutine list_bond_order_factors
 
 
   subroutine get_index_of_potential(pot_name, index)
@@ -516,6 +641,21 @@ contains
 
   end subroutine get_index_of_potential
 
+  subroutine get_index_of_bond_order_factor(bond_name, index)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    integer, intent(out) :: index
+    integer :: i
+
+    index = 0
+    do i = 1, n_bond_order_types
+       if(bond_order_descriptors(i)%name == bond_name)then
+          index = i
+          return
+       end if
+    end do
+
+  end subroutine get_index_of_bond_order_factor
 
 
   subroutine get_descriptor(pot_name,descriptor)
@@ -534,6 +674,21 @@ contains
 
   end subroutine get_descriptor
 
+  subroutine get_bond_descriptor(bond_name,descriptor)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    type(bond_order_descriptor), intent(out) :: descriptor
+    integer :: i
+
+    do i = 1, n_bond_order_types
+       if(bond_order_descriptors(i)%name == bond_name)then
+          descriptor = bond_order_descriptors(i)
+          return
+       end if
+    end do
+    descriptor = bond_order_descriptors(0)
+
+  end subroutine get_bond_descriptor
 
 
   subroutine get_names_of_parameters_of_potential(pot_name, param_names)
@@ -552,6 +707,25 @@ contains
 
   end subroutine get_names_of_parameters_of_potential
 
+  subroutine get_names_of_parameters_of_bond_order_factor(bond_name, n_targets, param_names)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    integer, intent(in) :: n_targets
+    character(len=param_name_length), pointer :: param_names(:)
+    type(bond_order_descriptor) :: descriptor
+    integer :: i
+
+    call get_bond_descriptor(bond_name,descriptor)
+    if(descriptor%n_targets < n_targets)then
+       return
+    end if
+    nullify(param_names)
+    allocate(param_names(descriptor%n_parameters(n_targets)))
+    do i = 1, descriptor%n_parameters(n_targets)
+       param_names(i) = descriptor%parameter_names(i,n_targets)
+    end do
+
+  end subroutine get_names_of_parameters_of_bond_order_factor
 
 
   subroutine get_descriptions_of_parameters_of_potential(pot_name, param_notes)
@@ -570,6 +744,26 @@ contains
 
   end subroutine get_descriptions_of_parameters_of_potential
 
+  subroutine get_descriptions_of_parameters_of_bond_order_factor(bond_name, &
+       n_targets, param_notes)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    integer, intent(in) :: n_targets
+    character(len=param_note_length), pointer :: param_notes(:)
+    type(bond_order_descriptor) :: descriptor
+    integer :: i
+
+    call get_bond_descriptor(bond_name,descriptor)
+    if(descriptor%n_targets < n_targets)then
+       return
+    end if
+    nullify(param_notes)
+    allocate(param_notes(descriptor%n_parameters(n_targets)))
+    do i = 1, descriptor%n_parameters(n_targets)
+       param_notes(i) = descriptor%parameter_notes(i,n_targets)
+    end do
+
+  end subroutine get_descriptions_of_parameters_of_bond_order_factor
 
 
   subroutine get_number_of_parameters_of_potential(pot_name,n_params)
@@ -583,6 +777,17 @@ contains
 
   end subroutine get_number_of_parameters_of_potential
 
+  subroutine get_number_of_parameters_of_bond_order_factor(bond_name,n_targets,n_params)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    integer, intent(in) :: n_targets
+    integer, intent(out) :: n_params
+    type(bond_order_descriptor) :: descriptor
+
+    call get_bond_descriptor(bond_name,descriptor)
+    n_params = descriptor%n_parameters(n_targets)
+
+  end subroutine get_number_of_parameters_of_bond_order_factor
 
 
   subroutine get_number_of_targets_of_potential(pot_name,n_target)
@@ -596,7 +801,16 @@ contains
 
   end subroutine get_number_of_targets_of_potential
 
+  subroutine get_number_of_targets_of_bond_order_factor(bond_name,n_target)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    integer, intent(out) :: n_target
+    type(bond_order_descriptor) :: descriptor
 
+    call get_bond_descriptor(bond_name,descriptor)
+    n_target = descriptor%n_targets
+
+  end subroutine get_number_of_targets_of_bond_order_factor
 
   subroutine get_number_of_targets_of_potential_index(pot_index,n_target)
     implicit none
@@ -606,6 +820,15 @@ contains
     n_target = potential_descriptors(pot_index)%n_targets
 
   end subroutine get_number_of_targets_of_potential_index
+
+  subroutine get_number_of_targets_of_bond_order_factor_index(bond_index,n_target)
+    implicit none
+    integer, intent(in) :: bond_index
+    integer, intent(out) :: n_target
+
+    n_target = bond_order_descriptors(bond_index)%n_targets
+
+  end subroutine get_number_of_targets_of_bond_order_factor_index
 
 
   subroutine is_valid_potential(string,is_valid)
@@ -624,6 +847,22 @@ contains
 
   end subroutine is_valid_potential
 
+
+  subroutine is_valid_bond_order_factor(string,is_valid)
+    implicit none
+    character(len=*), intent(in) :: string
+    logical, intent(out) :: is_valid
+    integer :: i
+
+    is_valid = .false.
+    do i = 1, n_bond_order_types
+       if(bond_order_descriptors(i)%name == string)then
+          is_valid = .true.
+          return
+       end if
+    end do
+
+  end subroutine is_valid_bond_order_factor
 
 
   subroutine get_index_of_parameter_of_potential(pot_name,param_name,index)
@@ -646,6 +885,31 @@ contains
 
   end subroutine get_index_of_parameter_of_potential
 
+  subroutine get_index_of_parameter_of_bond_order_factor(bond_name,param_name,index,n_targets)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    character(len=*), intent(in) :: param_name
+    integer, intent(out) :: index
+    integer, intent(out) :: n_targets
+    type(bond_order_descriptor) :: descriptor
+    integer :: i,j
+
+    call get_bond_descriptor(bond_name,descriptor)
+    
+    index = 0
+    n_targets = 0
+    do j = 1, descriptor%n_targets
+       do i = 1, descriptor%n_parameters(j)
+          if (descriptor%parameter_names(i,j) == param_name) then
+             index = i
+             n_targets = j
+             return
+          end if
+       end do
+    end do
+
+  end subroutine get_index_of_parameter_of_bond_order_factor
+
 
 
   subroutine get_description_of_potential(pot_name,description)
@@ -659,6 +923,16 @@ contains
 
   end subroutine get_description_of_potential
 
+  subroutine get_description_of_bond_order_factor(bond_name,description)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    character(len=pot_note_length), intent(out) :: description
+    type(bond_order_descriptor) :: descriptor
+
+    call get_bond_descriptor(bond_name,descriptor)
+    description = descriptor%description
+
+  end subroutine get_description_of_bond_order_factor
 
   subroutine potential_affects_atom(interaction,atom_in,affects,position)
     implicit none
@@ -725,6 +999,38 @@ contains
     end if
 
   end subroutine potential_affects_atom
+
+  subroutine bond_order_factor_affects_atom(factor,atom_in,affects,position)
+    implicit none
+    type(bond_order_parameters), intent(in) :: factor
+    type(atom), intent(in) :: atom_in
+    logical, intent(out) :: affects
+    integer, optional, intent(in) :: position
+    integer :: i
+
+    affects = .false.
+
+    if(present(position) .and. position <= size(factor%apply_elements) .and. position > 0)then
+
+       if(factor%apply_elements(position) == atom_in%element)then
+          affects = .true.
+          return
+       end if
+
+    else
+
+       do i = 1, size(factor%apply_elements)
+          if(factor%apply_elements(i) == atom_in%element)then
+             affects = .true.
+             return
+          end if
+       end do
+       
+    end if
+
+  end subroutine bond_order_factor_affects_atom
+
+
 
 
 end module potentials

@@ -39,7 +39,7 @@ class InvalidPotentialError(Exception):
         if(self.potential == None):
             return self.message
         else:
-            return self.messsage + " - the Potential: " + repr(potential)
+            return self.messsage + " \n the Potential: " + str(self.potential)
 
 
 
@@ -61,7 +61,7 @@ class InvalidCoordinatorError(Exception):
         if(self.coordinator == None):
             return self.message
         else:
-            return self.messsage + " - the Coordinator: " + repr(coordinator)
+            return self.messsage + " \n  the Coordinator: " + str(self.coordinator)
 
 
 
@@ -73,7 +73,7 @@ class InvalidParametersError(Exception):
 
     message: string
         information describing why the error occurred
-    coordinator: :class:`~pysic.BondOrderParameters`
+    params: :class:`~pysic.BondOrderParameters`
         the errorneous parameters
     """
     def __init__(self,message='',params=None):
@@ -84,7 +84,7 @@ class InvalidParametersError(Exception):
         if(self.params == None):
             return self.message
         else:
-            return self.messsage + " - the Parameters: " + repr(params)
+            return self.messsage + " \n  the Parameters: " + str(self.params)
 
 
 class MissingAtomsError(Exception):
@@ -372,10 +372,10 @@ class BondOrderParameters:
     element pair. To facilitate the handling of all these parameters, they are
     wrapped in a BondOrderParameters object.
 
-    For a single element, the bond order factor calculation requires four parameters:
-    alpha, beta, eta, and m.
-    For a pair of elements, also four parameters are required:
-    a, c, d, and h.
+    For a single element, the bond order factor calculation requires three parameters:
+    beta, eta, and m.
+    For a pair of elements, four parameters are required:
+    alpha, c, d, and h.
     The meaning of these parameters is explained in the documentation of the
     :class:`~pysic.Coordinator` class.
 
@@ -388,15 +388,6 @@ class BondOrderParameters:
     param_set: list of strings and doubles
         a list of parameters to be contained in the parameter object
     """
-
-    # Needed:
-    # add element parameter,
-    # add pair parameter,
-    # lists storing these,
-    # possibility for turning off some pairs,
-    # update Coordinator to handle this class,
-    # reading routines in the core (should not be stored, just read by the routine
-    #    for calculating the bond order factors)
     
     def __init__(self,param_set=None):
         self.params = []
@@ -404,11 +395,43 @@ class BondOrderParameters:
             self.set_parameters(param_set)
 
     def __repr__(self):
-        return "please implement __repr__"
+        return "BondOrderParameters( "+str(self.params)+" )"
+
 
     def __eq__(self,other):
-        return False
+        if self.params == other.params:
+            return True
+        else:
+            return False
 
+    def get_elements(self):
+        """Returns all single elements that have parameters associated, and the parameters, as a tuple.        
+        """
+        elems = []
+        pars = []
+        for param in self.params:
+            elem = param[0]
+            if len(elem) == 1:
+                elems.append(elem)
+                pars.append(param[1])
+
+        return ( elems, pars )
+
+
+    def get_pairs(self):
+        """Returns all element pairs that have parameters associated, and the parameters, as a tuple.
+        """
+        elems = []
+        pars = []
+        for param in self.params:
+            elem = param[0]
+            if len(elem) == 2:
+                elems.append(elem)
+                pars.append(param[1])
+
+        return ( elems, pars )
+
+    
     def get_parameters(self):
         """Returns all parameters stored.
         """
@@ -427,14 +450,26 @@ class BondOrderParameters:
 
     def remove(self,targets):
         """Removes the parameters of the given element or pair.
+
+        Parameters:
+
+        targets: list of strings
+            name(s) of element(s)
         """
         set_target = targets
         if not isinstance(targets,list):
             set_target = [targets]
-        self.params.remove(set_target,get_parameters_of(set_target))
+        self.params.remove([set_target,self.get_parameters_of(set_target)])
 
     def set_parameters_of(self,targets,param_set):
         """Sets the parameters of the given element or pair of elements to the given values.
+        
+        Parameters:
+
+        targets: list of strings
+            name(s) of element(s)
+        param_set: list of doubles
+            parameter values
         """
         index = self.index_of(targets)
 
@@ -480,9 +515,6 @@ class BondOrderParameters:
         return None
 
 
-    #
-    # Incomplete, continue here!
-    #
     def set_parameter(self,targets,param_name,value):
         """Resets the value of a specific parameter.
 
@@ -498,7 +530,7 @@ class BondOrderParameters:
         param_name: string
             The name of the parameter.
             For a single element, the valid parameters are: alpha, beta, eta, m.
-            For a pair of elements, the valid parameters are: a, c, d, h.
+            For a pair of elements, the valid parameters are: c, d, h.
         value: double
             new value for the parameter
         """
@@ -509,7 +541,59 @@ class BondOrderParameters:
         except:
             n_target = 1
 
-        the_pars = get_parameters_of(targets)
+        # get the index of the target
+        newpars = self.get_parameters_of(targets)
+        exists_already = True
+
+        if newpars == None:
+            if n_targets == 1:
+                newpars = 4*[0.0]
+            elif n_target == 2:
+                newpars = 3*[0.0]
+            exists_already = False
+        
+        newpars[self.parse_parameter(n_target,param_name)] = value
+
+        self.add_parameter(targets,newpars)
+        if exists_already:
+            self.remove(targets)
+
+
+    def parse_parameter(self,n_target,param_name):
+        """Internal utility for parsing the names of the parameters.
+
+        According to the given number of targets and the name of
+        parameter, the function finds the index of the parameter in
+        the list of parameters.
+        
+        Parameters:
+
+        n_target: integer
+            number of targets (1 for a single element, 2 for a pair)
+        param_name: string
+            name of parameter ("alpha", "beta", "eta", "m"; "c", "d", "h")
+        """
+        
+        if n_target == 1:
+            if str.lower(param_name).strip() == "alpha":
+                return 0
+            elif str.lower(param_name).strip() == "beta":
+                return 1
+            elif str.lower(param_name).strip() == "eta":
+                return 2
+            elif str.lower(param_name).strip() == "m":
+                return 3
+            else:
+                raise InvalidParametersError("No parameter named "+param_name+" for an element.")
+        elif n_target == 2:
+            if str.lower(param_name).strip() == "c":
+                return 0
+            elif str.lower(param_name).strip() == "d":
+                return 1
+            elif str.lower(param_name).strip() == "h":
+                return 2
+            else:
+                raise InvalidParametersError("No parameter named "+param_name+" for a pair of elements.")
 
     def get_parameter(self,targets,param_name):
         """Returns the value of a specific parameter.
@@ -534,36 +618,16 @@ class BondOrderParameters:
         except:
             n_target = 1
 
-        the_pars = get_parameters_of(targets)
+        the_pars = self.get_parameters_of(targets)
 
-        if n_target == 1:
-            if param_name.lowercase().strip() == "alpha":
-                return the_pars[0]
-            elif param_name.lowercase().strip() == "beta":
-                return the_pars[1]
-            elif param_name.lowercase().strip() == "eta":
-                return the_pars[2]
-            elif param_name.lowercase().strip() == "m":
-                return the_pars[3]
-
-        if n_target == 2:
-            if param_name.lowercase().strip() == "a":
-                return the_pars[0]
-            elif param_name.lowercase().strip() == "c":
-                return the_pars[1]
-            elif param_name.lowercase().strip() == "d":
-                return the_pars[2]
-            elif param_name.lowercase().strip() == "h":
-                return the_pars[3]
-
-        return None
+        return the_pars[self.parse_parameter(n_target,param_name)]
 
     def add_parameters(self,param_set):
         """Adds the given set of parameters.
 
         The set of parameters must be a list of the format::
 
-            param_set = [[["H"], [1.0, 2.0, 3.0, 4.0]], ..., [["H", "He"], [5.0, 6.0, 7.0, 8.0]]]
+            param_set = [[["H"], [1.0, 2.0, 3.0, 4.0]], ..., [["H", "He"], [5.0, 6.0, 7.0]]]
 
         i.e., a triple nested list.
         For each element or pair, there is a double list where the first list contains the element symbols
@@ -598,16 +662,16 @@ class BondOrderParameters:
 
         if(n_target == 1):
             if(len(new_params) != 4):
-                raise InvalidParametersError("An element requires a set of 4 parameters.",self)
+                raise InvalidParametersError("An element requires a set of 4 parameters.")
             newpar = [ set_target, new_params ]
             self.params.append(newpar)
         elif(n_target == 2):
-            if(len(new_params) != 4):
-                raise InvalidParametersError("A pair requires a set of 4 parameters.",self)
+            if(len(new_params) != 3):
+                raise InvalidParametersError("A pair requires a set of 3 parameters.")
             newpar = [ set_target, new_params ]
             self.params.append(newpar)
         else:
-            raise InvalidParametersError("Bond order factors only have parameters for single or paired elements.",self)
+            raise InvalidParametersError("Bond order factors only have parameters for single or paired elements.")
 
 
 class Coordinator:
@@ -640,17 +704,15 @@ class Coordinator:
         Any atom closer than this is considered (at least) a partial neighbor
         and will give a fractional contribution to the total coordination.
         Any atom farther than this will not contribute to the neighbor count.
+    bond_order_params: :class:`~pysic.BondOrderParameters`
+        Parameters for calculating bond order factors.
     """
 
     def __init__(self,soft_cut,hard_cut,bond_order_params=None):
         self.coordinations = None
         self.bond_orders = None
         self.bond_order_params = bond_order_params
-        if(self.bond_order_params != None):
-            if(len(self.bond_order_params) != 7):
-                raise InvalidCoordinatorError(
-                    'Invalid number of parameters for the bond order calculator: {npar} (7 required)'.format(
-                        npar = str(len(self.bond_order_params))) )
+
         if(soft_cut < 0.0):
             raise InvalidCoordinatorError(
                 'Invalid cutoff for the coordination calculator: soft={soft} (must be greater than 0).'.format(
@@ -714,6 +776,25 @@ class Coordinator:
         self.hard_cut = new_hard
 
 
+    def get_bond_order_parameters(self):
+        """Returns the bond order parameters of this Coordinator.
+        """
+
+        return self.bond_order_params
+
+
+    def set_bond_order_parameters(self,params):
+        """Assigns new bond order parameters to this Coordinator.
+
+        Parameters:
+
+        params: :class:`~pysic.BondOrderCoordinator`
+            new bond order parameters
+        """
+
+        self.bond_order_params = params
+
+
     def calculate_coordination(self):
         """Recalculates the coordination numbers for all atoms and stores them.
 
@@ -732,7 +813,8 @@ class Coordinator:
         to call this method when needed. In practice, :class:`~pysic.Pysic` does make sure
         that coordination is updated at the start of each force evaluation.
         """
-        pass
+        self.coordinations = pf.pysic_interface.calculate_coordination([self.soft_cut,self.hard_cut])
+        
 
     def get_coordination(self):
         """Returns an array containing the coordination numbers of all atoms.
@@ -796,7 +878,7 @@ class Potential:
         the maximum atomic separation at which the potential is applied
     """
 
-    def __init__(self,potential_type,symbols=None,tags=None,indices=None,parameters=None,cutoff=0.0,cutoff_margin=0.0):
+    def __init__(self,potential_type,symbols=None,tags=None,indices=None,parameters=None,cutoff=0.0,cutoff_margin=0.0,coordinator=None):
         if(is_valid_potential(potential_type)):
             self.symbols = None
             self.tags = None
@@ -804,6 +886,7 @@ class Potential:
             self.potential_type = potential_type
             self.cutoff = cutoff
             self.cutoff_margin = 0.0
+            self.coordinator = None
             self.set_cutoff_margin(cutoff_margin)
             self.n_targets = number_of_targets(potential_type)
             self.names_of_params = names_of_parameters(potential_type)
@@ -822,6 +905,7 @@ class Potential:
                     num=str(number_of_parameters(potential_type)),
                     par=str(parameters(potential_type))
                     ) )
+            self.set_coordinator(coordinator)
         else:
             raise InvalidPotentialError('There is no potential called "{pot}".'.format(pot=potential_type))
 
@@ -841,7 +925,9 @@ class Potential:
             if self.parameters != other.parameters:
                 return False
             if self.cutoff != other.cutoff:
-                return False            
+                return False         
+            if self.coordinator != other.coordinator:
+                return False               
         except:
             return False
         
@@ -849,13 +935,17 @@ class Potential:
 
 
     def __repr__(self):
-        return "Potential({name},symbols={symbs},tags={tags},indices={inds},parameters={params},cutoff={cut},cutoff_margin={marg})".format(name=self.potential_type,
-                                                                                                                      symbs=str(self.symbols),
-                                                                                                                      tags=str(self.tags),
-                                                                                                                      inds=str(self.indices),
-                                                                                                                      params=str(self.parameters),
-                                                                                                                      cut=str(self.cutoff),
-                                                                                                                      marg=str(self.cutoff_margin))
+        return ("Potential({name},symbols={symbs},"+ \
+                "tags={tags},indices={inds},parameters={params}"+ \
+                ",cutoff={cut},cutoff_margin={marg},"+ \
+                "coordinator={coord})").format(name=self.potential_type,
+                                               symbs=str(self.symbols),
+                                               tags=str(self.tags),
+                                               inds=str(self.indices),
+                                               params=str(self.parameters),
+                                               cut=str(self.cutoff),
+                                               marg=str(self.cutoff_margin),
+                                               coord=str(self.coordinator)
     
 
     def get_symbols(self):
@@ -971,6 +1061,17 @@ class Potential:
             return True
         except:
             return False
+
+    def get_coordinator(self):
+        """Returns the Coordinator.
+        """
+        return self.coordinator
+
+    def set_coordinator(self,coordinator):
+        """Sets a new Coordinator.
+        """
+        self.coordinator = coordinator
+        
 
     def set_symbols(self,symbols):
         """Sets the list of symbols to equal the given list.
@@ -1244,6 +1345,7 @@ class Pysic:
         self.forces_calculated = False
         self.energy_calculated = False
         self.stress_calculated = False
+        self.coordinations_calculated = False
         self.force_core_initialization = full_initialization
 
 
@@ -1419,6 +1521,7 @@ class Pysic:
                 self.forces_calculated = False
                 self.energy_calculated = False
                 self.stress_calculated = False
+                self.coordinations_calculated = False
                 self.neighbor_lists_ready = False
 
                 # NB: this avoids updating the potential lists every time an atom moves, but
@@ -1454,6 +1557,7 @@ class Pysic:
             self.forces_calculated = False
             self.energy_calculated = False
             self.stress_calculated = False
+            self.coordinations_calculated = False
             self.potential_lists_ready = False
             self.potentials_ready = False
             self.neighbor_lists_ready = False
@@ -1482,6 +1586,7 @@ class Pysic:
         self.forces_calculated = False
         self.energy_calculated = False
         self.stress_calculated = False
+        self.coordinations_calculated = False
         self.potential_lists_ready = False
         self.potentials_ready = False
         self.neighbor_lists_ready = False
@@ -1576,6 +1681,14 @@ class Pysic:
         self.stress = 0.0
         self.stress_calculated = True
     
+
+    def calculate_coordinations(self):
+        """Tells the list of Potentials to update their coordinations if needed.
+        """
+        for pot in self.potentials:
+            pot.update_coordinations()
+        self.coordinations_calculated = True        
+
 
     def get_core_readiness(self):
         """Returns a tuple of booleans used for notifying necessary core updates.
@@ -1781,6 +1894,7 @@ class Pysic:
         self.forces_calculated = False
         self.energy_calculated = False
         self.stress_calculated = False
+        self.coordinations_calculated = False
 
         pf.pysic_interface.update_atom_coordinates(positions,momenta)
         self.atoms_ready = True

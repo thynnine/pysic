@@ -210,6 +210,11 @@ ____________________
 - :meth:`~pysic.Potential.set_parameter_values`
 - :meth:`~pysic.Potential.set_soft_cutoff`
 
+Coordinator handling
+_____________________
+
+- :meth:`~pysic.Potential.get_coordinator`
+- :meth:`~pysic.Potential.set_coordinator`
 
 Target handling
 __________________

@@ -96,6 +96,8 @@ __________________
 - :meth:`~pysic.Coordinator.get_hard_cutoff`
 - :meth:`~pysic.Coordinator.set_soft_cutoff`
 - :meth:`~pysic.Coordinator.set_hard_cutoff`
+- :meth:`~pysic.Coordinator.get_bond_order_parameters`
+- :meth:`~pysic.Coordinator.set_bond_order_parameters`
 
 
 Coordination and bond order
