@@ -68,8 +68,9 @@ module potentials
   ! Defines parameters for bond order factor calculation.
   type bond_order_parameters
      integer :: type_index
-     double precision, pointer :: parameters(:), derived_parameters(:)
+     double precision, pointer :: parameters(:,:), derived_parameters(:,:)
      double precision :: cutoff, soft_cutoff
+     integer, pointer :: n_params(:)
      character(len=2), pointer :: apply_elements(:) ! label_length
      character(len=2), pointer :: original_elements(:) ! label_length
   end type bond_order_parameters
@@ -162,6 +163,200 @@ contains
     end if
 
   end subroutine create_potential
+
+
+
+  subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
+       cutoff,soft_cutoff,elements,orig_elements,new_bond)
+    implicit none
+    integer, intent(in) :: n_targets, n_params, n_split
+    integer, intent(in) :: param_split(n_split)
+    character(len=*), intent(in) :: bond_name
+    double precision, intent(in) :: parameters(n_params)
+    double precision, intent(in) :: cutoff, soft_cutoff
+    character(len=2), intent(in) :: elements(n_targets) ! label_length
+    character(len=2), intent(in) :: orig_elements(n_targets) ! label_length
+    type(bond_order_parameters), intent(out) :: new_bond
+    type(bond_order_descriptor) :: descriptor
+    integer :: max_split, accumulated_split, i
+
+    call get_bond_descriptor(bond_name, descriptor)
+    
+    new_bond%type_index = descriptor%type_index
+    nullify(new_bond%parameters)
+    nullify(new_bond%n_params)
+    max_split = MAXVAL(param_split)
+    allocate(new_bond%parameters(max_split,n_split))
+    allocate(new_bond%n_params(n_split))
+    new_bond%parameters = 0.d0
+    accumulated_split = 0
+    do i = 1, n_split
+       new_bond%n_params(i) = param_split(i)
+       new_bond%parameters(1:param_split(i),i) = &
+            parameters(accumulated_split+1:accumulated_split+param_split(i))
+       accumulated_split = accumulated_split + param_split(i)
+    end do
+    new_bond%cutoff = cutoff
+    new_bond%soft_cutoff = soft_cutoff
+    nullify(new_bond%apply_elements)
+    allocate(new_bond%apply_elements(n_targets))
+    new_bond%apply_elements = elements
+    nullify(new_bond%original_elements)
+    allocate(new_bond%original_elements(n_targets))
+    new_bond%original_elements = orig_elements
+
+    ! derived parameters - add here
+
+  end subroutine create_bond_order_factor
+
+
+  subroutine evaluate_bond_order_factor(n_targets,separations,distances,bond_params,factor,atoms)
+    implicit none
+    integer, intent(in) :: n_targets
+    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
+    type(bond_order_parameters), intent(in) :: bond_params(n_targets-1)
+    double precision, intent(out) :: factor
+    type(atom), optional, intent(in) :: atoms(n_targets)
+    double precision :: r1, r2, cosine, decay, xi, gee, beta, eta, mu, a, cc, dd, h
+    double precision :: tmp1(3), tmp2(3)
+
+    factor = 0.d0
+
+    select case (bond_params(1)%type_index)
+    case(coordination_index) ! number of neighbors
+
+       r1 = distances(1)
+       if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
+          call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(1)%soft_cutoff,decay)
+          factor = decay
+       end if
+
+    case(tersoff_index) ! tersoff bond-order factor
+
+       ! note that the given distances and separation vectors must be for index pairs
+       ! ij and ik (in the notation described in the documentation) since these are needed.
+       !
+       ! bond_params(1) should contain the ij parameters and bond_params(2) the ik ones,
+       ! but it is only checked that bond_params(1) is actually of tersoff type since only
+       ! the cutoffs of bond_params(2) are used
+
+       r1 = distances(1)
+       r2 = distances(2)
+
+       if(r2 < bond_params(2)%cutoff .and. r2 > 0.d0)then
+
+             tmp1 = separations(1:3,1)
+             tmp2 = separations(1:3,2)
+             cosine = (tmp1 .o. tmp2) / ( r1 * r2 ) ! angle between ij and ik
+
+             ! bond_params: beta_i, eta_i, mu_i, a_ij, c_ij, d_ij, h_ij
+             mu = bond_params(1)%parameters(3,1)
+             a = bond_params(1)%parameters(1,2)
+             cc = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
+             dd = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
+             h = bond_params(1)%parameters(4,2)
+
+             call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay)
+             xi = decay * exp( (a * (r1-r2))**mu )
+             gee = 1 + cc/dd - cc/(dd+(h-cosine)*(h-cosine))
+
+             factor = xi*gee
+             
+       end if
+
+    case default
+       ! if we have an invalid case, do nothing
+    end select
+
+  end subroutine evaluate_bond_order_factor
+
+
+
+  subroutine evaluate_bond_order_gradient(n_targets,separations,distances,bond_params,gradient,atoms)
+    implicit none
+    integer, intent(in) :: n_targets
+    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
+    type(bond_order_parameters), intent(in) :: bond_params(n_targets-1)
+    double precision, intent(out) :: gradient(3,n_targets)
+    type(atom), optional, intent(in) :: atoms(n_targets)
+    double precision :: r1, r2, nablar1(3,3), nablar2(3,3), cosine, nablacosine(3,3), decay, nabladecay(3,3), &
+         unitvector(3,2), xi, gee, nablaxi(3,3), nablagee(3,3), mu, a, cc, dd, h, dot, ratio
+    double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3), tmp5(3), tmpmat(3,3)
+
+    gradient = 0.d0
+
+    select case (bond_params(1)%type_index)
+    case(coordination_index) ! number of neighbors
+
+       r1 = distances(1)
+       if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
+          call smoothening_gradient(separations(1:3,1) / r1,r1,bond_params(1)%cutoff,bond_params(1)%soft_cutoff,tmp1)
+          gradient(1:3,1) = -tmp1(1:3)
+          gradient(1:3,2) = tmp1(1:3)
+       end if
+
+    case(tersoff_index) ! tersoff bond-order factor
+
+       r1 = distances(1)
+       r2 = distances(2)
+
+       if(r2 < bond_params(2)%cutoff .and. r2 > 0.d0)then
+
+             tmp1 = separations(1:3,1)
+             tmp2 = separations(1:3,2)
+             unitvector(1:3,1) = tmp1 / r1
+             unitvector(1:3,2) = tmp2 / r2
+             dot = (tmp1 .o. tmp2)
+             ratio = 1.d0 / ( r1 * r2 )
+             cosine = dot / ratio ! angle between ij and ik
+
+             ! gradients of the r_ij and r_ik vectors with respect to the positions 
+             ! of the three particles i, j, and k
+             nablar1 = 0.d0
+             nablar1(1:3,1) = -unitvector(1:3,1)
+             nablar1(1:3,2) = unitvector(1:3,1)
+             nablar2 = 0.d0
+             nablar2(1:3,1) = -unitvector(1:3,2)
+             nablar2(1:3,3) = unitvector(1:3,2)
+
+             ! gradient of the cos theta_ijk factor
+             nablacosine = 0.d0
+             tmp3 = tmp2 - dot / (r1*r1) * tmp1
+             tmp4 = tmp1 - dot / (r2*r2) * tmp2
+             nablacosine(1:3,1) = tmp3*ratio
+             nablacosine(1:3,2) = -(tmp3+tmp4)*ratio
+             nablacosine(1:3,3) = tmp4*ratio
+
+             ! bond_params: beta_i, eta_i, mu_i, a_ij, c_ij, d_ij, h_ij
+             mu = bond_params(1)%parameters(3,1)
+             a = bond_params(1)%parameters(1,2)
+             cc = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
+             dd = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
+             h = bond_params(1)%parameters(4,2)
+
+             call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay)
+             call smoothening_gradient(unitvector(1:3,2),r2,&
+                  bond_params(2)%cutoff,bond_params(2)%soft_cutoff,tmp5)
+
+             tmpmat = 0.d0
+             tmpmat(1:3,1) = tmp5
+             tmpmat(1:3,2) = tmp5
+             tmpmat(1:3,3) = tmp5
+
+             xi = decay * exp( (a * (r1-r2))**mu )
+             gee = 1 + cc/dd - cc/(dd+(h-cosine)*(h-cosine))
+             nablaxi = exp( (a * (r1-r2))**mu ) * &
+                  ( tmpmat + decay * mu * a * (a * (r1-r2))**(mu-1) * (nablar1 - nablar2) )
+             nablagee = - cc / ( (dd+(h-cosine)*(h-cosine))*(dd+(h-cosine)*(h-cosine)) ) * &
+                  2.d0 * (h-cosine) * nablacosine
+
+             gradient = nablaxi * gee + xi * nablagee
+
+       end if
+       
+    end select
+
+  end subroutine evaluate_bond_order_gradient
 
 
   subroutine evaluate_forces(n_targets,separations,distances,interaction,force,atoms)

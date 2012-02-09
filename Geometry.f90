@@ -12,11 +12,11 @@ module geometry
   ! Defines an atomic particle
   type atom
      double precision :: mass, charge, position(3), momentum(3)
-     integer :: index, tags, n_pots
-     logical :: potentials_listed
+     integer :: index, tags, n_pots, n_bonds
+     logical :: potentials_listed, bond_order_factors_listed
      character(len=label_length) :: element
      type(neighbor_list) :: neighbor_list
-     integer, pointer :: potential_indices(:)
+     integer, pointer :: potential_indices(:), bond_indices(:)
   end type atom
 
   ! Defines the supercell
@@ -149,6 +149,31 @@ contains
     atom_in%potentials_listed = .true.
 
   end subroutine assign_potential_indices
+
+
+  subroutine assign_bond_order_indices(n_bonds,atom_in,indices)
+    implicit none    
+    integer, intent(in) :: n_bonds
+    type(atom), intent(inout) :: atom_in
+    integer, intent(in) :: indices(n_bonds)
+
+    if(atom_in%bond_order_factors_listed)then
+       if(atom_in%n_bonds /= n_bonds)then
+          deallocate(atom_in%bond_indices)
+          allocate(atom_in%bond_indices(size(indices)))
+       end if
+    else
+       nullify(atom_in%bond_indices)
+       allocate(atom_in%bond_indices(size(indices)))
+    end if
+    atom_in%bond_indices = indices
+    atom_in%n_bonds = size(indices)
+    atom_in%bond_order_factors_listed = .true.
+
+  end subroutine assign_bond_order_indices
+
+
+
 
   ! Calculates the minimum separation vector between two atoms, r2-r1, including possible periodicity
   subroutine separation_vector(r1,r2,offset,cell,separation)

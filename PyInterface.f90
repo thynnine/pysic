@@ -282,13 +282,12 @@ contains
 
 
 
-  subroutine calculate_bond_orders(n_atoms,cutoffs,bond_params,bond_orders)
+  subroutine calculate_bond_orders(n_atoms,bond_orders)
     implicit none
     integer, intent(in) :: n_atoms
-    double precision, intent(in) :: cutoffs(2), bond_params(7)
     double precision, intent(out) :: bond_orders(n_atoms)
 
-    call core_calculate_bond_orders(n_atoms,cutoffs,bond_params,bond_orders)
+    call core_calculate_bond_orders(n_atoms,bond_orders)
 
   end subroutine calculate_bond_orders
 

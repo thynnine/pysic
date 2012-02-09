@@ -7,10 +7,12 @@ module pysic_core
   type(atom), pointer :: atoms(:)
   type(supercell) :: cell
   type(potential), pointer :: interactions(:)
-  integer :: n_interactions
+  type(bond_order_parameters), pointer :: bond_factors(:)
+  integer :: n_interactions, n_bond_factors
   logical :: &
        atoms_created = .false., &
-       potentials_allocated = .false.
+       potentials_allocated = .false., &
+       bond_factors_allocated = .false.
 
 contains
 
@@ -19,6 +21,7 @@ contains
 
     call core_clear_atoms()
     call core_clear_potentials()
+    call core_clear_bond_factors()
 
   end subroutine core_release_all_memory
 
@@ -142,6 +145,29 @@ contains
 
   end subroutine core_clear_potentials
   
+
+  
+  subroutine core_clear_bond_factors()
+    implicit none
+    integer :: i
+
+    if(n_bond_factors > 0)then
+       do i = 1, n_bond_factors
+          deallocate(bond_factors(i)%parameters)
+          deallocate(bond_factors(i)%n_params)
+          deallocate(bond_factors(i)%apply_elements)
+          deallocate(bond_factors(i)%original_elements)
+          deallocate(bond_factors(i)%derived_parameters)  
+       end do
+    end if
+    if(bond_factors_allocated)then
+       deallocate(bond_factors)
+    end if
+    n_bond_factors = 0
+    bond_factors_allocated = .false.
+
+  end subroutine core_clear_bond_factors
+
   
   subroutine core_allocate_potentials(n_pots)
     implicit none
@@ -163,6 +189,25 @@ contains
     potentials_allocated = .true.
 
   end subroutine core_allocate_potentials
+
+
+  subroutine core_allocate_bond_factors(n_pots)
+    implicit none
+    integer, intent(in) :: n_pots
+    integer :: i
+
+    call core_clear_bond_factors()
+    allocate(bond_factors(n_bond_factors))
+    do i = 1, n_bond_factors
+       nullify(bond_factors(i)%parameters)
+       nullify(bond_factors(i)%n_params)
+       nullify(bond_factors(i)%apply_elements)
+       nullify(bond_factors(i)%original_elements)
+       nullify(bond_factors(i)%derived_parameters)
+    end do
+    bond_factors_allocated = .true.
+
+  end subroutine core_allocate_bond_factors
 
 
 
@@ -189,6 +234,62 @@ contains
 
   end subroutine core_add_potential
 
+
+
+  subroutine core_add_bond_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
+       cutoff,smooth_cut,elements,orig_elements)
+    implicit none
+    integer, intent(in) :: n_targets, n_params, n_split
+    integer, intent(in) :: param_split(n_split)
+    character(len=*), intent(in) :: bond_name
+    double precision, intent(in) :: parameters(n_params)
+    double precision, intent(in) :: cutoff, smooth_cut
+    character(len=label_length), intent(in) :: elements(n_targets)
+    character(len=label_length), intent(in) :: orig_elements(n_targets)
+    type(bond_order_parameters) :: new_bond_factor
+
+    n_bond_factors = n_bond_factors + 1
+    call create_bond_order_factor(n_targets,n_params,n_split,&
+         bond_name,parameters,param_split,cutoff,smooth_cut,&
+         elements,orig_elements,&
+         new_bond_factor)
+    bond_factors(n_bond_factors) = new_bond_factor
+
+  end subroutine core_add_bond_factor
+
+
+  subroutine core_assign_bond_factor_indices()
+    implicit none
+    logical :: affects(n_bond_factors)
+    integer :: i, j, k, total
+    integer, allocatable :: bond_indices(:)
+
+    do i = 1, size(atoms)       
+       total = 0
+       do j = 1, n_bond_factors
+          call bond_order_factor_affects_atom(bond_factors(j),atoms(i),affects(j),1)
+          if(affects(j))then
+             total = total+1
+          end if
+       end do
+
+       allocate(bond_indices(total))
+       
+       k = 0
+       do j = 1, n_bond_factors
+          if(affects(j))then
+             k = k+1
+             bond_indices(k) = j
+          end if
+       end do
+
+       ! pointer allocations are handled in the subroutine
+       call assign_bond_order_factor_indices(total,atoms(i),bond_indices)
+
+       deallocate(bond_indices)
+    end do
+
+  end subroutine core_assign_bond_factor_indices
 
 
   subroutine core_assign_potential_indices()
@@ -289,13 +390,69 @@ contains
 
 
   !!!!! Empty method, to be implemented !!!!!
-  subroutine core_calculate_bond_orders(n_atoms,cutoffs,bond_params,bond_orders)
+  subroutine core_calculate_bond_orders(n_atoms,bond_orders)
     implicit none
     integer, intent(in) :: n_atoms
-    double precision, intent(in) :: cutoffs(2), bond_params(7)
     double precision, intent(out) :: bond_orders(n_atoms)
-    
+    integer :: index1, index2, index3
+    type(atom) :: atom1, atom2, atom3
+    type(neighbor_list) :: nbors1, nbors2
+    type(bond_order_parameters) :: bond_params(2)
+    integer, pointer :: bond_indices(:)
+    logical :: is_active, many_bodies_found, separation3_unknown
+
     bond_orders = 0.d0
+
+    ! loop over atoms
+    do index1 = 1, size(atoms)
+       
+       ! in MPI, only consider the atoms allocated to this particular cpu
+       if(is_my_atom(index1))then
+
+          ! target atom
+          atom1 = atoms(index1)
+          nbors1 = atom1%neighbor_list
+          bond_indices => atom1%potential_indices
+
+          ! loop over neighbors
+          do j = 1, nbors1%n_neighbors
+
+             ! neighboring atom
+             index2 = nbors1%neighbors(j)
+
+             ! There is no double count prevention since the factors
+             ! (1,2) and (2,1) need not be the same. In general,
+             ! some bond factors may have this symmetry though, so
+             ! it may be worth investigating if the nonsymmetry
+             ! should be taken into account in the Potential.f90
+             ! routines.
+             atom2 = atoms(index2)
+             call separation_vector(atom1%position, &
+                  atom2%position, &
+                  nbors1%pbc_offsets(1:3,j), &
+                  cell, &
+                  separations(1:3,1))
+             distances(1) = .norm.(separations(1:3,1))
+             if(distances(1) == 0.d0)then
+                directions(1:3,1) = (/ 0.d0, 0.d0, 0.d0 /)
+             else
+                directions(1:3,1) = separations(1:3,1) / distances(1)
+             end if
+             
+             many_bodies_found = .false.
+             ! 2-body bond order factors
+             do k = 1, size(bond_indices)
+                
+!!! continue here !!!
+                
+             end do
+
+
+          end do
+
+       end if
+
+    end do
 
   end subroutine core_calculate_bond_orders
 
