@@ -141,12 +141,13 @@ class LockedCoreError(Exception):
 
 # automatically call the initialization routine in Potentials.f90
 pf.pysic_interface.start_potentials()
+pf.pysic_interface.start_bond_order_factors()
 
 # automatically initialize mpi - fortran side decides if we really are in mpi
 pf.pysic_interface.start_mpi()
 
 # automatically initialize the fortran rng
-# it needs to be possible to force a seed by the user
+# it needs to be possible to force a seed by the user - to be implemented
 pf.pysic_interface.start_rng(5301)#rnd.randint(1, 999999))
 
 
@@ -180,21 +181,10 @@ def get_cpu_id():
     return pf.pysic_interface.get_cpu_id()
 
 
-#def distribute_mpi_load(pysic_calculator):
-#    """Distributes atoms among processors in the Fortran MPI core.
-#
-#    Parameters:
-#
-#    pysic_calculator: :class:`pysic.Pysic~` object
-#        the calculator object whose structure is used for distributing the MPI load.
-#    """
-#    pf.pysic_interface.distribute_mpi(pysic_calculator.get_atoms().get_number_of_atoms())
-
-
 def list_potentials():
     """Same as :meth:`~pysic.list_valid_potentials`
     """
-    list_valid_potentials()
+    return list_valid_potentials()
 
 def list_valid_potentials():
     """A list of names of potentials currently known by the core.
@@ -212,13 +202,32 @@ def list_valid_potentials():
     return pot_names
 
 
+def list_bond_order_factors():
+    """Same as :meth:`~pysic.list_valid_bond_order_factors`
+    """
+    return list_valid_bond_order_factors()
+
+def list_valid_bond_order_factors():
+    """A list of names of bond order factors currently known by the core.
+
+    The method retrieves from the core a list of the names of different bond factors
+    currently implemented. Since the fortran core is directly accessed, any
+    updates made in the core source code should get noticed automatically.
+    """
+    n_bonds = pf.pysic_interface.number_of_bond_order_factors()
+    bond_codes = pf.pysic_interface.list_valid_bond_order_factors(n_bonds).transpose()
+    bond_names = []
+    for code in bond_codes:
+        bond_names.append(pu.ints2str(code))
+
+    return bond_names
+
+
 def is_potential(potential_name):
     """Same as :meth:`~pysic.is_valid_potential`
     """
     return pf.pysic_interface.is_potential(potential_name)
 
-
-# Checks if the given keyword defines a potential
 def is_valid_potential(potential_name):
     """Tells if the given string is the name of a potential.
 
@@ -229,15 +238,47 @@ def is_valid_potential(potential_name):
     """
     return pf.pysic_interface.is_potential(potential_name)
 
+
+def is_bond_order_factor(bond_order_name):
+    """Same as :meth:`~pysic.is_valid_bond_order_factor`
+
+    Parameters:
+
+    bond_order_name: string
+        the name of the bond order factor
+    """
+    return pf.pysic_interface.is_bond_order_factor(bond_order_name)
+
+def is_valid_bond_order_factor(bond_order_name):
+    """Tells if the given string is the name of a bond order factor.
+
+    Parameters:
+
+    bond_order_name: string
+        the name of the bond order factor
+    """
+    return pf.pysic_interface.is_bond_order_factor(bond_order_name)
+
+
+
 def number_of_targets(potential_name):
-    """Tells how many targets a potential acts on, i.e., is it pair or many-body.
+    """Tells how many targets a potential or bond order factor acts on, i.e., is it pair or many-body.
 
     Parameters:
 
     potential_name: string
         the name of the potential
     """
-    return pf.pysic_interface.number_of_targets_of_potential(potential_name)
+
+    if(is_potential(potential_name)):
+        return pf.pysic_interface.number_of_targets_of_potential(potential_name)
+    elif(is_bond_order_factor(potential_name)):
+        return pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
+    else:
+        return 0
+
+### Continue here for adding bond order functionality to these methods. Also update the docstrings.
+
 
 def number_of_parameters(potential_name):
     """Tells how many parameters a potential incorporates.
@@ -945,9 +986,9 @@ class Potential:
                                                params=str(self.parameters),
                                                cut=str(self.cutoff),
                                                marg=str(self.cutoff_margin),
-                                               coord=str(self.coordinator)
+                                               coord=str(self.coordinator))
     
-
+                                          
     def get_symbols(self):
         """Return a list of the chemical symbols (elements) on which the potential
         acts on."""

@@ -151,7 +151,7 @@ contains
   end subroutine assign_potential_indices
 
 
-  subroutine assign_bond_order_indices(n_bonds,atom_in,indices)
+  subroutine assign_bond_order_factor_indices(n_bonds,atom_in,indices)
     implicit none    
     integer, intent(in) :: n_bonds
     type(atom), intent(inout) :: atom_in
@@ -170,7 +170,7 @@ contains
     atom_in%n_bonds = size(indices)
     atom_in%bond_order_factors_listed = .true.
 
-  end subroutine assign_bond_order_indices
+  end subroutine assign_bond_order_factor_indices
 
 
 

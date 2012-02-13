@@ -11,7 +11,8 @@ module potentials
        param_name_length = 10, &
        n_potential_types = 4, &
        n_bond_order_types = 2, &
-       n_max_params = 3, &
+       n_max_params = 4, &
+       n_max_targets = 2, &
        pot_note_length = 500, &
        param_note_length = 100
 
@@ -67,7 +68,7 @@ module potentials
 
   ! Defines parameters for bond order factor calculation.
   type bond_order_parameters
-     integer :: type_index
+     integer :: type_index, group_index ! group index connects the parameters to a bond factor entity in the python side of the simulator
      double precision, pointer :: parameters(:,:), derived_parameters(:,:)
      double precision :: cutoff, soft_cutoff
      integer, pointer :: n_params(:)
@@ -167,9 +168,9 @@ contains
 
 
   subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
-       cutoff,soft_cutoff,elements,orig_elements,new_bond)
+       cutoff,soft_cutoff,elements,orig_elements,group_index,new_bond)
     implicit none
-    integer, intent(in) :: n_targets, n_params, n_split
+    integer, intent(in) :: n_targets, n_params, n_split, group_index
     integer, intent(in) :: param_split(n_split)
     character(len=*), intent(in) :: bond_name
     double precision, intent(in) :: parameters(n_params)
@@ -182,6 +183,7 @@ contains
 
     call get_bond_descriptor(bond_name, descriptor)
     
+    new_bond%group_index = group_index
     new_bond%type_index = descriptor%type_index
     nullify(new_bond%parameters)
     nullify(new_bond%n_params)
@@ -594,7 +596,7 @@ contains
   end subroutine clear_potential_characterizers
 
 
-  subroutine clear_bond_order_characterizers()
+  subroutine clear_bond_order_factor_characterizers()
     implicit none
 
     if(bond_descriptors_created)then
@@ -604,7 +606,7 @@ contains
     end if
     bond_descriptors_created = .false.
 
-  end subroutine clear_bond_order_characterizers
+  end subroutine clear_bond_order_factor_characterizers
 
 
   subroutine initialize_potential_characterizers()
@@ -707,12 +709,13 @@ contains
   end subroutine initialize_potential_characterizers
   
 
-  subroutine initialize_bond_order_descriptors()
+  subroutine initialize_bond_order_factor_characterizers()
     implicit none
-    integer :: index
+    integer :: index, i
 
-    call clear_bond_order_characterizers()
+    call clear_bond_order_factor_characterizers()
     allocate(bond_order_descriptors(0:n_bond_order_types))
+
     index = 0
 
     ! Coordination
@@ -722,7 +725,9 @@ contains
     end if
     bond_order_descriptors(index)%type_index = index
     call pad_string('neighbors',pot_name_length,bond_order_descriptors(index)%name)
+    allocate(bond_order_descriptors(index)%n_parameters(1))
     bond_order_descriptors(index)%n_parameters(1) = 1
+    bond_order_descriptors(index)%n_targets = 1
     allocate(bond_order_descriptors(index)%parameter_names(bond_order_descriptors(index)%n_parameters(1),1))
     allocate(bond_order_descriptors(index)%parameter_notes(bond_order_descriptors(index)%n_parameters(1),1))
     call pad_string('none',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
@@ -737,8 +742,10 @@ contains
     end if
     bond_order_descriptors(index)%type_index = index
     call pad_string('tersoff',pot_name_length,bond_order_descriptors(index)%name)
+    allocate(bond_order_descriptors(index)%n_parameters(2))
     bond_order_descriptors(index)%n_parameters(1) = 3
     bond_order_descriptors(index)%n_parameters(2) = 4
+    bond_order_descriptors(index)%n_targets = 2
     allocate(bond_order_descriptors(index)%parameter_names(bond_order_descriptors(index)%n_parameters(1),1))
     allocate(bond_order_descriptors(index)%parameter_names(bond_order_descriptors(index)%n_parameters(2),2))
     allocate(bond_order_descriptors(index)%parameter_notes(bond_order_descriptors(index)%n_parameters(1),1))
@@ -747,10 +754,10 @@ contains
     call pad_string('prefactor',param_name_length,bond_order_descriptors(index)%parameter_notes(1,1))
     call pad_string('eta',param_name_length,bond_order_descriptors(index)%parameter_names(2,1))
     call pad_string('overall exponent',param_name_length,bond_order_descriptors(index)%parameter_notes(2,1))
-    call pad_string('m',param_name_length,bond_order_descriptors(index)%parameter_names(3,1))
-    call pad_string('distance exponent',param_name_length,bond_order_descriptors(index)%parameter_notes(3,1))
-    call pad_string('alpha',param_name_length,bond_order_descriptors(index)%parameter_names(1,2))
-    call pad_string('distance prefactor',param_name_length,bond_order_descriptors(index)%parameter_notes(1,2))
+    call pad_string('mu',param_name_length,bond_order_descriptors(index)%parameter_names(3,1))
+    call pad_string('decay exponent',param_name_length,bond_order_descriptors(index)%parameter_notes(3,1))
+    call pad_string('a',param_name_length,bond_order_descriptors(index)%parameter_names(1,2))
+    call pad_string('inverse decay factor',param_name_length,bond_order_descriptors(index)%parameter_notes(1,2))
     call pad_string('c',param_name_length,bond_order_descriptors(index)%parameter_names(2,2))
     call pad_string('angle term nominator',param_name_length,bond_order_descriptors(index)%parameter_notes(2,2))
     call pad_string('d',param_name_length,bond_order_descriptors(index)%parameter_names(3,2))
@@ -766,7 +773,9 @@ contains
     index = 0
     bond_order_descriptors(index)%type_index = index
     call pad_string('null',pot_name_length,bond_order_descriptors(index)%name)
+    allocate(bond_order_descriptors(index)%n_parameters(1))
     bond_order_descriptors(index)%n_parameters(1) = 1
+    bond_order_descriptors(index)%n_targets = 1
     allocate(bond_order_descriptors(index)%parameter_names(bond_order_descriptors(index)%n_parameters(1),1))
     allocate(bond_order_descriptors(index)%parameter_notes(bond_order_descriptors(index)%n_parameters(1),1))
     call pad_string('null',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
@@ -776,7 +785,7 @@ contains
     
     bond_descriptors_created = .true.
 
-  end subroutine initialize_bond_order_descriptors
+  end subroutine initialize_bond_order_factor_characterizers
 
 
   subroutine get_number_of_potentials(n_pots)
@@ -797,24 +806,34 @@ contains
   end subroutine get_number_of_bond_order_factors
 
 
-  subroutine list_potentials(pots)
+  subroutine list_potentials(n_pots,pots)
     implicit none
-    character(len=pot_name_length), dimension(n_potential_types), intent(out) :: pots
+    integer, intent(in) :: n_pots
+    character(len=pot_name_length), dimension(n_pots), intent(out) :: pots
     integer :: i
 
-    do i = 1, n_potential_types
-       pots(i) = potential_descriptors(i)%name
+    do i = 1, n_pots
+       if (i > n_potential_types)then
+          pots(i) = potential_descriptors(0)%name
+       else
+          pots(i) = potential_descriptors(i)%name
+       end if
     end do
 
   end subroutine list_potentials
 
-  subroutine list_bond_order_factors(bonds)
+  subroutine list_bond_order_factors(n_bonds,bonds)
     implicit none
-    character(len=pot_name_length), dimension(n_bond_order_types), intent(out) :: bonds
+    integer, intent(in) :: n_bonds
+    character(len=pot_name_length), dimension(n_bonds), intent(out) :: bonds
     integer :: i
 
-    do i = 1, n_bond_order_types
-       bonds(i) = bond_order_descriptors(i)%name
+    do i = 1, n_bonds
+       if (i > n_bond_order_types)then
+          bonds(i) = bond_order_descriptors(0)%name
+       else
+          bonds(i) = bond_order_descriptors(i)%name
+       end if
     end do
 
   end subroutine list_bond_order_factors
@@ -971,6 +990,7 @@ contains
     n_params = descriptor%n_parameters
 
   end subroutine get_number_of_parameters_of_potential
+
 
   subroutine get_number_of_parameters_of_bond_order_factor(bond_name,n_targets,n_params)
     implicit none
@@ -1194,6 +1214,16 @@ contains
     end if
 
   end subroutine potential_affects_atom
+
+  subroutine bond_order_factor_is_in_group(factor,group_index,in_group)
+    implicit none
+    type(bond_order_parameters), intent(in) :: factor
+    integer, intent(in) :: group_index
+    logical, intent(out) :: in_group
+
+    in_group = ( factor%group_index == group_index )
+
+  end subroutine bond_order_factor_is_in_group
 
   subroutine bond_order_factor_affects_atom(factor,atom_in,affects,position)
     implicit none
