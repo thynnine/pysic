@@ -711,7 +711,7 @@ contains
 
   subroutine initialize_bond_order_factor_characterizers()
     implicit none
-    integer :: index, i
+    integer :: index, i, max_params
 
     call clear_bond_order_factor_characterizers()
     allocate(bond_order_descriptors(0:n_bond_order_types))
@@ -725,13 +725,15 @@ contains
     end if
     bond_order_descriptors(index)%type_index = index
     call pad_string('neighbors',pot_name_length,bond_order_descriptors(index)%name)
-    allocate(bond_order_descriptors(index)%n_parameters(1))
-    bond_order_descriptors(index)%n_parameters(1) = 1
-    bond_order_descriptors(index)%n_targets = 1
-    allocate(bond_order_descriptors(index)%parameter_names(bond_order_descriptors(index)%n_parameters(1),1))
-    allocate(bond_order_descriptors(index)%parameter_notes(bond_order_descriptors(index)%n_parameters(1),1))
-    call pad_string('none',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
-    call pad_string('no parameters',param_name_length,bond_order_descriptors(index)%parameter_notes(1,1))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
+    bond_order_descriptors(index)%n_parameters(1) = 0
+    bond_order_descriptors(index)%n_parameters(2) = 0
+    bond_order_descriptors(index)%n_targets = 2
+!    max_params = 1
+!    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+!    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+!    call pad_string('none',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
+!    call pad_string('no parameters',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
     call pad_string('Counter for the number of neighbors: b_i = sum f(r_ij)', &
          pot_note_length,bond_order_descriptors(index)%description)
 
@@ -742,28 +744,30 @@ contains
     end if
     bond_order_descriptors(index)%type_index = index
     call pad_string('tersoff',pot_name_length,bond_order_descriptors(index)%name)
-    allocate(bond_order_descriptors(index)%n_parameters(2))
+    allocate(bond_order_descriptors(index)%n_parameters(3))
     bond_order_descriptors(index)%n_parameters(1) = 3
     bond_order_descriptors(index)%n_parameters(2) = 4
-    bond_order_descriptors(index)%n_targets = 2
-    allocate(bond_order_descriptors(index)%parameter_names(bond_order_descriptors(index)%n_parameters(1),1))
-    allocate(bond_order_descriptors(index)%parameter_names(bond_order_descriptors(index)%n_parameters(2),2))
-    allocate(bond_order_descriptors(index)%parameter_notes(bond_order_descriptors(index)%n_parameters(1),1))
-    allocate(bond_order_descriptors(index)%parameter_notes(bond_order_descriptors(index)%n_parameters(2),2))
+    bond_order_descriptors(index)%n_parameters(3) = 0
+    max_params = 4
+    bond_order_descriptors(index)%n_targets = 3
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
     call pad_string('beta',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
-    call pad_string('prefactor',param_name_length,bond_order_descriptors(index)%parameter_notes(1,1))
+    call pad_string('prefactor',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
     call pad_string('eta',param_name_length,bond_order_descriptors(index)%parameter_names(2,1))
-    call pad_string('overall exponent',param_name_length,bond_order_descriptors(index)%parameter_notes(2,1))
+    call pad_string('overall exponent',param_note_length,bond_order_descriptors(index)%parameter_notes(2,1))
     call pad_string('mu',param_name_length,bond_order_descriptors(index)%parameter_names(3,1))
-    call pad_string('decay exponent',param_name_length,bond_order_descriptors(index)%parameter_notes(3,1))
+    call pad_string('decay exponent',param_note_length,bond_order_descriptors(index)%parameter_notes(3,1))
     call pad_string('a',param_name_length,bond_order_descriptors(index)%parameter_names(1,2))
-    call pad_string('inverse decay factor',param_name_length,bond_order_descriptors(index)%parameter_notes(1,2))
+    call pad_string('inverse decay factor',param_note_length,bond_order_descriptors(index)%parameter_notes(1,2))
     call pad_string('c',param_name_length,bond_order_descriptors(index)%parameter_names(2,2))
-    call pad_string('angle term nominator',param_name_length,bond_order_descriptors(index)%parameter_notes(2,2))
+    call pad_string('angle term nominator',param_note_length,bond_order_descriptors(index)%parameter_notes(2,2))
     call pad_string('d',param_name_length,bond_order_descriptors(index)%parameter_names(3,2))
-    call pad_string('angle term denominator 1',param_name_length,bond_order_descriptors(index)%parameter_notes(3,2))
+    call pad_string('angle term denominator 1',param_note_length,bond_order_descriptors(index)%parameter_notes(3,2))
     call pad_string('h',param_name_length,bond_order_descriptors(index)%parameter_names(4,2))
-    call pad_string('angle term denominator 2',param_name_length,bond_order_descriptors(index)%parameter_notes(4,2))
+    call pad_string('angle term denominator 2',param_note_length,bond_order_descriptors(index)%parameter_notes(4,2))
+!    call pad_string('none',param_name_length,bond_order_descriptors(index)%parameter_names(1,3))
+!    call pad_string('no parameters',param_note_length,bond_order_descriptors(index)%parameter_notes(1,3))
     call pad_string('Tersoff bond-order: b_i = [ 1+( beta_i sum xi_ijk*g_ijk)^eta_i ]^(-1/eta_i), '//&
          'xi_ijk = f(r_ik)*exp(alpha_ij^m_i (r_ij-r_ik)^m_i), '// &
          'g_ijk = 1+c_ij^2/d_ij^2-c_ij^2/(d_ij^2+(h_ij^2-cos theta_ijk))', &
@@ -779,7 +783,7 @@ contains
     allocate(bond_order_descriptors(index)%parameter_names(bond_order_descriptors(index)%n_parameters(1),1))
     allocate(bond_order_descriptors(index)%parameter_notes(bond_order_descriptors(index)%n_parameters(1),1))
     call pad_string('null',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
-    call pad_string('a dummy parameter',param_name_length,bond_order_descriptors(index)%parameter_notes(1,1))
+    call pad_string('a dummy parameter',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
     call pad_string('No such bond-order factor is available', &
          pot_note_length,bond_order_descriptors(index)%description)
     

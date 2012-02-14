@@ -277,40 +277,98 @@ def number_of_targets(potential_name):
     else:
         return 0
 
-### Continue here for adding bond order functionality to these methods. Also update the docstrings.
 
 
-def number_of_parameters(potential_name):
-    """Tells how many parameters a potential incorporates.
+def number_of_parameters(potential_name,as_list=False):
+    """Tells how many parameters a potential or bond order factor incorporates.
+
+    A potential has a simple list of parameters and thus the function returns
+    by default a single number. A bond order factor can incorporate parameters for
+    different number of targets (some for single elements, others for pairs), and
+    so a list of numbers is returned, representing the number of single, pair etc.
+    parameters. If the parameter 'as_list' is given and is True, the result is
+    a list containing one number also for a potential.
 
     Parameters:
 
     potential_name: string
         the name of the potential
+    as_list: logical
+        should the result always be a list
     """
-    return pf.pysic_interface.number_of_parameters_of_potential(potential_name)
+    
+    if(is_potential(potential_name)):
+        n_params = pf.pysic_interface.number_of_parameters_of_potential(potential_name)
+        if as_list:
+            return [n_params]
+        else:
+            return n_params
+    elif(is_bond_order_factor(potential_name)):
+        n_targets = pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
+        n_params = [ [""] ]*n_targets
+        for i in range(n_targets):
+            n_params[i] = pf.pysic_interface.number_of_parameters_of_bond_order_factor(potential_name,i+1)
+        return n_params
+    else:
+        return 0
 
 def names_of_parameters(potential_name):
-    """Lists the names of the parameters of a potential.
+    """Lists the names of the parameters of a potential or bond order factor.
 
     Parameters:
 
     potential_name: string
         the name of the potential
     """
-    param_codes = pf.pysic_interface.names_of_parameters_of_potential(potential_name).transpose()
-    param_names = []
-    n_params = number_of_parameters(potential_name)
-    index = 0
-    for code in param_codes:
-        if index < n_params:
-            param_names.append(pu.ints2str(code).strip())
-            index += 1
+    
+    if(is_potential(potential_name)):
+        param_codes = pf.pysic_interface.names_of_parameters_of_potential(potential_name).transpose()
 
-    return param_names
+        param_names = []
+        n_params = number_of_parameters(potential_name)
+        index = 0
+        for code in param_codes:
+            if index < n_params:
+                param_names.append(pu.ints2str(code).strip())
+                index += 1
+                
+        return param_names
+
+    elif(is_bond_order_factor(potential_name)):
+        n_targets = pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
+        param_codes = [ [0] ]*n_targets
+        param_names = [ [] ]*n_targets
+        n_params = number_of_parameters(potential_name)
+
+        for i in range(n_targets):
+            param_codes[i] = pf.pysic_interface.names_of_parameters_of_bond_order_factor(potential_name,i+1).transpose()
+            param_names[i] = [""]*n_params[i]
+
+
+        target_index = 0
+        for target_codes in param_codes:
+            index = 0
+            for code in target_codes:
+                if index < n_params[target_index]:
+                    param_names[target_index][index] = pu.ints2str(code).strip()
+                    index += 1
+            target_index += 1
+        return param_names
+            
+    else:
+        return []
 
 def index_of_parameter(potential_name, parameter_name):
-    """Tells the index of a parameter of a potential in the list of parameters the potential uses.
+    """Tells the index of a parameter of a potential or bond order factor in the list of parameters the potential uses.
+
+    For a potential, the index of the specified parameter is given.
+    For a bond order factor, a list of two integers is given.
+    These give the number of targets (single element, pair etc.) the parameter
+    is associated with and the list index.
+
+    Note especially that an index is returned, and these start counting from 0.
+    So for a bond order factor, a parameter for pairs (2 targets) will return 1
+    as the index for number of targets.
 
     Parameters:
 
@@ -319,12 +377,27 @@ def index_of_parameter(potential_name, parameter_name):
     parameter_name: string
         the name of the parameter
     """
-    param_names = names_of_parameters(potential_name)
-    index = 0
-    for name in param_names:
-        if name == parameter_name:
-            return index
-        index += 1
+    
+    if(is_potential(potential_name)):
+        param_names = names_of_parameters(potential_name)
+        index = 0
+        for name in param_names:
+            if name == parameter_name:
+                return index
+            index += 1
+    elif(is_bond_order_factor(potential_name)):
+        param_names = names_of_parameters(potential_name)
+        target_index = 0
+        for listed in param_names:
+            index = 0
+            for name in listed:
+                if name == parameter_name:
+                    return [target_index,index]
+                index += 1
+            target_index += 1
+    else:
+        return None
+
 
 
 def descriptions_of_parameters(potential_name):
@@ -336,14 +409,39 @@ def descriptions_of_parameters(potential_name):
     potential_name: string
         the name of the potential
     """
-    param_codes = pf.pysic_interface.descriptions_of_parameters_of_potential(potential_name).transpose()
-    param_notes = []
-    n_params = number_of_parameters(potential_name)
-    index = 0
-    for code in param_codes:
-        if index < n_params:
-            param_notes.append(pu.ints2str(code).strip())
-            index += 1
+    
+    if(is_potential(potential_name)):
+        param_codes = pf.pysic_interface.descriptions_of_parameters_of_potential(potential_name).transpose()
+        param_notes = []
+        n_params = number_of_parameters(potential_name)
+        index = 0
+        for code in param_codes:
+            if index < n_params:
+                param_notes.append(pu.ints2str(code).strip())
+                index += 1
+    
+    elif(is_bond_order_factor(potential_name)):
+        n_targets = pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
+        param_codes = [ [0] ]*n_targets
+        param_names = [ [] ]*n_targets
+        n_params = number_of_parameters(potential_name)
+
+        for i in range(n_targets):
+            param_codes[i] = pf.pysic_interface.descriptions_of_parameters_of_bond_order_factor(potential_name,i+1).transpose()
+            param_names[i] = [""]*n_params[i]
+
+        target_index = 0
+        for target_codes in param_codes:
+            index = 0
+            for code in target_codes:
+                if index < n_params[target_index]:
+                    param_names[target_index][index] = pu.ints2str(code).strip()
+                    index += 1
+            target_index += 1
+        return param_names
+            
+    else:
+        return []
 
     return param_notes
 
@@ -405,20 +503,17 @@ parameters ({n_par}):
     print message
 
 
+
+
+
+
 class BondOrderParameters:
     """Class for representing a collection of parameters for bond order calculations.
 
-    Calculating bond order factors using the Tersoff-like method defined in
-    :class:`~pysic.Coordinator` requires three parameters per element and four per
+    Calculating bond order factors using Tersoff-like methods defined in
+    :class:`~pysic.Coordinator` requires several parameters per element and
     element pair. To facilitate the handling of all these parameters, they are
     wrapped in a BondOrderParameters object.
-
-    For a single element, the bond order factor calculation requires three parameters:
-    beta, eta, and m.
-    For a pair of elements, four parameters are required:
-    alpha, c, d, and h.
-    The meaning of these parameters is explained in the documentation of the
-    :class:`~pysic.Coordinator` class.
 
     The object can be created empty and filled later with the parameters. Alternatively,
     a list of parameters can be given upon initialization in which case it is passed
@@ -426,295 +521,297 @@ class BondOrderParameters:
 
     Parameters:
 
-    param_set: list of strings and doubles
+    bond_order_type: string
+        a keyword specifying the type of the bond order factor
+    soft_cut: double
+        The soft cutoff for calculating partial coordination.
+        Any atom closer than this is considered a full neighbor.
+    hard_cut: double
+        The hard cutoff for calculating partial coordination.
+        Any atom closer than this is considered (at least) a partial neighbor
+        and will give a fractional contribution to the total coordination.
+        Any atom farther than this will not contribute to the neighbor count.
+    parameters: list of doubles
         a list of parameters to be contained in the parameter object
+    symbols: list of strings
+        a list of elements on which the factor is applied
     """
     
-    def __init__(self,param_set=None):
+    def __init__(self,bond_order_type,cutoff=0.0,cutoff_margin=0.0,parameters=None,symbols=None):
         self.params = []
-        if param_set != None:
-            self.set_parameters(param_set)
 
+        if(not is_valid_bond_order_factor(bond_order_type)):
+            raise InvalidParametersError('There is no bond order factor called "{bof}"'.format(bof=bond_order_type))
+
+        self.bond_order_type = bond_order_type
+        self.cutoff = cutoff
+        self.cutoff_margin = 0.0
+        self.set_cutoff_margin(cutoff_margin)
+        self.n_targets = number_of_targets(bond_order_type)
+        self.names_of_params = names_of_parameters(bond_order_type)
+        self.n_params = number_of_parameters(bond_order_type)
+
+        if parameters == None:
+            self.parameters = self.n_targets*[[]]
+            index = 0
+            for param_set in self.parameters:
+                param_set = n_params[index]*[0.0]
+                index += 1
+        else:                
+            self.set_parameters(parameters)
+
+        self.symbols = None
+        self.set_symbols(symbols)
+
+        
     def __repr__(self):
-        return "BondOrderParameters( "+str(self.params)+" )"
+        return "BondOrderParameters( bond_order_type='"+self.bond_order_type+\
+               "',cutoff="+str(self.cutoff)+",cutoff_margin="+str(self.cutoff_margin)+\
+               ",parameters="+str(self.parameters)+",symbols="+str(self.symbols)+" )"
 
 
     def __eq__(self,other):
-        if self.params == other.params:
-            return True
-        else:
+        try:
+            if other == None:
+                return False
+            if self.soft_cut != other.soft_cut:
+                return False
+            if self.hard_cut != other.hard_cut:
+                return False
+            if self.params != other.params:
+                return False
+        except:
             return False
 
-    def get_elements(self):
-        """Returns all single elements that have parameters associated, and the parameters, as a tuple.        
-        """
-        elems = []
-        pars = []
-        for param in self.params:
-            elem = param[0]
-            if len(elem) == 1:
-                elems.append(elem)
-                pars.append(param[1])
-
-        return ( elems, pars )
-
-
-    def get_pairs(self):
-        """Returns all element pairs that have parameters associated, and the parameters, as a tuple.
-        """
-        elems = []
-        pars = []
-        for param in self.params:
-            elem = param[0]
-            if len(elem) == 2:
-                elems.append(elem)
-                pars.append(param[1])
-
-        return ( elems, pars )
-
-    
-    def get_parameters(self):
-        """Returns all parameters stored.
-        """
-        return self.params
-
-    def set_parameters(self,param_set):
-        """Sets the parameters stored in the object to equal the given list.
-
-        Parameters:
-
-        param_set: list of strings and doubles
-            the new list of parameters
-        """
-        self.params = []
-        self.add_parameters(param_set)
-
-    def remove(self,targets):
-        """Removes the parameters of the given element or pair.
-
-        Parameters:
-
-        targets: list of strings
-            name(s) of element(s)
-        """
-        set_target = targets
-        if not isinstance(targets,list):
-            set_target = [targets]
-        self.params.remove([set_target,self.get_parameters_of(set_target)])
-
-    def set_parameters_of(self,targets,param_set):
-        """Sets the parameters of the given element or pair of elements to the given values.
-        
-        Parameters:
-
-        targets: list of strings
-            name(s) of element(s)
-        param_set: list of doubles
-            parameter values
-        """
-        index = self.index_of(targets)
-
-        if index == None: # the parameters are not yet set
-            self.add_parameter(targets,param_set)
-        else:
-            self.add_parameter(targets,param_set)            
-            self.remove(targets)
+        return True
             
+    def accepts_parameters(self,params):
+        if(len(params) != len(self.n_params)):
+            return False
+        for i in range(len(self.n_params)):
+            if(len(params[i]) != self.n_params[i]):
+                return False
+        return True
 
-    def get_parameters_of(self,targets):
-        """Returns the parameters associated with the given element or pair of elements.
-
-        This method allows the user to inquire the parameters of any element. If the given
-        element or pair has no parameters attached to it, the method returns None.
-
-        Parameters:
-
-        targets: string or a list of strings
-            the name(s) of the element(s) whose parameters are requested
-        """
-        for pars in self.params:
-            targ = pars[0]
-            if(targ == targets or targ == [targets]):
-                return pars[1]
-        return None
-
-    def index_of(self,targets):
-        """Returns the index of the given element in the internal list of parameters.
-
-        If the given element has no parameters, None is returned.
+    def set_symbols(self,symbols):
+        """Sets the list of symbols to equal the given list.
 
         Parameters:
 
-        targets: string or list of strings
-            name of the element or pair of elements to be searched for
+        symbols: list of strings
+            list of element symbols on which the bond order factor acts
         """
-        for index in len(self.params):
-            pars = self.params[index]
-            targ = pars[0]
-            if(targ == targets or targ == [targets]):
-                return index
-        return None
-
-
-    def set_parameter(self,targets,param_name,value):
-        """Resets the value of a specific parameter.
-
-        This allows the user to inquire the value of a single parameter by giving the
-        names of an element or pair and the parameter. If the given element(s) do not
-        have associated parameters, the specified parameter is set to the given value
-        while the other parameters of the element are set to zero.
-        If the name of the parameter is invalid, an Error is raised.
-
-        Parameters:
-        targets: string or a list of strings
-            the name(s) of the element(s) whose parameters are requested
-        param_name: string
-            The name of the parameter.
-            For a single element, the valid parameters are: alpha, beta, eta, m.
-            For a pair of elements, the valid parameters are: c, d, h.
-        value: double
-            new value for the parameter
-        """
-        n_targets = 0
-        try:
-            assert isinstance(targets,list)                
-            n_target = len(targets)
-        except:
-            n_target = 1
-
-        # get the index of the target
-        newpars = self.get_parameters_of(targets)
-        exists_already = True
-
-        if newpars == None:
-            if n_targets == 1:
-                newpars = 4*[0.0]
-            elif n_target == 2:
-                newpars = 3*[0.0]
-            exists_already = False
-        
-        newpars[self.parse_parameter(n_target,param_name)] = value
-
-        self.add_parameter(targets,newpars)
-        if exists_already:
-            self.remove(targets)
-
-
-    def parse_parameter(self,n_target,param_name):
-        """Internal utility for parsing the names of the parameters.
-
-        According to the given number of targets and the name of
-        parameter, the function finds the index of the parameter in
-        the list of parameters.
-        
-        Parameters:
-
-        n_target: integer
-            number of targets (1 for a single element, 2 for a pair)
-        param_name: string
-            name of parameter ("alpha", "beta", "eta", "m"; "c", "d", "h")
-        """
-        
-        if n_target == 1:
-            if str.lower(param_name).strip() == "alpha":
-                return 0
-            elif str.lower(param_name).strip() == "beta":
-                return 1
-            elif str.lower(param_name).strip() == "eta":
-                return 2
-            elif str.lower(param_name).strip() == "m":
-                return 3
-            else:
-                raise InvalidParametersError("No parameter named "+param_name+" for an element.")
-        elif n_target == 2:
-            if str.lower(param_name).strip() == "c":
-                return 0
-            elif str.lower(param_name).strip() == "d":
-                return 1
-            elif str.lower(param_name).strip() == "h":
-                return 2
-            else:
-                raise InvalidParametersError("No parameter named "+param_name+" for a pair of elements.")
-
-    def get_parameter(self,targets,param_name):
-        """Returns the value of a specific parameter.
-
-        This allows the user to inquire the value of a single parameter by giving the
-        names of an element or pair and the parameter. If the given element(s) do not
-        have associated parameters, or if the name of the parameter is invalid, None
-        is returned.
-
-        Parameters:
-        targets: string or a list of strings
-            the name(s) of the element(s) whose parameters are requested
-        param_name: string
-            The name of the parameter.
-            For a single element, the valid parameters are: alpha, beta, eta, m.
-            For a pair of elements, the valid parameters are: a, c, d, h.
-        """
-        n_targets = 0
-        try:
-            assert isinstance(targets,list)
-            n_target = len(targets)
-        except:
-            n_target = 1
-
-        the_pars = self.get_parameters_of(targets)
-
-        return the_pars[self.parse_parameter(n_target,param_name)]
-
-    def add_parameters(self,param_set):
-        """Adds the given set of parameters.
-
-        The set of parameters must be a list of the format::
-
-            param_set = [[["H"], [1.0, 2.0, 3.0, 4.0]], ..., [["H", "He"], [5.0, 6.0, 7.0]]]
-
-        i.e., a triple nested list.
-        For each element or pair, there is a double list where the first list contains the element symbols
-        and the second the numeric values of the parameters.
-        
-        Parameters:
-
-        param_set: list of strings and doubles
-            list of parameters to add
-        """
-        for index in len(param_set):
-            self.add_parameter(param_set[index][0],param_set[index][1])
-
-    def add_parameter(self,targets,new_params):
-        """Associates new parameters to the given element or pair.
-
-        Parameters:
-
-        targets: list of strings
-            either one element or a pair of elements
-        new_params: list of doubles
-            a list of four numbers
-        """
-        n_targets = 0
-        set_target = targets
-        try:
-            assert isinstance(targets,list)               
-            n_target = len(targets)
-        except:
-            set_target = [targets]
-            n_target = 1
-
-        if(n_target == 1):
-            if(len(new_params) != 4):
-                raise InvalidParametersError("An element requires a set of 4 parameters.")
-            newpar = [ set_target, new_params ]
-            self.params.append(newpar)
-        elif(n_target == 2):
-            if(len(new_params) != 3):
-                raise InvalidParametersError("A pair requires a set of 3 parameters.")
-            newpar = [ set_target, new_params ]
-            self.params.append(newpar)
+        if symbols == None:
+            return
+        if(self.accepts_target_list(symbols)):
+            self.symbols = symbols
+        elif(self.accepts_target_list([symbols])):
+            self.symbols = [symbols]
         else:
-            raise InvalidParametersError("Bond order factors only have parameters for single or paired elements.")
+            raise InvalidPotentialError("Invalid number of targets.")
+
+        
+    def add_symbols(self,symbols):
+        """Adds the given symbols to the list of symbols.
+
+        Parameters:
+
+        symbols: list of strings
+            list of additional symbols on which the bond order factor acts
+        """
+        if(self.accepts_target_list(symbols)):
+            if self.symbols == None:
+                self.symbols = []
+
+            for stuff in symbols:
+                self.symbols.append(stuff)
+        elif(self.accepts_target_list([symbols])):
+            if self.symbols == None:
+                self.symbols = []
+
+            self.symbols.append(symbols)
+        else:
+            raise InvalidParametersError("Invalid number of targets.")
 
 
+    def get_different_symbols(self):
+        """Returns a list containing each symbol the potential affects once."""
+        all_symbols = []
+        if self.symbols == None:
+            return all_symbols
+
+        for symblist in self.symbols:
+            for symb in symblist:
+                if all_symbols.count(symb) == 0:
+                    all_symbols.append(symb)
+        return all_symbols
+
+
+
+    def get_parameter_values(self):
+        """Returns a list containing the current parameter values of the potential."""
+        return self.parameters
+
+    def get_parameter_names(self):
+        """Returns a list of the names of the parameters of the potential."""
+        return self.names_of_params
+
+
+    def get_parameter_value(self,param_name):
+        """Returns the value of the given parameter.
+
+        Parameters:
+
+        param_name: string
+            name of the parameter
+        """
+        indices = index_of_parameter(self.bond_order_type,param_name)
+        return self.parameters[indices[0]][indices[1]]
+
+
+    def get_bond_order_type(self):
+        """Returns the keyword specifying the type of the bond order factor."""
+        return self.bond_order_type
+
+    def get_cutoff(self):
+        """Returns the cutoff."""
+        return self.cutoff
+
+    def get_cutoff_margin(self):
+        """Returns the margin for a smooth cutoff."""
+        return self.cutoff_margin
+
+    def get_soft_cutoff(self):
+        """Returns the lower limit for a smooth cutoff."""
+        return self.cutoff-self.cutoff_margin
+
+
+    def set_parameter_values(self,values):
+        """Sets the numeric values of all parameters.
+
+        Parameters:
+        
+        params: list of doubles
+            list of values to be assigned to parameters
+        """
+        self.set_parameters(values)
+
+    def set_parameter_value(self,parameter_name,value):
+        """Sets a given parameter to the desired value.
+
+        Parameters:
+
+        parameter_name: string
+            name of the parameter
+        value: double
+            the new value of the parameter
+        """
+        indices = index_of_parameter(self.bond_order_type,parameter_name)
+        if indices != None:
+            self.parameters[indices[0]][indices[1]] = value
+        else:
+            raise InvalidParametersError("The bond order factor '{pot}' does not have a parameter '{para}'".
+                                        format(pot=self.bond_order_type,para=parameter_name))
+
+    def set_cutoff(self,cutoff):
+        """Sets the cutoff to a given value.
+
+        This method affects the hard cutoff.
+        
+        Parameters:
+
+        cutoff: double
+            new cutoff for the bond order factor
+        """
+        self.cutoff = cutoff
+
+
+    def set_cutoff_margin(self,margin):
+        """Sets the margin for smooth cutoff to a given value.
+
+        This method defines the decay interval :math:`r_\mathrm{hard}-r_\mathrm{soft}`.
+        Note that if the soft cutoff value is made smaller than 0 or larger than the
+        hard cutoff value an :class:`~pysic.InvalidParametersError` is raised.
+
+        Parameters:
+
+        margin: double
+            The new cutoff margin
+        """
+        if margin < 0.0:
+            raise InvalidParametersError("A negative cutoff margin of {marg} was given.".format(marg=str(margin)))
+        if margin > self.cutoff:
+            raise InvalidParametersError("A cutoff margin ({marg}) longer than the hard cutoff ({hard}) was given.".format(marg=str(margin), hard=str(self.cutoff)))
+        
+        self.cutoff_margin = margin
+
+
+    def set_soft_cutoff(self,cutoff):
+        """Sets the soft cutoff to a given value.
+
+        Note that actually the cutoff margin is recorded, so changing the
+        hard cutoff (see :meth:`~pysic.BondOrderParameters.set_cutoff`) will also affect the
+        soft cutoff.
+
+        Parameters:
+
+        cutoff: double
+            The new soft cutoff
+        """
+        self.set_cutoff_margin(self.cutoff-cutoff)
+
+
+
+
+    def accepts_target_list(self,targets):
+        """Tests whether a list is suitable as a list of targets, i.e., element symbols
+        and returns True or False accordingly.
+
+        A list of targets should be of the format::
+
+            targets = [[a, b], [c, d]]
+
+        where the length of the sublists must equal the number of targets.
+
+        It is not tested that the values contained in the list are valid.
+
+        Parameters:
+
+        targets: list of strings or integers
+            a list whose format is checked
+        """
+        n_targets = self.get_number_of_targets()
+        try:
+            for a_set in targets:
+                assert isinstance(a_set,list)
+                if len(a_set) != n_targets:
+                    return False
+            return True
+        except:
+            return False
+
+    def get_number_of_targets(self):
+        return self.n_targets
+
+
+    def set_parameters(self,params):
+        """Sets the numeric values of all parameters.
+
+        Equivalent to :meth:`~pysic.BondOrderParameters.set_parameter_values`.
+
+        Parameters:
+        
+        params: list of doubles
+            list of values to be assigned to parameters
+        """
+        if self.accepts_parameters(params):
+            self.parameters = params
+        else:
+            raise InvalidParameterError('The bond order factor "{bof}" requires {num} parameters.'.format(bof=bond_order_type,num=str(self.n_params)))
+
+
+        
+        
 class Coordinator:
     """Class for representing a calculator for atomic coordination numbers and bond order factors.
 
@@ -737,14 +834,6 @@ class Coordinator:
 
     Parameters:
 
-    soft_cut: double
-        The soft cutoff for calculating partial coordination.
-        Any atom closer than this is considered a full neighbor.
-    hard_cut: double
-        The hard cutoff for calculating partial coordination.
-        Any atom closer than this is considered (at least) a partial neighbor
-        and will give a fractional contribution to the total coordination.
-        Any atom farther than this will not contribute to the neighbor count.
     bond_order_params: :class:`~pysic.BondOrderParameters`
         Parameters for calculating bond order factors.
     """
@@ -754,29 +843,11 @@ class Coordinator:
         self.bond_orders = None
         self.bond_order_params = bond_order_params
 
-        if(soft_cut < 0.0):
-            raise InvalidCoordinatorError(
-                'Invalid cutoff for the coordination calculator: soft={soft} (must be greater than 0).'.format(
-                    soft=str(soft_cut)) )
-        if(hard_cut < 0.0):
-            raise InvalidCoordinatorError(
-                'Invalid cutoff for the coordination calculator: hard={hard} (must be greater than 0).'.format(
-                    hard=str(hard_cut)) )
-        if(soft_cut > hard_cut):
-            raise InvalidCoordinatorError(
-                'Invalid cutoff for the coordination calculator: hard={hard} (must be greater than soft={soft}).'.format(
-                    hard=str(hard_cut),soft=str(soft_cut)) )
-        self.soft_cut = soft_cut
-        self.hard_cut = hard_cut
 
 
     def __eq__(self,other):
         try:
             if other == None:
-                return False
-            if self.soft_cut != other.soft_cut:
-                return False
-            if self.hard_cut != other.hard_cut:
                 return False
             if self.bond_order_params != other.bond_order_params:
                 return False
@@ -784,37 +855,6 @@ class Coordinator:
             return False
 
         return True
-
-
-    def get_soft_cutoff(self):
-        """Returns the soft cutoff.
-        """
-        return self.soft_cut
-
-    def get_hard_cutoff(self):
-        """Returns the hard cutoff.
-        """
-        return self.hard_cut
-
-    def set_soft_cutoff(self,new_soft):
-        """Assigns a value for the soft cutoff.
-
-        Parameters:
-
-        new_soft: double
-            the new soft cutoff
-        """
-        self.soft_cut = new_soft
-
-    def set_hard_cutoff(self,new_hard):
-        """Assigns a value for the hard cutoff.
-
-        Parameters:
-
-        new_hard: double
-            the new hard cutoff
-        """
-        self.hard_cut = new_hard
 
 
     def get_bond_order_parameters(self):
@@ -1120,7 +1160,7 @@ class Potential:
         Parameters:
 
         symbols: list of strings
-            list of symbols on which the potential acts
+            list of element symbols on which the potential acts
         """
         if symbols == None:
             return
@@ -1232,6 +1272,18 @@ class Potential:
             self.indices.append(indices)
         else:
             raise InvalidPotentialError("Invalid number of targets.")
+
+    def set_parameters(self, values):
+        """Sets the numeric values of all parameters.
+
+        Equivalent to :meth:`~pysic.Potential.set_parameter_values`.
+
+        Parameters:
+
+        values: list of doubles
+            list of values to be assigned to parameters
+        """
+        self.set_parameter_values(values)
 
     def set_parameter_values(self,values):
         """Sets the numeric values of all parameters.
