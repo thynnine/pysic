@@ -239,6 +239,7 @@ contains
     double precision, intent(out) :: energy
     type(atom), optional, intent(in) :: atoms(n_targets)
     double precision :: r1, r2, r3, r6, ratio
+    integer :: i
 
     energy = 0.d0
 

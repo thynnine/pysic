@@ -816,13 +816,16 @@ contains
        write(*,'(A,I5,F10.4)') "type, cutoff ", interactions(i)%type_index, interactions(i)%cutoff
        write(*,*) "params ", interactions(i)%parameters
        if(interactions(i)%filter_elements)then
-          write(*,*) "symbols ",interactions(i)%apply_elements
+          write(*,*) "         symbols ",interactions(i)%apply_elements
+          write(*,*) "original symbols ",interactions(i)%original_elements
        end if
        if(interactions(i)%filter_tags)then
-          write(*,*) "tags ", interactions(i)%apply_tags
+          write(*,*) "         tags ", interactions(i)%apply_tags
+          write(*,*) "original tags ",interactions(i)%original_tags
        end if
        if(interactions(i)%filter_indices)then
-          write(*,*) "indices ", interactions(i)%apply_indices
+          write(*,*) "         indices ", interactions(i)%apply_indices
+          write(*,*) "original indices ",interactions(i)%original_indices
        end if
        write(*,*) ""
     end do
