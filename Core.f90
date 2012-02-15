@@ -21,7 +21,7 @@ contains
 
     call core_clear_atoms()
     call core_clear_potentials()
-    call core_clear_bond_factors()
+    call core_clear_bond_order_factors()
 
   end subroutine core_release_all_memory
 
@@ -147,7 +147,7 @@ contains
   
 
   
-  subroutine core_clear_bond_factors()
+  subroutine core_clear_bond_order_factors()
     implicit none
     integer :: i
 
@@ -166,7 +166,7 @@ contains
     n_bond_factors = 0
     bond_factors_allocated = .false.
 
-  end subroutine core_clear_bond_factors
+  end subroutine core_clear_bond_order_factors
 
   
   subroutine core_allocate_potentials(n_pots)
@@ -191,12 +191,12 @@ contains
   end subroutine core_allocate_potentials
 
 
-  subroutine core_allocate_bond_factors(n_pots)
+  subroutine core_allocate_bond_order_factors(n_bond_factors)
     implicit none
-    integer, intent(in) :: n_pots
+    integer, intent(in) :: n_bond_factors
     integer :: i
 
-    call core_clear_bond_factors()
+    call core_clear_bond_order_factors()
     allocate(bond_factors(n_bond_factors))
     do i = 1, n_bond_factors
        nullify(bond_factors(i)%parameters)
@@ -207,7 +207,7 @@ contains
     end do
     bond_factors_allocated = .true.
 
-  end subroutine core_allocate_bond_factors
+  end subroutine core_allocate_bond_order_factors
 
 
 
@@ -236,10 +236,10 @@ contains
 
 
 
-  subroutine core_add_bond_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
+  subroutine core_add_bond_order_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
        cutoff,smooth_cut,elements,orig_elements,group_index)
     implicit none
-    integer, intent(in) :: n_targets, n_params, n_split,group_index
+    integer, intent(in) :: n_targets, n_params, n_split, group_index
     integer, intent(in) :: param_split(n_split)
     character(len=*), intent(in) :: bond_name
     double precision, intent(in) :: parameters(n_params)
@@ -255,7 +255,7 @@ contains
          new_bond_factor)
     bond_factors(n_bond_factors) = new_bond_factor
 
-  end subroutine core_add_bond_factor
+  end subroutine core_add_bond_order_factor
 
 
   subroutine core_assign_bond_order_factor_indices()
@@ -1232,10 +1232,32 @@ contains
        if(interactions(i)%filter_indices)then
           write(*,*) "indices ", interactions(i)%apply_indices
        end if
+       if(interactions(i)%pot_index >= 0)then
+          write(*,*) "bond order index ", interactions(i)%pot_index
+       end if
        write(*,*) ""
     end do
 
   end subroutine list_interactions
+
+
+
+  subroutine list_bonds()
+    implicit none
+    integer :: i,j
+
+    write(*,*) "bond order factors"
+    do i = 1, n_bond_factors
+       write(*,'(A,I5,F10.4)') "type, cutoff ", bond_factors(i)%type_index, bond_factors(i)%cutoff
+       write(*,*) "params "
+       do j = 1, size(bond_factors(i)%n_params)
+          write(*,*) j, " : ", bond_factors(i)%parameters(:,j)
+       end do
+       write(*,*) "symbols ",bond_factors(i)%apply_elements
+       write(*,*) "bond order index ", bond_factors(i)%group_index
+    end do
+
+  end subroutine list_bonds
 
 
   

@@ -596,6 +596,21 @@ class BondOrderParameters:
                 return False
         return True
 
+
+    def get_number_of_parameters(self):
+        return self.n_params
+
+
+    def get_number_of_targets(self):
+        return len(self.n_params)
+
+    def get_parameters_as_list(self):
+        allparams = []
+        for target_params in self.parameters:
+            for param in target_params:
+                allparams.append(param)
+        return allparams
+
     def set_symbols(self,symbols):
         """Sets the list of symbols to equal the given list.
 
@@ -636,6 +651,12 @@ class BondOrderParameters:
         else:
             raise InvalidParametersError("Invalid number of targets.")
 
+
+    def get_symbols(self):
+        """Returns the symbols the bond parameters affect.
+        """
+
+        return self.symbols
 
     def get_different_symbols(self):
         """Returns a list containing each symbol the potential affects once."""
@@ -835,14 +856,15 @@ class Coordinator:
 
     Parameters:
 
-    bond_order_params: list of :class:`~pysic.BondOrderParameters` objects
+    bond_order_parameters: list of :class:`~pysic.BondOrderParameters` objects
         Parameters for calculating bond order factors.
     """
 
-    def __init__(self,bond_order_params=None):
-        self.bond_order_params = []
+    def __init__(self,bond_order_parameters=None):
+        self.bond_order_parameters = []
+        self.bond_order_factors = None
         if(bond_order_parameters != None):
-            self.set_bond_order_parameters(bond_order_parametrs)
+            self.set_bond_order_parameters(bond_order_parameters)
 
 
     def __eq__(self,other):
@@ -973,7 +995,7 @@ class Potential:
                     'The potential "{pot}" requires {num} parameters: {par}'.format(
                     pot=potential_type,
                     num=str(number_of_parameters(potential_type)),
-                    par=str(parameters(potential_type))
+                    par=str(names_of_parameters(potential_type))
                     ) )
             self.set_coordinator(coordinator)
         else:
@@ -1850,7 +1872,8 @@ class Pysic:
         pf.pysic_interface.create_bond_order_factor_list()
         self.potential_lists_ready = True
 
-#### add bond factor updating ###
+
+
     def update_core_potentials(self):
         """Generates potentials for the Fortran core."""
         n_pots = 0
@@ -1977,6 +2000,56 @@ class Pysic:
             except:
                 pass
 
+
+
+        n_bonds = 0
+        print coord_list
+        for coord in coord_list:
+            try:
+                allbonds = coord[0].get_bond_order_parameters()
+                for bond in allbonds:
+                    alltargets = bond.get_symbols()
+                    for targets in alltargets:
+                        perms = permutations(targets)
+                        different = set(perms)
+                        n_bonds += len(different)
+            except:
+                pass
+
+        print n_bonds
+        pf.pysic_interface.allocate_bond_order_factors(n_bonds)
+
+        for coord in coord_list:
+            try:
+                allbonds = coord[0].get_bond_order_parameters()
+                for bond in allbonds:
+                    alltargets = bond.get_symbols()
+                    for targets in alltargets:
+
+                        int_orig_symbs = []
+                        for orig_symbs in targets:
+                            for label in orig_symbs:
+                                int_orig_symbs.append( pu.str2ints(label,2) )
+                        
+                        perms = permutations(targets)
+                        different = set(perms)
+
+                        for symbs in different:
+                            int_symbs = []
+                            for label in symbs:
+                                int_symbs.append( pu.str2ints(label,2) )
+                            pf.pysic_interface.add_bond_order_factor(bond.get_bond_order_type(),
+                                                                   np.array( bond.get_parameters_as_list() ),
+                                                                   np.array( bond.get_number_of_parameters() ),
+                                                                   bond.get_cutoff(),
+                                                                   bond.get_soft_cutoff(),
+                                                                   np.array( int_symbs ).transpose(),
+                                                                   np.array( int_orig_symbs ).transpose(),
+                                                                   coord[1])
+
+            except:
+                pass
+
         self.potentials_ready = True
         
     
@@ -2084,6 +2157,7 @@ class Pysic:
         pf.pysic_interface.examine_atoms()
         pf.pysic_interface.examine_cell()
         pf.pysic_interface.examine_potentials()
+        pf.pysic_interface.examine_bond_order_factors()
 
     def core_is_available(self):
         """True if this calculator can use the Fortran core."""

@@ -221,7 +221,7 @@ contains
     integer, intent(in) :: n_targets
     double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
     type(bond_order_parameters), intent(in) :: bond_params(n_targets-1)
-    double precision, intent(out) :: factor
+    double precision, intent(out) :: factor(n_targets)
     type(atom), optional, intent(in) :: atoms(n_targets)
     double precision :: r1, r2, cosine, decay, xi, gee, beta, eta, mu, a, cc, dd, h
     double precision :: tmp1(3), tmp2(3)
@@ -245,6 +245,24 @@ contains
        ! bond_params(1) should contain the ij parameters and bond_params(2) the ik ones,
        ! but it is only checked that bond_params(1) is actually of tersoff type since only
        ! the cutoffs of bond_params(2) are used
+
+       if(.not.present(atoms))then
+          return
+       end if
+       ! check that bond_params(1) is for atom1-atom2 (ij)
+       if(bond_params(1)%original_elements(1) /= atoms(1)%element)then
+          return
+       end if
+       if(bond_params(1)%original_elements(2) /= atoms(2)%element)then
+          return
+       end if
+       ! check that bond_params(2) is for atom1-atom3 (ik)
+       if(bond_params(2)%original_elements(1) /= atoms(1)%element)then
+          return
+       end if
+       if(bond_params(2)%original_elements(2) /= atoms(3)%element)then
+          return
+       end if
 
        r1 = distances(1)
        r2 = distances(2)

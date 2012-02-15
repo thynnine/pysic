@@ -221,6 +221,11 @@ contains
     call list_interactions()
   end subroutine examine_potentials
 
+  subroutine examine_bond_order_factors()
+    implicit none
+    call list_bonds()
+  end subroutine examine_bond_order_factors
+
 
   ! Creates potentials for describing the atomic interactions
   subroutine allocate_potentials(n_pots)
@@ -231,6 +236,13 @@ contains
 
   end subroutine allocate_potentials
 
+  subroutine allocate_bond_order_factors(n_bonds)
+    implicit none
+    integer, intent(in) :: n_bonds
+
+    call core_allocate_bond_order_factors(n_bonds)
+
+  end subroutine allocate_bond_order_factors
 
   subroutine add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
        elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index)
@@ -256,6 +268,33 @@ contains
          elements_str,tags,indices+1,orig_elements_str,orig_tags,orig_indices+1,pot_index)
 
   end subroutine add_potential
+
+
+
+  subroutine add_bond_order_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
+       cutoff,smooth_cut,elements,orig_elements,group_index)
+    implicit none
+    integer, intent(in) :: n_targets, n_params, n_split
+    integer, intent(in) :: param_split(n_split), group_index
+    character(len=*), intent(in) :: bond_name
+    double precision, intent(in) :: parameters(n_params)
+    double precision, intent(in) :: cutoff, smooth_cut
+    integer, intent(in) :: elements(2,n_targets) ! label_length
+    integer, intent(in) :: orig_elements(2,n_targets) ! label_length
+    character(len=2) :: elements_str(n_targets), orig_elements_str(n_targets) ! label_length
+    integer :: i
+
+    ! translates the integer-formatted labels to characters
+    do i = 1, n_targets
+       call int2str(2,elements(:,i),elements_str(i))
+       call int2str(2,orig_elements(:,i),orig_elements_str(i))
+    end do
+    call core_add_bond_order_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
+         cutoff,smooth_cut,elements_str,orig_elements_str,group_index)
+
+  end subroutine add_bond_order_factor
+
+
 
 
   ! Creates neighbor lists
