@@ -212,9 +212,9 @@ contains
 
 
   subroutine core_add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
-       elements,tags,indices,orig_elements,orig_tags,orig_indices)
+       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index)
     implicit none
-    integer, intent(in) :: n_targets, n_params
+    integer, intent(in) :: n_targets, n_params, pot_index
     character(len=*), intent(in) :: pot_name
     double precision, intent(in) :: parameters(n_params)
     double precision, intent(in) :: cutoff, smooth_cut
@@ -228,7 +228,7 @@ contains
     call create_potential(n_targets,n_params,&
          pot_name,parameters,cutoff,smooth_cut,&
          elements,tags,indices,&
-         orig_elements,orig_tags,orig_indices,&
+         orig_elements,orig_tags,orig_indices,pot_index,&
          new_interaction)
     interactions(n_interactions) = new_interaction
 
@@ -485,7 +485,7 @@ contains
                 ! but these evaluations may result in different
                 ! bond parameters since the bond factors need not be symmetric.
                 
-                ! loop over neighbors atom 1
+                ! loop over neighbors of atom 1
                 do l = 1, nbors1%n_neighbors
                    index3 = nbors1%neighbors(l)
                    atom3 = atoms(index3)

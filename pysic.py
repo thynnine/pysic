@@ -150,6 +150,9 @@ pf.pysic_interface.start_mpi()
 # it needs to be possible to force a seed by the user - to be implemented
 pf.pysic_interface.start_rng(5301)#rnd.randint(1, 999999))
 
+#####
+##### ToDo: Implement a single instance class which reflects the status of the core.
+#####
 
 def finish_mpi():
     """Terminates the MPI framework.
@@ -1795,10 +1798,10 @@ class Pysic:
         """Sets up the Fortran core for calculation.
 
         If the core is not initialized, if the number of atoms has changed, or
-        if full initialization is forces, the core is initialized from scratch.
+        if full initialization is forced, the core is initialized from scratch.
         Otherwise, only the atomic coordinates and momenta are updated.
         Potentials, neighbor lists etc. are also updated if they have been edited.
-        """
+        """        
         if not self.core_is_available():
             raise LockedCoreError("core is not available")
 
@@ -1851,8 +1854,16 @@ class Pysic:
     def update_core_potentials(self):
         """Generates potentials for the Fortran core."""
         n_pots = 0
+        coord_list = []
+        pot_index = 0
         # count the number of separate potentials
         for pot in self.potentials:
+
+            # grab the coordinators associated with the potentials
+            coord = pot.get_coordinator()
+            if(coord != None):
+                coord_list.append([coord,pot_index])
+            pot_index += 1
             
             try:
                 alltargets = pot.get_symbols()
@@ -1880,7 +1891,15 @@ class Pysic:
                 pass
 
         pf.pysic_interface.allocate_potentials(n_pots)
+
+        pot_index = 0
         for pot in self.potentials:
+            
+            group_index = -1
+            if pot.get_coordinator() != None:
+                group_index = pot_index
+            pot_index += 1
+
             n_targ = pot.get_number_of_targets()
             no_symbs = np.array( n_targ*[pu.str2ints('xx',2)] ).transpose()
             no_tags = np.array( n_targ*[-9] )
@@ -1913,7 +1932,8 @@ class Pysic:
                                                          no_inds,
                                                          np.array( int_orig_symbs ).transpose(),
                                                          no_tags,
-                                                         no_inds )
+                                                         no_inds,
+                                                         group_index )
             except:
                 pass
             try:
@@ -1932,7 +1952,8 @@ class Pysic:
                                                          no_inds,
                                                          no_symbs,
                                                          np.array(orig_tags),
-                                                         no_inds )
+                                                         no_inds,
+                                                         group_index )
             except:
                 pass
             try:
@@ -1951,7 +1972,8 @@ class Pysic:
                                                          np.array( inds ),
                                                          no_symbs,
                                                          no_tags,
-                                                         np.array(orig_inds) )
+                                                         np.array(orig_inds),
+                                                         group_index )
             except:
                 pass
 

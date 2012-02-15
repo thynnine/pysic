@@ -36,6 +36,7 @@ module potentials
      integer :: n_parameters, n_targets, type_index
      character(len=pot_note_length) :: description
      character(len=param_note_length), pointer :: parameter_notes(:)
+     logical :: bond_order_argument
   end type potential_descriptor
 
   type bond_order_descriptor
@@ -56,19 +57,19 @@ module potentials
   ! In addition a real potential must have information on the 
   ! particles it acts on and the range it operates in.
   type potential
-     integer :: type_index
+     integer :: type_index, pot_index
      double precision, pointer :: parameters(:), derived_parameters(:)
      double precision :: cutoff, soft_cutoff
      character(len=2), pointer :: apply_elements(:) ! label_length
      integer, pointer :: apply_tags(:), apply_indices(:)
      character(len=2), pointer :: original_elements(:) ! label_length
      integer, pointer :: original_tags(:), original_indices(:)
-     logical :: filter_elements, filter_tags, filter_indices, smoothened
+     logical :: filter_elements, filter_tags, filter_indices, smoothened, bond_order_argument
   end type potential
 
   ! Defines parameters for bond order factor calculation.
   type bond_order_parameters
-     integer :: type_index, group_index ! group index connects the parameters to a bond factor entity in the python side of the simulator
+     integer :: type_index, group_index ! group index connects the parameters to a coordinator entity in the python side of the simulator
      double precision, pointer :: parameters(:,:), derived_parameters(:,:)
      double precision :: cutoff, soft_cutoff
      integer, pointer :: n_params(:)
@@ -79,9 +80,9 @@ module potentials
 contains
 
   subroutine create_potential(n_targets,n_params,pot_name,parameters,cutoff,soft_cutoff,&
-       elements,tags,indices,orig_elements,orig_tags,orig_indices,new_potential)
+       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,new_potential)
     implicit none
-    integer, intent(in) :: n_targets, n_params
+    integer, intent(in) :: n_targets, n_params, pot_index
     character(len=*), intent(in) :: pot_name
     double precision, intent(in) :: parameters(n_params)
     double precision, intent(in) :: cutoff, soft_cutoff
@@ -139,7 +140,10 @@ contains
        allocate(new_potential%derived_parameters(1))
        new_potential%derived_parameters(1) = 0.0
     end select
-       
+
+    new_potential%pot_index = pot_index
+    new_potential%bond_order_argument = descriptor%bond_order_argument
+
 
     if(n_targets < 1)then
        return
@@ -623,6 +627,7 @@ contains
        write(*,*) "Potential indices in the core do not match!"
     end if
     potential_descriptors(index)%type_index = index
+    potential_descriptors(index)%bond_order_argument = .false.
     call pad_string('pair_LJ', pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 2
     potential_descriptors(index)%n_targets = 2
@@ -641,6 +646,7 @@ contains
        write(*,*) "Potential indices in the core do not match!"
     end if
     potential_descriptors(index)%type_index = index
+    potential_descriptors(index)%bond_order_argument = .false.
     call pad_string('pair_spring', pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 2
     potential_descriptors(index)%n_targets = 2
@@ -659,6 +665,7 @@ contains
        write(*,*) "Potential indices in the core do not match!"
     end if
     potential_descriptors(index)%type_index = index
+    potential_descriptors(index)%bond_order_argument = .false.
     call pad_string('mono_const', pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 3
     potential_descriptors(index)%n_targets = 1
@@ -679,6 +686,7 @@ contains
        write(*,*) "Potential indices in the core do not match!"
     end if
     potential_descriptors(index)%type_index = index
+    potential_descriptors(index)%bond_order_argument = .false.
     call pad_string('tri_bend', pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 2
     potential_descriptors(index)%n_targets = 3
@@ -691,9 +699,11 @@ contains
     call pad_string('Bond bending potential: V(theta) = k/2 (cos theta - cos theta_0)^2', &
          pot_note_length,potential_descriptors(index)%description)
 
+
     ! null potential, for errorneous inquiries
     index = 0
     potential_descriptors(index)%type_index = index
+    potential_descriptors(index)%bond_order_argument = .false.
     call pad_string('null',pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 1
     potential_descriptors(index)%n_targets = 0

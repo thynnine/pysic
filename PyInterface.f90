@@ -233,9 +233,9 @@ contains
 
 
   subroutine add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
-       elements,tags,indices,orig_elements,orig_tags,orig_indices)
+       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index)
     implicit none
-    integer, intent(in) :: n_targets, n_params
+    integer, intent(in) :: n_targets, n_params,pot_index
     character(len=*), intent(in) :: pot_name
     double precision, intent(in) :: parameters(n_params)
     double precision, intent(in) :: cutoff, smooth_cut
@@ -253,7 +253,7 @@ contains
     end do
     ! indices +1 because fortran starts indexing from 1
     call core_add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
-         elements_str,tags,indices+1,orig_elements_str,orig_tags,orig_indices+1)
+         elements_str,tags,indices+1,orig_elements_str,orig_tags,orig_indices+1,pot_index)
 
   end subroutine add_potential
 
