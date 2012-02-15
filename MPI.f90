@@ -14,6 +14,7 @@ module mpi
   integer :: load_length
   logical, allocatable :: is_my_atom(:), loads_mask(:)
   integer, allocatable :: atom_buffer(:)
+  logical :: mpi_atoms_allocated = .false.
   double precision :: stopwatch, my_load
   double precision, allocatable :: all_loads(:)
 
@@ -110,7 +111,13 @@ contains
     integer :: i, random_int
     double precision :: random_real
 
-    allocate(is_my_atom(n_atoms))
+    if(.not.mpi_atoms_allocated)then
+       allocate(is_my_atom(n_atoms))
+       mpi_atoms_allocated = .true.
+    else
+       deallocate(is_my_atom)
+       allocate(is_my_atom(n_atoms))
+    end if
     my_atoms = 0
     all_atoms = n_atoms
     is_my_atom = .false.

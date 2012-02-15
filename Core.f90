@@ -258,7 +258,7 @@ contains
   end subroutine core_add_bond_factor
 
 
-  subroutine core_assign_bond_factor_indices()
+  subroutine core_assign_bond_order_factor_indices()
     implicit none
     logical :: affects(n_bond_factors)
     integer :: i, j, k, total
@@ -289,7 +289,7 @@ contains
        deallocate(bond_indices)
     end do
 
-  end subroutine core_assign_bond_factor_indices
+  end subroutine core_assign_bond_order_factor_indices
 
 
   subroutine core_assign_potential_indices()

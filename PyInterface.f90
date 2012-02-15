@@ -279,6 +279,13 @@ contains
   end subroutine create_potential_list
 
 
+  subroutine create_bond_order_factor_list()
+    implicit none
+
+    call core_assign_bond_order_factor_indices()
+
+  end subroutine create_bond_order_factor_list
+
   subroutine calculate_coordinations(n_atoms,cutoffs,coordinations)
     implicit none
     integer, intent(in) :: n_atoms

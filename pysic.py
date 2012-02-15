@@ -815,14 +815,12 @@ class BondOrderParameters:
 class Coordinator:
     """Class for representing a calculator for atomic coordination numbers and bond order factors.
 
-    Pysic can utilise 'Tersoff-like' potentials which are locally scaled according to the
-    number of neighbors of each atom. The coordination calculator keeps track of updating
-    the number of neighbors and holds the parameters for calculating the values.
+    Pysic can utilise 'Tersoff-like' potentials which are locally scaled according to
+    bond order factors, related to the number of neighbors of each atom.
+    The coordination calculator keeps track of updating
+    the bond order factors and holds the parameters for calculating the values.
 
     When calculating forces also the derivatives of the coordination numbers are needed.
-    This leads to effective three-body interactions since moving one atom may affect the
-    coordination of another and thus the forces between two other atoms.
-
     Coordination numbers may be used repeatedly when calculating energies and forces even within
     one evaluation of the forces and therefore they are stored by the calculator. Derivatives
     are not stored since they are only needed once per force evaluation and storing them could
@@ -834,15 +832,14 @@ class Coordinator:
 
     Parameters:
 
-    bond_order_params: :class:`~pysic.BondOrderParameters`
+    bond_order_params: list of :class:`~pysic.BondOrderParameters` objects
         Parameters for calculating bond order factors.
     """
 
-    def __init__(self,soft_cut,hard_cut,bond_order_params=None):
-        self.coordinations = None
-        self.bond_orders = None
-        self.bond_order_params = bond_order_params
-
+    def __init__(self,bond_order_params=None):
+        self.bond_order_params = []
+        if(bond_order_parameters != None):
+            self.set_bond_order_parameters(bond_order_parametrs)
 
 
     def __eq__(self,other):
@@ -860,7 +857,6 @@ class Coordinator:
     def get_bond_order_parameters(self):
         """Returns the bond order parameters of this Coordinator.
         """
-
         return self.bond_order_params
 
 
@@ -873,38 +869,28 @@ class Coordinator:
             new bond order parameters
         """
 
-        self.bond_order_params = params
+        if isinstance(params,list):
+            self.bond_order_params = params
+        else:
+            self.bond_order_params = [params]
 
+    def add_bond_order_parameters(self,params):
+        """Adds the given parameters to this Coordinator.
 
-    def calculate_coordination(self):
-        """Recalculates the coordination numbers for all atoms and stores them.
+        Parameters:
 
-        This method does not return anything. It merely tells the
-        :class:`~pysic.Coordinator` to update its internal array of
-        coordination numbers.
-
-        To access the array, use :meth:`~pysic.Coordinator.get_coordination`.
-
-        The calculation and access of the results are separated in this way because
-        for a large system the calculation is a relatively heavy procedure yet the
-        results may be needed several times during one force and energy evaluation.
-
-        Also note that the coordination calculator does not keep track of whether it
-        is up-to-date with the geometry, and it is the responsibility of the host
-        to call this method when needed. In practice, :class:`~pysic.Pysic` does make sure
-        that coordination is updated at the start of each force evaluation.
+        params: :class:`~pysic.BondOrderCoordinator`
+            new bond order parameters
         """
-        self.coordinations = pf.pysic_interface.calculate_coordination([self.soft_cut,self.hard_cut])
+        if isinstance(params,list):
+            for param in params:
+                self.bond_order_params.append(param)
+        else:
+            self.bond_order_params.append([params])
         
 
-    def get_coordination(self):
-        """Returns an array containing the coordination numbers of all atoms.
 
-        This method does not calculate the coordination but returns the precalculated array.
-        """
-        return self.coordinations
-
-    def calculate_bond_order(self):
+    def calculate_bond_order_factors(self):
         """Recalculates the bond order factors for all atoms and stores them.
 
         Similarly to coordination numbers (:meth:`~pysic.Coordinator.calculate_coordination`),
@@ -912,7 +898,7 @@ class Coordinator:
         """
         pass
 
-    def get_bond_order(self):
+    def get_bond_order_factors(self):
         """Returns an array containing the bond order factors of all atoms.
 
         This method does not calculate the bond order factors but returns the
@@ -1858,9 +1844,10 @@ class Pysic:
         if not self.atoms_ready:
             raise MissingAtomsError("Creating potential lists before updating atoms in core.")
         pf.pysic_interface.create_potential_list()
+        pf.pysic_interface.create_bond_order_factor_list()
         self.potential_lists_ready = True
-        
 
+#### add bond factor updating ###
     def update_core_potentials(self):
         """Generates potentials for the Fortran core."""
         n_pots = 0
