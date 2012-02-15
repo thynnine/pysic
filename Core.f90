@@ -396,12 +396,12 @@ contains
     double precision, intent(out) :: total_bond_orders(n_atoms)
     integer :: index1, index2, index3, k1, k2, j, l, n_targets
     double precision :: separations(3,2), distances(2), directions(3,2)
-    double precision :: tmp_factor, bond_orders(n_atoms)
+    double precision :: tmp_factor(3), bond_orders(n_atoms)
     type(atom) :: atom1, atom2, atom3
     type(atom) :: atom_list(3)
     type(neighbor_list) :: nbors1, nbors2
     type(bond_order_parameters) :: bond_params(2)
-    integer, pointer :: bond_indices(:)
+    integer, pointer :: bond_indices(:), bond_indices2(:)
     logical :: is_active, is_in_group, many_bodies_found, separation3_unknown
 
     bond_orders = 0.d0
@@ -423,138 +423,208 @@ contains
 
              ! neighboring atom
              index2 = nbors1%neighbors(j)
+             if(index2 > index1)then ! do not double count
 
-             ! There is no double count prevention since the factors
-             ! (1,2) and (2,1) need not be the same. In general,
-             ! some bond factors may have this symmetry though, so
-             ! it may be worth investigating if the nonsymmetry
-             ! should be taken into account in the Potential.f90
-             ! routines.
-             atom2 = atoms(index2)
-             call separation_vector(atom1%position, &
-                  atom2%position, &
-                  nbors1%pbc_offsets(1:3,j), &
-                  cell, &
-                  separations(1:3,1))
-             distances(1) = .norm.(separations(1:3,1))
-             if(distances(1) == 0.d0)then
-                directions(1:3,1) = (/ 0.d0, 0.d0, 0.d0 /)
-             else
-                directions(1:3,1) = separations(1:3,1) / distances(1)
-             end if
-             
-             many_bodies_found = .false.
-             ! 2-body bond order factors
-             do k1 = 1, size(bond_indices)
-                
-                bond_params(1) = bond_factors(bond_indices(k1))
-                call get_number_of_targets_of_bond_order_factor_index(bond_params(1)%type_index,n_targets)
-                call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
-                call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
-                
-                if( is_active .and. is_in_group .and. bond_params(1)%cutoff > distances(1) )then
-                   if( n_targets == 2 )then
-                      
-                      call evaluate_bond_order_factor(2,separations(1:3,1),distances(1),bond_params(1),tmp_factor)
-                      ! update only the bond order of index1
-                      ! index2 is handled as the loop goes over that particular atom
-                      bond_orders(index1) = bond_orders(index1) + tmp_factor
-                      
-                   else if( n_targets > 2 )then
-                      
-                      many_bodies_found = .true.
-                      
-                   end if
+                atom2 = atoms(index2)
+                call separation_vector(atom1%position, &
+                     atom2%position, &
+                     nbors1%pbc_offsets(1:3,j), &
+                     cell, &
+                     separations(1:3,1))
+                distances(1) = .norm.(separations(1:3,1))
+                if(distances(1) == 0.d0)then
+                   directions(1:3,1) = (/ 0.d0, 0.d0, 0.d0 /)
+                else
+                   directions(1:3,1) = separations(1:3,1) / distances(1)
                 end if
                 
-             end do ! k1 = 1, size(bond_indices)
-             
-             if(many_bodies_found)then
+                many_bodies_found = .false.
+                ! 2-body bond order factors
+                do k1 = 1, size(bond_indices)
+                   
+                   bond_params = bond_factors(bond_indices(k1))
+                   call get_number_of_targets_of_bond_order_factor_index(bond_params(1)%type_index,n_targets)
+                   call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
+                   call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
+                   
+                   if( is_active .and. is_in_group .and. bond_params(1)%cutoff > distances(1) )then
+                      if( n_targets == 2 )then
+                         
+                         call evaluate_bond_order_factor(2,separations(1:3,1),distances(1),bond_params(1),tmp_factor(1:2))
+                         ! update only the bond order of index1
+                         ! index2 is handled as the loop goes over that particular atom
+                         bond_orders(index1) = bond_orders(index1) + tmp_factor(1)
+                         bond_orders(index2) = bond_orders(index2) + tmp_factor(2)
+                         
+                      else if( n_targets > 2 )then
+                         
+                         many_bodies_found = .true.
+                         
+                      end if
+                   end if
+                   
+                end do ! k1 = 1, size(bond_indices)
                 
-                nbors2 = atom2%neighbor_list
-
-                ! Unlike potential evaluation, here we loop over all ordered triplets 
-                ! (potential loop is over all non-ordered triplets, i.e., sets of three atoms).
-                ! This means that for the chosen (atom1, atom2) we need to loop over
-                ! the neighbors of atom1 to find the possible third atoms to
-                ! complete the triplet (atom1, atom2, atom3). 
-                ! Looping over neighbors of atom2 should not be done since it would find
-                ! the same neighbors again and the atoms that weren't found near atom1
-                ! will be beyond the cutoff anyway.
-                ! The same set of atoms will be found also for atom2 and atom3, 
-                ! but these evaluations may result in different
-                ! bond parameters since the bond factors need not be symmetric.
-                
-                ! loop over neighbors of atom 1
-                do l = 1, nbors1%n_neighbors
-                   index3 = nbors1%neighbors(l)
-                   atom3 = atoms(index3)
-                   separation3_unknown = .true.
-                   atom_list = (/ atom2, atom1, atom3 /)
-                
-                   ! we must loop over the bond indices twice to catch the ij and ik parameters
-                   do k1 = 1, size(bond_indices)
+                if(many_bodies_found)then
+                   
+                   nbors2 = atom2%neighbor_list
+                   !bond_indices2 => atom2%bond_indices
+                                      
+                   ! loop over neighbors of atom 1
+                   do l = 1, nbors1%n_neighbors
+                      index3 = nbors1%neighbors(l)
+                      atom3 = atoms(index3)
+                      separation3_unknown = .true.
+                      atom_list = (/ atom2, atom1, atom3 /)
                       
-                      ! bond_params(1) is the 'ij' parameter 
-                      ! (so atom2 is index j, second index, and atom3 is index k, third index)
-                      bond_params(1) = bond_factors(bond_indices(k1))
-                      call get_number_of_targets_of_bond_order_factor_index(bond_params(1)%type_index,n_targets)
-                      call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
-                      call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
+                      ! the condition for finding each triplet once is such that
+                      ! index 3 must be higher than the index of the atom whose
+                      ! neighbors are NOT currently searched
+                      if(index3 > index2)then
 
-                      if( is_active .and. is_in_group .and. n_targets == 3 )then
-                         call bond_order_factor_affects_atom(bond_params(1),atom3,is_active,3)
-
-                         if( is_active )then
-
-                            do k2 = 1, size(bond_indices)
-
-                               ! bond_params(2) is the 'ik' parameter
-                               ! (so atom2 is index j, third index, and atom3 is index k, second index)
-                               bond_params(2) = bond_factors(bond_indices(k2))
-                               call get_number_of_targets_of_bond_order_factor_index(bond_params(2)%type_index,n_targets)
-                               call bond_order_factor_affects_atom(bond_params(2),atom3,is_active,2)
-                               call bond_order_factor_is_in_group(bond_params(2),group_index,is_in_group)
-
-                               if( is_active .and. is_in_group .and. n_targets == 3 )then
-                                  call bond_order_factor_affects_atom(bond_params(2),atom2,is_active,3)
-
-                                  if( is_active )then
+                         ! search for the first bond params containing the parameters for atom1-atom2
+                         do k1 = 1, size(bond_indices)
+                         
+                            bond_params(1) = bond_factors(bond_indices(k1))
+                            call get_number_of_targets_of_bond_order_factor_index(bond_params(1)%type_index,&
+                                 n_targets)
+                            call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
+                            call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
+                         
+                            if( is_active .and. is_in_group .and. n_targets == 3 )then
+                               call bond_order_factor_affects_atom(bond_params(1),atom3,is_active,3)
                             
-                                     ! we have found a pair of bond parameters ij and jk
-                                     ! and now we can proceed to analyse the third atom
-                                     if( separation3_unknown )then
-                                        call separation_vector(atom1%position, &
-                                             atom3%position, &
-                                             nbors1%pbc_offsets(1:3,j), &
-                                             cell, &
-                                             separations(1:3,2))
-                                        separation3_unknown = .false.
-                                        distances(2) = .norm.(separations(1:3,2))
-                                        if(distances(2) == 0.d0)then
-                                           directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-                                        else
-                                           directions(1:3,2) = separations(1:3,2) / distances(2)
-                                        end if
+                               if( is_active )then
+
+
+                         ! search for the second bond params containing the parameters for atom1-atom3
+                         do k2 = 1, size(bond_indices)
+                         
+                            bond_params(2) = bond_factors(bond_indices(k2))
+                            call get_number_of_targets_of_bond_order_factor_index(bond_params(2)%type_index,&
+                                 n_targets)
+                            call bond_order_factor_affects_atom(bond_params(2),atom2,is_active,2)
+                            call bond_order_factor_is_in_group(bond_params(2),group_index,is_in_group)
+                         
+                            if( is_active .and. is_in_group .and. n_targets == 3 )then
+                               call bond_order_factor_affects_atom(bond_params(2),atom3,is_active,3)
+                            
+                               if( is_active )then
+
+                               
+                                  if( separation3_unknown )then
+                                     call separation_vector(atom1%position, &
+                                          atom3%position, &
+                                          nbors1%pbc_offsets(1:3,j), &
+                                          cell, &
+                                          separations(1:3,2))
+                                     separation3_unknown = .false.
+                                     distances(2) = .norm.(separations(1:3,2))
+                                     if(distances(2) == 0.d0)then
+                                        directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+                                     else
+                                        directions(1:3,2) = separations(1:3,2) / distances(2)
                                      end if
+                                  end if
+                                        
+                                  call evaluate_bond_order_factor(3,separations(1:3,1:2),&
+                                       distances(1:2),bond_params(1:2),tmp_factor(1:3),atom_list)
+                                  ! bond factor:
+                                  bond_orders(index2) = bond_orders(index2) + tmp_factor(1)
+                                  bond_orders(index1) = bond_orders(index1) + tmp_factor(2)
+                                  bond_orders(index3) = bond_orders(index3) + tmp_factor(3)
+                                        
+                               end if ! is_active
+                            end if ! is_active and is_in_group and n_targets == 3
+                            
+                         end do ! k2
+   
+                               end if ! is_active
+                            end if ! is_active and is_in_group and n_targets == 3
+                            
+                         end do ! k1
+                      end if ! index3 > index2
 
-                                     call evaluate_bond_order_factor(3,separations(1:3,1:2),&
-                                          distances(1:2),bond_params(1:2),tmp_factor)
-                                     ! bond factor on atom 1:
-                                     bond_orders(index1) = bond_orders(index1) + tmp_factor
+                   end do ! l = 1, nbors1%n_neighbors
 
-                                  end if ! is_active
-                               end if ! is_active and is_in_group and n_targets == 3
-                            end do ! k2
-                         end if ! is_active
-                      end if ! is_active and is_in_group and n_targets == 3
 
-                   end do ! k1
+                   ! Next we try to find ordered triplets atom1 -- atom2 -- atom3
+                   ! Therefore we need separations a2--a1 and a2--a3.
+                   separation3_unknown = .true.
+                   separations(1:3,1) = -separations(1:3,1)
 
-                end do ! l = 1, nbors1%n_neighbors
+                   ! loop over neighbors of atom 2
+                   do l = 1, nbors2%n_neighbors
+                      index3 = nbors2%neighbors(l)
+                      atom3 = atoms(index3)
+                      atom_list = (/ atom1, atom2, atom3 /)
+                      
+                      if(index3 > index1)then
 
-             end if ! many_bodies_found
+                         ! search for the first bond params containing the parameters for atom2-atom1
+                         do k1 = 1, size(bond_indices2)
+                         
+                            bond_params(1) = bond_factors(bond_indices(k1))
+                            call get_number_of_targets_of_bond_order_factor_index(bond_params(1)%type_index,n_targets)
+                            call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
+                            call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
+                         
+                            if( is_active .and. is_in_group .and. n_targets == 3 )then
+                               call bond_order_factor_affects_atom(bond_params(1),atom3,is_active,3)
+                            
+                               if( is_active )then
+                               
+                         ! search for the second bond params containing the parameters for atom2-atom3
+                         do k2 = 1, size(bond_indices2)
+                         
+                            bond_params(2) = bond_factors(bond_indices(k2))
+                            call get_number_of_targets_of_bond_order_factor_index(bond_params(2)%type_index,&
+                                 n_targets)
+                            call bond_order_factor_affects_atom(bond_params(2),atom2,is_active,2)
+                            call bond_order_factor_is_in_group(bond_params(2),group_index,is_in_group)
+                         
+                            if( is_active .and. is_in_group .and. n_targets == 3 )then
+                               call bond_order_factor_affects_atom(bond_params(2),atom3,is_active,3)
+                            
+                               if( is_active )then
 
+                                  if( separation3_unknown )then
+                                     call separation_vector(atom1%position, &
+                                          atom3%position, &
+                                          nbors1%pbc_offsets(1:3,j), &
+                                          cell, &
+                                          separations(1:3,2))
+                                     separation3_unknown = .false.
+                                     distances(2) = .norm.(separations(1:3,2))
+                                     if(distances(2) == 0.d0)then
+                                        directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+                                     else
+                                        directions(1:3,2) = separations(1:3,2) / distances(2)
+                                     end if
+                                  end if
+                                        
+                                  call evaluate_bond_order_factor(3,separations(1:3,1:2),&
+                                       distances(1:2),bond_params(1:2),tmp_factor(1:3),atom_list)
+                                  ! bond factor:
+                                  bond_orders(index1) = bond_orders(index1) + tmp_factor(1)
+                                  bond_orders(index2) = bond_orders(index2) + tmp_factor(2)
+                                  bond_orders(index3) = bond_orders(index3) + tmp_factor(3)
+                                     
+                               end if ! is_active
+                            end if ! is_active and is_in_group and n_targets == 3
+                            
+                         end do ! k2
+     
+                               end if ! is_active
+                            end if ! is_active and is_in_group and n_targets == 3
+                            
+                         end do ! k1
+                      end if ! index3 > index2
+
+                   end do ! l = 1, nbors2%n_neighbors
+
+                end if ! many_bodies_found
+             end if
           end do
 
        end if
