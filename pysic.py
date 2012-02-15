@@ -1241,17 +1241,14 @@ class Pysic:
             no_tags = np.array( n_targ*[-9] )
             no_inds = np.array( n_targ*[-9] )
 
-            orig_symbs = pot.get_symbols()
-            for orig_symbs in orig_symbs:
-                int_orig_symbs = []
-                for label in orig_symbs:
-                    int_orig_symbs.append( pu.str2ints(label,2) )
-            orig_tags = pot.get_tags()
-            orig_inds = pot.get_indices()
-
             try:
                 alltargets = pot.get_symbols()
                 for targets in alltargets:
+                    int_orig_symbs = []
+                    for orig_symbs in targets:
+                        for label in orig_symbs:
+                            int_orig_symbs.append( pu.str2ints(label,2) )
+
                     perms = permutations(targets)
                     different = set(perms)
                     for symbs in different:
@@ -1274,6 +1271,7 @@ class Pysic:
             try:
                 alltargets = pot.get_tags()
                 for targets in alltargets:
+                    orig_tags = targets
                     perms = permutations(targets)
                     different = set(perms)
 
@@ -1293,6 +1291,7 @@ class Pysic:
             try:
                 alltargets = pot.get_indices()                
                 for targets in alltargets:
+                    orig_inds = targets
                     perms = permutations(targets)
                     different = set(perms)
 
