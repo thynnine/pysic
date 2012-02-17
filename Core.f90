@@ -451,6 +451,7 @@ contains
                       if( n_targets == 2 )then
                          
                          call evaluate_bond_order_factor(2,separations(1:3,1),distances(1),bond_params(1),tmp_factor(1:2))
+
                          ! update only the bond order of index1
                          ! index2 is handled as the loop goes over that particular atom
                          bond_orders(index1) = bond_orders(index1) + tmp_factor(1)
@@ -630,6 +631,13 @@ contains
        end if
 
     end do
+
+#ifdef MPI
+    call mpi_allreduce(bond_orders,total_bond_orders,size(bond_orders),mpi_double_precision,&
+         mpi_sum,mpi_comm_world,mpistat)
+#else
+    total_bond_orders = bond_orders
+#endif
 
   end subroutine core_calculate_bond_orders
 

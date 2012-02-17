@@ -228,6 +228,11 @@ def list_valid_bond_order_factors():
 
 def is_potential(potential_name):
     """Same as :meth:`~pysic.is_valid_potential`
+    
+    Parameters:
+
+    potential_name: string
+        the name of the potential
     """
     return pf.pysic_interface.is_potential(potential_name)
 
@@ -270,7 +275,7 @@ def number_of_targets(potential_name):
     Parameters:
 
     potential_name: string
-        the name of the potential
+        the name of the potential or bond order factor
     """
 
     if(is_potential(potential_name)):
@@ -287,7 +292,7 @@ def number_of_parameters(potential_name,as_list=False):
 
     A potential has a simple list of parameters and thus the function returns
     by default a single number. A bond order factor can incorporate parameters for
-    different number of targets (some for single elements, others for pairs), and
+    different number of targets (some for single elements, others for pairs, etc.), and
     so a list of numbers is returned, representing the number of single, pair etc.
     parameters. If the parameter 'as_list' is given and is True, the result is
     a list containing one number also for a potential.
@@ -295,7 +300,7 @@ def number_of_parameters(potential_name,as_list=False):
     Parameters:
 
     potential_name: string
-        the name of the potential
+        the name of the potential or bond order factor
     as_list: logical
         should the result always be a list
     """
@@ -318,10 +323,16 @@ def number_of_parameters(potential_name,as_list=False):
 def names_of_parameters(potential_name):
     """Lists the names of the parameters of a potential or bond order factor.
 
+    For a potential, a simple list of names is returned. For a bond order factor, the
+    parameters are categorised according to the number of targets they apply to
+    (single element, pair, etc.). So, for a bond order factor, a list of lists is
+    returned, where the first list contains the single element parameters, the second
+    list the pair parameters etc.
+
     Parameters:
 
     potential_name: string
-        the name of the potential
+        the name of the potential or bond order factor
     """
     
     if(is_potential(potential_name)):
@@ -376,7 +387,7 @@ def index_of_parameter(potential_name, parameter_name):
     Parameters:
 
     potential_name: string
-        the name of the potential
+        the name of the potential or bond order factor
     parameter_name: string
         the name of the parameter
     """
@@ -404,13 +415,19 @@ def index_of_parameter(potential_name, parameter_name):
 
 
 def descriptions_of_parameters(potential_name):
-    """Returns a list of strings containing physical names of the parameters of a potential,
+    """Returns a list of strings containing physical names of the parameters of a potential or bond order factor,
     e.g., 'spring constant' or 'decay length'.
+    
+    For a potential, a simple list of descriptions is returned. For a bond order factor, the
+    parameters are categorised according to the number of targets they apply to
+    (single element, pair, etc.). So, for a bond order factor, a list of lists is
+    returned, where the first list contains the single element parameters, the second
+    list the pair parameters etc.
     
     Parameters:
 
     potential_name: string
-        the name of the potential
+        the name of the potential or bond order factor
     """
     
     if(is_potential(potential_name)):
@@ -450,7 +467,9 @@ def descriptions_of_parameters(potential_name):
 
 def description_of_potential(potential_name, parameter_values=None, cutoff=None,
                              elements=None, tags=None, indices=None):
-    """Prints a brief description of a potential. If optional arguments are provided,
+    """Prints a brief description of a potential.
+
+    If optional arguments are provided,
     they are incorporated in the description. That is, by default the method describes
     the general features of a potential, but it can also be used for describing a
     particular potential with set parameters.
@@ -558,7 +577,7 @@ class BondOrderParameters:
             self.parameters = self.n_targets*[[]]
             index = 0
             for param_set in self.parameters:
-                param_set = n_params[index]*[0.0]
+                param_set = self.n_params[index]*[0.0]
                 index += 1
         else:                
             self.set_parameters(parameters)
@@ -577,11 +596,15 @@ class BondOrderParameters:
         try:
             if other == None:
                 return False
-            if self.soft_cut != other.soft_cut:
+            if self.bond_order_type != other.bond_order_type:
                 return False
-            if self.hard_cut != other.hard_cut:
+            if self.cutoff != other.cutoff:
                 return False
-            if self.params != other.params:
+            if self.cutoff_margin != other.cutoff_margin:
+                return False
+            if self.parameters != other.parameters:
+                return False
+            if self.symbols != other.symbols:
                 return False
         except:
             return False
@@ -589,6 +612,18 @@ class BondOrderParameters:
         return True
             
     def accepts_parameters(self,params):
+        """Test if the given parameters array has the correct dimensions.
+
+        A bond order parameter can contain separate parameters for single,
+        pair etc. elements and each class can have a different number of
+        parameters. This method checks if the given list has the correct
+        dimensions.
+
+        Parameters:
+
+        params: list of doubles
+            list of parameters
+        """
         if(len(params) != len(self.n_params)):
             return False
         for i in range(len(self.n_params)):
@@ -598,13 +633,22 @@ class BondOrderParameters:
 
 
     def get_number_of_parameters(self):
+        """Returns the number of parameters the bond order parameter object contains.
+        """
         return self.n_params
 
 
     def get_number_of_targets(self):
+        """Returns the (maximum) number of targets the bond order factor affects.
+        """
         return len(self.n_params)
 
     def get_parameters_as_list(self):
+        """Returns the parameters of the bond order factor as a single list.
+
+        The generated list first contains the single element parameters, then
+        pair parameters, etc.
+        """
         allparams = []
         for target_params in self.parameters:
             for param in target_params:
@@ -626,7 +670,7 @@ class BondOrderParameters:
         elif(self.accepts_target_list([symbols])):
             self.symbols = [symbols]
         else:
-            raise InvalidPotentialError("Invalid number of targets.")
+            raise InvalidParametersError("Invalid number of targets.")
 
         
     def add_symbols(self,symbols):
@@ -814,9 +858,6 @@ class BondOrderParameters:
         except:
             return False
 
-    def get_number_of_targets(self):
-        return self.n_targets
-
 
     def set_parameters(self,params):
         """Sets the numeric values of all parameters.
@@ -865,7 +906,7 @@ class Coordinator:
         self.bond_order_factors = None
         if(bond_order_parameters != None):
             self.set_bond_order_parameters(bond_order_parameters)
-
+        self.group_index = -1
 
     def __eq__(self,other):
         try:
@@ -914,6 +955,28 @@ class Coordinator:
             self.bond_order_params.append([params])
         
 
+    def set_group_index(self,index):
+        """Sets an index for the coordinator object.
+
+        In the fortran core, bond order parameters are calculated by
+        bond order parameters. Since a coordinator contains many, they are grouped
+        to a coordinator via a grouping index when the core is initialized.
+        This method is meant to be used for telling the Coordinator of this
+        index. That allows the bond orders can be calculated by calling the
+        Coordinator itself, since the index tells which bond parameters in the
+        core are needed.
+
+        Parameters:
+
+        index: integer
+            an index for grouping bond order parameters in the core
+        """
+        self.group_index = index
+
+    def get_group_index(self):
+        """Returns the group index of the Coordinator.
+        """
+        return self.group_index
 
     def calculate_bond_order_factors(self):
         """Recalculates the bond order factors for all atoms and stores them.
@@ -921,7 +984,9 @@ class Coordinator:
         Similarly to coordination numbers (:meth:`~pysic.Coordinator.calculate_coordination`),
         this method only calculates the factors and stroes them but does not return them.
         """
-        pass
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        self.bond_order_factors = pf.pysic_interface.calculate_bond_orders(n_atoms,self.group_index)
+
 
     def get_bond_order_factors(self):
         """Returns an array containing the bond order factors of all atoms.
@@ -1753,6 +1818,15 @@ class Pysic:
                     
                     if active_potential and potential.get_cutoff() > max_cut:
                         max_cut = potential.get_cutoff()
+
+                    for bond in potential.get_coordinator().get_bond_order_parameters():
+                        active_bond = False
+                        if bond.get_different_symbols().count(symbol) > 0:
+                            active_bond = True
+
+                        if active_bond:
+                            max_cut = bond.get_cutoff()
+
                 cuts.append(max_cut*scaler)
             return cuts
 
@@ -1921,6 +1995,7 @@ class Pysic:
             group_index = -1
             if pot.get_coordinator() != None:
                 group_index = pot_index
+                pot.get_coordinator().set_group_index(pot_index)
             pot_index += 1
 
             n_targ = pot.get_number_of_targets()

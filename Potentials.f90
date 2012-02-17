@@ -211,7 +211,15 @@ contains
     allocate(new_bond%original_elements(n_targets))
     new_bond%original_elements = orig_elements
 
-    ! derived parameters - add here
+    ! calculate derived parameters if necessary
+    select case (new_bond%type_index)
+    case(tersoff_index) ! tersoff
+       nullify(new_bond%derived_parameters)
+       allocate(new_bond%derived_parameters(0,n_split))
+    case default
+       nullify(new_bond%derived_parameters)
+       allocate(new_bond%derived_parameters(0,n_split))
+    end select
 
   end subroutine create_bond_order_factor
 
