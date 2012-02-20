@@ -231,7 +231,7 @@ contains
     type(bond_order_parameters), intent(in) :: bond_params(n_targets-1)
     double precision, intent(out) :: factor(n_targets)
     type(atom), optional, intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, cosine, decay, xi, gee, beta, eta, mu, a, cc, dd, h
+    double precision :: r1, r2, cosine, decay1, decay2, xi, gee, beta, eta, mu, a, cc, dd, h
     double precision :: tmp1(3), tmp2(3)
 
     factor = 0.d0
@@ -241,8 +241,8 @@ contains
 
        r1 = distances(1)
        if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
-          call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(1)%soft_cutoff,decay)
-          factor = decay
+          call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(1)%soft_cutoff,decay1)
+          factor = decay1
        end if
 
     case(tersoff_index) ! tersoff bond-order factor
@@ -257,15 +257,15 @@ contains
        if(.not.present(atoms))then
           return
        end if
-       ! check that bond_params(1) is for atom1-atom2 (ij)
-       if(bond_params(1)%original_elements(1) /= atoms(1)%element)then
+       ! check that bond_params(1) is for indices (ij)
+       if(bond_params(1)%original_elements(1) /= atoms(2)%element)then
           return
        end if
-       if(bond_params(1)%original_elements(2) /= atoms(2)%element)then
+       if(bond_params(1)%original_elements(2) /= atoms(1)%element)then
           return
        end if
-       ! check that bond_params(2) is for atom1-atom3 (ik)
-       if(bond_params(2)%original_elements(1) /= atoms(1)%element)then
+       ! check that bond_params(2) is for indices (ik)
+       if(bond_params(2)%original_elements(1) /= atoms(2)%element)then
           return
        end if
        if(bond_params(2)%original_elements(2) /= atoms(3)%element)then
@@ -275,7 +275,8 @@ contains
        r1 = distances(1)
        r2 = distances(2)
 
-       if(r2 < bond_params(2)%cutoff .and. r2 > 0.d0)then
+       if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .or. &
+            (r1 < bond_params(1)%cutoff .and. r1 > 0.d0) )then
 
              tmp1 = separations(1:3,1)
              tmp2 = separations(1:3,2)
@@ -288,11 +289,16 @@ contains
              dd = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
              h = bond_params(1)%parameters(4,2)
 
-             call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay)
-             xi = decay * exp( (a * (r1-r2))**mu )
+             call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay2)
+             call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(2)%soft_cutoff,decay1)
+
+!             write(*,*) "Potentials.f90 300: decay, a, cc, dd, h, mu, r1, r2, cos", &
+!                  decay1, decay2, a, cc, dd, h, mu, r1, r2, cosine
+
+             xi = decay2 * exp( (a * (r1-r2))**mu ) + decay1 * exp( (a * (r2-r1))**mu )
              gee = 1 + cc/dd - cc/(dd+(h-cosine)*(h-cosine))
 
-             factor = xi*gee
+             factor(2) = xi*gee
              
        end if
 

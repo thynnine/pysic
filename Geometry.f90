@@ -74,6 +74,8 @@ contains
        atoms(i)%n_pots = 0
        atoms(i)%potentials_listed = .false.
        nullify(atoms(i)%potential_indices)
+       atoms(i)%bond_order_factors_listed = .false.
+       nullify(atoms(i)%bond_indices)
     end do
 
   end subroutine generate_atoms

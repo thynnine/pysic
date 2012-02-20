@@ -81,6 +81,9 @@ contains
           if(atoms(i)%potentials_listed)then
              deallocate(atoms(i)%potential_indices)
           end if
+          if(atoms(i)%bond_order_factors_listed)then
+             deallocate(atoms(i)%bond_indices)
+          end if
 
        end do
        deallocate(atoms)
@@ -442,12 +445,15 @@ contains
                 ! 2-body bond order factors
                 do k1 = 1, size(bond_indices)
                    
-                   bond_params = bond_factors(bond_indices(k1))
+                   bond_params(1) = bond_factors(bond_indices(k1))
                    call get_number_of_targets_of_bond_order_factor_index(bond_params(1)%type_index,n_targets)
                    call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
                    call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
                    
-                   if( is_active .and. is_in_group .and. bond_params(1)%cutoff > distances(1) )then
+                   write(*,*) "Core.f90 453: bond ", k1, is_active, is_in_group, n_targets, &
+                        bond_params(1)%cutoff, distances(1)
+
+                   if( is_active .and. is_in_group )then !.and. bond_params(1)%cutoff > distances(1) )then
                       if( n_targets == 2 )then
                          
                          call evaluate_bond_order_factor(2,separations(1:3,1),distances(1),bond_params(1),tmp_factor(1:2))
@@ -465,7 +471,7 @@ contains
                    end if
                    
                 end do ! k1 = 1, size(bond_indices)
-                
+                write(*,*) "Core.f90 468: many bodies ", many_bodies_found, index1, index2
                 if(many_bodies_found)then
                    
                    nbors2 = atom2%neighbor_list
@@ -483,6 +489,8 @@ contains
                       ! neighbors are NOT currently searched
                       if(index3 > index2)then
 
+                         write(*,*) "Core.f90 486: triplet ", index2, index1, index3
+
                          ! search for the first bond params containing the parameters for atom1-atom2
                          do k1 = 1, size(bond_indices)
                          
@@ -491,7 +499,9 @@ contains
                                  n_targets)
                             call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
                             call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
-                         
+
+                            write(*,*) "Core.f90 500: bond ", k1, is_active, is_in_group
+                                                     
                             if( is_active .and. is_in_group .and. n_targets == 3 )then
                                call bond_order_factor_affects_atom(bond_params(1),atom3,is_active,3)
                             
@@ -507,6 +517,8 @@ contains
                             call bond_order_factor_affects_atom(bond_params(2),atom2,is_active,2)
                             call bond_order_factor_is_in_group(bond_params(2),group_index,is_in_group)
                          
+                            write(*,*) "Core.f90 517: bond ", k2, is_active, is_in_group
+
                             if( is_active .and. is_in_group .and. n_targets == 3 )then
                                call bond_order_factor_affects_atom(bond_params(2),atom3,is_active,3)
                             
@@ -530,6 +542,10 @@ contains
                                         
                                   call evaluate_bond_order_factor(3,separations(1:3,1:2),&
                                        distances(1:2),bond_params(1:2),tmp_factor(1:3),atom_list)
+
+                                  write(*,*) "Core.f90 543: factor ", tmp_factor, distances, &
+                                       bond_indices(k1), bond_indices(k2)
+
                                   ! bond factor:
                                   bond_orders(index2) = bond_orders(index2) + tmp_factor(1)
                                   bond_orders(index1) = bond_orders(index1) + tmp_factor(2)
@@ -551,24 +567,28 @@ contains
 
                    ! Next we try to find ordered triplets atom1 -- atom2 -- atom3
                    ! Therefore we need separations a2--a1 and a2--a3.
-                   separation3_unknown = .true.
                    separations(1:3,1) = -separations(1:3,1)
 
                    ! loop over neighbors of atom 2
                    do l = 1, nbors2%n_neighbors
                       index3 = nbors2%neighbors(l)
                       atom3 = atoms(index3)
+                      separation3_unknown = .true.
                       atom_list = (/ atom1, atom2, atom3 /)
                       
                       if(index3 > index1)then
 
+                         write(*,*) "Core.f90 567: triplet ", index1, index2, index3
+
                          ! search for the first bond params containing the parameters for atom2-atom1
-                         do k1 = 1, size(bond_indices2)
+                         do k1 = 1, size(bond_indices)
                          
                             bond_params(1) = bond_factors(bond_indices(k1))
                             call get_number_of_targets_of_bond_order_factor_index(bond_params(1)%type_index,n_targets)
                             call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
                             call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
+                         
+                            write(*,*) "Core.f90 577: bond ", k1, is_active, is_in_group
                          
                             if( is_active .and. is_in_group .and. n_targets == 3 )then
                                call bond_order_factor_affects_atom(bond_params(1),atom3,is_active,3)
@@ -576,13 +596,15 @@ contains
                                if( is_active )then
                                
                          ! search for the second bond params containing the parameters for atom2-atom3
-                         do k2 = 1, size(bond_indices2)
+                         do k2 = 1, size(bond_indices)
                          
                             bond_params(2) = bond_factors(bond_indices(k2))
                             call get_number_of_targets_of_bond_order_factor_index(bond_params(2)%type_index,&
                                  n_targets)
                             call bond_order_factor_affects_atom(bond_params(2),atom2,is_active,2)
                             call bond_order_factor_is_in_group(bond_params(2),group_index,is_in_group)
+
+                            write(*,*) "Core.f90 593: bond ", k2, is_active, is_in_group
                          
                             if( is_active .and. is_in_group .and. n_targets == 3 )then
                                call bond_order_factor_affects_atom(bond_params(2),atom3,is_active,3)
@@ -590,9 +612,9 @@ contains
                                if( is_active )then
 
                                   if( separation3_unknown )then
-                                     call separation_vector(atom1%position, &
+                                     call separation_vector(atom2%position, &
                                           atom3%position, &
-                                          nbors1%pbc_offsets(1:3,j), &
+                                          nbors2%pbc_offsets(1:3,l), &
                                           cell, &
                                           separations(1:3,2))
                                      separation3_unknown = .false.
@@ -606,6 +628,10 @@ contains
                                         
                                   call evaluate_bond_order_factor(3,separations(1:3,1:2),&
                                        distances(1:2),bond_params(1:2),tmp_factor(1:3),atom_list)
+
+                                  write(*,*) "Core.f90 618: factor ", tmp_factor, distances, &
+                                       bond_indices(k1), bond_indices(k2)
+
                                   ! bond factor:
                                   bond_orders(index1) = bond_orders(index1) + tmp_factor(1)
                                   bond_orders(index2) = bond_orders(index2) + tmp_factor(2)
@@ -853,13 +879,13 @@ contains
                    
                    ! Next we try to find ordered triplets atom1 -- atom2 -- atom3
                    ! Therefore we need separations a2--a1 and a2--a3.
-                   separation3_unknown = .true.
                    separations(1:3,1) = -separations(1:3,1)
 
                    ! loop over neighbors of atom 2
                    do l = 1, nbors2%n_neighbors
                       index3 = nbors2%neighbors(l)
                       atom3 = atoms(index3)
+                      separation3_unknown = .true.
                       atom_list = (/ atom1, atom2, atom3 /)
                       
                       if(index3 > index1)then
@@ -876,7 +902,7 @@ contains
                                   if( separation3_unknown )then
                                      call separation_vector(atom2%position, &
                                           atom3%position, &
-                                          nbors1%pbc_offsets(1:3,j), &
+                                          nbors2%pbc_offsets(1:3,l), &
                                           cell, &
                                           separations(1:3,2))
                                      separation3_unknown = .false.

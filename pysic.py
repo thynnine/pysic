@@ -575,11 +575,9 @@ class BondOrderParameters:
 
         if parameters == None:
             self.parameters = self.n_targets*[[]]
-            index = 0
-            for param_set in self.parameters:
-                param_set = self.n_params[index]*[0.0]
-                index += 1
-        else:                
+            for index in range(len(self.parameters)): 
+                self.parameters[index] = self.n_params[index]*[0.0]
+        else:  
             self.set_parameters(parameters)
 
         self.symbols = None
@@ -610,6 +608,9 @@ class BondOrderParameters:
             return False
 
         return True
+
+    def __ne__(self,other):
+        return not self.__eq__(other)
             
     def accepts_parameters(self,params):
         """Test if the given parameters array has the correct dimensions.
@@ -872,7 +873,7 @@ class BondOrderParameters:
         if self.accepts_parameters(params):
             self.parameters = params
         else:
-            raise InvalidParameterError('The bond order factor "{bof}" requires {num} parameters.'.format(bof=bond_order_type,num=str(self.n_params)))
+            raise InvalidParametersError('The bond order factor "{bof}" requires {num} parameters.'.format(bof=bond_order_type,num=str(self.n_params)))
 
 
         
@@ -919,6 +920,8 @@ class Coordinator:
 
         return True
 
+    def __ne__(self,other):
+        return not self.__eq__(other)
 
     def get_bond_order_parameters(self):
         """Returns the bond order parameters of this Coordinator.
@@ -1090,6 +1093,8 @@ class Potential:
         
         return True
 
+    def __ne__(self,other):
+        return not self.__eq__(other)
 
     def __repr__(self):
         return ("Potential({name},symbols={symbs},"+ \
@@ -1517,6 +1522,22 @@ class Pysic:
         self.coordinations_calculated = False
         self.force_core_initialization = full_initialization
 
+
+    def __eq__(self,other):
+        try:
+            if self.structure != other.structure:
+                return False
+            if self.neighbor_list != other.neighbor_list:
+                return False
+            if self.potentials != other.potentials:
+                return False
+        except:
+            return False
+
+        return True
+
+    def __ne__(self,other):
+        return not self.__eq__(other)
 
     def __del__(self):
         self.release_fortran_core()
@@ -2078,7 +2099,6 @@ class Pysic:
 
 
         n_bonds = 0
-        print coord_list
         for coord in coord_list:
             try:
                 allbonds = coord[0].get_bond_order_parameters()
@@ -2091,7 +2111,6 @@ class Pysic:
             except:
                 pass
 
-        print n_bonds
         pf.pysic_interface.allocate_bond_order_factors(n_bonds)
 
         for coord in coord_list:
