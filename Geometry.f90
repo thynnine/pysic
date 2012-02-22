@@ -110,7 +110,7 @@ contains
     integer, intent(in) :: neighbors(n_nbs), offsets(3,n_nbs)
     type(neighbor_list), intent(inout) :: nbor_list
 
-    if(nbor_list%max_length < n_nbs)then
+    if(nbor_list%max_length <= n_nbs)then
        if(nbor_list%max_length > 0)then
           deallocate(nbor_list%neighbors)
           deallocate(nbor_list%pbc_offsets)
@@ -125,8 +125,10 @@ contains
     nbor_list%neighbors = -1
     nbor_list%pbc_offsets = 0
     nbor_list%n_neighbors = n_nbs
-    nbor_list%neighbors(1:n_nbs) = neighbors(1:n_nbs)
-    nbor_list%pbc_offsets(1:3,1:n_nbs) = offsets(1:3,1:n_nbs)
+    if(n_nbs > 0)then
+       nbor_list%neighbors(1:n_nbs) = neighbors(1:n_nbs)
+       nbor_list%pbc_offsets(1:3,1:n_nbs) = offsets(1:3,1:n_nbs)
+    end if
 
   end subroutine assign_neighbor_list
 

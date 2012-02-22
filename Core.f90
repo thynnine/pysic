@@ -392,6 +392,272 @@ contains
   end subroutine core_calculate_coordinations
 
 
+  ! Returns the gradients of all bond order factors with respect to
+  ! moving a given atom.
+  subroutine core_calculate_bond_order_gradients(n_atoms,group_index,&
+       atom_index,total_gradient,mpi_split)
+    implicit none
+    integer, intent(in) :: n_atoms, group_index, atom_index
+    double precision, intent(out) :: total_gradient(3,n_atoms)
+    logical, optional, intent(in) :: mpi_split
+    double precision :: gradient(3,n_atoms)
+    type(atom) :: atom1, atom2, atom3
+    type(atom) :: atom_list(3)
+    type(neighbor_list) :: nbors1, nbors2
+    type(bond_order_parameters) :: bond_params(2)
+    integer, pointer :: bond_indices(:), bond_indices2(:)
+    integer :: index1, index2, index3, k1, k2, j, l, n_targets
+    double precision :: separations(3,2), distances(2), directions(3,2), tmp_grad(3,3,3)
+    logical :: is_active, is_in_group, many_bodies_found, separation3_unknown
+
+    gradient = 0.d0
+    total_gradient = 0.d0
+    
+    ! target atom
+    index1 = atom_index
+    atom1 = atoms(atom_index)
+    nbors1 = atom1%neighbor_list
+    bond_indices => atom1%bond_indices
+          
+    ! loop over neighbors
+    do j = 1, nbors1%n_neighbors
+       
+       ! neighboring atom
+       index2 = nbors1%neighbors(j)
+          
+       atom2 = atoms(index2)
+       call separation_vector(atom1%position, &
+            atom2%position, &
+            nbors1%pbc_offsets(1:3,j), &
+            cell, &
+            separations(1:3,1))
+       distances(1) = .norm.(separations(1:3,1))
+       if(distances(1) == 0.d0)then
+          directions(1:3,1) = (/ 0.d0, 0.d0, 0.d0 /)
+       else
+          directions(1:3,1) = separations(1:3,1) / distances(1)
+       end if
+          
+       many_bodies_found = .false.
+       ! 2-body bond order factors
+       do k1 = 1, size(bond_indices)
+                   
+          bond_params(1) = bond_factors(bond_indices(k1))
+          call get_number_of_targets_of_bond_order_factor_index(bond_params(1)%type_index,n_targets)
+          call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
+          call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
+                   
+          if( is_active .and. is_in_group )then !.and. bond_params(1)%cutoff > distances(1) )then
+             if( n_targets == 2 )then
+
+                call evaluate_bond_order_gradient(2,&
+                     separations(1:3,1),&
+                     distances(1),&
+                     bond_params(1),&
+                     tmp_grad(1:3,1:2,1:2))
+                ! store the gradients of the atom1 and atom2 terms
+                ! with respect to movind atom1 (the target atom)
+                gradient(1:3,index1) = gradient(1:3,index1) + tmp_grad(1:3,1,1)
+                gradient(1:3,index2) = gradient(1:3,index1) + tmp_grad(1:3,2,1)
+
+             else if( n_targets > 2 )then
+                   
+                many_bodies_found = .true.
+                   
+             end if
+          end if
+             
+       end do ! k1 = 1, size(bond_indices)
+
+
+       if(many_bodies_found)then
+
+          nbors2 = atom2%neighbor_list
+
+          ! loop over neighbors of atom 1
+          do l = 1, nbors1%n_neighbors
+             index3 = nbors1%neighbors(l)
+
+             ! Since we first loop over the neighbors of atom1 to get atom2 candidates
+             ! and then again to find atom3 candidates, we will find the same triplet
+             ! atom2-atom1-atom3 = atom3-atom1-atom2 twice.
+             ! In order to filter out the duplicate, only consider the case where
+             ! index of atom3 is bigger than the index of atom2. This condition is
+             ! bound to be true for one and false for the other triplet.
+             if(index3 > index2)then
+
+                atom3 = atoms(index3)
+                separation3_unknown = .true.
+                atom_list = (/ atom2, atom1, atom3 /)
+                
+                ! search for the first bond params containing the parameters for atom1-atom2
+                do k1 = 1, size(bond_indices)
+                   
+                   bond_params(1) = bond_factors(bond_indices(k1))
+                   call get_number_of_targets_of_bond_order_factor_index(bond_params(1)%type_index,&
+                        n_targets)
+                   call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
+                   call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
+                   
+                   if( is_active .and. is_in_group .and. n_targets == 3 )then
+                      call bond_order_factor_affects_atom(bond_params(1),atom3,is_active,3)
+                      
+                      if( is_active )then
+                         
+                         
+                         ! search for the second bond params containing the parameters for atom1-atom3
+                         do k2 = 1, size(bond_indices)
+                            
+                            bond_params(2) = bond_factors(bond_indices(k2))
+                            call get_number_of_targets_of_bond_order_factor_index(bond_params(2)%type_index,&
+                                 n_targets)
+                            call bond_order_factor_affects_atom(bond_params(2),atom2,is_active,2)
+                            call bond_order_factor_is_in_group(bond_params(2),group_index,is_in_group)
+                            
+                            if( is_active .and. is_in_group .and. n_targets == 3 )then
+                               call bond_order_factor_affects_atom(bond_params(2),atom3,is_active,3)
+                               
+                               if( is_active )then
+                                  
+                                  if( separation3_unknown )then
+                                     call separation_vector(atom1%position, &
+                                          atom3%position, &
+                                          nbors1%pbc_offsets(1:3,j), &
+                                          cell, &
+                                          separations(1:3,2))
+                                     separation3_unknown = .false.
+                                     distances(2) = .norm.(separations(1:3,2))
+                                     if(distances(2) == 0.d0)then
+                                        directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+                                     else
+                                        directions(1:3,2) = separations(1:3,2) / distances(2)
+                                     end if
+                                  end if
+                                  
+                                  call evaluate_bond_order_gradient(3,&
+                                       separations(1:3,1:2),&
+                                       distances(1:2),&
+                                       bond_params(1:2),&
+                                       tmp_grad(1:3,1:3,1:3),&
+                                       atom_list)
+                                  ! store the gradients of the atom1, atom2, and atom3 terms
+                                  ! with respect to movind atom1 (the target atom)
+                                  ! Note that here atom1 is the middle atom, so we take index 2
+                                  ! in the third column of tmp_grad.
+                                  gradient(1:3,index2) = gradient(1:3,index2) + tmp_grad(1:3,1,2)
+                                  gradient(1:3,index1) = gradient(1:3,index1) + tmp_grad(1:3,2,2)
+                                  gradient(1:3,index3) = gradient(1:3,index3) + tmp_grad(1:3,3,2)
+                                  
+                               end if ! is_active
+                            end if ! is_active and is_in_group and n_targets == 3
+                            
+                         end do ! k2
+                         
+                      end if ! is_active
+                   end if ! is_active and is_in_group and n_targets == 3
+                   
+                end do ! k1
+             end if ! index3 /= index2
+          end do ! l = 1, nbors1%n_neighbors
+
+
+          ! Next we try to find ordered triplets atom1 -- atom2 -- atom3
+          ! Therefore we need separations a2--a1 and a2--a3.
+          separations(1:3,1) = -separations(1:3,1)
+
+          ! loop over neighbors of atom 2
+          do l = 1, nbors2%n_neighbors
+             index3 = nbors2%neighbors(l)
+
+             if(index3 /= index1)then
+                atom3 = atoms(index3)
+                separation3_unknown = .true.
+                atom_list = (/ atom1, atom2, atom3 /)
+                
+                ! search for the first bond params containing the parameters for atom2-atom1
+                do k1 = 1, size(bond_indices)
+                   
+                   bond_params(1) = bond_factors(bond_indices(k1))
+                   call get_number_of_targets_of_bond_order_factor_index(bond_params(1)%type_index,n_targets)
+                   call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
+                   call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
+                   
+                   if( is_active .and. is_in_group .and. n_targets == 3 )then
+                      call bond_order_factor_affects_atom(bond_params(1),atom3,is_active,3)
+                      
+                      if( is_active )then
+                         
+                         ! search for the second bond params containing the parameters for atom2-atom3
+                         do k2 = 1, size(bond_indices)
+                            
+                            bond_params(2) = bond_factors(bond_indices(k2))
+                            call get_number_of_targets_of_bond_order_factor_index(bond_params(2)%type_index,&
+                                 n_targets)
+                            call bond_order_factor_affects_atom(bond_params(2),atom2,is_active,2)
+                            call bond_order_factor_is_in_group(bond_params(2),group_index,is_in_group)
+                            
+                            if( is_active .and. is_in_group .and. n_targets == 3 )then
+                               call bond_order_factor_affects_atom(bond_params(2),atom3,is_active,3)
+                               
+                               if( is_active )then
+                                  
+                                  if( separation3_unknown )then
+                                     call separation_vector(atom2%position, &
+                                          atom3%position, &
+                                          nbors2%pbc_offsets(1:3,l), &
+                                          cell, &
+                                          separations(1:3,2))
+                                     separation3_unknown = .false.
+                                     distances(2) = .norm.(separations(1:3,2))
+                                     if(distances(2) == 0.d0)then
+                                        directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+                                     else
+                                        directions(1:3,2) = separations(1:3,2) / distances(2)
+                                     end if
+                                  end if
+                                  
+                                  call evaluate_bond_order_gradient(3,&
+                                       separations(1:3,1:2),&
+                                       distances(1:2),&
+                                       bond_params(1:2),&
+                                       tmp_grad(1:3,1:3,1:3),&
+                                       atom_list)
+                                  ! store the gradients of the atom1, atom2, and atom3 terms
+                                  ! with respect to movind atom1 (the target atom)
+                                  ! Note that here atom1 is the first atom, so we take index 1
+                                  ! in the third column of tmp_grad.
+                                  gradient(1:3,index1) = gradient(1:3,index1) + tmp_grad(1:3,1,1)
+                                  gradient(1:3,index2) = gradient(1:3,index2) + tmp_grad(1:3,2,1)
+                                  gradient(1:3,index3) = gradient(1:3,index3) + tmp_grad(1:3,3,1)
+                                  
+                               end if ! is_active
+                            end if ! is_active and is_in_group and n_targets == 3
+                            
+                         end do ! k2
+                         
+                      end if ! is_active
+                   end if ! is_active and is_in_group and n_targets == 3
+                   
+                end do ! k1
+                
+             end if ! index3 /= index1
+          end do ! l = 1, nbors2%n_neighbors
+             
+       end if ! many_bodies_found
+    end do ! j = nbors1%n_neighbors
+
+!#ifdef MPI
+!    call mpi_allreduce(bond_orders,total_bond_orders,size(bond_orders),mpi_double_precision,&
+!         mpi_sum,mpi_comm_world,mpistat)
+!#else
+!    total_bond_orders = bond_orders
+!#endif
+
+    total_gradient = gradient
+
+  end subroutine core_calculate_bond_order_gradients
+
+
 
   subroutine core_calculate_bond_orders(n_atoms,group_index,total_bond_orders)
     implicit none
@@ -406,6 +672,7 @@ contains
     type(bond_order_parameters) :: bond_params(2)
     integer, pointer :: bond_indices(:), bond_indices2(:)
     logical :: is_active, is_in_group, many_bodies_found, separation3_unknown
+    integer :: post_process
 
     bond_orders = 0.d0
     total_bond_orders = 0.d0
@@ -450,16 +717,11 @@ contains
                    call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
                    call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
                    
-                   write(*,*) "Core.f90 453: bond ", k1, is_active, is_in_group, n_targets, &
-                        bond_params(1)%cutoff, distances(1)
-
                    if( is_active .and. is_in_group )then !.and. bond_params(1)%cutoff > distances(1) )then
                       if( n_targets == 2 )then
                          
                          call evaluate_bond_order_factor(2,separations(1:3,1),distances(1),bond_params(1),tmp_factor(1:2))
 
-                         ! update only the bond order of index1
-                         ! index2 is handled as the loop goes over that particular atom
                          bond_orders(index1) = bond_orders(index1) + tmp_factor(1)
                          bond_orders(index2) = bond_orders(index2) + tmp_factor(2)
                          
@@ -471,7 +733,7 @@ contains
                    end if
                    
                 end do ! k1 = 1, size(bond_indices)
-                write(*,*) "Core.f90 468: many bodies ", many_bodies_found, index1, index2
+
                 if(many_bodies_found)then
                    
                    nbors2 = atom2%neighbor_list
@@ -489,8 +751,6 @@ contains
                       ! neighbors are NOT currently searched
                       if(index3 > index2)then
 
-                         write(*,*) "Core.f90 486: triplet ", index2, index1, index3
-
                          ! search for the first bond params containing the parameters for atom1-atom2
                          do k1 = 1, size(bond_indices)
                          
@@ -500,8 +760,6 @@ contains
                             call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
                             call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
 
-                            write(*,*) "Core.f90 500: bond ", k1, is_active, is_in_group
-                                                     
                             if( is_active .and. is_in_group .and. n_targets == 3 )then
                                call bond_order_factor_affects_atom(bond_params(1),atom3,is_active,3)
                             
@@ -517,14 +775,11 @@ contains
                             call bond_order_factor_affects_atom(bond_params(2),atom2,is_active,2)
                             call bond_order_factor_is_in_group(bond_params(2),group_index,is_in_group)
                          
-                            write(*,*) "Core.f90 517: bond ", k2, is_active, is_in_group
-
                             if( is_active .and. is_in_group .and. n_targets == 3 )then
                                call bond_order_factor_affects_atom(bond_params(2),atom3,is_active,3)
                             
                                if( is_active )then
 
-                               
                                   if( separation3_unknown )then
                                      call separation_vector(atom1%position, &
                                           atom3%position, &
@@ -542,9 +797,6 @@ contains
                                         
                                   call evaluate_bond_order_factor(3,separations(1:3,1:2),&
                                        distances(1:2),bond_params(1:2),tmp_factor(1:3),atom_list)
-
-                                  write(*,*) "Core.f90 543: factor ", tmp_factor, distances, &
-                                       bond_indices(k1), bond_indices(k2)
 
                                   ! bond factor:
                                   bond_orders(index2) = bond_orders(index2) + tmp_factor(1)
@@ -578,8 +830,6 @@ contains
                       
                       if(index3 > index1)then
 
-                         write(*,*) "Core.f90 567: triplet ", index1, index2, index3
-
                          ! search for the first bond params containing the parameters for atom2-atom1
                          do k1 = 1, size(bond_indices)
                          
@@ -587,8 +837,6 @@ contains
                             call get_number_of_targets_of_bond_order_factor_index(bond_params(1)%type_index,n_targets)
                             call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2)
                             call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group)
-                         
-                            write(*,*) "Core.f90 577: bond ", k1, is_active, is_in_group
                          
                             if( is_active .and. is_in_group .and. n_targets == 3 )then
                                call bond_order_factor_affects_atom(bond_params(1),atom3,is_active,3)
@@ -603,8 +851,6 @@ contains
                                  n_targets)
                             call bond_order_factor_affects_atom(bond_params(2),atom2,is_active,2)
                             call bond_order_factor_is_in_group(bond_params(2),group_index,is_in_group)
-
-                            write(*,*) "Core.f90 593: bond ", k2, is_active, is_in_group
                          
                             if( is_active .and. is_in_group .and. n_targets == 3 )then
                                call bond_order_factor_affects_atom(bond_params(2),atom3,is_active,3)
@@ -629,9 +875,6 @@ contains
                                   call evaluate_bond_order_factor(3,separations(1:3,1:2),&
                                        distances(1:2),bond_params(1:2),tmp_factor(1:3),atom_list)
 
-                                  write(*,*) "Core.f90 618: factor ", tmp_factor, distances, &
-                                       bond_indices(k1), bond_indices(k2)
-
                                   ! bond factor:
                                   bond_orders(index1) = bond_orders(index1) + tmp_factor(1)
                                   bond_orders(index2) = bond_orders(index2) + tmp_factor(2)
@@ -654,6 +897,68 @@ contains
              end if
           end do
 
+       end if
+
+    end do
+
+#ifdef MPI
+    call mpi_allreduce(bond_orders,total_bond_orders,size(bond_orders),mpi_double_precision,&
+         mpi_sum,mpi_comm_world,mpistat)
+#else
+    total_bond_orders = bond_orders
+#endif
+
+
+    return
+
+    !!!! this should be a separate subroutine !!!!
+
+    ! bond-order post processing 
+    !
+    ! By post processing, we mean any operations done after calculating the
+    ! sum of pair- and many-body terms. That is, if a factor is, say,
+    !      b_i = 1 + sum_j c_ij,
+    ! the 'sum_j c_ij' would have been calculated above and the operation '1 +'
+    ! remains to be carried out.
+    ! The post processing is done per atom regardless of if the
+    ! bond factor is of a pair or many body type.
+    do index1 = 1, size(atoms)
+       
+       ! in MPI, only consider the atoms allocated to this particular cpu
+       if(is_my_atom(index1))then
+
+          ! target atom
+          atom1 = atoms(index1)
+          nbors1 = atom1%neighbor_list
+          bond_indices => atom1%bond_indices
+
+          ! Check all the bond factors that affect the atom and see
+          ! if any of them require post processing.
+          ! If such a factor is found, the corresponding parameters
+          ! are saved to be used for the post processing.
+          ! Note that only one set of post processing parameters will
+          ! be used: the first found. This is because there may well
+          ! be several factors acting on the same type of atom and
+          ! we do not want to apply the post processing several times.
+          post_process = -1
+          do index2 = 1, size(bond_indices)
+             bond_params(1) = bond_factors(bond_indices(index2))
+             if( bond_params(1)%includes_post_processing )then
+                if( bond_params(1)%original_elements(1) == atom1%element )then
+                   post_process = bond_indices(index2)
+                   exit
+                end if
+             end if
+          end do
+
+          if( post_process > 0 )then
+             call post_process_bond_order_factor(total_bond_orders(index1),&
+                  bond_factors( post_process ), &
+                  bond_orders(index1) )
+          end if
+
+       else
+          bond_orders(index1) = 0.d0
        end if
 
     end do

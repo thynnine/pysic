@@ -46,6 +46,7 @@ module potentials
      integer, pointer :: n_parameters(:)
      character(len=pot_note_length) :: description
      character(len=param_note_length), pointer :: parameter_notes(:,:)
+     logical :: includes_post_processing
   end type bond_order_descriptor
 
   type(potential_descriptor), pointer :: potential_descriptors(:)
@@ -75,6 +76,7 @@ module potentials
      integer, pointer :: n_params(:)
      character(len=2), pointer :: apply_elements(:) ! label_length
      character(len=2), pointer :: original_elements(:) ! label_length
+     logical :: includes_post_processing
   end type bond_order_parameters
   
 contains
@@ -210,6 +212,7 @@ contains
     nullify(new_bond%original_elements)
     allocate(new_bond%original_elements(n_targets))
     new_bond%original_elements = orig_elements
+    new_bond%includes_post_processing = descriptor%includes_post_processing
 
     ! calculate derived parameters if necessary
     select case (new_bond%type_index)
@@ -224,6 +227,26 @@ contains
   end subroutine create_bond_order_factor
 
 
+  subroutine post_process_bond_order_factor(raw_sum, bond_params, factor_out)
+    implicit none
+    double precision, intent(in) :: raw_sum
+    type(bond_order_parameters), intent(in) :: bond_params
+    double precision, intent(out) :: factor_out
+    double precision :: beta, eta
+    
+    factor_out = raw_sum
+
+    select case(bond_params%type_index)
+    case(tersoff_index)
+       beta = bond_params%parameters(1,1)
+       eta = bond_params%parameters(2,1)
+       write(*,*) "Potentials.f90 243: pp ", raw_sum, beta, eta
+       factor_out = ( 1 + ( beta*raw_sum )**eta )**(-1.d0/(2.d0*eta))
+    end select
+
+  end subroutine post_process_bond_order_factor
+
+
   subroutine evaluate_bond_order_factor(n_targets,separations,distances,bond_params,factor,atoms)
     implicit none
     integer, intent(in) :: n_targets
@@ -231,7 +254,8 @@ contains
     type(bond_order_parameters), intent(in) :: bond_params(n_targets-1)
     double precision, intent(out) :: factor(n_targets)
     type(atom), optional, intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, cosine, decay1, decay2, xi, gee, beta, eta, mu, a, cc, dd, h
+    double precision :: r1, r2, cosine, decay1, decay2, xi1, xi2, gee1, gee2, &
+         mu, a1, a2, cc1, dd1, h1, cc2, dd2, h2
     double precision :: tmp1(3), tmp2(3)
 
     factor = 0.d0
@@ -242,7 +266,7 @@ contains
        r1 = distances(1)
        if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
           call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(1)%soft_cutoff,decay1)
-          factor = decay1
+          factor = decay1 ! symmetric, so factor(1) = factor(2)
        end if
 
     case(tersoff_index) ! tersoff bond-order factor
@@ -275,31 +299,35 @@ contains
        r1 = distances(1)
        r2 = distances(2)
 
-       if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .or. &
-            (r1 < bond_params(1)%cutoff .and. r1 > 0.d0) )then
+       if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .and. &
+           ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
 
-             tmp1 = separations(1:3,1)
-             tmp2 = separations(1:3,2)
-             cosine = (tmp1 .o. tmp2) / ( r1 * r2 ) ! angle between ij and ik
-
-             ! bond_params: beta_i, eta_i, mu_i, a_ij, c_ij, d_ij, h_ij
-             mu = bond_params(1)%parameters(3,1)
-             a = bond_params(1)%parameters(1,2)
-             cc = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
-             dd = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
-             h = bond_params(1)%parameters(4,2)
-
-             call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay2)
-             call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(2)%soft_cutoff,decay1)
-
-!             write(*,*) "Potentials.f90 300: decay, a, cc, dd, h, mu, r1, r2, cos", &
-!                  decay1, decay2, a, cc, dd, h, mu, r1, r2, cosine
-
-             xi = decay2 * exp( (a * (r1-r2))**mu ) + decay1 * exp( (a * (r2-r1))**mu )
-             gee = 1 + cc/dd - cc/(dd+(h-cosine)*(h-cosine))
-
-             factor(2) = xi*gee
-             
+          tmp1 = separations(1:3,1)
+          tmp2 = separations(1:3,2)
+          cosine = (tmp1 .o. tmp2) / ( r1 * r2 ) ! angle between ij and ik
+          
+          ! bond_params: beta_i, eta_i, mu_i, a_ij, c_ij, d_ij, h_ij
+          mu = bond_params(1)%parameters(3,1)
+          a1 = bond_params(1)%parameters(1,2)
+          a2 = bond_params(2)%parameters(1,2)
+          cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
+          dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
+          h1 = bond_params(1)%parameters(4,2)
+          cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
+          dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
+          h2 = bond_params(2)%parameters(4,2)
+          
+          call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay2)
+          call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(1)%soft_cutoff,decay1)
+          
+          xi1 = decay1 * decay2 * exp( (a1 * (r1-r2))**mu ) 
+          xi2 = decay1 * decay2 * exp( (a2 * (r2-r1))**mu ) 
+          gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
+          gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
+          
+          ! only the middle atom gets a contribution, so factor(1) = factor(3) = 0.0
+          factor(2) = xi1*gee1 + xi2*gee2
+          
        end if
 
     case default
@@ -309,17 +337,24 @@ contains
   end subroutine evaluate_bond_order_factor
 
 
-
+  ! Returns the gradients of bond order terms with respect to moving an atom.
+  ! The returned array has three layers:
+  ! gradient( coordinates, atom with respect to which we differentiate, atom whose factor is differentiated )
+  ! So for example, for a three body term atom1-atom2-atom3, gradient(1,2,3) contains
+  ! the x-coordinate (1), of the factor for atom2 (2), with respect to moving atom3 (3).
   subroutine evaluate_bond_order_gradient(n_targets,separations,distances,bond_params,gradient,atoms)
     implicit none
     integer, intent(in) :: n_targets
     double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
     type(bond_order_parameters), intent(in) :: bond_params(n_targets-1)
-    double precision, intent(out) :: gradient(3,n_targets)
+    double precision, intent(out) :: gradient(3,n_targets,n_targets)
     type(atom), optional, intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, nablar1(3,3), nablar2(3,3), cosine, nablacosine(3,3), decay, nabladecay(3,3), &
-         unitvector(3,2), xi, gee, nablaxi(3,3), nablagee(3,3), mu, a, cc, dd, h, dot, ratio
-    double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3), tmp5(3), tmpmat(3,3)
+    double precision :: r1, r2, nablar1(3,3), nablar2(3,3), cosine, nablacosine(3,3), decay1, decay2,&
+         nabladecay(3,3), unitvector(3,2), xi1, gee1, nablaxi1(3,3), nablagee1(3,3), &
+         xi2, gee2, nablaxi2(3,3), nablagee2(3,3), &
+         mu, a1, a2, cc1, dd1, h1, cc2, dd2, h2, dot, &
+         ratio, exponent1a, exponent1b, exponent2a, exponent2b
+    double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3), tmp5(3), tmp6(3), tmpmat1(3,3), tmpmat2(3,3)
 
     gradient = 0.d0
 
@@ -328,17 +363,41 @@ contains
 
        r1 = distances(1)
        if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
-          call smoothening_gradient(separations(1:3,1) / r1,r1,bond_params(1)%cutoff,bond_params(1)%soft_cutoff,tmp1)
-          gradient(1:3,1) = -tmp1(1:3)
-          gradient(1:3,2) = tmp1(1:3)
+          call smoothening_gradient(separations(1:3,1) / r1,r1,&
+               bond_params(1)%cutoff,&
+               bond_params(1)%soft_cutoff,&
+               tmp1)
+          gradient(1:3,1,1) = -tmp1(1:3)
+          gradient(1:3,2,1) = tmp1(1:3)
+          gradient(1:3,1,2) = -tmp1(1:3)
+          gradient(1:3,2,2) = tmp1(1:3)
        end if
 
     case(tersoff_index) ! tersoff bond-order factor
 
+       if(.not.present(atoms))then
+          return
+       end if
+       ! check that bond_params(1) is for indices (ij)
+       if(bond_params(1)%original_elements(1) /= atoms(2)%element)then
+          return
+       end if
+       if(bond_params(1)%original_elements(2) /= atoms(1)%element)then
+          return
+       end if
+       ! check that bond_params(2) is for indices (ik)
+       if(bond_params(2)%original_elements(1) /= atoms(2)%element)then
+          return
+       end if
+       if(bond_params(2)%original_elements(2) /= atoms(3)%element)then
+          return
+       end if
+
        r1 = distances(1)
        r2 = distances(2)
 
-       if(r2 < bond_params(2)%cutoff .and. r2 > 0.d0)then
+       if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .and. &
+           ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
 
              tmp1 = separations(1:3,1)
              tmp2 = separations(1:3,2)
@@ -346,15 +405,18 @@ contains
              unitvector(1:3,2) = tmp2 / r2
              dot = (tmp1 .o. tmp2)
              ratio = 1.d0 / ( r1 * r2 )
-             cosine = dot / ratio ! angle between ij and ik
+             cosine = dot * ratio ! angle between ij and ik
 
              ! gradients of the r_ij and r_ik vectors with respect to the positions 
              ! of the three particles i, j, and k
+
+             ! gradient 1 affects atoms ij, so atoms 2 and 1
              nablar1 = 0.d0
-             nablar1(1:3,1) = -unitvector(1:3,1)
-             nablar1(1:3,2) = unitvector(1:3,1)
+             nablar1(1:3,2) = -unitvector(1:3,1)
+             nablar1(1:3,1) = unitvector(1:3,1)
+             ! gradient 2 affects atoms ik, so atoms 2 and 3
              nablar2 = 0.d0
-             nablar2(1:3,1) = -unitvector(1:3,2)
+             nablar2(1:3,2) = -unitvector(1:3,2)
              nablar2(1:3,3) = unitvector(1:3,2)
 
              ! gradient of the cos theta_ijk factor
@@ -367,28 +429,59 @@ contains
 
              ! bond_params: beta_i, eta_i, mu_i, a_ij, c_ij, d_ij, h_ij
              mu = bond_params(1)%parameters(3,1)
-             a = bond_params(1)%parameters(1,2)
-             cc = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
-             dd = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
-             h = bond_params(1)%parameters(4,2)
+             a1 = bond_params(1)%parameters(1,2)
+             a2 = bond_params(2)%parameters(1,2)
+             cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
+             dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
+             h1 = bond_params(1)%parameters(4,2)
+             cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
+             dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
+             h2 = bond_params(2)%parameters(4,2)
 
-             call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay)
+             call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay2)
+             call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(2)%soft_cutoff,decay1)
+             ! store the gradients of decay1 and decay2 in tmp5 and tmp6
              call smoothening_gradient(unitvector(1:3,2),r2,&
-                  bond_params(2)%cutoff,bond_params(2)%soft_cutoff,tmp5)
+                  bond_params(2)%cutoff,bond_params(2)%soft_cutoff,tmp6)
+             call smoothening_gradient(unitvector(1:3,1),r1,&
+                  bond_params(1)%cutoff,bond_params(1)%soft_cutoff,tmp5)
 
-             tmpmat = 0.d0
-             tmpmat(1:3,1) = tmp5
-             tmpmat(1:3,2) = tmp5
-             tmpmat(1:3,3) = tmp5
+             ! gradient 1 (tmp5) affects atoms ij, so atoms 2 and 1
+             tmpmat1 = 0.d0
+             tmpmat1(1:3,1) = tmp5
+             tmpmat1(1:3,2) = -tmp5
+             ! gradient 2 (tmp6) affects atoms ik, so atoms 2 and 3
+             tmpmat2 = 0.d0
+             tmpmat2(1:3,2) = -tmp6
+             tmpmat2(1:3,3) = tmp6
 
-             xi = decay * exp( (a * (r1-r2))**mu )
-             gee = 1 + cc/dd - cc/(dd+(h-cosine)*(h-cosine))
-             nablaxi = exp( (a * (r1-r2))**mu ) * &
-                  ( tmpmat + decay * mu * a * (a * (r1-r2))**(mu-1) * (nablar1 - nablar2) )
-             nablagee = - cc / ( (dd+(h-cosine)*(h-cosine))*(dd+(h-cosine)*(h-cosine)) ) * &
-                  2.d0 * (h-cosine) * nablacosine
+             exponent1a = (a1 * (r1-r2))**(mu-1)
+             exponent2a = (a2 * (r2-r1))**(mu-1)
+             exponent1b = (a1 * (r1-r2))*exponent1a
+             exponent2b = (a2 * (r2-r1))*exponent2a
+             xi1 = exp( exponent1b ) 
+             xi2 = exp( exponent2b )
+             gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
+             gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
+             nablaxi1 = (tmpmat1 * decay2 + tmpmat2 * decay1) * xi1 + &
+                  decay1*decay2*( exp( exponent1b ) * a1 * mu * exponent1a ) * (nablar1 - nablar2)
+             nablaxi2 = (tmpmat2 * decay1 + tmpmat1 * decay2) * xi2 + &
+                  decay1*decay2*( exp( exponent2b ) * a2 * mu * exponent2a ) * (nablar2 - nablar1)
+             xi1 = xi1 * decay1 * decay2
+             xi2 = xi2 * decay1 * decay2
+             nablagee1 = - cc1 / ( (dd1+(h1-cosine)*(h1-cosine))*(dd1+(h1-cosine)*(h1-cosine)) ) * &
+                  2.d0 * (h1-cosine) * nablacosine
+             nablagee2 = - cc2 / ( (dd2+(h2-cosine)*(h2-cosine))*(dd2+(h2-cosine)*(h2-cosine)) ) * &
+                  2.d0 * (h2-cosine) * nablacosine
 
-             gradient = nablaxi * gee + xi * nablagee
+             ! there is only contribution to the factor of the middle atom, so
+             ! also the gradients of atoms 1 and 3 are 0.
+             gradient(1:3,2,1) = nablaxi1(1:3,1) * gee1 + xi1 * nablagee1(1:3,1) + &
+                  nablaxi2(1:3,1) * gee2 + xi2 * nablagee2(1:3,1)
+             gradient(1:3,2,2) = nablaxi1(1:3,2) * gee1 + xi1 * nablagee1(1:3,2) + &
+                  nablaxi2(1:3,2) * gee2 + xi2 * nablagee2(1:3,2)
+             gradient(1:3,2,3) = nablaxi1(1:3,3) * gee1 + xi1 * nablagee1(1:3,3) + &
+                  nablaxi2(1:3,3) * gee2 + xi2 * nablagee2(1:3,3)
 
        end if
        
@@ -771,6 +864,7 @@ contains
     bond_order_descriptors(index)%n_parameters(1) = 0
     bond_order_descriptors(index)%n_parameters(2) = 0
     bond_order_descriptors(index)%n_targets = 2
+    bond_order_descriptors(index)%includes_post_processing = .false.
 !    max_params = 1
 !    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
 !    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
@@ -792,6 +886,7 @@ contains
     bond_order_descriptors(index)%n_parameters(3) = 0
     max_params = 4
     bond_order_descriptors(index)%n_targets = 3
+    bond_order_descriptors(index)%includes_post_processing = .true.
     allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
     allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
     call pad_string('beta',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))

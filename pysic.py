@@ -1001,6 +1001,17 @@ class Coordinator:
 
 
     
+    def get_bond_order_gradients(self,atom_index):
+        """Returns an array containing the gradients of bond order factors of all atoms with respect to moving one atom.
+
+        Parameters:
+
+        atom_index: integer
+            the index of the atom the position of which is being differentiated with
+        """
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        # add 1 to atom index because fortran indexing starts from 1, not 0
+        return pf.pysic_interface.calculate_bond_order_gradients(n_atoms,self.group_index,atom_index+1).transpose()
 
 class Potential:
     """Class for representing a potential.
@@ -2307,3 +2318,58 @@ class Pysic:
         return [ -(energy_xp-energy_xm)/(2.0*shift),
                  -(energy_yp-energy_ym)/(2.0*shift),
                  -(energy_zp-energy_zm)/(2.0*shift) ]
+
+
+
+
+    def get_numerical_bond_order_gradient(self, coordinator, atom_index, moved_index, shift=0.001, atoms=None):
+        """Numerically calculates the gradient of a bond order factor with respect to moving a single particle.
+
+        This is for debugging the bond orders."""
+
+        if(atoms == None):
+            system = self.structure.copy()
+            orig_system = self.structure.copy()
+        else:
+            system = atoms.copy()
+            orig_system = atoms.copy()
+
+        self.energy_calculated = False
+        self.atoms_ready = False
+        crd = coordinator
+        system[moved_index].x += shift
+        energy_xp = self.get_potential_energy(system)
+        crd.calculate_bond_order_factors()
+        bond_xp = crd.get_bond_order_factors()[atom_index]
+        system[moved_index].x -= 2.0*shift
+        energy_xm = self.get_potential_energy(system)
+        crd.calculate_bond_order_factors()
+        bond_xm = crd.get_bond_order_factors()[atom_index]
+        system[moved_index].x += shift
+
+        system[moved_index].y += shift
+        energy_yp = self.get_potential_energy(system)
+        crd.calculate_bond_order_factors()
+        bond_yp = crd.get_bond_order_factors()[atom_index]
+        system[moved_index].y -= 2.0*shift
+        energy_ym = self.get_potential_energy(system)
+        crd.calculate_bond_order_factors()
+        bond_ym = crd.get_bond_order_factors()[atom_index]
+        system[moved_index].y += shift
+
+        system[moved_index].z += shift
+        energy_zp = self.get_potential_energy(system)
+        crd.calculate_bond_order_factors()
+        bond_zp = crd.get_bond_order_factors()[atom_index]
+        system[moved_index].z -= 2.0*shift
+        energy_zm = self.get_potential_energy(system)
+        crd.calculate_bond_order_factors()
+        bond_zm = crd.get_bond_order_factors()[atom_index]
+
+        self.energy_calculated = False
+        self.atoms_ready = False
+        self.get_potential_energy(orig_system)
+        
+        return [ (bond_xp-bond_xm)/(2.0*shift),
+                 (bond_yp-bond_ym)/(2.0*shift),
+                 (bond_zp-bond_zm)/(2.0*shift) ]

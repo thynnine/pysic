@@ -336,7 +336,6 @@ contains
   end subroutine calculate_coordinations
 
 
-
   subroutine calculate_bond_orders(n_atoms,group_index,bond_orders)
     implicit none
     integer, intent(in) :: n_atoms, group_index
@@ -345,6 +344,18 @@ contains
     call core_calculate_bond_orders(n_atoms,group_index,bond_orders)
 
   end subroutine calculate_bond_orders
+
+
+
+  subroutine calculate_bond_order_gradients(n_atoms,group_index,atom_index,gradients)
+    implicit none
+    integer, intent(in) :: n_atoms, group_index, atom_index
+    double precision, intent(out) :: gradients(3,n_atoms)
+
+    call core_calculate_bond_order_gradients(n_atoms,group_index,atom_index,gradients)
+
+  end subroutine calculate_bond_order_gradients
+
 
 
   ! Calculates the total energy of the system
