@@ -244,6 +244,15 @@ contains
 
   end subroutine allocate_bond_order_factors
 
+  subroutine allocate_bond_order_storage(n_atoms,n_groups,n_factors)
+    implicit none
+    integer, intent(in) :: n_atoms, n_groups, n_factors
+
+    call core_allocate_bond_order_storage(n_atoms,n_groups,n_factors)
+
+  end subroutine allocate_bond_order_storage
+
+
   subroutine add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
        elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index)
     implicit none
@@ -336,14 +345,17 @@ contains
   end subroutine calculate_coordinations
 
 
-  subroutine calculate_bond_orders(n_atoms,group_index,bond_orders)
+  subroutine calculate_bond_order_factors(n_atoms,group_index,bond_orders)
     implicit none
     integer, intent(in) :: n_atoms, group_index
     double precision, intent(out) :: bond_orders(n_atoms)
+    double precision :: raw_sums(n_atoms)
 
-    call core_calculate_bond_orders(n_atoms,group_index,bond_orders)
+!    call core_calculate_bond_order_factors(n_atoms,group_index,raw_sums)
+!    call core_post_process_bond_order_factors(n_atoms,group_index,raw_sums,bond_orders)
+    call core_get_bond_order_factors(n_atoms,group_index,bond_orders)
 
-  end subroutine calculate_bond_orders
+  end subroutine calculate_bond_order_factors
 
 
 
@@ -351,8 +363,10 @@ contains
     implicit none
     integer, intent(in) :: n_atoms, group_index, atom_index
     double precision, intent(out) :: gradients(3,n_atoms)
-
-    call core_calculate_bond_order_gradients(n_atoms,group_index,atom_index,gradients)
+    double precision :: bond_orders(n_atoms)
+ 
+    call core_get_bond_order_sums(n_atoms,group_index,bond_orders)
+    call core_calculate_bond_order_gradients(n_atoms,group_index,atom_index,bond_orders,gradients)
 
   end subroutine calculate_bond_order_gradients
 

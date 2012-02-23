@@ -234,18 +234,36 @@ contains
     double precision, intent(out) :: factor_out
     double precision :: beta, eta
     
-    factor_out = raw_sum
-
     select case(bond_params%type_index)
     case(tersoff_index)
        beta = bond_params%parameters(1,1)
        eta = bond_params%parameters(2,1)
-       write(*,*) "Potentials.f90 243: pp ", raw_sum, beta, eta
        factor_out = ( 1 + ( beta*raw_sum )**eta )**(-1.d0/(2.d0*eta))
+   case default
+       factor_out = raw_sum
     end select
 
   end subroutine post_process_bond_order_factor
 
+  subroutine post_process_bond_order_gradient(raw_sum, raw_gradient, bond_params, factor_out)
+    implicit none
+    double precision, intent(in) :: raw_sum, raw_gradient(3)
+    type(bond_order_parameters), intent(in) :: bond_params
+    double precision, intent(out) :: factor_out(3)
+    double precision :: beta, eta, inv_eta
+    
+    select case(bond_params%type_index)
+    case(tersoff_index)
+       beta = bond_params%parameters(1,1)
+       eta = bond_params%parameters(2,1)
+       inv_eta = -1.d0/(2.d0*eta)
+       factor_out = inv_eta * ( 1.d0 + ( beta*raw_sum )**eta )**(inv_eta-1.d0) * &
+            eta * (beta*raw_sum)**(eta-1.d0) * beta * raw_gradient
+    case default
+       factor_out = raw_gradient
+    end select
+
+  end subroutine post_process_bond_order_gradient
 
   subroutine evaluate_bond_order_factor(n_targets,separations,distances,bond_params,factor,atoms)
     implicit none
@@ -368,8 +386,8 @@ contains
                bond_params(1)%soft_cutoff,&
                tmp1)
           gradient(1:3,1,1) = -tmp1(1:3)
-          gradient(1:3,2,1) = tmp1(1:3)
-          gradient(1:3,1,2) = -tmp1(1:3)
+          gradient(1:3,2,1) = -tmp1(1:3)
+          gradient(1:3,1,2) = tmp1(1:3)
           gradient(1:3,2,2) = tmp1(1:3)
        end if
 

@@ -988,7 +988,7 @@ class Coordinator:
         this method only calculates the factors and stroes them but does not return them.
         """
         n_atoms = pf.pysic_interface.get_number_of_atoms()
-        self.bond_order_factors = pf.pysic_interface.calculate_bond_orders(n_atoms,self.group_index)
+        self.bond_order_factors = pf.pysic_interface.calculate_bond_order_factors(n_atoms,self.group_index)
 
 
     def get_bond_order_factors(self):
@@ -2107,8 +2107,6 @@ class Pysic:
             except:
                 pass
 
-
-
         n_bonds = 0
         for coord in coord_list:
             try:
@@ -2154,6 +2152,12 @@ class Pysic:
 
             except:
                 pass
+
+
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        pf.pysic_interface.allocate_bond_order_storage(n_atoms,
+                                                       pot_index,
+                                                       len(coord_list))
 
         self.potentials_ready = True
         

@@ -8,11 +8,19 @@ module pysic_core
   type(supercell) :: cell
   type(potential), pointer :: interactions(:)
   type(bond_order_parameters), pointer :: bond_factors(:)
-  integer :: n_interactions, n_bond_factors
+  integer :: n_interactions = 0, n_bond_factors = 0
   logical :: &
        atoms_created = .false., &
        potentials_allocated = .false., &
-       bond_factors_allocated = .false.
+       bond_factors_allocated = .false., &
+       bond_storage_allocated = .false.
+
+  ! storage for bond order factors during force and energy evaluation
+  double precision, pointer :: saved_bond_order_sums(:,:)
+  double precision, pointer :: saved_bond_order_factors(:,:)
+  integer :: n_saved_bond_order_factors = 0
+  integer, pointer :: group_index_save_slot(:)
+  logical :: use_saved_bond_order_factors = .false.
 
 contains
 
@@ -22,6 +30,7 @@ contains
     call core_clear_atoms()
     call core_clear_potentials()
     call core_clear_bond_order_factors()
+    call core_clear_bond_order_storage()
 
   end subroutine core_release_all_memory
 
@@ -171,7 +180,123 @@ contains
 
   end subroutine core_clear_bond_order_factors
 
+
+  subroutine core_clear_bond_order_storage()
+    implicit none
+
+    if(bond_storage_allocated)then
+       deallocate(saved_bond_order_sums)
+       deallocate(saved_bond_order_factors)
+       deallocate(group_index_save_slot)
+    else
+       nullify(saved_bond_order_sums)
+       nullify(saved_bond_order_factors)
+       nullify(group_index_save_slot)
+    end if
+    n_saved_bond_order_factors = 0
+    use_saved_bond_order_factors = .false.
+    bond_storage_allocated = .false.
+
+  end subroutine core_clear_bond_order_storage
+
+
+  subroutine core_empty_bond_order_storage()
+    implicit none
+
+    if(bond_storage_allocated)then
+       saved_bond_order_sums = 0.d0
+       saved_bond_order_factors = 0.d0
+       group_index_save_slot = -1
+       n_saved_bond_order_factors = 0
+    end if
+    
+  end subroutine core_empty_bond_order_storage
+
+
+  subroutine core_allocate_bond_order_storage(n_atoms,n_groups,n_factors)
+    implicit none
+    integer, intent(in) :: n_atoms, n_groups, n_factors
+
+    call core_clear_bond_order_storage()
+    allocate(saved_bond_order_sums(n_atoms,n_factors))
+    allocate(saved_bond_order_factors(n_atoms,n_factors))
+    allocate(group_index_save_slot(0:n_groups))
+    bond_storage_allocated = .true.
+    call core_empty_bond_order_storage()
+
+
+  end subroutine core_allocate_bond_order_storage
   
+
+  subroutine core_fill_bond_order_storage(n_atoms)
+    implicit none
+    integer, intent(in) :: n_atoms
+    integer :: i, group_index
+    double precision :: dummy_factors(n_atoms)
+
+    do i = 1, n_interactions
+       group_index = interactions(i)%pot_index
+       if(group_index > -1)then
+          call core_get_bond_order_sums(n_atoms,group_index,dummy_factors)
+       end if
+    end do
+
+  end subroutine core_fill_bond_order_storage
+
+  subroutine core_get_bond_order_sums(n_atoms,group_index,bond_order_sums)
+    implicit none
+    integer, intent(in) :: n_atoms, group_index
+    double precision, intent(out) :: bond_order_sums(n_atoms)
+    double precision :: bond_order_factors(n_atoms)
+    integer :: save_slot
+
+    if(use_saved_bond_order_factors)then
+       save_slot = group_index_save_slot(group_index)
+       if(save_slot > 0)then
+          bond_order_sums(1:n_atoms) = saved_bond_order_sums(1:n_atoms,save_slot)
+       else
+          call core_calculate_bond_order_factors(n_atoms,group_index,bond_order_sums)
+          call core_post_process_bond_order_factors(n_atoms,group_index,bond_order_sums,bond_order_factors)
+          n_saved_bond_order_factors = n_saved_bond_order_factors + 1
+          group_index_save_slot(group_index) = n_saved_bond_order_factors
+          saved_bond_order_sums(1:n_atoms,n_saved_bond_order_factors) = bond_order_sums(1:n_atoms)
+          saved_bond_order_factors(1:n_atoms,n_saved_bond_order_factors) = bond_order_factors(1:n_atoms)
+       end if
+    else
+       call core_calculate_bond_order_factors(n_atoms,group_index,bond_order_sums)       
+    end if
+
+  end subroutine core_get_bond_order_sums
+
+
+
+  subroutine core_get_bond_order_factors(n_atoms,group_index,bond_order_factors)
+    implicit none
+    integer, intent(in) :: n_atoms, group_index
+    double precision, intent(out) :: bond_order_factors(n_atoms)
+    double precision :: bond_order_sums(n_atoms)
+    integer :: save_slot
+
+    if(use_saved_bond_order_factors)then
+       save_slot = group_index_save_slot(group_index)
+       if(save_slot > 0)then
+          bond_order_factors(1:n_atoms) = saved_bond_order_factors(1:n_atoms,save_slot)
+       else
+          call core_calculate_bond_order_factors(n_atoms,group_index,bond_order_sums)
+          call core_post_process_bond_order_factors(n_atoms,group_index,bond_order_sums,bond_order_factors)
+          n_saved_bond_order_factors = n_saved_bond_order_factors + 1
+          group_index_save_slot(group_index) = n_saved_bond_order_factors
+          saved_bond_order_sums(1:n_atoms,n_saved_bond_order_factors) = bond_order_sums(1:n_atoms)
+          saved_bond_order_factors(1:n_atoms,n_saved_bond_order_factors) = bond_order_factors(1:n_atoms)
+       end if
+    else
+       call core_calculate_bond_order_factors(n_atoms,group_index,bond_order_sums)       
+       call core_post_process_bond_order_factors(n_atoms,group_index,bond_order_sums,bond_order_factors)
+    end if
+
+  end subroutine core_get_bond_order_factors
+
+
   subroutine core_allocate_potentials(n_pots)
     implicit none
     integer, intent(in) :: n_pots
@@ -395,11 +520,11 @@ contains
   ! Returns the gradients of all bond order factors with respect to
   ! moving a given atom.
   subroutine core_calculate_bond_order_gradients(n_atoms,group_index,&
-       atom_index,total_gradient,mpi_split)
+       atom_index,raw_sums,total_gradient)
     implicit none
     integer, intent(in) :: n_atoms, group_index, atom_index
     double precision, intent(out) :: total_gradient(3,n_atoms)
-    logical, optional, intent(in) :: mpi_split
+    double precision, intent(in) :: raw_sums(n_atoms)
     double precision :: gradient(3,n_atoms)
     type(atom) :: atom1, atom2, atom3
     type(atom) :: atom_list(3)
@@ -458,7 +583,7 @@ contains
                 ! store the gradients of the atom1 and atom2 terms
                 ! with respect to movind atom1 (the target atom)
                 gradient(1:3,index1) = gradient(1:3,index1) + tmp_grad(1:3,1,1)
-                gradient(1:3,index2) = gradient(1:3,index1) + tmp_grad(1:3,2,1)
+                gradient(1:3,index2) = gradient(1:3,index2) + tmp_grad(1:3,2,1)
 
              else if( n_targets > 2 )then
                    
@@ -646,20 +771,14 @@ contains
        end if ! many_bodies_found
     end do ! j = nbors1%n_neighbors
 
-!#ifdef MPI
-!    call mpi_allreduce(bond_orders,total_bond_orders,size(bond_orders),mpi_double_precision,&
-!         mpi_sum,mpi_comm_world,mpistat)
-!#else
-!    total_bond_orders = bond_orders
-!#endif
-
-    total_gradient = gradient
+    call core_post_process_bond_order_gradients(n_atoms,group_index,raw_sums,&
+         gradient,total_gradient)
 
   end subroutine core_calculate_bond_order_gradients
 
 
 
-  subroutine core_calculate_bond_orders(n_atoms,group_index,total_bond_orders)
+  subroutine core_calculate_bond_order_factors(n_atoms,group_index,total_bond_orders)
     implicit none
     integer, intent(in) :: n_atoms, group_index
     double precision, intent(out) :: total_bond_orders(n_atoms)
@@ -672,7 +791,6 @@ contains
     type(bond_order_parameters) :: bond_params(2)
     integer, pointer :: bond_indices(:), bond_indices2(:)
     logical :: is_active, is_in_group, many_bodies_found, separation3_unknown
-    integer :: post_process
 
     bond_orders = 0.d0
     total_bond_orders = 0.d0
@@ -904,24 +1022,35 @@ contains
 #ifdef MPI
     call mpi_allreduce(bond_orders,total_bond_orders,size(bond_orders),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
+    bond_orders = total_bond_orders
 #else
     total_bond_orders = bond_orders
 #endif
 
+  end subroutine core_calculate_bond_order_factors
 
-    return
-
-    !!!! this should be a separate subroutine !!!!
 
     ! bond-order post processing 
     !
     ! By post processing, we mean any operations done after calculating the
     ! sum of pair- and many-body terms. That is, if a factor is, say,
     !      b_i = 1 + sum_j c_ij,
-    ! the 'sum_j c_ij' would have been calculated above and the operation '1 +'
+    ! the 'sum_j c_ij' would have been calculated already and the operation '1 +'
     ! remains to be carried out.
     ! The post processing is done per atom regardless of if the
     ! bond factor is of a pair or many body type.
+  subroutine core_post_process_bond_order_factors(n_atoms,group_index,raw_sums,total_bond_orders)
+    implicit none
+    integer, intent(in) :: n_atoms, group_index
+    double precision, intent(out) :: total_bond_orders(n_atoms)
+    integer :: index1, index2
+    double precision, intent(in) :: raw_sums(n_atoms)
+    double precision :: bond_orders(n_atoms)
+    type(atom) :: atom1
+    type(bond_order_parameters) :: bond_params
+    integer, pointer :: bond_indices(:)
+    integer :: post_process
+
     do index1 = 1, size(atoms)
        
        ! in MPI, only consider the atoms allocated to this particular cpu
@@ -929,7 +1058,6 @@ contains
 
           ! target atom
           atom1 = atoms(index1)
-          nbors1 = atom1%neighbor_list
           bond_indices => atom1%bond_indices
 
           ! Check all the bond factors that affect the atom and see
@@ -942,9 +1070,9 @@ contains
           ! we do not want to apply the post processing several times.
           post_process = -1
           do index2 = 1, size(bond_indices)
-             bond_params(1) = bond_factors(bond_indices(index2))
-             if( bond_params(1)%includes_post_processing )then
-                if( bond_params(1)%original_elements(1) == atom1%element )then
+             bond_params = bond_factors(bond_indices(index2))
+             if( bond_params%includes_post_processing )then
+                if( bond_params%original_elements(1) == atom1%element )then
                    post_process = bond_indices(index2)
                    exit
                 end if
@@ -952,9 +1080,11 @@ contains
           end do
 
           if( post_process > 0 )then
-             call post_process_bond_order_factor(total_bond_orders(index1),&
+             call post_process_bond_order_factor(raw_sums(index1),&
                   bond_factors( post_process ), &
                   bond_orders(index1) )
+          else
+             bond_orders(index1) = raw_sums(index1)
           end if
 
        else
@@ -970,7 +1100,83 @@ contains
     total_bond_orders = bond_orders
 #endif
 
-  end subroutine core_calculate_bond_orders
+  end subroutine core_post_process_bond_order_factors
+
+  subroutine core_post_process_bond_order_gradients(n_atoms,group_index,raw_sums,&
+       raw_gradients,total_bond_gradients,mpi_split)
+    implicit none
+    integer, intent(in) :: n_atoms, group_index
+    double precision, intent(out) :: total_bond_gradients(3,n_atoms)
+    double precision, intent(in) :: raw_sums(n_atoms), raw_gradients(3,n_atoms)
+    logical, optional, intent(in) :: mpi_split
+    integer :: index1, index2
+    double precision :: bond_gradients(3,n_atoms)
+    type(atom) :: atom1
+    type(neighbor_list) :: nbors1
+    type(bond_order_parameters) :: bond_params
+    integer, pointer :: bond_indices(:)
+    integer :: post_process
+    logical :: evaluate
+
+    do index1 = 1, size(atoms)
+       
+       evaluate = .true.
+       ! in MPI, only consider the atoms allocated to this particular cpu
+       if(present(mpi_split))then
+          if(is_my_atom(index1) .or. .not.mpi_split)then
+             evaluate = .true.
+          else
+             evaluate = .false.
+          end if
+       end if
+       if(evaluate)then
+          ! target atom
+          atom1 = atoms(index1)
+          bond_indices => atom1%bond_indices
+
+          ! Check all the bond factors that affect the atom and see
+          ! if any of them require post processing.
+          ! If such a factor is found, the corresponding parameters
+          ! are saved to be used for the post processing.
+          ! Note that only one set of post processing parameters will
+          ! be used: the first found. This is because there may well
+          ! be several factors acting on the same type of atom and
+          ! we do not want to apply the post processing several times.
+          post_process = -1
+          do index2 = 1, size(bond_indices)
+             bond_params = bond_factors(bond_indices(index2))
+             if( bond_params%includes_post_processing )then
+                if( bond_params%original_elements(1) == atom1%element )then
+                   post_process = bond_indices(index2)
+                   exit
+                end if
+             end if
+          end do
+
+          if( post_process > 0 )then
+             call post_process_bond_order_gradient(raw_sums(index1),&
+                  raw_gradients(1:3,index1),&
+                  bond_factors( post_process ), &
+                  bond_gradients(1:3,index1) )
+          else
+             bond_gradients(1:3,index1) = raw_gradients(1:3,index1)
+          end if
+
+       else
+          bond_gradients(1:3,index1) = 0.d0
+       end if
+
+    end do
+
+#ifdef MPI
+    call mpi_allreduce(bond_gradients,total_bond_gradients,size(bond_gradients),mpi_double_precision,&
+         mpi_sum,mpi_comm_world,mpistat)
+#else
+    total_bond_gradients = bond_gradients
+#endif
+
+  end subroutine core_post_process_bond_order_gradients
+
 
 
   subroutine core_calculate_forces(n_atoms,total_forces)
@@ -1319,6 +1525,9 @@ contains
     energy = 0.d0
     total_energy = 0.d0
 
+    use_saved_bond_order_factors = .true.
+    call core_fill_bond_order_storage(size(atoms))
+
     do index1 = 1, size(atoms)
 
        ! in MPI, only consider the atoms allocated to this particular cpu
@@ -1522,6 +1731,9 @@ contains
 #else
     total_energy = energy
 #endif
+
+    use_saved_bond_order_factors = .false.
+    call core_empty_bond_order_storage()
 
   end subroutine core_calculate_energy
 
