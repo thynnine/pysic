@@ -370,14 +370,25 @@ contains
 
   end subroutine calculate_bond_order_gradients
 
+  subroutine calculate_bond_order_gradients_of_factor(n_atoms,group_index,atom_index,gradients)
+    implicit none
+    integer, intent(in) :: n_atoms, group_index, atom_index
+    double precision, intent(out) :: gradients(3,n_atoms)
+    double precision :: bond_orders(n_atoms)
+ 
+    call core_get_bond_order_sums(n_atoms,group_index,bond_orders)
+    call core_calculate_bond_order_gradients_of_factor(n_atoms,group_index,atom_index,bond_orders,gradients)
+
+  end subroutine calculate_bond_order_gradients_of_factor
 
 
   ! Calculates the total energy of the system
-  subroutine calculate_energy(energy)
+  subroutine calculate_energy(n_atoms,energy)
     implicit none
+    integer, intent(in) :: n_atoms
     double precision, intent(out) :: energy
 
-    call core_calculate_energy(energy)
+    call core_calculate_energy(n_atoms,energy)
 
   end subroutine calculate_energy
 

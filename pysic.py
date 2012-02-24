@@ -985,7 +985,7 @@ class Coordinator:
         """Recalculates the bond order factors for all atoms and stores them.
 
         Similarly to coordination numbers (:meth:`~pysic.Coordinator.calculate_coordination`),
-        this method only calculates the factors and stroes them but does not return them.
+        this method only calculates the factors and stores them but does not return them.
         """
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.bond_order_factors = pf.pysic_interface.calculate_bond_order_factors(n_atoms,self.group_index)
@@ -1012,6 +1012,22 @@ class Coordinator:
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         # add 1 to atom index because fortran indexing starts from 1, not 0
         return pf.pysic_interface.calculate_bond_order_gradients(n_atoms,self.group_index,atom_index+1).transpose()
+
+
+
+    def get_bond_order_gradients_of_factor(self,atom_index):
+        """Returns an array containing the gradients of the bond order factor of one atom with respect to moving any atom.
+
+        Parameters:
+
+        atom_index: integer
+            the index of the atom the position of which is being differentiated with
+        """
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        # add 1 to atom index because fortran indexing starts from 1, not 0
+        return pf.pysic_interface.calculate_bond_order_gradients_of_factor(n_atoms,self.group_index,atom_index+1).transpose()
+
+
 
 class Potential:
     """Class for representing a potential.
@@ -1851,13 +1867,16 @@ class Pysic:
                     if active_potential and potential.get_cutoff() > max_cut:
                         max_cut = potential.get_cutoff()
 
-                    for bond in potential.get_coordinator().get_bond_order_parameters():
-                        active_bond = False
-                        if bond.get_different_symbols().count(symbol) > 0:
-                            active_bond = True
-
-                        if active_bond:
-                            max_cut = bond.get_cutoff()
+                    try:
+                        for bond in potential.get_coordinator().get_bond_order_parameters():
+                            active_bond = False
+                            if bond.get_different_symbols().count(symbol) > 0:
+                                active_bond = True
+                                
+                            if active_bond:
+                                max_cut = bond.get_cutoff()
+                    except:
+                        pass
 
                 cuts.append(max_cut*scaler)
             return cuts
@@ -1879,7 +1898,8 @@ class Pysic:
         Calls the Fortran core to calculate the potential energy for the currently assigned structure.
         """
         self.set_core()
-        self.energy = pf.pysic_interface.calculate_energy()
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        self.energy = pf.pysic_interface.calculate_energy(n_atoms)
         self.energy_calculated = True
 
 
@@ -2298,6 +2318,7 @@ class Pysic:
 
         self.energy_calculated = False
         self.atoms_ready = False
+        energy_xp = self.get_potential_energy(system)
         system[atom_index].x += shift
         energy_xp = self.get_potential_energy(system)
         system[atom_index].x -= 2.0*shift
@@ -2341,6 +2362,7 @@ class Pysic:
         self.energy_calculated = False
         self.atoms_ready = False
         crd = coordinator
+        energy_xp = self.get_potential_energy(system)
         system[moved_index].x += shift
         energy_xp = self.get_potential_energy(system)
         crd.calculate_bond_order_factors()
@@ -2377,3 +2399,6 @@ class Pysic:
         return [ (bond_xp-bond_xm)/(2.0*shift),
                  (bond_yp-bond_ym)/(2.0*shift),
                  (bond_zp-bond_zm)/(2.0*shift) ]
+
+
+
