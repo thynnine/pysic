@@ -1875,9 +1875,9 @@ contains
                                      forces(1:3,index2) = forces(1:3,index2) + &
                                           ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2) - &
                                           cut_gradients(1:3,1)*cut_factors(2)*tmp_energy ) * &
-                                          ( bo_factors(index2) &
+                                          ( bo_factors(index1) &
                                           + bo_factors(index2) &
-                                          + bo_factors(index2) )/3.d0
+                                          + bo_factors(index3) )/3.d0
                                      
                                      ! force on atom 1:
                                      forces(1:3,index1) = forces(1:3,index1) + &
@@ -1885,15 +1885,15 @@ contains
                                           (cut_gradients(1:3,1)*cut_factors(2) + &
                                           cut_gradients(1:3,2)*cut_factors(1)) * tmp_energy ) * &
                                           ( bo_factors(index1) &
-                                          + bo_factors(index1) &
-                                          + bo_factors(index1) )/3.d0
+                                          + bo_factors(index2) &
+                                          + bo_factors(index3) )/3.d0
                                      
                                      ! force on atom 3:
                                      forces(1:3,index3) = forces(1:3,index3) + &
                                           ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2) - &
                                           cut_gradients(1:3,2)*cut_factors(1)*tmp_energy ) * &
-                                          ( bo_factors(index3) &
-                                          + bo_factors(index3) &
+                                          ( bo_factors(index1) &
+                                          + bo_factors(index2) &
                                           + bo_factors(index3) )/3.d0
                                      
                                   end if
@@ -2011,30 +2011,29 @@ contains
                                      ! -D (f1 f2 V) = - (D f1) f2 V - f1 (D f2) V - f1 f2 (D V)
                                      ! f1: a1 -- a2, f2: a2 -- a3
                                      
-                                     
                                      ! force on atom 1:
                                      forces(1:3,index1) = forces(1:3,index1) + &
                                           ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2) + &
                                           cut_gradients(1:3,1)*cut_factors(2)*tmp_energy ) * &
                                           ( bo_factors(index1) &
-                                          + bo_factors(index1) &
-                                          + bo_factors(index1) )/3.d0
+                                          + bo_factors(index2) &
+                                          + bo_factors(index3) )/3.d0
                                      
                                      ! force on atom 2:
                                      forces(1:3,index2) = forces(1:3,index2) + &
                                           ( tmp_forces(1:3,2)*cut_factors(1)*cut_factors(2) - &
                                           cut_gradients(1:3,1)*cut_factors(2)*tmp_energy + &
                                           cut_gradients(1:3,2)*cut_factors(1)*tmp_energy ) * &
-                                          ( bo_factors(index2) &
+                                          ( bo_factors(index1) &
                                           + bo_factors(index2) &
-                                          + bo_factors(index2) )/3.d0
+                                          + bo_factors(index3) )/3.d0
                                      
                                      ! force on atom 3:
                                      forces(1:3,index3) = forces(1:3,index3) + &
                                           ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2) - &
                                           cut_gradients(1:3,2)*cut_factors(1)*tmp_energy ) * &
-                                          ( bo_factors(index3) &
-                                          + bo_factors(index3) &
+                                          ( bo_factors(index1) &
+                                          + bo_factors(index2) &
                                           + bo_factors(index3) )/3.d0
                                      
                                   end if ! cutoff
@@ -2238,7 +2237,7 @@ contains
                                      call evaluate_energy(3,separations(1:3,1:2),distances(1:2),&
                                           interaction,tmp_energy,atom_list)
                                      energy = energy + tmp_energy*cut_factors(1)*cut_factors(2)*&
-                                          (bo_factors(1)+bo_factors(2)+bo_factors(3))/3.d0
+                                          (bo_factors(index1)+bo_factors(index2)+bo_factors(index3))/3.d0
 
                                   end if
 
@@ -2305,7 +2304,7 @@ contains
                                      call evaluate_energy(3,separations(1:3,1:2),distances(1:2),&
                                           interaction,tmp_energy,atom_list)
                                      energy = energy + tmp_energy*cut_factors(1)*cut_factors(2)*&
-                                          (bo_factors(1)+bo_Factors(2)+bo_Factors(3))/3.d0
+                                          (bo_factors(index1)+bo_factors(index2)+bo_factors(index3))/3.d0
 
                                   end if
 
