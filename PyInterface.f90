@@ -136,6 +136,15 @@ contains
   end subroutine start_potentials
 
 
+  ! Initializes the potentials module
+  subroutine start_bond_order_factors()
+    implicit none
+
+    call initialize_bond_order_factor_characterizers()
+
+  end subroutine start_bond_order_factors
+
+
   ! Creates a supercell for containing the calculation geometry
   subroutine create_cell(vectors,inverse,periodicity)
     implicit none
@@ -212,6 +221,11 @@ contains
     call list_interactions()
   end subroutine examine_potentials
 
+  subroutine examine_bond_order_factors()
+    implicit none
+    call list_bonds()
+  end subroutine examine_bond_order_factors
+
 
   ! Creates potentials for describing the atomic interactions
   subroutine allocate_potentials(n_pots)
@@ -222,11 +236,27 @@ contains
 
   end subroutine allocate_potentials
 
+  subroutine allocate_bond_order_factors(n_bonds)
+    implicit none
+    integer, intent(in) :: n_bonds
+
+    call core_allocate_bond_order_factors(n_bonds)
+
+  end subroutine allocate_bond_order_factors
+
+  subroutine allocate_bond_order_storage(n_atoms,n_groups,n_factors)
+    implicit none
+    integer, intent(in) :: n_atoms, n_groups, n_factors
+
+    call core_allocate_bond_order_storage(n_atoms,n_groups,n_factors)
+
+  end subroutine allocate_bond_order_storage
+
 
   subroutine add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
-       elements,tags,indices,orig_elements,orig_tags,orig_indices)
+       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index)
     implicit none
-    integer, intent(in) :: n_targets, n_params
+    integer, intent(in) :: n_targets, n_params,pot_index
     character(len=*), intent(in) :: pot_name
     double precision, intent(in) :: parameters(n_params)
     double precision, intent(in) :: cutoff, smooth_cut
@@ -244,9 +274,36 @@ contains
     end do
     ! indices +1 because fortran starts indexing from 1
     call core_add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
-         elements_str,tags,indices+1,orig_elements_str,orig_tags,orig_indices+1)
+         elements_str,tags,indices+1,orig_elements_str,orig_tags,orig_indices+1,pot_index)
 
   end subroutine add_potential
+
+
+
+  subroutine add_bond_order_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
+       cutoff,smooth_cut,elements,orig_elements,group_index)
+    implicit none
+    integer, intent(in) :: n_targets, n_params, n_split
+    integer, intent(in) :: param_split(n_split), group_index
+    character(len=*), intent(in) :: bond_name
+    double precision, intent(in) :: parameters(n_params)
+    double precision, intent(in) :: cutoff, smooth_cut
+    integer, intent(in) :: elements(2,n_targets) ! label_length
+    integer, intent(in) :: orig_elements(2,n_targets) ! label_length
+    character(len=2) :: elements_str(n_targets), orig_elements_str(n_targets) ! label_length
+    integer :: i
+
+    ! translates the integer-formatted labels to characters
+    do i = 1, n_targets
+       call int2str(2,elements(:,i),elements_str(i))
+       call int2str(2,orig_elements(:,i),orig_elements_str(i))
+    end do
+    call core_add_bond_order_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
+         cutoff,smooth_cut,elements_str,orig_elements_str,group_index)
+
+  end subroutine add_bond_order_factor
+
+
 
 
   ! Creates neighbor lists
@@ -270,12 +327,68 @@ contains
   end subroutine create_potential_list
 
 
-  ! Calculates the total energy of the system
-  subroutine calculate_energy(energy)
+  subroutine create_bond_order_factor_list()
     implicit none
+
+    call core_assign_bond_order_factor_indices()
+
+  end subroutine create_bond_order_factor_list
+
+  subroutine calculate_coordinations(n_atoms,cutoffs,coordinations)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(in) :: cutoffs(2)
+    double precision, intent(out) :: coordinations(n_atoms)
+
+    call core_calculate_coordinations(n_atoms,cutoffs,coordinations)
+
+  end subroutine calculate_coordinations
+
+
+  subroutine calculate_bond_order_factors(n_atoms,group_index,bond_orders)
+    implicit none
+    integer, intent(in) :: n_atoms, group_index
+    double precision, intent(out) :: bond_orders(n_atoms)
+    double precision :: raw_sums(n_atoms)
+
+!    call core_calculate_bond_order_factors(n_atoms,group_index,raw_sums)
+!    call core_post_process_bond_order_factors(n_atoms,group_index,raw_sums,bond_orders)
+    call core_get_bond_order_factors(n_atoms,group_index,bond_orders)
+
+  end subroutine calculate_bond_order_factors
+
+
+
+  subroutine calculate_bond_order_gradients(n_atoms,group_index,atom_index,gradients)
+    implicit none
+    integer, intent(in) :: n_atoms, group_index, atom_index
+    double precision, intent(out) :: gradients(3,n_atoms)
+    double precision :: bond_orders(n_atoms)
+ 
+    call core_get_bond_order_sums(n_atoms,group_index,bond_orders)
+    call core_calculate_bond_order_gradients(n_atoms,group_index,atom_index,bond_orders,gradients)
+
+  end subroutine calculate_bond_order_gradients
+
+  subroutine calculate_bond_order_gradients_of_factor(n_atoms,group_index,atom_index,gradients)
+    implicit none
+    integer, intent(in) :: n_atoms, group_index, atom_index
+    double precision, intent(out) :: gradients(3,n_atoms)
+    double precision :: bond_orders(n_atoms)
+ 
+    call core_get_bond_order_sums(n_atoms,group_index,bond_orders)
+    call core_calculate_bond_order_gradients_of_factor(n_atoms,group_index,atom_index,bond_orders,gradients)
+
+  end subroutine calculate_bond_order_gradients_of_factor
+
+
+  ! Calculates the total energy of the system
+  subroutine calculate_energy(n_atoms,energy)
+    implicit none
+    integer, intent(in) :: n_atoms
     double precision, intent(out) :: energy
 
-    call core_calculate_energy(energy)
+    call core_calculate_energy(n_atoms,energy)
 
   end subroutine calculate_energy
 
@@ -307,6 +420,14 @@ contains
 
   end subroutine number_of_potentials
 
+  ! Tells the number of differently named bond order factors the core knows
+  subroutine number_of_bond_order_factors(n_bonds)
+    implicit none
+    integer, intent(out) :: n_bonds
+
+    call get_number_of_bond_order_factors(n_bonds)
+
+  end subroutine number_of_bond_order_factors
 
   ! Tells whether a given keyword defines a potential or not
   subroutine is_potential(string,is_ok)
@@ -318,6 +439,15 @@ contains
 
   end subroutine is_potential
 
+  ! Tells whether a given keyword defines a bond order factor or not
+  subroutine is_bond_order_factor(string,is_ok)
+    implicit none
+    character(len=*), intent(in) :: string
+    logical, intent(out) :: is_ok
+
+    call is_valid_bond_order_factor(string,is_ok)
+
+  end subroutine is_bond_order_factor
 
   ! Lists all the keywords which define a potential
   subroutine list_valid_potentials(n_pots,potentials)
@@ -327,13 +457,27 @@ contains
     character(len=11), dimension(n_pots) :: pots ! pot_name_length
     integer :: i
 
-    call list_potentials(pots)
+    call list_potentials(n_pots,pots)
     do i = 1, n_pots
        call str2int(pot_name_length,pots(i),potentials(1:pot_name_length,i))
     end do
 
   end subroutine list_valid_potentials
 
+  ! Lists all the keywords which define a bond order factor
+  subroutine list_valid_bond_order_factors(n_bonds,bond_factors)
+    implicit none
+    integer, intent(in) :: n_bonds
+    integer, intent(out) :: bond_factors(11,n_bonds) ! pot_name_length
+    character(len=11), dimension(n_bonds) :: bonds ! pot_name_length
+    integer :: i
+
+    call list_bond_order_factors(n_bonds,bonds)
+    do i = 1, n_bonds
+       call str2int(pot_name_length,bonds(i),bond_factors(1:pot_name_length,i))
+    end do
+
+  end subroutine list_valid_bond_order_factors
 
   ! Tells how many targets a potential has, i.e., is it a many-body potential
   subroutine number_of_targets_of_potential(pot_name, n_target)
@@ -345,6 +489,15 @@ contains
 
   end subroutine number_of_targets_of_potential
 
+  ! Tells how many targets a bond order factor has, i.e., is it many-body
+  subroutine number_of_targets_of_bond_order_factor(bond_name, n_target)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    integer, intent(out) :: n_target
+
+    call get_number_of_targets_of_bond_order_factor(bond_name,n_target)
+
+  end subroutine number_of_targets_of_bond_order_factor
 
   ! Tells how many numeric parameters a potential incorporates
   subroutine number_of_parameters_of_potential(pot_name, n_params)
@@ -357,10 +510,22 @@ contains
   end subroutine number_of_parameters_of_potential
 
 
+  ! Tells how many numeric parameters a bond order factor incorporates
+  subroutine number_of_parameters_of_bond_order_factor(bond_name, n_targets, n_params)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    integer, intent(in) :: n_targets
+    integer, intent(out) :: n_params
+
+    call get_number_of_parameters_of_bond_order_factor(bond_name,n_targets,n_params)
+
+  end subroutine number_of_parameters_of_bond_order_factor
+
+
   subroutine names_of_parameters_of_potential(pot_name,param_names)
     implicit none
     character(len=*), intent(in) :: pot_name
-    integer, intent(out) :: param_names(10,3) ! param_name_length, n_max_param
+    integer, intent(out) :: param_names(10,4) ! param_name_length, n_max_param
     character(len=10), pointer :: param_name_str(:) ! param_name_length
     integer :: i
     
@@ -371,6 +536,24 @@ contains
     end do
 
   end subroutine names_of_parameters_of_potential
+
+
+  subroutine names_of_parameters_of_bond_order_factor(bond_name,n_targets,param_names)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    integer, intent(in) :: n_targets
+    integer, intent(out) :: param_names(10,4) ! param_name_length, n_max_param
+    character(len=10), pointer :: param_name_str(:) ! param_name_length
+    integer :: i
+    
+    call get_names_of_parameters_of_bond_order_factor(bond_name, n_targets, param_name_str)
+    param_names = 0
+    do i = 1, size(param_name_str(:))
+       call str2int(param_name_length,param_name_str(i),param_names(1:param_name_length,i))
+    end do
+
+  end subroutine names_of_parameters_of_bond_order_factor
+
 
 
   subroutine descriptions_of_parameters_of_potential(pot_name,param_notes)
@@ -389,6 +572,25 @@ contains
   end subroutine descriptions_of_parameters_of_potential
 
 
+
+  subroutine descriptions_of_parameters_of_bond_order_factor(bond_name,n_targets,param_notes)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    integer, intent(in) :: n_targets
+    integer, intent(out) :: param_notes(100,4) ! param_note_length, n_max_param
+    character(len=100), pointer :: param_note_str(:) ! param_note_length
+    integer :: i
+    
+    call get_descriptions_of_parameters_of_bond_order_factor(bond_name,n_targets,param_note_str)
+    param_notes = 0
+    do i = 1, size(param_note_str(:))
+       call str2int(param_note_length,param_note_str(i),param_notes(1:param_note_length,i))
+    end do
+
+  end subroutine descriptions_of_parameters_of_bond_order_factor
+
+
+
   subroutine description_of_potential(pot_name,description)
     implicit none
     character(len=*), intent(in) :: pot_name
@@ -397,6 +599,17 @@ contains
     call get_description_of_potential(pot_name,description)
 
   end subroutine description_of_potential
+
+
+
+  subroutine description_of_bond_order_factor(bond_name,description)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    character(len=500), intent(out) :: description ! pot_note_length
+    
+    call get_description_of_bond_order_factor(bond_name,description)
+
+  end subroutine description_of_bond_order_factor
 
 
   subroutine release()

@@ -39,7 +39,52 @@ class InvalidPotentialError(Exception):
         if(self.potential == None):
             return self.message
         else:
-            return self.messsage + " - the Potential: " + repr(potential)
+            return self.messsage + " \n the Potential: " + str(self.potential)
+
+
+
+class InvalidCoordinatorError(Exception):
+    """An error raised when an invalid coordination calculator is about to be created or used.
+
+    Parameters:
+
+    message: string
+        information describing why the error occurred
+    coordinator: :class:`~pysic.Coordinator`
+        the errorneous coordinator
+    """
+    def __init__(self,message='',coordinator=None):
+        self.message = message
+        self.coordinator = coordinator
+
+    def __str__(self):
+        if(self.coordinator == None):
+            return self.message
+        else:
+            return self.messsage + " \n  the Coordinator: " + str(self.coordinator)
+
+
+
+
+class InvalidParametersError(Exception):
+    """An error raised when an invalid set of parameters is about to be created.
+
+    Parameters:
+
+    message: string
+        information describing why the error occurred
+    params: :class:`~pysic.BondOrderParameters`
+        the errorneous parameters
+    """
+    def __init__(self,message='',params=None):
+        self.message = message
+        self.params = params
+
+    def __str__(self):
+        if(self.params == None):
+            return self.message
+        else:
+            return self.messsage + " \n  the Parameters: " + str(self.params)
 
 
 class MissingAtomsError(Exception):
@@ -96,14 +141,18 @@ class LockedCoreError(Exception):
 
 # automatically call the initialization routine in Potentials.f90
 pf.pysic_interface.start_potentials()
+pf.pysic_interface.start_bond_order_factors()
 
 # automatically initialize mpi - fortran side decides if we really are in mpi
 pf.pysic_interface.start_mpi()
 
 # automatically initialize the fortran rng
-# it needs to be possible to force a seed by the user
+# it needs to be possible to force a seed by the user - to be implemented
 pf.pysic_interface.start_rng(5301)#rnd.randint(1, 999999))
 
+#####
+##### ToDo: Implement a single instance class which reflects the status of the core.
+#####
 
 def finish_mpi():
     """Terminates the MPI framework.
@@ -135,16 +184,10 @@ def get_cpu_id():
     return pf.pysic_interface.get_cpu_id()
 
 
-#def distribute_mpi_load(pysic_calculator):
-#    """Distributes atoms among processors in the Fortran MPI core.
-#
-#    Parameters:
-#
-#    pysic_calculator: :class:`pysic.Pysic~` object
-#        the calculator object whose structure is used for distributing the MPI load.
-#    """
-#    pf.pysic_interface.distribute_mpi(pysic_calculator.get_atoms().get_number_of_atoms())
-
+def list_potentials():
+    """Same as :meth:`~pysic.list_valid_potentials`
+    """
+    return list_valid_potentials()
 
 def list_valid_potentials():
     """A list of names of potentials currently known by the core.
@@ -161,7 +204,38 @@ def list_valid_potentials():
 
     return pot_names
 
-# Checks if the given keyword defines a potential
+
+def list_bond_order_factors():
+    """Same as :meth:`~pysic.list_valid_bond_order_factors`
+    """
+    return list_valid_bond_order_factors()
+
+def list_valid_bond_order_factors():
+    """A list of names of bond order factors currently known by the core.
+
+    The method retrieves from the core a list of the names of different bond factors
+    currently implemented. Since the fortran core is directly accessed, any
+    updates made in the core source code should get noticed automatically.
+    """
+    n_bonds = pf.pysic_interface.number_of_bond_order_factors()
+    bond_codes = pf.pysic_interface.list_valid_bond_order_factors(n_bonds).transpose()
+    bond_names = []
+    for code in bond_codes:
+        bond_names.append(pu.ints2str(code))
+
+    return bond_names
+
+
+def is_potential(potential_name):
+    """Same as :meth:`~pysic.is_valid_potential`
+    
+    Parameters:
+
+    potential_name: string
+        the name of the potential
+    """
+    return pf.pysic_interface.is_potential(potential_name)
+
 def is_valid_potential(potential_name):
     """Tells if the given string is the name of a potential.
 
@@ -172,86 +246,230 @@ def is_valid_potential(potential_name):
     """
     return pf.pysic_interface.is_potential(potential_name)
 
+
+def is_bond_order_factor(bond_order_name):
+    """Same as :meth:`~pysic.is_valid_bond_order_factor`
+
+    Parameters:
+
+    bond_order_name: string
+        the name of the bond order factor
+    """
+    return pf.pysic_interface.is_bond_order_factor(bond_order_name)
+
+def is_valid_bond_order_factor(bond_order_name):
+    """Tells if the given string is the name of a bond order factor.
+
+    Parameters:
+
+    bond_order_name: string
+        the name of the bond order factor
+    """
+    return pf.pysic_interface.is_bond_order_factor(bond_order_name)
+
+
+
 def number_of_targets(potential_name):
-    """Tells how many targets a potential acts on, i.e., is it pair or many-body.
+    """Tells how many targets a potential or bond order factor acts on, i.e., is it pair or many-body.
 
     Parameters:
 
     potential_name: string
-        the name of the potential
+        the name of the potential or bond order factor
     """
-    return pf.pysic_interface.number_of_targets_of_potential(potential_name)
 
-def number_of_parameters(potential_name):
-    """Tells how many parameters a potential incorporates.
+    if(is_potential(potential_name)):
+        return pf.pysic_interface.number_of_targets_of_potential(potential_name)
+    elif(is_bond_order_factor(potential_name)):
+        return pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
+    else:
+        return 0
+
+
+
+def number_of_parameters(potential_name,as_list=False):
+    """Tells how many parameters a potential or bond order factor incorporates.
+
+    A potential has a simple list of parameters and thus the function returns
+    by default a single number. A bond order factor can incorporate parameters for
+    different number of targets (some for single elements, others for pairs, etc.), and
+    so a list of numbers is returned, representing the number of single, pair etc.
+    parameters. If the parameter 'as_list' is given and is True, the result is
+    a list containing one number also for a potential.
 
     Parameters:
 
     potential_name: string
-        the name of the potential
+        the name of the potential or bond order factor
+    as_list: logical
+        should the result always be a list
     """
-    return pf.pysic_interface.number_of_parameters_of_potential(potential_name)
+    
+    if(is_potential(potential_name)):
+        n_params = pf.pysic_interface.number_of_parameters_of_potential(potential_name)
+        if as_list:
+            return [n_params]
+        else:
+            return n_params
+    elif(is_bond_order_factor(potential_name)):
+        n_targets = pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
+        n_params = [ [""] ]*n_targets
+        for i in range(n_targets):
+            n_params[i] = pf.pysic_interface.number_of_parameters_of_bond_order_factor(potential_name,i+1)
+        return n_params
+    else:
+        return 0
 
 def names_of_parameters(potential_name):
-    """Lists the names of the parameters of a potential.
+    """Lists the names of the parameters of a potential or bond order factor.
+
+    For a potential, a simple list of names is returned. For a bond order factor, the
+    parameters are categorised according to the number of targets they apply to
+    (single element, pair, etc.). So, for a bond order factor, a list of lists is
+    returned, where the first list contains the single element parameters, the second
+    list the pair parameters etc.
 
     Parameters:
 
     potential_name: string
-        the name of the potential
+        the name of the potential or bond order factor
     """
-    param_codes = pf.pysic_interface.names_of_parameters_of_potential(potential_name).transpose()
-    param_names = []
-    n_params = number_of_parameters(potential_name)
-    index = 0
-    for code in param_codes:
-        if index < n_params:
-            param_names.append(pu.ints2str(code).strip())
-            index += 1
+    
+    if(is_potential(potential_name)):
+        param_codes = pf.pysic_interface.names_of_parameters_of_potential(potential_name).transpose()
 
-    return param_names
+        param_names = []
+        n_params = number_of_parameters(potential_name)
+        index = 0
+        for code in param_codes:
+            if index < n_params:
+                param_names.append(pu.ints2str(code).strip())
+                index += 1
+                
+        return param_names
+
+    elif(is_bond_order_factor(potential_name)):
+        n_targets = pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
+        param_codes = [ [0] ]*n_targets
+        param_names = [ [] ]*n_targets
+        n_params = number_of_parameters(potential_name)
+
+        for i in range(n_targets):
+            param_codes[i] = pf.pysic_interface.names_of_parameters_of_bond_order_factor(potential_name,i+1).transpose()
+            param_names[i] = [""]*n_params[i]
+
+
+        target_index = 0
+        for target_codes in param_codes:
+            index = 0
+            for code in target_codes:
+                if index < n_params[target_index]:
+                    param_names[target_index][index] = pu.ints2str(code).strip()
+                    index += 1
+            target_index += 1
+        return param_names
+            
+    else:
+        return []
 
 def index_of_parameter(potential_name, parameter_name):
-    """Tells the index of a parameter of a potential in the list of parameters the potential uses.
+    """Tells the index of a parameter of a potential or bond order factor in the list of parameters the potential uses.
+
+    For a potential, the index of the specified parameter is given.
+    For a bond order factor, a list of two integers is given.
+    These give the number of targets (single element, pair etc.) the parameter
+    is associated with and the list index.
+
+    Note especially that an index is returned, and these start counting from 0.
+    So for a bond order factor, a parameter for pairs (2 targets) will return 1
+    as the index for number of targets.
 
     Parameters:
 
     potential_name: string
-        the name of the potential
+        the name of the potential or bond order factor
     parameter_name: string
         the name of the parameter
     """
-    param_names = names_of_parameters(potential_name)
-    index = 0
-    for name in param_names:
-        if name == parameter_name:
-            return index
-        index += 1
+    
+    if(is_potential(potential_name)):
+        param_names = names_of_parameters(potential_name)
+        index = 0
+        for name in param_names:
+            if name == parameter_name:
+                return index
+            index += 1
+    elif(is_bond_order_factor(potential_name)):
+        param_names = names_of_parameters(potential_name)
+        target_index = 0
+        for listed in param_names:
+            index = 0
+            for name in listed:
+                if name == parameter_name:
+                    return [target_index,index]
+                index += 1
+            target_index += 1
+    else:
+        return None
+
 
 
 def descriptions_of_parameters(potential_name):
-    """Returns a list of strings containing physical names of the parameters of a potential,
+    """Returns a list of strings containing physical names of the parameters of a potential or bond order factor,
     e.g., 'spring constant' or 'decay length'.
+    
+    For a potential, a simple list of descriptions is returned. For a bond order factor, the
+    parameters are categorised according to the number of targets they apply to
+    (single element, pair, etc.). So, for a bond order factor, a list of lists is
+    returned, where the first list contains the single element parameters, the second
+    list the pair parameters etc.
     
     Parameters:
 
     potential_name: string
-        the name of the potential
+        the name of the potential or bond order factor
     """
-    param_codes = pf.pysic_interface.descriptions_of_parameters_of_potential(potential_name).transpose()
-    param_notes = []
-    n_params = number_of_parameters(potential_name)
-    index = 0
-    for code in param_codes:
-        if index < n_params:
-            param_notes.append(pu.ints2str(code).strip())
-            index += 1
+    
+    if(is_potential(potential_name)):
+        param_codes = pf.pysic_interface.descriptions_of_parameters_of_potential(potential_name).transpose()
+        param_notes = []
+        n_params = number_of_parameters(potential_name)
+        index = 0
+        for code in param_codes:
+            if index < n_params:
+                param_notes.append(pu.ints2str(code).strip())
+                index += 1
+    
+    elif(is_bond_order_factor(potential_name)):
+        n_targets = pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
+        param_codes = [ [0] ]*n_targets
+        param_names = [ [] ]*n_targets
+        n_params = number_of_parameters(potential_name)
+
+        for i in range(n_targets):
+            param_codes[i] = pf.pysic_interface.descriptions_of_parameters_of_bond_order_factor(potential_name,i+1).transpose()
+            param_names[i] = [""]*n_params[i]
+
+        target_index = 0
+        for target_codes in param_codes:
+            index = 0
+            for code in target_codes:
+                if index < n_params[target_index]:
+                    param_names[target_index][index] = pu.ints2str(code).strip()
+                    index += 1
+            target_index += 1
+        return param_names
+            
+    else:
+        return []
 
     return param_notes
 
 def description_of_potential(potential_name, parameter_values=None, cutoff=None,
                              elements=None, tags=None, indices=None):
-    """Prints a brief description of a potential. If optional arguments are provided,
+    """Prints a brief description of a potential.
+
+    If optional arguments are provided,
     they are incorporated in the description. That is, by default the method describes
     the general features of a potential, but it can also be used for describing a
     particular potential with set parameters.
@@ -308,6 +526,509 @@ parameters ({n_par}):
 
 
 
+
+
+
+class BondOrderParameters:
+    """Class for representing a collection of parameters for bond order calculations.
+
+    Calculating bond order factors using Tersoff-like methods defined in
+    :class:`~pysic.Coordinator` requires several parameters per element and
+    element pair. To facilitate the handling of all these parameters, they are
+    wrapped in a BondOrderParameters object.
+
+    The object can be created empty and filled later with the parameters. Alternatively,
+    a list of parameters can be given upon initialization in which case it is passed
+    to the :meth:`~pysic.BondOrderParameter.set_parameters` method.
+
+    Parameters:
+
+    bond_order_type: string
+        a keyword specifying the type of the bond order factor
+    soft_cut: double
+        The soft cutoff for calculating partial coordination.
+        Any atom closer than this is considered a full neighbor.
+    hard_cut: double
+        The hard cutoff for calculating partial coordination.
+        Any atom closer than this is considered (at least) a partial neighbor
+        and will give a fractional contribution to the total coordination.
+        Any atom farther than this will not contribute to the neighbor count.
+    parameters: list of doubles
+        a list of parameters to be contained in the parameter object
+    symbols: list of strings
+        a list of elements on which the factor is applied
+    """
+    
+    def __init__(self,bond_order_type,cutoff=0.0,cutoff_margin=0.0,parameters=None,symbols=None):
+        self.params = []
+
+        if(not is_valid_bond_order_factor(bond_order_type)):
+            raise InvalidParametersError('There is no bond order factor called "{bof}"'.format(bof=bond_order_type))
+
+        self.bond_order_type = bond_order_type
+        self.cutoff = cutoff
+        self.cutoff_margin = 0.0
+        self.set_cutoff_margin(cutoff_margin)
+        self.n_targets = number_of_targets(bond_order_type)
+        self.names_of_params = names_of_parameters(bond_order_type)
+        self.n_params = number_of_parameters(bond_order_type)
+
+        if parameters == None:
+            self.parameters = self.n_targets*[[]]
+            for index in range(len(self.parameters)): 
+                self.parameters[index] = self.n_params[index]*[0.0]
+        else:  
+            self.set_parameters(parameters)
+
+        self.symbols = None
+        self.set_symbols(symbols)
+
+        
+    def __repr__(self):
+        return "BondOrderParameters( bond_order_type='"+self.bond_order_type+\
+               "',cutoff="+str(self.cutoff)+",cutoff_margin="+str(self.cutoff_margin)+\
+               ",parameters="+str(self.parameters)+",symbols="+str(self.symbols)+" )"
+
+
+    def __eq__(self,other):
+        try:
+            if other == None:
+                return False
+            if self.bond_order_type != other.bond_order_type:
+                return False
+            if self.cutoff != other.cutoff:
+                return False
+            if self.cutoff_margin != other.cutoff_margin:
+                return False
+            if self.parameters != other.parameters:
+                return False
+            if self.symbols != other.symbols:
+                return False
+        except:
+            return False
+
+        return True
+
+    def __ne__(self,other):
+        return not self.__eq__(other)
+            
+    def accepts_parameters(self,params):
+        """Test if the given parameters array has the correct dimensions.
+
+        A bond order parameter can contain separate parameters for single,
+        pair etc. elements and each class can have a different number of
+        parameters. This method checks if the given list has the correct
+        dimensions.
+
+        Parameters:
+
+        params: list of doubles
+            list of parameters
+        """
+        if(len(params) != len(self.n_params)):
+            return False
+        for i in range(len(self.n_params)):
+            if(len(params[i]) != self.n_params[i]):
+                return False
+        return True
+
+
+    def get_number_of_parameters(self):
+        """Returns the number of parameters the bond order parameter object contains.
+        """
+        return self.n_params
+
+
+    def get_number_of_targets(self):
+        """Returns the (maximum) number of targets the bond order factor affects.
+        """
+        return len(self.n_params)
+
+    def get_parameters_as_list(self):
+        """Returns the parameters of the bond order factor as a single list.
+
+        The generated list first contains the single element parameters, then
+        pair parameters, etc.
+        """
+        allparams = []
+        for target_params in self.parameters:
+            for param in target_params:
+                allparams.append(param)
+        return allparams
+
+    def set_symbols(self,symbols):
+        """Sets the list of symbols to equal the given list.
+
+        Parameters:
+
+        symbols: list of strings
+            list of element symbols on which the bond order factor acts
+        """
+        if symbols == None:
+            return
+        if(self.accepts_target_list(symbols)):
+            self.symbols = symbols
+        elif(self.accepts_target_list([symbols])):
+            self.symbols = [symbols]
+        else:
+            raise InvalidParametersError("Invalid number of targets.")
+
+        
+    def add_symbols(self,symbols):
+        """Adds the given symbols to the list of symbols.
+
+        Parameters:
+
+        symbols: list of strings
+            list of additional symbols on which the bond order factor acts
+        """
+        if(self.accepts_target_list(symbols)):
+            if self.symbols == None:
+                self.symbols = []
+
+            for stuff in symbols:
+                self.symbols.append(stuff)
+        elif(self.accepts_target_list([symbols])):
+            if self.symbols == None:
+                self.symbols = []
+
+            self.symbols.append(symbols)
+        else:
+            raise InvalidParametersError("Invalid number of targets.")
+
+
+    def get_symbols(self):
+        """Returns the symbols the bond parameters affect.
+        """
+
+        return self.symbols
+
+    def get_different_symbols(self):
+        """Returns a list containing each symbol the potential affects once."""
+        all_symbols = []
+        if self.symbols == None:
+            return all_symbols
+
+        for symblist in self.symbols:
+            for symb in symblist:
+                if all_symbols.count(symb) == 0:
+                    all_symbols.append(symb)
+        return all_symbols
+
+
+
+    def get_parameter_values(self):
+        """Returns a list containing the current parameter values of the potential."""
+        return self.parameters
+
+    def get_parameter_names(self):
+        """Returns a list of the names of the parameters of the potential."""
+        return self.names_of_params
+
+
+    def get_parameter_value(self,param_name):
+        """Returns the value of the given parameter.
+
+        Parameters:
+
+        param_name: string
+            name of the parameter
+        """
+        indices = index_of_parameter(self.bond_order_type,param_name)
+        return self.parameters[indices[0]][indices[1]]
+
+
+    def get_bond_order_type(self):
+        """Returns the keyword specifying the type of the bond order factor."""
+        return self.bond_order_type
+
+    def get_cutoff(self):
+        """Returns the cutoff."""
+        return self.cutoff
+
+    def get_cutoff_margin(self):
+        """Returns the margin for a smooth cutoff."""
+        return self.cutoff_margin
+
+    def get_soft_cutoff(self):
+        """Returns the lower limit for a smooth cutoff."""
+        return self.cutoff-self.cutoff_margin
+
+
+    def set_parameter_values(self,values):
+        """Sets the numeric values of all parameters.
+
+        Parameters:
+        
+        params: list of doubles
+            list of values to be assigned to parameters
+        """
+        self.set_parameters(values)
+
+    def set_parameter_value(self,parameter_name,value):
+        """Sets a given parameter to the desired value.
+
+        Parameters:
+
+        parameter_name: string
+            name of the parameter
+        value: double
+            the new value of the parameter
+        """
+        indices = index_of_parameter(self.bond_order_type,parameter_name)
+        if indices != None:
+            self.parameters[indices[0]][indices[1]] = value
+        else:
+            raise InvalidParametersError("The bond order factor '{pot}' does not have a parameter '{para}'".
+                                        format(pot=self.bond_order_type,para=parameter_name))
+
+    def set_cutoff(self,cutoff):
+        """Sets the cutoff to a given value.
+
+        This method affects the hard cutoff.
+        
+        Parameters:
+
+        cutoff: double
+            new cutoff for the bond order factor
+        """
+        self.cutoff = cutoff
+
+
+    def set_cutoff_margin(self,margin):
+        """Sets the margin for smooth cutoff to a given value.
+
+        This method defines the decay interval :math:`r_\mathrm{hard}-r_\mathrm{soft}`.
+        Note that if the soft cutoff value is made smaller than 0 or larger than the
+        hard cutoff value an :class:`~pysic.InvalidParametersError` is raised.
+
+        Parameters:
+
+        margin: double
+            The new cutoff margin
+        """
+        if margin < 0.0:
+            raise InvalidParametersError("A negative cutoff margin of {marg} was given.".format(marg=str(margin)))
+        if margin > self.cutoff:
+            raise InvalidParametersError("A cutoff margin ({marg}) longer than the hard cutoff ({hard}) was given.".format(marg=str(margin), hard=str(self.cutoff)))
+        
+        self.cutoff_margin = margin
+
+
+    def set_soft_cutoff(self,cutoff):
+        """Sets the soft cutoff to a given value.
+
+        Note that actually the cutoff margin is recorded, so changing the
+        hard cutoff (see :meth:`~pysic.BondOrderParameters.set_cutoff`) will also affect the
+        soft cutoff.
+
+        Parameters:
+
+        cutoff: double
+            The new soft cutoff
+        """
+        self.set_cutoff_margin(self.cutoff-cutoff)
+
+
+
+
+    def accepts_target_list(self,targets):
+        """Tests whether a list is suitable as a list of targets, i.e., element symbols
+        and returns True or False accordingly.
+
+        A list of targets should be of the format::
+
+            targets = [[a, b], [c, d]]
+
+        where the length of the sublists must equal the number of targets.
+
+        It is not tested that the values contained in the list are valid.
+
+        Parameters:
+
+        targets: list of strings or integers
+            a list whose format is checked
+        """
+        n_targets = self.get_number_of_targets()
+        try:
+            for a_set in targets:
+                assert isinstance(a_set,list)
+                if len(a_set) != n_targets:
+                    return False
+            return True
+        except:
+            return False
+
+
+    def set_parameters(self,params):
+        """Sets the numeric values of all parameters.
+
+        Equivalent to :meth:`~pysic.BondOrderParameters.set_parameter_values`.
+
+        Parameters:
+        
+        params: list of doubles
+            list of values to be assigned to parameters
+        """
+        if self.accepts_parameters(params):
+            self.parameters = params
+        else:
+            raise InvalidParametersError('The bond order factor "{bof}" requires {num} parameters.'.format(bof=bond_order_type,num=str(self.n_params)))
+
+
+        
+        
+class Coordinator:
+    """Class for representing a calculator for atomic coordination numbers and bond order factors.
+
+    Pysic can utilise 'Tersoff-like' potentials which are locally scaled according to
+    bond order factors, related to the number of neighbors of each atom.
+    The coordination calculator keeps track of updating
+    the bond order factors and holds the parameters for calculating the values.
+
+    When calculating forces also the derivatives of the coordination numbers are needed.
+    Coordination numbers may be used repeatedly when calculating energies and forces even within
+    one evaluation of the forces and therefore they are stored by the calculator. Derivatives
+    are not stored since storing them could
+    potentially require an N x N matrix, where N is the number of particles.
+
+    The calculation of coordination is an operation on the geometry, not the complete physical
+    system including the interactions, and so one can define coordination calculators as
+    standalone objects as well. They always operate on the geometry currently allocated in the core.
+
+    Parameters:
+
+    bond_order_parameters: list of :class:`~pysic.BondOrderParameters` objects
+        Parameters for calculating bond order factors.
+    """
+
+    def __init__(self,bond_order_parameters=None):
+        self.bond_order_parameters = []
+        self.bond_order_factors = None
+        if(bond_order_parameters != None):
+            self.set_bond_order_parameters(bond_order_parameters)
+        self.group_index = -1
+
+    def __eq__(self,other):
+        try:
+            if other == None:
+                return False
+            if self.bond_order_params != other.bond_order_params:
+                return False
+        except:
+            return False
+
+        return True
+
+    def __ne__(self,other):
+        return not self.__eq__(other)
+
+    def get_bond_order_parameters(self):
+        """Returns the bond order parameters of this Coordinator.
+        """
+        return self.bond_order_params
+
+
+    def set_bond_order_parameters(self,params):
+        """Assigns new bond order parameters to this Coordinator.
+
+        Parameters:
+
+        params: :class:`~pysic.BondOrderCoordinator`
+            new bond order parameters
+        """
+
+        if isinstance(params,list):
+            self.bond_order_params = params
+        else:
+            self.bond_order_params = [params]
+
+    def add_bond_order_parameters(self,params):
+        """Adds the given parameters to this Coordinator.
+
+        Parameters:
+
+        params: :class:`~pysic.BondOrderCoordinator`
+            new bond order parameters
+        """
+        if isinstance(params,list):
+            for param in params:
+                self.bond_order_params.append(param)
+        else:
+            self.bond_order_params.append([params])
+        
+
+    def set_group_index(self,index):
+        """Sets an index for the coordinator object.
+
+        In the fortran core, bond order parameters are calculated by
+        bond order parameters. Since a coordinator contains many, they are grouped
+        to a coordinator via a grouping index when the core is initialized.
+        This method is meant to be used for telling the Coordinator of this
+        index. That allows the bond orders can be calculated by calling the
+        Coordinator itself, since the index tells which bond parameters in the
+        core are needed.
+
+        Parameters:
+
+        index: integer
+            an index for grouping bond order parameters in the core
+        """
+        self.group_index = index
+
+    def get_group_index(self):
+        """Returns the group index of the Coordinator.
+        """
+        return self.group_index
+
+    def calculate_bond_order_factors(self):
+        """Recalculates the bond order factors for all atoms and stores them.
+
+        Similarly to coordination numbers (:meth:`~pysic.Coordinator.calculate_coordination`),
+        this method only calculates the factors and stores them but does not return them.
+        """
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        self.bond_order_factors = pf.pysic_interface.calculate_bond_order_factors(n_atoms,self.group_index)
+
+
+    def get_bond_order_factors(self):
+        """Returns an array containing the bond order factors of all atoms.
+
+        This method does not calculate the bond order factors but returns the
+        precalculated array.
+        """
+        return self.bond_order_factors
+
+
+    
+    def get_bond_order_gradients(self,atom_index):
+        """Returns an array containing the gradients of bond order factors of all atoms with respect to moving one atom.
+
+        Parameters:
+
+        atom_index: integer
+            the index of the atom the position of which is being differentiated with
+        """
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        # add 1 to atom index because fortran indexing starts from 1, not 0
+        return pf.pysic_interface.calculate_bond_order_gradients(n_atoms,self.group_index,atom_index+1).transpose()
+
+
+
+    def get_bond_order_gradients_of_factor(self,atom_index):
+        """Returns an array containing the gradients of the bond order factor of one atom with respect to moving any atom.
+
+        Parameters:
+
+        atom_index: integer
+            the index of the atom the position of which is being differentiated with
+        """
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        # add 1 to atom index because fortran indexing starts from 1, not 0
+        return pf.pysic_interface.calculate_bond_order_gradients_of_factor(n_atoms,self.group_index,atom_index+1).transpose()
+
+
+
 class Potential:
     """Class for representing a potential.
 
@@ -344,7 +1065,7 @@ class Potential:
         the maximum atomic separation at which the potential is applied
     """
 
-    def __init__(self,potential_type,symbols=None,tags=None,indices=None,parameters=None,cutoff=0.0,cutoff_margin=0.0):
+    def __init__(self,potential_type,symbols=None,tags=None,indices=None,parameters=None,cutoff=0.0,cutoff_margin=0.0,coordinator=None):
         if(is_valid_potential(potential_type)):
             self.symbols = None
             self.tags = None
@@ -352,6 +1073,7 @@ class Potential:
             self.potential_type = potential_type
             self.cutoff = cutoff
             self.cutoff_margin = 0.0
+            self.coordinator = None
             self.set_cutoff_margin(cutoff_margin)
             self.n_targets = number_of_targets(potential_type)
             self.names_of_params = names_of_parameters(potential_type)
@@ -368,8 +1090,9 @@ class Potential:
                     'The potential "{pot}" requires {num} parameters: {par}'.format(
                     pot=potential_type,
                     num=str(number_of_parameters(potential_type)),
-                    par=str(parameters(potential_type))
+                    par=str(names_of_parameters(potential_type))
                     ) )
+            self.set_coordinator(coordinator)
         else:
             raise InvalidPotentialError('There is no potential called "{pot}".'.format(pot=potential_type))
 
@@ -389,23 +1112,31 @@ class Potential:
             if self.parameters != other.parameters:
                 return False
             if self.cutoff != other.cutoff:
-                return False            
+                return False         
+            if self.coordinator != other.coordinator:
+                return False               
         except:
             return False
         
         return True
 
+    def __ne__(self,other):
+        return not self.__eq__(other)
 
     def __repr__(self):
-        return "Potential({name},symbols={symbs},tags={tags},indices={inds},parameters={params},cutoff={cut},cutoff_margin={marg})".format(name=self.potential_type,
-                                                                                                                      symbs=str(self.symbols),
-                                                                                                                      tags=str(self.tags),
-                                                                                                                      inds=str(self.indices),
-                                                                                                                      params=str(self.parameters),
-                                                                                                                      cut=str(self.cutoff),
-                                                                                                                      marg=str(self.cutoff_margin))
-            
-
+        return ("Potential({name},symbols={symbs},"+ \
+                "tags={tags},indices={inds},parameters={params}"+ \
+                ",cutoff={cut},cutoff_margin={marg},"+ \
+                "coordinator={coord})").format(name=self.potential_type,
+                                               symbs=str(self.symbols),
+                                               tags=str(self.tags),
+                                               inds=str(self.indices),
+                                               params=str(self.parameters),
+                                               cut=str(self.cutoff),
+                                               marg=str(self.cutoff_margin),
+                                               coord=str(self.coordinator))
+    
+                                          
     def get_symbols(self):
         """Return a list of the chemical symbols (elements) on which the potential
         acts on."""
@@ -520,13 +1251,24 @@ class Potential:
         except:
             return False
 
+    def get_coordinator(self):
+        """Returns the Coordinator.
+        """
+        return self.coordinator
+
+    def set_coordinator(self,coordinator):
+        """Sets a new Coordinator.
+        """
+        self.coordinator = coordinator
+        
+
     def set_symbols(self,symbols):
         """Sets the list of symbols to equal the given list.
 
         Parameters:
 
         symbols: list of strings
-            list of symbols on which the potential acts
+            list of element symbols on which the potential acts
         """
         if symbols == None:
             return
@@ -638,6 +1380,18 @@ class Potential:
             self.indices.append(indices)
         else:
             raise InvalidPotentialError("Invalid number of targets.")
+
+    def set_parameters(self, values):
+        """Sets the numeric values of all parameters.
+
+        Equivalent to :meth:`~pysic.Potential.set_parameter_values`.
+
+        Parameters:
+
+        values: list of doubles
+            list of values to be assigned to parameters
+        """
+        self.set_parameter_values(values)
 
     def set_parameter_values(self,values):
         """Sets the numeric values of all parameters.
@@ -792,8 +1546,25 @@ class Pysic:
         self.forces_calculated = False
         self.energy_calculated = False
         self.stress_calculated = False
+        self.coordinations_calculated = False
         self.force_core_initialization = full_initialization
 
+
+    def __eq__(self,other):
+        try:
+            if self.structure != other.structure:
+                return False
+            if self.neighbor_list != other.neighbor_list:
+                return False
+            if self.potentials != other.potentials:
+                return False
+        except:
+            return False
+
+        return True
+
+    def __ne__(self,other):
+        return not self.__eq__(other)
 
     def __del__(self):
         self.release_fortran_core()
@@ -967,6 +1738,7 @@ class Pysic:
                 self.forces_calculated = False
                 self.energy_calculated = False
                 self.stress_calculated = False
+                self.coordinations_calculated = False
                 self.neighbor_lists_ready = False
 
                 # NB: this avoids updating the potential lists every time an atom moves, but
@@ -1002,6 +1774,7 @@ class Pysic:
             self.forces_calculated = False
             self.energy_calculated = False
             self.stress_calculated = False
+            self.coordinations_calculated = False
             self.potential_lists_ready = False
             self.potentials_ready = False
             self.neighbor_lists_ready = False
@@ -1030,6 +1803,7 @@ class Pysic:
         self.forces_calculated = False
         self.energy_calculated = False
         self.stress_calculated = False
+        self.coordinations_calculated = False
         self.potential_lists_ready = False
         self.potentials_ready = False
         self.neighbor_lists_ready = False
@@ -1092,6 +1866,18 @@ class Pysic:
                     
                     if active_potential and potential.get_cutoff() > max_cut:
                         max_cut = potential.get_cutoff()
+
+                    try:
+                        for bond in potential.get_coordinator().get_bond_order_parameters():
+                            active_bond = False
+                            if bond.get_different_symbols().count(symbol) > 0:
+                                active_bond = True
+                                
+                            if active_bond:
+                                max_cut = bond.get_cutoff()
+                    except:
+                        pass
+
                 cuts.append(max_cut*scaler)
             return cuts
 
@@ -1112,7 +1898,8 @@ class Pysic:
         Calls the Fortran core to calculate the potential energy for the currently assigned structure.
         """
         self.set_core()
-        self.energy = pf.pysic_interface.calculate_energy()
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        self.energy = pf.pysic_interface.calculate_energy(n_atoms)
         self.energy_calculated = True
 
 
@@ -1124,6 +1911,14 @@ class Pysic:
         self.stress = 0.0
         self.stress_calculated = True
     
+
+    def calculate_coordinations(self):
+        """Tells the list of Potentials to update their coordinations if needed.
+        """
+        for pot in self.potentials:
+            pot.update_coordinations()
+        self.coordinations_calculated = True        
+
 
     def get_core_readiness(self):
         """Returns a tuple of booleans used for notifying necessary core updates.
@@ -1151,10 +1946,10 @@ class Pysic:
         """Sets up the Fortran core for calculation.
 
         If the core is not initialized, if the number of atoms has changed, or
-        if full initialization is forces, the core is initialized from scratch.
+        if full initialization is forced, the core is initialized from scratch.
         Otherwise, only the atomic coordinates and momenta are updated.
         Potentials, neighbor lists etc. are also updated if they have been edited.
-        """
+        """        
         if not self.core_is_available():
             raise LockedCoreError("core is not available")
 
@@ -1200,14 +1995,24 @@ class Pysic:
         if not self.atoms_ready:
             raise MissingAtomsError("Creating potential lists before updating atoms in core.")
         pf.pysic_interface.create_potential_list()
+        pf.pysic_interface.create_bond_order_factor_list()
         self.potential_lists_ready = True
-        
+
+
 
     def update_core_potentials(self):
         """Generates potentials for the Fortran core."""
         n_pots = 0
+        coord_list = []
+        pot_index = 0
         # count the number of separate potentials
         for pot in self.potentials:
+
+            # grab the coordinators associated with the potentials
+            coord = pot.get_coordinator()
+            if(coord != None):
+                coord_list.append([coord,pot_index])
+            pot_index += 1
             
             try:
                 alltargets = pot.get_symbols()
@@ -1235,7 +2040,16 @@ class Pysic:
                 pass
 
         pf.pysic_interface.allocate_potentials(n_pots)
+
+        pot_index = 0
         for pot in self.potentials:
+            
+            group_index = -1
+            if pot.get_coordinator() != None:
+                group_index = pot_index
+                pot.get_coordinator().set_group_index(pot_index)
+            pot_index += 1
+
             n_targ = pot.get_number_of_targets()
             no_symbs = np.array( n_targ*[pu.str2ints('xx',2)] ).transpose()
             no_tags = np.array( n_targ*[-9] )
@@ -1265,7 +2079,8 @@ class Pysic:
                                                          no_inds,
                                                          np.array( int_orig_symbs ).transpose(),
                                                          no_tags,
-                                                         no_inds )
+                                                         no_inds,
+                                                         group_index )
             except:
                 pass
             try:
@@ -1285,7 +2100,8 @@ class Pysic:
                                                          no_inds,
                                                          no_symbs,
                                                          np.array(orig_tags),
-                                                         no_inds )
+                                                         no_inds,
+                                                         group_index )
             except:
                 pass
             try:
@@ -1305,9 +2121,62 @@ class Pysic:
                                                          np.array( inds ),
                                                          no_symbs,
                                                          no_tags,
-                                                         np.array(orig_inds) )
+                                                         np.array(orig_inds),
+                                                         group_index )
             except:
                 pass
+
+        n_bonds = 0
+        for coord in coord_list:
+            try:
+                allbonds = coord[0].get_bond_order_parameters()
+                for bond in allbonds:
+                    alltargets = bond.get_symbols()
+                    for targets in alltargets:
+                        perms = permutations(targets)
+                        different = set(perms)
+                        n_bonds += len(different)
+            except:
+                pass
+
+        pf.pysic_interface.allocate_bond_order_factors(n_bonds)
+
+        for coord in coord_list:
+            try:
+                allbonds = coord[0].get_bond_order_parameters()
+                for bond in allbonds:
+                    alltargets = bond.get_symbols()
+                    for targets in alltargets:
+
+                        int_orig_symbs = []
+                        for orig_symbs in targets:
+                            for label in orig_symbs:
+                                int_orig_symbs.append( pu.str2ints(label,2) )
+                        
+                        perms = permutations(targets)
+                        different = set(perms)
+
+                        for symbs in different:
+                            int_symbs = []
+                            for label in symbs:
+                                int_symbs.append( pu.str2ints(label,2) )
+                            pf.pysic_interface.add_bond_order_factor(bond.get_bond_order_type(),
+                                                                   np.array( bond.get_parameters_as_list() ),
+                                                                   np.array( bond.get_number_of_parameters() ),
+                                                                   bond.get_cutoff(),
+                                                                   bond.get_soft_cutoff(),
+                                                                   np.array( int_symbs ).transpose(),
+                                                                   np.array( int_orig_symbs ).transpose(),
+                                                                   coord[1])
+
+            except:
+                pass
+
+
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        pf.pysic_interface.allocate_bond_order_storage(n_atoms,
+                                                       pot_index,
+                                                       len(coord_list))
 
         self.potentials_ready = True
         
@@ -1328,6 +2197,7 @@ class Pysic:
         self.forces_calculated = False
         self.energy_calculated = False
         self.stress_calculated = False
+        self.coordinations_calculated = False
 
         pf.pysic_interface.update_atom_coordinates(positions,momenta)
         self.atoms_ready = True
@@ -1415,6 +2285,7 @@ class Pysic:
         pf.pysic_interface.examine_atoms()
         pf.pysic_interface.examine_cell()
         pf.pysic_interface.examine_potentials()
+        pf.pysic_interface.examine_bond_order_factors()
 
     def core_is_available(self):
         """True if this calculator can use the Fortran core."""
@@ -1446,6 +2317,7 @@ class Pysic:
 
         self.energy_calculated = False
         self.atoms_ready = False
+        energy_xp = self.get_potential_energy(system)
         system[atom_index].x += shift
         energy_xp = self.get_potential_energy(system)
         system[atom_index].x -= 2.0*shift
@@ -1470,3 +2342,62 @@ class Pysic:
         return [ -(energy_xp-energy_xm)/(2.0*shift),
                  -(energy_yp-energy_ym)/(2.0*shift),
                  -(energy_zp-energy_zm)/(2.0*shift) ]
+
+
+
+
+    def get_numerical_bond_order_gradient(self, coordinator, atom_index, moved_index, shift=0.001, atoms=None):
+        """Numerically calculates the gradient of a bond order factor with respect to moving a single particle.
+
+        This is for debugging the bond orders."""
+
+        if(atoms == None):
+            system = self.structure.copy()
+            orig_system = self.structure.copy()
+        else:
+            system = atoms.copy()
+            orig_system = atoms.copy()
+
+        self.energy_calculated = False
+        self.atoms_ready = False
+        crd = coordinator
+        energy_xp = self.get_potential_energy(system)
+        system[moved_index].x += shift
+        energy_xp = self.get_potential_energy(system)
+        crd.calculate_bond_order_factors()
+        bond_xp = crd.get_bond_order_factors()[atom_index]
+        system[moved_index].x -= 2.0*shift
+        energy_xm = self.get_potential_energy(system)
+        crd.calculate_bond_order_factors()
+        bond_xm = crd.get_bond_order_factors()[atom_index]
+        system[moved_index].x += shift
+
+        system[moved_index].y += shift
+        energy_yp = self.get_potential_energy(system)
+        crd.calculate_bond_order_factors()
+        bond_yp = crd.get_bond_order_factors()[atom_index]
+        system[moved_index].y -= 2.0*shift
+        energy_ym = self.get_potential_energy(system)
+        crd.calculate_bond_order_factors()
+        bond_ym = crd.get_bond_order_factors()[atom_index]
+        system[moved_index].y += shift
+
+        system[moved_index].z += shift
+        energy_zp = self.get_potential_energy(system)
+        crd.calculate_bond_order_factors()
+        bond_zp = crd.get_bond_order_factors()[atom_index]
+        system[moved_index].z -= 2.0*shift
+        energy_zm = self.get_potential_energy(system)
+        crd.calculate_bond_order_factors()
+        bond_zm = crd.get_bond_order_factors()[atom_index]
+
+        self.energy_calculated = False
+        self.atoms_ready = False
+        self.get_potential_energy(orig_system)
+        
+        return [ (bond_xp-bond_xm)/(2.0*shift),
+                 (bond_yp-bond_ym)/(2.0*shift),
+                 (bond_zp-bond_zm)/(2.0*shift) ]
+
+
+

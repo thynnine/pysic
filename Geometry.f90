@@ -12,11 +12,11 @@ module geometry
   ! Defines an atomic particle
   type atom
      double precision :: mass, charge, position(3), momentum(3)
-     integer :: index, tags, n_pots
-     logical :: potentials_listed
+     integer :: index, tags, n_pots, n_bonds
+     logical :: potentials_listed, bond_order_factors_listed
      character(len=label_length) :: element
      type(neighbor_list) :: neighbor_list
-     integer, pointer :: potential_indices(:)
+     integer, pointer :: potential_indices(:), bond_indices(:)
   end type atom
 
   ! Defines the supercell
@@ -74,6 +74,8 @@ contains
        atoms(i)%n_pots = 0
        atoms(i)%potentials_listed = .false.
        nullify(atoms(i)%potential_indices)
+       atoms(i)%bond_order_factors_listed = .false.
+       nullify(atoms(i)%bond_indices)
     end do
 
   end subroutine generate_atoms
@@ -108,7 +110,7 @@ contains
     integer, intent(in) :: neighbors(n_nbs), offsets(3,n_nbs)
     type(neighbor_list), intent(inout) :: nbor_list
 
-    if(nbor_list%max_length < n_nbs)then
+    if(nbor_list%max_length <= n_nbs)then
        if(nbor_list%max_length > 0)then
           deallocate(nbor_list%neighbors)
           deallocate(nbor_list%pbc_offsets)
@@ -123,8 +125,10 @@ contains
     nbor_list%neighbors = -1
     nbor_list%pbc_offsets = 0
     nbor_list%n_neighbors = n_nbs
-    nbor_list%neighbors(1:n_nbs) = neighbors(1:n_nbs)
-    nbor_list%pbc_offsets(1:3,1:n_nbs) = offsets(1:3,1:n_nbs)
+    if(n_nbs > 0)then
+       nbor_list%neighbors(1:n_nbs) = neighbors(1:n_nbs)
+       nbor_list%pbc_offsets(1:3,1:n_nbs) = offsets(1:3,1:n_nbs)
+    end if
 
   end subroutine assign_neighbor_list
 
@@ -149,6 +153,31 @@ contains
     atom_in%potentials_listed = .true.
 
   end subroutine assign_potential_indices
+
+
+  subroutine assign_bond_order_factor_indices(n_bonds,atom_in,indices)
+    implicit none    
+    integer, intent(in) :: n_bonds
+    type(atom), intent(inout) :: atom_in
+    integer, intent(in) :: indices(n_bonds)
+
+    if(atom_in%bond_order_factors_listed)then
+       if(atom_in%n_bonds /= n_bonds)then
+          deallocate(atom_in%bond_indices)
+          allocate(atom_in%bond_indices(size(indices)))
+       end if
+    else
+       nullify(atom_in%bond_indices)
+       allocate(atom_in%bond_indices(size(indices)))
+    end if
+    atom_in%bond_indices = indices
+    atom_in%n_bonds = size(indices)
+    atom_in%bond_order_factors_listed = .true.
+
+  end subroutine assign_bond_order_factor_indices
+
+
+
 
   ! Calculates the minimum separation vector between two atoms, r2-r1, including possible periodicity
   subroutine separation_vector(r1,r2,offset,cell,separation)
