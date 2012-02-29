@@ -889,7 +889,7 @@ class Coordinator:
     When calculating forces also the derivatives of the coordination numbers are needed.
     Coordination numbers may be used repeatedly when calculating energies and forces even within
     one evaluation of the forces and therefore they are stored by the calculator. Derivatives
-    are not stored since they are only needed once per force evaluation and storing them could
+    are not stored since storing them could
     potentially require an N x N matrix, where N is the number of particles.
 
     The calculation of coordination is an operation on the geometry, not the complete physical

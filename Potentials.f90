@@ -9,8 +9,8 @@ module potentials
   ! search for their names to find them (in comments)
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
-       n_potential_types = 4, &
-       n_bond_order_types = 2, &
+       n_potential_types = 5, &
+       n_bond_order_types = 3, &
        n_max_params = 4, &
        n_max_targets = 2, &
        pot_note_length = 500, &
@@ -19,10 +19,12 @@ module potentials
   integer, parameter :: pair_lj_index = 1, &
        pair_spring_index = 2, &
        mono_const_index = 3, &
-       tri_bend_index = 4
+       tri_bend_index = 4, &
+       mono_none_index = 5
 
   integer, parameter :: coordination_index = 1, &
-       tersoff_index = 2
+       tersoff_index = 2, &
+       c_scale_index = 3
 
   character(len=label_length), parameter :: no_name = "xx"
   logical :: descriptors_created = .false., bond_descriptors_created = .false.
@@ -232,14 +234,20 @@ contains
     double precision, intent(in) :: raw_sum
     type(bond_order_parameters), intent(in) :: bond_params
     double precision, intent(out) :: factor_out
-    double precision :: beta, eta
+    double precision :: beta, eta, dN
     
     select case(bond_params%type_index)
-    case(tersoff_index)
+    case(tersoff_index) ! tersoff factor
        beta = bond_params%parameters(1,1)
        eta = bond_params%parameters(2,1)
        factor_out = ( 1 + ( beta*raw_sum )**eta )**(-1.d0/(2.d0*eta))
-   case default
+
+    case (c_scale_index) ! coordination correction scaling function
+
+       dN = ( raw_sum - bond_params%parameters(2,1) ) * bond_params%parameters(3,1)
+       factor_out = bond_params%parameters(1,1) * dN / (1.d0 + exp(bond_params%parameters(4,1)*dN))
+
+    case default
        factor_out = raw_sum
     end select
 
@@ -250,7 +258,7 @@ contains
     double precision, intent(in) :: raw_sum, raw_gradient(3)
     type(bond_order_parameters), intent(in) :: bond_params
     double precision, intent(out) :: factor_out(3)
-    double precision :: beta, eta, inv_eta
+    double precision :: beta, eta, inv_eta, dN, expo, inv_exp
     
     select case(bond_params%type_index)
     case(tersoff_index)
@@ -259,6 +267,16 @@ contains
        inv_eta = -1.d0/(2.d0*eta)
        factor_out = inv_eta * ( 1.d0 + ( beta*raw_sum )**eta )**(inv_eta-1.d0) * &
             eta * (beta*raw_sum)**(eta-1.d0) * beta * raw_gradient
+
+    case (c_scale_index) ! coordination correction scaling function
+
+       dN = ( raw_sum - bond_params%parameters(2,1) ) * bond_params%parameters(3,1)
+       expo = exp( bond_params%parameters(4,1)*dN )
+       inv_exp = 1.d0 / (1.d0 + expo)
+       factor_out = bond_params%parameters(1,1) * &
+            bond_params%parameters(3,1) * ( inv_exp - &
+            dN * inv_exp*inv_exp * bond_params%parameters(4,1) * expo ) * raw_gradient
+
     case default
        factor_out = raw_gradient
     end select
@@ -347,7 +365,8 @@ contains
           factor(2) = xi1*gee1 + xi2*gee2
           
        end if
-
+    case (c_scale_index) ! coordination correction scaling function
+       ! there is no contribution to raw sums
     case default
        ! if we have an invalid case, do nothing
     end select
@@ -503,6 +522,8 @@ contains
 
        end if
        
+    case (c_scale_index) ! coordination correction scaling function
+       ! there is no contribution to raw sums
     end select
 
   end subroutine evaluate_bond_order_gradient
@@ -593,6 +614,10 @@ contains
           end if
        end if
 
+    case (mono_none_index) ! constant potential
+
+       force(1:3,1) = 0.d0
+
     end select
 
   end subroutine evaluate_forces
@@ -670,6 +695,10 @@ contains
 
           end if
        end if
+
+    case (mono_none_index) ! constant potential
+
+       energy = interaction%parameters(1)
 
     end select
 
@@ -771,7 +800,7 @@ contains
     end if
     potential_descriptors(index)%type_index = index
     potential_descriptors(index)%bond_order_argument = .false.
-    call pad_string('pair_LJ', pot_name_length,potential_descriptors(index)%name)
+    call pad_string('LJ', pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 2
     potential_descriptors(index)%n_targets = 2
     allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
@@ -790,7 +819,7 @@ contains
     end if
     potential_descriptors(index)%type_index = index
     potential_descriptors(index)%bond_order_argument = .false.
-    call pad_string('pair_spring', pot_name_length,potential_descriptors(index)%name)
+    call pad_string('spring', pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 2
     potential_descriptors(index)%n_targets = 2
     allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
@@ -809,7 +838,7 @@ contains
     end if
     potential_descriptors(index)%type_index = index
     potential_descriptors(index)%bond_order_argument = .false.
-    call pad_string('mono_const', pot_name_length,potential_descriptors(index)%name)
+    call pad_string('force', pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 3
     potential_descriptors(index)%n_targets = 1
     allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
@@ -830,7 +859,7 @@ contains
     end if
     potential_descriptors(index)%type_index = index
     potential_descriptors(index)%bond_order_argument = .false.
-    call pad_string('tri_bend', pot_name_length,potential_descriptors(index)%name)
+    call pad_string('bond_bend', pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 2
     potential_descriptors(index)%n_targets = 3
     allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
@@ -842,6 +871,22 @@ contains
     call pad_string('Bond bending potential: V(theta) = k/2 (cos theta - cos theta_0)^2', &
          pot_note_length,potential_descriptors(index)%description)
 
+    ! constant potential
+    index = index+1
+    if(mono_none_index /= index)then
+       write(*,*) "Potential indices in the core do not match!"
+    end if
+    potential_descriptors(index)%type_index = index
+    potential_descriptors(index)%bond_order_argument = .false.
+    call pad_string('constant', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 1
+    potential_descriptors(index)%n_targets = 1
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+    call pad_string('V', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('potential value', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('Constant potential: V(r) = V', &
+         pot_note_length,potential_descriptors(index)%description)
 
     ! null potential, for errorneous inquiries
     index = 0
@@ -928,6 +973,34 @@ contains
          'g_ijk = 1+c_ij^2/d_ij^2-c_ij^2/(d_ij^2+(h_ij^2-cos theta_ijk))', &
          pot_note_length,bond_order_descriptors(index)%description)
     
+
+    ! Coordination correction
+    index = index+1
+    if(c_scale_index /= index)then
+       write(*,*) "Bond-order indices in the core do not match!"
+    end if
+    bond_order_descriptors(index)%type_index = index
+    call pad_string('c_scale',pot_name_length,bond_order_descriptors(index)%name)
+    allocate(bond_order_descriptors(index)%n_parameters(1))
+    bond_order_descriptors(index)%n_parameters(1) = 4
+    bond_order_descriptors(index)%n_targets = 1
+    bond_order_descriptors(index)%includes_post_processing = .true.
+    max_params = 4
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    call pad_string('epsilon',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
+    call pad_string('energy scale constant',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
+    call pad_string('N',param_name_length,bond_order_descriptors(index)%parameter_names(2,1))
+    call pad_string('normal coordination number',param_note_length,bond_order_descriptors(index)%parameter_notes(2,1))
+    call pad_string('C',param_name_length,bond_order_descriptors(index)%parameter_names(3,1))
+    call pad_string('coordination difference scale constant',param_note_length,bond_order_descriptors(index)%parameter_notes(3,1))
+    call pad_string('gamma',param_name_length,bond_order_descriptors(index)%parameter_names(4,1))
+    call pad_string('exponential decay constant',param_note_length,bond_order_descriptors(index)%parameter_notes(4,1))
+    call pad_string('Coordination difference scaling function: '//&
+         'b_i(n_i) = epsilon_i dN_i / (1 + exp(gamma_i dN_i)); dN_i = C_i(n_i - N_i)', &
+         pot_note_length,bond_order_descriptors(index)%description)
+
+
     ! null, for error inquiries
     index = 0
     bond_order_descriptors(index)%type_index = index

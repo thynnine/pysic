@@ -48,8 +48,9 @@ List of currently available potentials
 Below is a list of potentials currently implemented.
 
 
-Constant
-________
+
+Constant force
+______________
 
 1-body potential defined as
 
@@ -60,9 +61,30 @@ i.e., a constant force :math:`F`.
 
 Keywords::
 
-    >>> names_of_parameters('mono_const')
-    ['k', 'theta_0']
+    >>> names_of_parameters('force')
+    ['Fx', 'Fy', 'Fz']
 
+
+
+Constant potential
+__________________
+
+One body potential defined as
+
+.. math ::
+   
+   V(\mathbf{r}) = V,
+
+i.e., a constant potential.
+
+A constant potential is of course irrelevant in force calculation since the
+gradient is zero. However, one can add a :class:`~pysic.BondOrderParameters` bond order
+factor with the potential to create essentially a bond order potential.
+
+Keywords::
+
+    >>> names_of_parameters('constant')
+    ['V']
 
 Lennard-Jones
 _____________
@@ -77,7 +99,7 @@ where :math:`\varepsilon` is an energy constant defining the depth of the potent
 
 Keywords::
 
-    >>> names_of_parameters('pair_LJ')
+    >>> names_of_parameters('LJ')
     ['epsilon', 'sigma']    
 
 
@@ -116,7 +138,7 @@ where :math:`k` is a spring constant, :math:`R_0` is the equilibrium distance, a
 
 Keywords::
 
-    >>> names_of_parameters('pair_spring')
+    >>> names_of_parameters('spring')
     ['k', 'R_0']
 
 .. plot::
@@ -152,14 +174,14 @@ where :math:`k` is an angular spring constant, :math:`\theta` is an angle define
 
 Keywords::
 
-    >>>	names_of_parameters('tri_bend')
+    >>>	names_of_parameters('bond_bend')
     ['k', 'theta_0']
 
 Three bodies form a triangle and so there are three possible angles the potential could bend. To remove this ambiguousness, the angle is defined so that as the potential is given a list of targets, the middle target is considered to be at the tip of the angle. 
 
 Example::
 
-    >>> pot = Potential('tri_bend')
+    >>> pot = Potential('bond_bend')
     >>> pot.set_symbols(['H', 'O', 'H'])
 
 This creates a potential for H-O-H angles, but not for H-H-O angles.
@@ -186,6 +208,9 @@ Also remember that the bond bending potential does not include any actual bondin
    plt.polar(theta,r2)   
    plt.title(r'Bond bending potential: $k = 1.0$, [$\theta_0 = 0$; $\theta_0 = \pi/2$]')
    plt.show()
+
+
+
 
 
 List of methods

@@ -18,11 +18,11 @@ module pysic_core
   ! storage for bond order factors during force and energy evaluation
   double precision, pointer :: saved_bond_order_sums(:,:)
   double precision, pointer :: saved_bond_order_factors(:,:)
-  double precision, pointer :: saved_bond_order_gradients(:,:,:)
+  double precision, pointer :: saved_bond_order_gradients(:,:,:,:)
   integer :: n_saved_bond_order_factors = 0
   integer, pointer :: group_index_save_slot(:)
   logical :: use_saved_bond_order_factors = .false.
-  integer :: use_saved_bond_order_gradients(3) = -1
+  integer, pointer :: use_saved_bond_order_gradients(:,:)
 
 contains
 
@@ -190,11 +190,13 @@ contains
        deallocate(saved_bond_order_sums)
        deallocate(saved_bond_order_factors)
        deallocate(saved_bond_order_gradients)
+       deallocate(use_saved_bond_order_gradients)
        deallocate(group_index_save_slot)
     else
        nullify(saved_bond_order_sums)
        nullify(saved_bond_order_factors)
        nullify(saved_bond_order_gradients)
+       nullify(use_saved_bond_order_gradients)
        nullify(group_index_save_slot)
     end if
     n_saved_bond_order_factors = 0
@@ -223,7 +225,7 @@ contains
 
     if(present(index))then
        if(bond_storage_allocated)then
-          use_saved_bond_order_gradients(index) = -1
+          use_saved_bond_order_gradients(:,index) = -1
        end if
     else
        if(bond_storage_allocated)then
@@ -241,7 +243,8 @@ contains
     call core_clear_bond_order_storage()
     allocate(saved_bond_order_sums(n_atoms,n_factors))
     allocate(saved_bond_order_factors(n_atoms,n_factors))
-    allocate(saved_bond_order_gradients(3,n_atoms,3))
+    allocate(saved_bond_order_gradients(3,n_atoms,n_factors,3))
+    allocate(use_saved_bond_order_gradients(n_factors,3))
     allocate(group_index_save_slot(0:n_groups))
     bond_storage_allocated = .true.
     call core_empty_bond_order_storage()
@@ -271,19 +274,29 @@ contains
     integer, intent(in) :: n_atoms, group_index, atom_index, slot_index
     double precision, intent(out) :: bond_order_gradients(1:3,n_atoms)
     double precision :: bond_order_sums(n_atoms)
+    logical :: found_grads
+    integer :: save_slot
 
     if(use_saved_bond_order_factors)then
-       if(use_saved_bond_order_gradients(slot_index) == group_index)then
-          bond_order_gradients(1:3,1:n_atoms) = saved_bond_order_gradients(1:3,1:n_atoms,slot_index)
-       else
+       found_grads = .false.
+       save_slot = group_index_save_slot(group_index)       
+       if(save_slot > 0)then
+          if(use_saved_bond_order_gradients(save_slot,slot_index) == atom_index)then
+             !write(*,*) "access saved grads: ", save_slot, slot_index, atom_index
+             found_grads = .true.
+             bond_order_gradients(1:3,1:n_atoms) = saved_bond_order_gradients(1:3,1:n_atoms,save_slot,slot_index)
+          end if
+       end if
+       if(.not.found_grads)then
+          !write(*,*) "calculate grads: ", save_slot, slot_index, atom_index
           call core_get_bond_order_sums(n_atoms,group_index,bond_order_sums)
           call core_calculate_bond_order_gradients_of_factor(n_atoms,&
                group_index,&
                atom_index,&
                bond_order_sums,&
                bond_order_gradients)
-          saved_bond_order_gradients(1:3,1:n_atoms,slot_index) = bond_order_gradients(1:3,1:n_atoms)
-          use_saved_bond_order_gradients(slot_index) = group_index
+          saved_bond_order_gradients(1:3,1:n_atoms,save_slot,slot_index) = bond_order_gradients(1:3,1:n_atoms)
+          use_saved_bond_order_gradients(save_slot,slot_index) = atom_index
        end if
     else
        call core_get_bond_order_sums(n_atoms,group_index,bond_order_sums)
@@ -1494,8 +1507,16 @@ contains
     end do
 
 #ifdef MPI
-    call mpi_allreduce(bond_gradients,total_bond_gradients,size(bond_gradients),mpi_double_precision,&
-         mpi_sum,mpi_comm_world,mpistat)
+    if(present(mpi_split))then
+       if(mpi_split)then
+          call mpi_allreduce(bond_gradients,total_bond_gradients,size(bond_gradients),mpi_double_precision,&
+               mpi_sum,mpi_comm_world,mpistat)
+       else
+          total_bond_gradients = bond_gradients
+       end if
+    else
+       total_bond_gradients = bond_gradients
+    end if
 #else
     total_bond_gradients = bond_gradients
 #endif
@@ -1571,8 +1592,16 @@ contains
     end do
 
 #ifdef MPI
-    call mpi_allreduce(bond_gradients,total_bond_gradients,size(bond_gradients),mpi_double_precision,&
-         mpi_sum,mpi_comm_world,mpistat)
+    if(present(mpi_split))then
+       if(mpi_split)then
+          call mpi_allreduce(bond_gradients,total_bond_gradients,size(bond_gradients),mpi_double_precision,&
+               mpi_sum,mpi_comm_world,mpistat)
+       else
+          total_bond_gradients = bond_gradients
+       end if
+    else
+       total_bond_gradients = bond_gradients
+    end if
 #else
     total_bond_gradients = bond_gradients
 #endif
@@ -1693,7 +1722,7 @@ contains
                    
                    if( is_active .and. interaction%cutoff > distances(1) )then
                       if( n_targets == 2 )then
-                         
+
                          if((interaction%pot_index > -1) .or. &
                             interaction%smoothened)then
                             call evaluate_energy(2,separations(1:3,1),distances(1),&
@@ -1773,7 +1802,7 @@ contains
                       ! index 3 must be higher than the index of the atom whose
                       ! neighbors are NOT currently searched
                       if(index3 > index2)then
-                         call core_empty_bond_order_gradient_storage(3)
+                         !call core_empty_bond_order_gradient_storage(3)
                          do k = 1, size(interaction_indices)
                             
                             interaction = interactions(interaction_indices(k))
@@ -1918,7 +1947,7 @@ contains
                       atom_list = (/ atom1, atom2, atom3 /)
                       
                       if(index3 > index1)then
-                         call core_empty_bond_order_gradient_storage(3)
+                         !call core_empty_bond_order_gradient_storage(3)
                          do k = 1, size(interaction_indices)
                             
                             interaction = interactions(interaction_indices(k))

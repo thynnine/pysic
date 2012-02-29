@@ -4,9 +4,12 @@
 Pysic Module
 ============
 
-Pysic defines two main classes: :class:`~pysic.Pysic`, which defines a calculator 
-for the `ASE`_ simulation environment [#]_ and :class:`~pysic.Potential`, which defines
-potentials to be used by :class:`~pysic.Pysic` for calculating atomic interactions.
+Pysic defines four classes: :class:`~pysic.Pysic`, which defines a calculator 
+for the `ASE`_ simulation environment [#]_, :class:`~pysic.Potential`, which defines
+potentials to be used by :class:`~pysic.Pysic` for calculating atomic interactions,
+:class:`~pysic.Coordinator` which can be used for modifying potentials with
+bond order factors, and :class:`~pysic.BondOrderParameters` which are used as a
+container of parameters for the :class:`~pysic.Coordinator`.
 
 .. _ASE: https://wiki.fysik.dtu.dk/ase/
 
@@ -63,13 +66,18 @@ List of methods
 Below is a list of methods in :mod:`~pysic`.
 
 
-Potential inquiry
-__________________
+Potential and bond order factor inquiry
+_______________________________________
+
 
 - :meth:`~pysic.list_potentials`
 - :meth:`~pysic.list_valid_potentials`
 - :meth:`~pysic.is_potential`
 - :meth:`~pysic.is_valid_potential`
+- :meth:`~pysic.list_bond_order_factors`
+- :meth:`~pysic.list_valid_bond_order_factors`
+- :meth:`~pysic.is_bond_order_factor`
+- :meth:`~pysic.is_valid_bond_order_factor`
 - :meth:`~pysic.number_of_targets`
 - :meth:`~pysic.number_of_parameters`
 - :meth:`~pysic.names_of_parameters`
@@ -92,6 +100,10 @@ The module defines a group of intrinsic errors to describe situations where
 one tries to use or set up the calculator with errorneous or insufficient
 information.
 
+.. autoclass:: InvalidParametersError
+   :members:
+.. autoclass:: InvalidCoordinatorError
+   :members:
 .. autoclass:: InvalidPotentialError
    :members:
 .. autoclass:: MissingAtomsError
@@ -111,7 +123,9 @@ information on available potentials.
 
 .. automodule:: pysic
    :members: list_potentials, list_valid_potentials,is_potential,
-   	     is_valid_potential, number_of_targets,
+   	     is_valid_potential, list_bond_order_factors, 
+	     list_valid_bond_order_factors, is_bond_order_factor,
+   	     is_valid_bond_order_factor, number_of_targets,
    	     number_of_parameters, names_of_parameters, index_of_parameter,
 	     descriptions_of_parameters, description_of_potential,
 	     finish_mpi, get_number_of_cpus, get_cpu_id
