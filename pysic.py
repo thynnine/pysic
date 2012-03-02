@@ -6,6 +6,7 @@ import numpy as np
 import ase.calculators.neighborlist as nbl
 from itertools import permutations
 import random as rnd
+import copy
 
 #
 # PySiC : Pythonic Simulation Code
@@ -150,9 +151,7 @@ pf.pysic_interface.start_mpi()
 # it needs to be possible to force a seed by the user - to be implemented
 pf.pysic_interface.start_rng(5301)#rnd.randint(1, 999999))
 
-#####
-##### ToDo: Implement a single instance class which reflects the status of the core.
-#####
+
 
 def finish_mpi():
     """Terminates the MPI framework.
@@ -558,7 +557,118 @@ class BondOrderParameters:
     symbols: list of strings
         a list of elements on which the factor is applied
     """
-    
+
+    @staticmethod    
+    def expand_symbols_table(symbol_list,type=None):
+        """Creates a table of symbols for a BondOrderParameters object.
+
+        The syntax for defining the targets of bond order factors is precise
+        but somewhat cumbersome due to the large number of permutations one gets
+        when the number of bodies increases. Oftentimes one does not need such
+        fine control over all the parameters since many of them have the same
+        numerical values. Therefore it is convenient to be able to define
+        the targets in a more compact way.
+
+        This method generates the detailed target tables from compact syntax.
+        By default, the method takes a list of list and multiplies each list
+        with the others (note the call for a static method)::
+
+            >>> pysic.BondOrderParameters.expand_symbols_table(['Si', ['O', 'C'], ['H', 'O']])
+            [['Si', 'O', 'H'],
+             ['Si', 'C', 'H'],
+             ['Si', 'O', 'O'],
+             ['Si', 'C', 'O']]
+
+        Other custom types of formatting can be defined with the type parameter.
+
+        For type 'triplet', the target list is created for triplets A-B-C from an input list of the form::
+
+         ['A', 'B', 'C']
+
+        Remember that in the symbol table accepted by the BondOrderParameters, one needs to define
+        the B-A and B-C bonds separately and so B appears as the first symbol in the output and the other
+        two appear as second and third (both cases)::
+
+         [['B', 'A', 'C'],
+           'B', 'C', 'A']]
+           
+        However, for an A-B-A triplet, the A-B bond should only be defined once to prevent double counting.
+        Like the default function, also here several triplets can be defined at once::
+
+         >>> pysic.BondOrderParameters.expand_symbols_table([['H', 'O'], 'Si', ['O', 'C']], type='triplet')
+         [['Si', 'H', 'O'],
+          ['Si', 'O', 'H'],
+          ['Si', 'H', 'C'],
+          ['Si', 'C', 'H'],
+          ['Si', 'O', 'O'],
+          ['Si', 'O', 'C'],
+          ['Si', 'C', 'O']]
+        
+
+        Parameters:
+
+        symbol_list: list of strings
+            list to be expanded to a table
+        type: string
+            specifies a custom way of generating the table
+        """
+        if not isinstance(symbol_list,list):
+            return [symbol_list]
+        n_slots = len(symbol_list)
+        n_subslots = []
+        for sub in symbol_list:
+            if isinstance(sub,list):
+                n_subslots.append(len(sub))
+            else:
+                n_subslots.append(1)
+        
+        table = []
+        if(type == None):
+            slot_indices = n_slots*[0]
+            while (slot_indices[n_slots-1] < n_subslots[n_slots-1]):
+                row = []
+                for i in range(n_slots):
+                    if isinstance(symbol_list[i],list):
+                        symb = symbol_list[i][slot_indices[i]]
+                    else:
+                        symb = symbol_list[i]
+                    row.append(symb)
+                table.append(row)
+                slot_indices[0] += 1
+                for i in range(n_slots):
+                    if slot_indices[i] >= n_subslots[i]:
+                        if(i < n_slots-1):
+                            slot_indices[i] = 0
+                            slot_indices[i+1] += 1
+                        else:
+                            pass
+        elif(type == 'triplet'):
+            if n_slots != 3:
+                return None
+            for i in range(n_subslots[1]):
+                for j in range(n_subslots[0]):
+                    for k in range(n_subslots[2]):
+                        
+                        if isinstance(symbol_list[1],list):
+                            symb1 = symbol_list[1][i]
+                        else:
+                            symb1 = symbol_list[1]
+                        if isinstance(symbol_list[0],list):
+                            symb0 = symbol_list[0][j]
+                        else:
+                            symb0 = symbol_list[0]
+                        if isinstance(symbol_list[2],list):
+                            symb2 = symbol_list[2][k]
+                        else:
+                            symb2 = symbol_list[2]
+
+                        table.append([symb1,symb0,symb2])
+                        if symb0 != symb2:
+                            table.append([symb1,symb2,symb0])
+
+
+        return table
+
     def __init__(self,bond_order_type,cutoff=0.0,cutoff_margin=0.0,parameters=None,symbols=None):
         self.params = []
 
@@ -611,6 +721,8 @@ class BondOrderParameters:
 
     def __ne__(self,other):
         return not self.__eq__(other)
+        
+
             
     def accepts_parameters(self,params):
         """Test if the given parameters array has the correct dimensions.
@@ -903,15 +1015,18 @@ class Coordinator:
     """
 
     def __init__(self,bond_order_parameters=None):
-        self.bond_order_parameters = []
+        self.bond_order_params = []
         self.bond_order_factors = None
         if(bond_order_parameters != None):
             self.set_bond_order_parameters(bond_order_parameters)
         self.group_index = -1
 
+
     def __eq__(self,other):
         try:
             if other == None:
+                return False
+            if self.group_index != other.group_index:
                 return False
             if self.bond_order_params != other.bond_order_params:
                 return False
@@ -922,6 +1037,11 @@ class Coordinator:
 
     def __ne__(self,other):
         return not self.__eq__(other)
+
+    def __repr__(self):
+        return "Coordinator(bond_order_parameters={bonds})".format(bonds=str(self.bond_order_params))
+
+
 
     def get_bond_order_parameters(self):
         """Returns the bond order parameters of this Coordinator.
@@ -1492,6 +1612,101 @@ class Potential:
                                  self.tags,
                                  self.indices)
 
+
+
+
+class CoreMirror:
+    """A class representing the status of the core.
+
+    Whenever data is being passed over to the core for calculation,
+    it should also be saved in the CoreMirror. This makes the CoreMirror
+    reflect the current status of the core. Then, when something needs to be
+    calculated, the :class:`~pysic.Pysic` calculator can simply check that
+    it contains the same system as the CoreMirror to ensure that the
+    core operates on the correct data.
+    """
+
+    def __init__(self):
+        self.structure = None
+        self.potentials = None
+        self.neighbor_lists = None
+        self.potential_lists_ready = False
+        self.bond_order_factor_lists_ready = False
+        self.neighbor_lists_waiting = False
+        
+    def __del__(self):
+        try:
+            pf.pysic_interface.release()
+        except:
+            pass
+
+    def get_atoms(self):
+        """Returns the ASE atoms structure stored in the CoreMirror.
+        """
+        return self.structure
+
+    def view_fortran_core(self):
+        """Print some information on the data allocated in the Fortran core."""
+        pf.pysic_interface.examine_atoms()
+        pf.pysic_interface.examine_cell()
+        pf.pysic_interface.examine_potentials()
+        pf.pysic_interface.examine_bond_order_factors()
+
+    def set_atoms(self, atoms):
+        self.structure = copy.deepcopy(atoms)
+        self.potential_lists_ready = False
+        self.neighbor_lists_waiting = False
+
+    def set_atomic_positions(self, atoms):
+        self.structure.set_positions(atoms.get_positions())
+        
+    def set_atomic_momenta(self, atoms):
+        self.structure.set_momenta(atoms.get_momenta())
+        
+    def set_cell(self, atoms):
+        self.structure.set_cell(atoms.get_cell())
+        self.structure.set_pbc(atoms.get_pbc())
+        self.neighbor_lists_waiting = False
+        
+    def set_potentials(self, potentials):
+        self.potentials = copy.deepcopy(potentials)
+        self.potential_lists_ready = False        
+
+    def set_neighbor_lists(self, lists):
+        self.neighbor_lists = copy.deepcopy(lists)
+
+    def atoms_ready(self, atoms):
+        if self.structure == None:
+            return False
+        if((self.structure.get_atomic_numbers() != atoms.get_atomic_numbers()).any()):
+            return False
+        if((self.structure.get_positions() != atoms.get_positions()).any()):
+            return False
+        if((self.structure.get_momenta() != atoms.get_momenta()).any()):
+            return False
+        return True
+
+    def cell_ready(self,atoms):
+        if self.structure == None:
+            return False
+        if((self.structure.get_cell() != atoms.get_cell()).any()):
+            return False
+        if((self.structure.get_pbc() != atoms.get_pbc()).any()):
+            return False
+        return True
+
+    def potentials_ready(self, pots):
+        if self.potentials == None:
+            return False
+        return (self.potentials == pots)
+
+    def neighbor_lists_ready(self, lists):
+        if self.neighbor_lists == None:
+            return False
+        return self.neighbor_lists == lists
+
+
+
 class Pysic:
     """A calculator class providing the necessary methods for interfacing with `ASE`_.
 
@@ -1522,19 +1737,10 @@ class Pysic:
         atoms will be remembered by the core.
     """
 
-    id_number = 1
-    
+    core = CoreMirror()
+
     def __init__(self,atoms=None,potentials=None,full_initialization=False):
-        self.id = Pysic.id_number
-        Pysic.id_number += 1
-        
-        self.neighbor_lists_ready = False
         self.neighbor_lists_waiting = False
-        self.potential_lists_ready = False
-        self.potentials_ready = False
-        self.atoms_ready = False
-        self.cell_ready = False
-        
         self.structure = None
         self.neighbor_list = None
         self.potentials = None
@@ -1546,7 +1752,6 @@ class Pysic:
         self.forces_calculated = False
         self.energy_calculated = False
         self.stress_calculated = False
-        self.coordinations_calculated = False
         self.force_core_initialization = full_initialization
 
 
@@ -1565,9 +1770,6 @@ class Pysic:
 
     def __ne__(self,other):
         return not self.__eq__(other)
-
-    def __del__(self):
-        self.release_fortran_core()
             
 
     def __repr__(self):
@@ -1628,6 +1830,21 @@ class Pysic:
                 do_it.append(not self.stress_calculated)
             else:
                 do_it.append(False)
+
+        # If the core does not match the Pysic calculator,
+        # we may have changed the system or potentials
+        # associated with the calculator without telling it.
+        # In that case the quantities need to be recalculated.
+        # It is of course possible that we have several Pysics
+        # changing the core which would lead to unnecessary
+        # recalculations.
+        if(not Pysic.core.atoms_ready(self.structure)):
+            do_it.append(True)
+        if(not Pysic.core.cell_ready(self.structure)):
+            do_it.append(True)
+        if(not Pysic.core.potentials_ready(self.structure)):
+            do_it.append(True)
+            
         return any(do_it)
 
 
@@ -1738,25 +1955,21 @@ class Pysic:
                 self.forces_calculated = False
                 self.energy_calculated = False
                 self.stress_calculated = False
-                self.coordinations_calculated = False
-                self.neighbor_lists_ready = False
 
-                # NB: this avoids updating the potential lists every time an atom moves, but
-                # at the same time it is prone to miss an update if the user changes the
-                # structure so that the number of atoms remains the same...
+                # NB: this avoids updating the potential lists every time an atom moves
                 try:
-                    if(self.structure.get_number_of_atoms() != atoms.get_number_of_atoms()):
-                        self.potential_lists_ready = False
+                    if((self.structure.get_atomic_numbers() != atoms.get_atomic_numbers()).any()):
+                        Pysic.core.potential_lists_ready = False
+                        
+                    if((self.structure.get_tags() != atoms.get_tags()).any()):
+                        Pysic.core.potential_lists_ready = False
+
+                    if(not Pysic.core.potentials_ready(self.potentials)):
+                        Pysic.core.potential_lists_ready = False
+
                 except:
-                    self.potential_lists_ready = False
-                
-                self.atoms_ready = False
-                try:
-                    if((self.structure.get_cell() != atoms.get_cell()).any()):
-                        self.cell_ready = False
-                except:
-                    self.cell_ready = False
-                
+                    Pysic.core.potential_lists_ready = False
+
                 self.structure = atoms.copy()
 
 
@@ -1774,10 +1987,7 @@ class Pysic:
             self.forces_calculated = False
             self.energy_calculated = False
             self.stress_calculated = False
-            self.coordinations_calculated = False
-            self.potential_lists_ready = False
-            self.potentials_ready = False
-            self.neighbor_lists_ready = False
+            Pysic.core.potential_lists_ready = False
             self.neighbor_lists_waiting = False
 
             try:
@@ -1803,10 +2013,7 @@ class Pysic:
         self.forces_calculated = False
         self.energy_calculated = False
         self.stress_calculated = False
-        self.coordinations_calculated = False
-        self.potential_lists_ready = False
-        self.potentials_ready = False
-        self.neighbor_lists_ready = False
+        Pysic.core.potential_lists_ready = False
         self.neighbor_lists_waiting = False
         
     
@@ -1831,7 +2038,6 @@ class Pysic:
             cutoffs = self.get_individual_cutoffs(0.5)
         self.neighbor_list = nbl.NeighborList(cutoffs,skin=marginal,sorted=False,self_interaction=False,bothways=True)
         self.neighbor_lists_waiting = True
-        self.neighbor_lists_ready = False
 
 
     def get_individual_cutoffs(self,scaler=1.0):
@@ -1888,7 +2094,8 @@ class Pysic:
         Calls the Fortran core to calculate forces for the currently assigned structure.
         """
         self.set_core()
-        self.forces = pf.pysic_interface.calculate_forces(self.structure.get_number_of_atoms()).transpose()
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        self.forces = pf.pysic_interface.calculate_forces(n_atoms).transpose()
         self.forces_calculated = True
         
 
@@ -1908,39 +2115,14 @@ class Pysic:
 
         Calls the Fortran core to calculate the stress tensor for the currently assigned structure.
         """
+
+        #
+        # ToDo: implement stress tensor calculation based on the forces and positions
+        #
         self.stress = 0.0
         self.stress_calculated = True
     
 
-    def calculate_coordinations(self):
-        """Tells the list of Potentials to update their coordinations if needed.
-        """
-        for pot in self.potentials:
-            pot.update_coordinations()
-        self.coordinations_calculated = True        
-
-
-    def get_core_readiness(self):
-        """Returns a tuple of booleans used for notifying necessary core updates.
-
-        This is mainly a debug utility. If any of the values are False,
-        the corresponding part of the core will be updated when calculation
-        is invoked the next time.
-
-        The returned booleans are in order:
-        atoms_ready,
-        cell_ready,
-        potentials_ready,
-        potential_lists_ready,
-        neighbor_lists_waiting,
-        neighbor_lists_ready
-        """
-        return (self.atoms_ready,
-                self.cell_ready,
-                self.potentials_ready,
-                self.potential_lists_ready,
-                self.neighbor_lists_waiting,
-                self.neighbor_lists_ready)
 
     def set_core(self):
         """Sets up the Fortran core for calculation.
@@ -1950,13 +2132,10 @@ class Pysic:
         Otherwise, only the atomic coordinates and momenta are updated.
         Potentials, neighbor lists etc. are also updated if they have been edited.
         """        
-        if not self.core_is_available():
-            raise LockedCoreError("core is not available")
-
         do_full_init = False
         if self.force_core_initialization:
             do_full_init = True
-        elif not self.owns_the_core():
+        elif Pysic.core.get_atoms() == None:
             do_full_init = True
         elif self.structure.get_number_of_atoms() != pf.pysic_interface.get_number_of_atoms():
             do_full_init = True
@@ -1964,22 +2143,22 @@ class Pysic:
         if do_full_init:
             self.initialize_fortran_core()
         else:
-            if not self.atoms_ready:
+            if not Pysic.core.atoms_ready(self.structure):
                 self.update_core_coordinates()
 
-            if not self.cell_ready:
+            if not Pysic.core.cell_ready(self.structure):
                 self.update_core_supercell()
                     
-            if not self.potentials_ready:
+            if not Pysic.core.potentials_ready(self.potentials):
                 self.update_core_potentials()
 
-            if not self.potential_lists_ready:
+            if not Pysic.core.potential_lists_ready:
                 self.update_core_potential_lists()
 
             if not self.neighbor_lists_waiting:
                 self.create_neighbor_lists(self.get_individual_cutoffs(0.5))
 
-            if not self.neighbor_lists_ready:
+            if not Pysic.core.neighbor_lists_ready(self.neighbor_list):
                 self.update_core_neighbor_lists()
 
 
@@ -1992,12 +2171,11 @@ class Pysic:
         of such potentials for every particle. This method asks the core to
         generate these lists.
         """
-        if not self.atoms_ready:
+        if not Pysic.core.atoms_ready(self.structure):
             raise MissingAtomsError("Creating potential lists before updating atoms in core.")
         pf.pysic_interface.create_potential_list()
         pf.pysic_interface.create_bond_order_factor_list()
-        self.potential_lists_ready = True
-
+        Pysic.core.potential_lists_ready = True
 
 
     def update_core_potentials(self):
@@ -2178,7 +2356,7 @@ class Pysic:
                                                        pot_index,
                                                        len(coord_list))
 
-        self.potentials_ready = True
+        Pysic.core.set_potentials(self.potentials)
         
     
     def update_core_coordinates(self):
@@ -2197,10 +2375,12 @@ class Pysic:
         self.forces_calculated = False
         self.energy_calculated = False
         self.stress_calculated = False
-        self.coordinations_calculated = False
 
         pf.pysic_interface.update_atom_coordinates(positions,momenta)
-        self.atoms_ready = True
+
+        Pysic.core.set_atomic_positions(self.structure)
+        Pysic.core.set_atomic_momenta(self.structure)
+
         if not self.neighbor_lists_waiting:
             self.create_neighbor_lists(self.get_individual_cutoffs(0.5))
         
@@ -2215,8 +2395,8 @@ class Pysic:
         
         pf.pysic_interface.create_cell(vectors,inverse,periodicity)
         
-        self.cell_ready = True
-        self.neighbor_lists_ready = False
+        Pysic.core.set_cell(self.structure)
+        Pysic.core.set_neighbor_lists(None)
 
 
     def update_core_neighbor_lists(self):
@@ -2225,17 +2405,17 @@ class Pysic:
          If uninitialized, the lists are created first via :meth:`~pysic.Pysic.create_neighbor_lists`.
          """
         
-        if not self.atoms_ready:
+        if not Pysic.core.atoms_ready(self.structure):
             raise MissingAtomsError("Creating neighbor lists before updating atoms in the core.")
-        if not self.neighbor_lists_waiting:            
+        if not self.neighbor_lists_waiting:
             self.create_neighbor_lists(self.get_individual_cutoffs(0.5))
-            #raise MissingNeighborsError("The neighbor lists have not been pre-initialized.")
 
         self.neighbor_list.update(self.structure)
         for index in range(self.structure.get_number_of_atoms()):
             [nbors,offs] = self.neighbor_list.get_neighbors(index)                
             pf.pysic_interface.create_neighbor_list(index+1,np.array(nbors),np.array(offs).transpose())
-        self.neighbor_lists_ready = True
+
+        Pysic.core.set_neighbor_lists(self.neighbor_list)
         
 
     def initialize_fortran_core(self):
@@ -2254,53 +2434,16 @@ class Pysic:
         elements = np.array( elements ).transpose()
 
         self.create_neighbor_lists(self.get_individual_cutoffs(0.5))
-        #self.neighbor_list.update(self.structure) #now done in update_core_neighbor_lists
 
-        pf.pysic_interface.set_owner_id(-1)
         pf.pysic_interface.create_atoms(masses,charges,positions,momenta,tags,elements)
-        self.atoms_ready = True
+        Pysic.core.set_atoms(self.structure)
         
         self.update_core_supercell()
         self.update_core_potentials()
         self.update_core_neighbor_lists()
         self.update_core_potential_lists()
         pf.pysic_interface.distribute_mpi(self.structure.get_number_of_atoms())
-        pf.pysic_interface.set_owner_id(self.id)
 
-
-    def release_fortran_core(self):
-        """Releases the Fortran core, deallocating memory and allowing another calculator to act."""
-        if self.owns_the_core():
-            pf.pysic_interface.release()        
-
-        self.neighbor_lists_ready = False
-        self.potential_lists_ready = False
-        self.potentials_ready = False
-        self.atoms_ready = False
-        self.cell_ready = False
-
-
-    def view_fortran_core(self):
-        """Print some information on the data allocated in the Fortran core."""
-        pf.pysic_interface.examine_atoms()
-        pf.pysic_interface.examine_cell()
-        pf.pysic_interface.examine_potentials()
-        pf.pysic_interface.examine_bond_order_factors()
-
-    def core_is_available(self):
-        """True if this calculator can use the Fortran core."""
-        return pf.pysic_interface.can_be_accessed(self.id)
-
-    def owns_the_core(self):
-        """True if this calculator owns the core.
-
-        One can create several instances of :class:`~pysic.Pysic` within Python, but there is only one
-        Fortran core for the actual calculations. Therefore, it is recommended that
-        only one :class:`~pysic.Pysic` is created. In case there are several calculators, some basic
-        checks are done to assure that the calculators do not use the core simultaneously.
-        This method simply checks if the core is currently owned by this particular
-        :class:`~pysic.Pysic`."""
-        return (self.id == pf.pysic_interface.get_owner_id())
 
 
     def get_numerical_energy_gradient(self, atom_index, shift=0.001, atoms=None):
@@ -2316,7 +2459,6 @@ class Pysic:
             orig_system = atoms.copy()
 
         self.energy_calculated = False
-        self.atoms_ready = False
         energy_xp = self.get_potential_energy(system)
         system[atom_index].x += shift
         energy_xp = self.get_potential_energy(system)
@@ -2334,9 +2476,9 @@ class Pysic:
         energy_zp = self.get_potential_energy(system)
         system[atom_index].z -= 2.0*shift
         energy_zm = self.get_potential_energy(system)
+        system[atom_index].z += shift
 
         self.energy_calculated = False
-        self.atoms_ready = False
         self.get_potential_energy(orig_system)
         
         return [ -(energy_xp-energy_xm)/(2.0*shift),
@@ -2359,41 +2501,47 @@ class Pysic:
             orig_system = atoms.copy()
 
         self.energy_calculated = False
-        self.atoms_ready = False
         crd = coordinator
-        energy_xp = self.get_potential_energy(system)
         system[moved_index].x += shift
-        energy_xp = self.get_potential_energy(system)
+        self.set_atoms(system)
+        self.set_core()
         crd.calculate_bond_order_factors()
         bond_xp = crd.get_bond_order_factors()[atom_index]
         system[moved_index].x -= 2.0*shift
-        energy_xm = self.get_potential_energy(system)
+        self.set_atoms(system)
+        self.set_core()
         crd.calculate_bond_order_factors()
         bond_xm = crd.get_bond_order_factors()[atom_index]
-        system[moved_index].x += shift
+        system[moved_index].x += shift        
 
         system[moved_index].y += shift
-        energy_yp = self.get_potential_energy(system)
+        self.set_atoms(system)
+        self.set_core()
         crd.calculate_bond_order_factors()
         bond_yp = crd.get_bond_order_factors()[atom_index]
         system[moved_index].y -= 2.0*shift
-        energy_ym = self.get_potential_energy(system)
+        self.set_atoms(system)
+        self.set_core()
         crd.calculate_bond_order_factors()
         bond_ym = crd.get_bond_order_factors()[atom_index]
         system[moved_index].y += shift
 
         system[moved_index].z += shift
-        energy_zp = self.get_potential_energy(system)
+        self.set_atoms(system)
+        self.set_core()
         crd.calculate_bond_order_factors()
         bond_zp = crd.get_bond_order_factors()[atom_index]
         system[moved_index].z -= 2.0*shift
-        energy_zm = self.get_potential_energy(system)
+        self.set_atoms(system)
+        self.set_core()
         crd.calculate_bond_order_factors()
         bond_zm = crd.get_bond_order_factors()[atom_index]
+        system[moved_index].z += shift
 
         self.energy_calculated = False
-        self.atoms_ready = False
-        self.get_potential_energy(orig_system)
+        self.set_atoms(orig_system)
+        self.set_core()
+
         
         return [ (bond_xp-bond_xm)/(2.0*shift),
                  (bond_yp-bond_ym)/(2.0*shift),

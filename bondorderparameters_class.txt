@@ -228,9 +228,14 @@ For three different elements, say C, O, and H, the possible triplets are::
 
 In principle, one can attach a different set of parameters to each of these.
 Often though the parameters are mostly the same,
-and writing these kinds of lists for all possible combinations is cumbersome. Therefore
-utilities will be added for generating the tables of symbols automatically. 
-These have not been yet implemented though.
+and writing these kinds of lists for all possible combinations is cumbersome. 
+To help in generating the tables, the utility method 
+:meth:`~pysic.BondOrderParameters.expand_symbols_table` can be used.
+For instance, the full list of triplets above can be created with::
+
+   >>> pysic.BondOrderParameters.expand_symbols_table([['C', 'O', 'H'], ['C', 'O', 'H'], ['C', 'O', 'H'],])
+
+
 
 
 Bond order mixing
@@ -390,6 +395,13 @@ List of methods
 
 Below is a list of methods in :class:`~pysic.BondOrderParameters`, grouped according to
 the type of functionality.
+
+Static methods
+______________
+
+- :meth:`~pysic.BondOrderParameters.expand_symbols_table`
+
+
 
 Parameter handling
 __________________

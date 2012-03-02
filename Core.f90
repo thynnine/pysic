@@ -1163,7 +1163,7 @@ contains
                 else
                    directions(1:3,1) = separations(1:3,1) / distances(1)
                 end if
-                
+
                 many_bodies_found = .false.
                 ! 2-body bond order factors
                 do k1 = 1, size(bond_indices)

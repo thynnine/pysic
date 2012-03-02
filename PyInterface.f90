@@ -7,45 +7,8 @@ module pysic_interface
   use mt95
   implicit none
 
-  integer :: owner_id = -1
-
 contains
 
-  subroutine get_owner_id(id)
-    implicit none
-    integer, intent(out) :: id
-    
-    id = owner_id
-    
-  end subroutine get_owner_id
-
-
-  subroutine set_owner_id(id)
-    implicit none
-    integer, intent(in) :: id
-
-    owner_id = id
-
-  end subroutine set_owner_id
-
-
-  subroutine can_be_accessed(id, free)
-    implicit none
-    integer, intent(in) :: id
-    logical, intent(out) :: free
-
-    if(owner_id < 0)then
-       free = .true.
-       return
-    else if(id == owner_id)then
-       free = .true.
-       return
-    else
-       free = .false.
-       return
-    end if
-
-  end subroutine can_be_accessed
 
 
   ! Initialize Mersenne Twister rng
@@ -616,7 +579,6 @@ contains
     implicit none
     
     call core_release_all_memory()
-    owner_id = -1
 
   end subroutine release
 
