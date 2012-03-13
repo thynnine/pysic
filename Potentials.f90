@@ -1,46 +1,195 @@
+! 
+! Potentials contains the low-level routines for handling interactions.
+! The module defines custom types for both describing the types of
+! potentials and bond order factors (:data:`potential_descriptor`, :data:`bond_order_descriptor`) 
+! as well as for storing the parameters of actual interactions in use
+! for the Fortran calculations (:data:`potential`, :data:`bond_order_parameters`).
+! Tools for creating the custom datatypes (:func:`create_potential`, :func:`create_bond_order_factor`)
+! are provided.
+!
+! The types of potentials and bond order factors are defined using the types
+! :data:`potential_descriptor` and :data:`bond_order_descriptor`. 
+! These should be created at start-up and remain untouched during simulation.
+! They are used by the Fortran core for checking the types of parameters a potential
+! needs, for instance, but they are also accessible from the Python interface.
+! Especially, upon creation of :class:`~pysic.Potential` and :class:`~pysic.BondOrderParameters` 
+! instances, one needs to specify the type as a keyword. This keyword is then compared to the list of 
+! characterizers in the core to determine the type of the interaction.
+!
+! The basic routines for calculating the actual forces and energies are also defined in
+! this module (:func:`evaluate_energy`, :func:`evaluate_forces`, :func:`evaluate_bond_order_factor`,
+! :func:`evaluate_bond_order_gradient`). However, these routines do not calculate the total potential
+! energy of the system, :math:`V`, or the total forces acting on the particles,
+! :math:`\mathbf{F} = -\nabla_\alpha V`. Instead, the routines evaluate the contributions from individual
+! atoms, atom pairs, atom triplets, etc. For instance, let the total energy of the system be
+!
+! .. math::
+!
+!   V = \sum_p \left( \sum_i v^p_i + \sum_{(i,j)} v^p_{ij} + \sum_{(i,j,k)} v^p_{ijk} \right),
+!
+! where :math:`p` sums over the different potentials acting on the system and :math:`i`, :math:`(i,j)` and
+! :math:`(i,j,k)` sum over all atoms, pairs and triplet, respectively. Then the energy terms :math:`v`
+! are obtained from :func:`evaluate_energy`. In pseudo-code,
+!
+! .. math::
+!
+!   v^p_{S} = \mathtt{evaluate\_energy}(S,p),
+!
+! where :math:`S` is a set of atoms. The summation over potentials and atoms is done in :ref:`pysic_core`
+! in :func:`calculate_energy`. Similarly for forces, the summation is carried out in :func:`calculate_forces`.
+!
+! The reason for separating the calculation of individual interaction terms to :ref:`potentials`
+! and the overall summation to :ref:`pysic_core` is that only the core knows the current structure and
+! interactions of the system. 
+! It is the task of this module to tell the core how all the potentials behave given
+! any local structure, but the overall system information is kept in the core. So during energy
+! evaluation, :ref:`pysic_core` finds all local structures that possibly contribute with an interaction
+! and asks :ref:`potentials` to calculate this contribution.
+!
+! Bond order factors are potential modifiers, not direct interactions themselves.
+! In general, the factors are scalar functions defined per atom, for instance,
+!
+! .. math::
+!
+!    b^p_i = s^p_i\left( \sum_{(i,j)} c^p_{ij} + \sum_{(i,j,k)} c^p_{ijk} \right)
+! 
+! for a three-body factor, where :math:`c^p` are local contributions 
+! (usually representing chemical bonds) and :math:`s^p_i` is a per atom scaling function. 
+! The bond factors multiply the potentials :math:`p`
+! leading to the total energy
+!
+! .. math::
+!
+!    V = \sum_p \left( \sum_i b^p_i v^p_i + \sum_{(i,j)} \frac{1}{2}(b^p_i+b^p_j) v^p_{ij} + \sum_{(i,j,k)} \frac{1}{2}(b^p_i+b^p_j+b^p_k) v^p_{ijk} \right).
+!
+! The corresponding total force on atom :math:`\alpha` is then
+!
+! .. math::
+!
+!    \mathbf{F}_{\alpha} = - \nabla_\alpha V = - \sum_p \left( \sum_i ((\nabla_\alpha b^p_i) v^p_i + b^p_i (\nabla_\alpha v^p_i) ) + \ldots \right).
+!
+! The contributions :math:`f^p_\alpha = -\nabla_\alpha v^p`, :math:`c^p`, 
+! and :math:`\nabla_\alpha c^p` are
+! calculated in :func:`evaluate_forces`, :func:`evaluate_bond_order_factor`, 
+! and :func:`evaluate_bond_order_gradient`.
+! Application of the scaling functions :math:`s_i` and :math:`s_i'` on the sums 
+! :math:`\sum_{(i,j)} c^p_{ij} + \sum_{(i,j,k)} c^p_{ijk}` is done in the routines
+! :func:`post_process_bond_order_factor` and :func:`post_process_bond_order_gradient` to
+! produce the actual bond order factors :math:`b^p_i` and gradients :math:`\nabla_\alpha b^p_i`.
+! These sums, similarly to the energy and force summations, are evaluated with 
+! :func:`core_calculate_bond_order_factors` in :ref:`pysic_core`.
+!
+! Note when adding potentials or bond order factors in the source code:
+!
+! The parameters defined in Potentials.f90 are used for determining the maximum sizes of arrays, 
+! numbers of potentials and bond factors, and the internally used indices
+! for them. When adding new potentials of bond factors, make sure to update
+! the relevant numbers. Especially the number of potentials (:data:`n_potential_types`)
+! or number of bond order factors (:data:`n_bond_order_types`) must be increased
+! when more types are defined.
+! 
+! Also note that in :ref:`pysic_core`, some of these parameters are used for
+! determining array sizes. However, the actual parameters are not used
+! because f2py does not read the values from here. Therefore if you change
+! a parameter here, search for its name in :ref:`pysic_core` to see if the
+! name appears in a comment. That is an indicator that a numeric value
+! must be updated accordingly.
+!
 module potentials
   use utility
   use geometry
   implicit none
 
-  ! NB: When adding new potentials remember to update these parameters if necessary.
-  ! At least n_potential_types must always be updated.
-  ! Also note that in PyInterface, these constants are not used because f2py doesn't read them from here.
-  ! search for their names to find them (in comments)
+
+  ! Parameters for potential descriptors
+  ! *pot_name_length maximum length allowed for the names of potentials
+  ! *parameter_name_length maximum length allowed for the names of parameters
+  ! *n_potential_types number of different types of potentials known
+  ! *n_bond_order_types number of different types of bond order factors known
+  ! *n_max_param maximum number of parameters for a potential or for a bond factor, per number of targets
+  ! *pot_note_length maximum lenght allowed for the description of the potential
+  ! *param_note_length maximum length allowed for the descriptions of parameters
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
        n_potential_types = 5, &
        n_bond_order_types = 3, &
        n_max_params = 4, &
-       n_max_targets = 2, &
        pot_note_length = 500, &
        param_note_length = 100
 
+  ! Indices for potential types.
+  ! These are used internally so that when
+  ! a potential is evaluated, its type index
+  ! is compared against these values.
+  ! It makes the code easier to read when
+  ! it says 
+  !    if(type == pair_lj_index)then
+  ! instead  of
+  !    if(type == 1)then
+  !
+  ! *pair_lj_index internal index for the Lennard-Jones potential
+  ! *pair_spring_index internal index for the spring potential
+  ! *mono_const_index internal index for the constant force potential
+  ! *tri_bend_index internal index for the bond bending potential
+  ! *mono_none_index internal index for the constant potential
   integer, parameter :: pair_lj_index = 1, &
        pair_spring_index = 2, &
        mono_const_index = 3, &
        tri_bend_index = 4, &
        mono_none_index = 5
 
+  ! Indices for bond order factor types.
+  ! Similar to potential types above.
+  !
+  ! *coordiantion_index internal index for the coordination bondorder factor
+  ! *tersoff_index internal index for the Tersoff bond order factor
+  ! *c_scale_index internal index for the coordination scaling potential
   integer, parameter :: coordination_index = 1, &
        tersoff_index = 2, &
        c_scale_index = 3
 
+  ! *no_name The label for unlabeled atoms. In other words, there are routines that expect atomic symbols as arguments, but if there are no symbols to pass, this should be given to mark an empty entry.
   character(len=label_length), parameter :: no_name = "xx"
+
+  ! *descriptors_created logical tag used for managing pointer allocations for potential descriptors
+  ! *bond_descriptors_created logical tag used for managing pointer allocations for bond order factor descriptors
   logical :: descriptors_created = .false., bond_descriptors_created = .false.
 
-  ! Contains a description of a type of a potential.
+  ! Description of a type of a potential.
   ! The type contains the name and description of the potential
   ! and the parameters it contains.
+  ! The descriptors contain the information that the inquiry methods in
+  ! the python interface fetch.
+  !
+  ! *name The name of the potential: this is a keyword according to which the potentials may be recognized.
+  ! *parameter_names The names of the parameters of the potential: these are keywords according to which the parameters may be recognized.
+  ! *n_parameters number of parameters
+  ! *n_targets number of targets, i.e., interacting bodies
+  ! *type_index The internal index of the potential. This can also be used for recognizing the potential and must therefore match the name. For instance, if name = 'LJ', type_index = :data:`pair_lj_index`.
+  ! *description A description of the potential. This should contain the mathematical formulation as well as a short verbal explanation.
+  ! *parameter_notes Descriptions of the parameters. The descriptions should be very short indicators such as 'spring constant' or 'energy coefficient'. For more detailed explanations, the proper documentation should be used.
   type potential_descriptor
      character(len=pot_name_length) :: name
      character(len=param_name_length), pointer :: parameter_names(:)
      integer :: n_parameters, n_targets, type_index
      character(len=pot_note_length) :: description
      character(len=param_note_length), pointer :: parameter_notes(:)
-     logical :: bond_order_argument
   end type potential_descriptor
 
+  ! Description of a type of a potential.
+  ! The type contains the name and description of the potential
+  ! and the parameters it contains.
+  ! The descriptors contain the information that the inquiry methods in
+  ! the python interface fetch.
+  !
+  ! *name The name of the bond order factor: this is a keyword according to which the factor may be recognized.
+  ! *parameter_names The names of the parameters of the bond order factor: these are keywords according to which the parameters may be recognized.
+  ! *n_parameters number of parameters for each number of bodies (1-body parameters, 2-body parameters etc.)
+  ! *n_targets number of targets, i.e., interacting bodies
+  ! *type_index The internal index of the bond order factor. This can also be used for recognizing the factor and must therefore match the name. For instance, if name = 'neighbors', type_index = :data:`coordination_index`.
+  ! *description A description of the bond order factor. This should contain the mathematical formulation as well as a short verbal explanation.
+  ! *parameter_notes Descriptions of the parameters. The descriptions should be very short indicators such as 'spring constant' or 'energy coefficient'. For more detailed explanations, the proper documentation should be used.
+  ! *includes_post_processing a logical tag specifying if there is a scaling function :math:`s_i` attached to the factor.
   type bond_order_descriptor
      character(len=pot_name_length) :: name
      character(len=param_name_length), pointer :: parameter_names(:,:)
@@ -51,14 +200,35 @@ module potentials
      logical :: includes_post_processing
   end type bond_order_descriptor
 
+  ! *potential_descriptors an array for storing descriptors for the different *types* of potentials
   type(potential_descriptor), pointer :: potential_descriptors(:)
+  ! *bond_order_descriptors an array for storing descriptors for the different *types* of bond order factors
   type(bond_order_descriptor), pointer :: bond_order_descriptors(:)
 
   ! Defines a particular potential.
   ! The potential should correspond to the description of some
   ! built-in type and hold actual numeric values for parameters. 
-  ! In addition a real potential must have information on the 
+  ! In addition, a real potential must have information on the 
   ! particles it acts on and the range it operates in.
+  ! These are to be created based on the :class:`~pysic.Potential` objects in the Python
+  ! interface when calculations are invoked.
+  !
+  ! *type_index The internal index of the potential *type*. This is used for recognizing the potential. Note that the potential instance does not have a name. If the name is needed, it can be obtained from the :data:`potential_descriptor` of the correct index.
+  ! *pot_index The internal index of the *actual potential*. This is needed when bond order factors are included so that the factors may be joint with the correct potentials.
+  ! *parameters numerical values for parameters
+  ! *derived_parameters numerical values for parameters calculated based on the parameters specified by the user
+  ! *cutoff The hard cutoff for the potential. If the atoms are farther away from each other than this, the potential does not affect them.
+  ! *soft_cutoff The soft cutoff for the potential. If this is smaller than the hard cutoff, the potential is scaled to zero continuously when the interatomic distances grow from the soft to the hard cutoff.
+  ! *apply_elements A list of elements (atomic symbols) the potential affects. E.g., for a Si-O potential, it would be ('Si','O'). Note that unlike in the Python interface, a single :data:`potential` only has one set of targets, and for multiple target options several :data:`potential` instances are created.
+  ! *apply_tags A list of atom tags the potential affects. Note that unlike in the Python interface, a single :data:`potential` only has one set of targets, and for multiple target options several :data:`potential` instances are created.
+  ! *apply_indices A list of atom indices the potential affects. Note that unlike in the Python interface, a single :data:`potential` only has one set of targets, and for multiple target options several :data:`potential` instances are created.
+  ! *original_elements The list of elements (atomic symbols) of the original :class:`~pysic.Potential` in the Python interface from which this potential was created. Whereas the apply_* lists are used for finding all pairs and triplets of atoms for which the potential could act on, the original_* lists specify the roles of atoms in the interaction.
+  ! *original_tags The list of atom tags of the original :class:`~pysic.Potential` in the Python interface from which this potential was created. Whereas the apply_* lists are used for finding all pairs and triplets of atoms for which the potential could act on, the original_* lists specify the roles of atoms in the interaction.
+  ! *original_indices The list of atom indices of the original :class:`~pysic.Potential` in the Python interface from which this potential was created. Whereas the apply_* lists are used for finding all pairs and triplets of atoms for which the potential could act on, the original_* lists specify the roles of atoms in the interaction.
+  ! *filter_elements a logical switch specifying whether the potential targets atoms based on the atomic symbols
+  ! *filter_tags a logical switch specifying whether the potential targets atoms based on the atom tags
+  ! *filter_indices a logical switch specifying whether the potential targets atoms based on the atom indices
+  ! *smoothened logical switch specifying if a smooth cutoff is applied to the potential
   type potential
      integer :: type_index, pot_index
      double precision, pointer :: parameters(:), derived_parameters(:)
@@ -67,12 +237,29 @@ module potentials
      integer, pointer :: apply_tags(:), apply_indices(:)
      character(len=2), pointer :: original_elements(:) ! label_length
      integer, pointer :: original_tags(:), original_indices(:)
-     logical :: filter_elements, filter_tags, filter_indices, smoothened, bond_order_argument
+     logical :: filter_elements, filter_tags, filter_indices, smoothened
   end type potential
 
-  ! Defines parameters for bond order factor calculation.
+  ! Defines a particular bond order factor.
+  ! The factor should correspond to the description of some
+  ! built-in type and hold actual numeric values for parameters. 
+  ! In addition a real bond order factor must have information on the 
+  ! particles it acts on and the range it operates in.
+  ! These are created based on the :class:`~pysic.BondOrderParameters` objects in the Python
+  ! interface when calculations are invoked.
+  !
+  ! *type_index The internal index of the bond order factor *type*. This is used for recognizing the factor. Note that the bond order parameters instance does not have a name. If the name is needed, it can be obtained from the :data:`bond_order_descriptor` of the correct index.
+  ! *group_index The internal index of the *potential* the bond order factor is modifying.
+  ! *parameters numerical values for parameters
+  ! *n_params array containing the numbers of parameters for different number of targets (1-body parameters, 2-body parameters, etc.)
+  ! *derived_parameters numerical values for parameters calculated based on the parameters specified by the user
+  ! *cutoff The hard cutoff for the bond order factor. If the atoms are farther away from each other than this, they do not contribute to the total bond order factor does not affect them.
+  ! *soft_cutoff The soft cutoff for the bond order factor. If this is smaller than the hard cutoff, the bond contribution is scaled to zero continuously when the interatomic distances grow from the soft to the hard cutoff.
+  ! *apply_elements A list of elements (atomic symbols) the factor affects. E.g., for Si-O bonds, it would be ('Si','O'). Note that unlike in the Python interface, a single :data:`bond_order_parameters` only has one set of targets, and for multiple target options several :data:`bond_order_parameters` instances are created.
+  ! *original_elements The list of elements (atomic symbols) of the original :class:`~pysic.BondOrderParameters` in the Python interface from which this factor was created. Whereas the apply_elements lists are used for finding all pairs and triplets of atoms which could contribute to the bond order factor, the original_elements lists specify the roles of atoms in the factor.
+  ! *includes_post_processing a logical switch specifying if there is a scaling function :math:`s_i` attached to the factor
   type bond_order_parameters
-     integer :: type_index, group_index ! group index connects the parameters to a coordinator entity in the python side of the simulator
+     integer :: type_index, group_index
      double precision, pointer :: parameters(:,:), derived_parameters(:,:)
      double precision :: cutoff, soft_cutoff
      integer, pointer :: n_params(:)
@@ -83,6 +270,25 @@ module potentials
   
 contains
 
+  ! Returns a :data:`potential`.
+  !
+  ! The routine takes as arguments all the necessary parameters
+  ! and returns a potential type wrapping them in one package.
+  !
+  ! *n_targets number of targets, i.e., interacting bodies
+  ! *n_params number of parameters
+  ! *pot_name name of the potential - a keyword that must match a name of one of the :data:`potential_descriptors`
+  ! *parameters array of numerical values for the parameters
+  ! *cutoff the hard cutoff for the potential
+  ! *soft_cutoff the soft cutoff for the potential
+  ! *elements the elements (atomic symbols) the potential acts on
+  ! *tags the atom tags the potential acts on
+  ! *indices the atom indices the potential acts on
+  ! *orig_elements The elements (atomic symbols) in the :class:`~pysic.Potential` used for generating the potential. This is needed to specify the roles of the atoms in the interaction.
+  ! *orig_tags The atom tags in the :class:`~pysic.Potential` used for generating the potential. This is needed to specify the roles of the atoms in the interaction.
+  ! *orig_indices The atom indices in the :class:`~pysic.Potential` used for generating the potential. This is needed to specify the roles of the atoms in the interaction.
+  ! *pot_index the internal index of the potential
+  ! *new_potential the created :data:`potential`
   subroutine create_potential(n_targets,n_params,pot_name,parameters,cutoff,soft_cutoff,&
        elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,new_potential)
     implicit none
@@ -146,7 +352,6 @@ contains
     end select
 
     new_potential%pot_index = pot_index
-    new_potential%bond_order_argument = descriptor%bond_order_argument
 
 
     if(n_targets < 1)then
@@ -175,7 +380,24 @@ contains
 
 
 
-  subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
+  ! Returns a :data:`bond_order_parameters`.
+  !
+  ! The routine takes as arguments all the necessary parameters
+  ! and returns a bond order parameters type wrapping them in one package.
+  !
+  ! *group_index The internal index of the *potential* the bond order factor is modifying.
+  ! *parameters numerical values for parameters as a one-dimensional array
+  ! *n_targets number of targets, i.e., interacting bodies
+  ! *n_params array containing the numbers of parameters for different number of targets (1-body parameters, 2-body parameters, etc.)
+  ! *n_split number of groupings in the list of parameters, per number of bodies - should equal n_targets
+  ! *param_split Array containing the numbers of 1-body, 2-body, etc. parameters. The parameters are given as a list, but a bond order factor may have parameters separately for different numbers of targets. This list specifies the number of parameters for each.
+  ! *bond_name name of the bond order factor - a keyword that must match a name of one of the :data:`bond_order_descriptors`
+  ! *cutoff The hard cutoff for the bond order factor. If the atoms are farther away from each other than this, they do not contribute to the total bond order factor does not affect them.
+  ! *soft_cutoff The soft cutoff for the bond order factor. If this is smaller than the hard cutoff, the bond contribution is scaled to zero continuously when the interatomic distances grow from the soft to the hard cutoff.
+  ! *elements a list of elements (atomic symbols) the factor affects
+  ! *orig_elements the list of elements (atomic symbols) of the original :class:`~pysic.BondOrderParameters` in the Python interface from which this factor was created
+  ! *new_bond the created :data:`bond_order_parameters`
+subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
        cutoff,soft_cutoff,elements,orig_elements,group_index,new_bond)
     implicit none
     integer, intent(in) :: n_targets, n_params, n_split, group_index
@@ -229,6 +451,27 @@ contains
   end subroutine create_bond_order_factor
 
 
+  ! Bond-order post processing, i.e., 
+  ! application of per-atom scaling functions.
+  !
+  ! By post processing, we mean any operations done after calculating the
+  ! sum of pair- and many-body terms. That is, if a factor is, say,
+  !
+  ! .. math::
+  !
+  !      b_i = f(\sum_j c_{ij}) = 1 + \sum_j c_{ij},
+  !
+  ! the :math:`\sum_j c_ij` would have been calculated already and the 
+  ! operation :math:`f(x) = 1 + x` remains to be carried out.
+  ! The post processing is done per atom regardless of if the
+  ! bond factor is of a pair or many body type.
+  ! 
+  ! This routine applies the scaling function on the given
+  ! bond order sum accoding to the given parameters.
+  !
+  ! *raw_sum the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+  ! *bond_params a :data:`bond_order_parameters` specifying the parameters
+  ! *factor_out the calculated bond order factor :math:`b_i`
   subroutine post_process_bond_order_factor(raw_sum, bond_params, factor_out)
     implicit none
     double precision, intent(in) :: raw_sum
@@ -253,6 +496,35 @@ contains
 
   end subroutine post_process_bond_order_factor
 
+
+  ! Bond-order post processing, i.e., 
+  ! application of per-atom scaling functions.
+  !
+  ! By post processing, we mean any operations done after calculating the
+  ! sum of pair- and many-body terms. That is, if a factor is, say,
+  !
+  ! .. math::
+  !
+  !      b_i = f(\sum_j c_{ij}) = 1 + \sum_j c_{ij},
+  !
+  ! the :math:`\sum_j c_{ij}` would have been calculated already and the 
+  ! operation :math:`f(x) = 1 + x` remains to be carried out.
+  ! The post processing is done per atom regardless of if the
+  ! bond factor is of a pair or many body type.
+  ! 
+  ! For gradients, one needs to evaluate
+  !
+  ! .. math::
+  !
+  !     \nabla_\alpha b_i = f'(\sum_j c_{ij}) \nabla_\alpha \sum_j c_{ij}
+  !
+  ! This routine applies the scaling function on the given
+  ! bond order sum and gradient accoding to the given parameters.
+  !
+  ! *raw_sum the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+  ! *raw_gradient the precalculated bond order gradient sum, :math:`\nabla_\alpha \sum_j c_ij` in the above example
+  ! *bond_params a :data:`bond_order_parameters` specifying the parameters
+  ! *factor_out the calculated bond order factor :math:`\nabla_\alpha b_i`
   subroutine post_process_bond_order_gradient(raw_sum, raw_gradient, bond_params, factor_out)
     implicit none
     double precision, intent(in) :: raw_sum, raw_gradient(3)
@@ -283,14 +555,35 @@ contains
 
   end subroutine post_process_bond_order_gradient
 
+
+  ! Returns a bond order factor term.
+  ! 
+  ! By a bond order factor term, we mean the contribution from
+  ! specific atoms, :math:`c_{ijk}`, appearing in the factor
+  !
+  ! .. math::
+  !
+  !       b_i = f(\sum_{jk} c_{ijk})
+  ! 
+  ! This routine evaluates the term :math:`c_{ij}` or :math:`c_{ijk}` for the given
+  ! atoms :math:`ij` or :math:`ijk` according to the given parameters.
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *bond_params a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *factor the calculated bond order term :math:`c`
   subroutine evaluate_bond_order_factor(n_targets,separations,distances,bond_params,factor,atoms)
     implicit none
     integer, intent(in) :: n_targets
-    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
+    double precision, intent(in) :: separations(3,n_targets-1), &
+         distances(n_targets-1)
     type(bond_order_parameters), intent(in) :: bond_params(n_targets-1)
     double precision, intent(out) :: factor(n_targets)
     type(atom), optional, intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, cosine, decay1, decay2, xi1, xi2, gee1, gee2, &
+    double precision :: r1, r2, cosine, decay1, decay2, &
+         xi1, xi2, gee1, gee2, &
          mu, a1, a2, cc1, dd1, h1, cc2, dd2, h2
     double precision :: tmp1(3), tmp2(3)
 
@@ -301,18 +594,25 @@ contains
 
        r1 = distances(1)
        if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
-          call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(1)%soft_cutoff,decay1)
+          ! coordination is simply the number of neighbors
+          ! calculated as a sum of cutoff functions
+          call smoothening_factor(r1,bond_params(1)%cutoff,&
+               bond_params(1)%soft_cutoff,decay1)
           factor = decay1 ! symmetric, so factor(1) = factor(2)
        end if
 
     case(tersoff_index) ! tersoff bond-order factor
 
-       ! note that the given distances and separation vectors must be for index pairs
-       ! ij and ik (in the notation described in the documentation) since these are needed.
+       ! note that the given distances and separation vectors 
+       ! must be for index pairs ij and ik (in the notation 
+       ! described in the documentation) since these are needed.
        !
-       ! bond_params(1) should contain the ij parameters and bond_params(2) the ik ones,
-       ! but it is only checked that bond_params(1) is actually of tersoff type since only
-       ! the cutoffs of bond_params(2) are used
+       ! bond_params(1) should contain the ij parameters and 
+       ! bond_params(2) the ik ones
+
+       if(bond_params(1)%type_index /= bond_params(2)%type_index)then
+          return
+       end if
 
        if(.not.present(atoms))then
           return
@@ -338,11 +638,15 @@ contains
        if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .and. &
            ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
 
+          ! tmp1 and tmp2 are the vectors r_ij, r_ik
           tmp1 = separations(1:3,1)
           tmp2 = separations(1:3,2)
-          cosine = (tmp1 .o. tmp2) / ( r1 * r2 ) ! angle between ij and ik
+          ! cosine of the angle between ij and ik
+          cosine = (tmp1 .o. tmp2) / ( r1 * r2 )
           
-          ! bond_params: beta_i, eta_i, mu_i, a_ij, c_ij, d_ij, h_ij
+          ! bond_params: mu_i, a_ij, a_ik, &
+          !              c_ij^2, d_ij^2, h_ij, 
+          !              c_ik^2, d_ik^2, h_ik
           mu = bond_params(1)%parameters(3,1)
           a1 = bond_params(1)%parameters(1,2)
           a2 = bond_params(2)%parameters(1,2)
@@ -353,15 +657,18 @@ contains
           dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
           h2 = bond_params(2)%parameters(4,2)
           
-          call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay2)
-          call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(1)%soft_cutoff,decay1)
+          call smoothening_factor(r2,bond_params(2)%cutoff,&
+               bond_params(2)%soft_cutoff,decay2)
+          call smoothening_factor(r1,bond_params(1)%cutoff,&
+               bond_params(1)%soft_cutoff,decay1)
           
           xi1 = decay1 * decay2 * exp( (a1 * (r1-r2))**mu ) 
           xi2 = decay1 * decay2 * exp( (a2 * (r2-r1))**mu ) 
           gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
           gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
           
-          ! only the middle atom gets a contribution, so factor(1) = factor(3) = 0.0
+          ! only the middle atom gets a contribution, 
+          ! so factor(1) = factor(3) = 0.0
           factor(2) = xi1*gee1 + xi2*gee2
           
        end if
@@ -375,23 +682,45 @@ contains
 
 
   ! Returns the gradients of bond order terms with respect to moving an atom.
-  ! The returned array has three layers:
+  ! 
+  ! By a bond order factor term, we mean the contribution from
+  ! specific atoms, c_ijk, appearing in the factor
+  !
+  ! .. math::
+  !
+  !       b_i = f(\sum_{jk} c_{ijk})
+  ! 
+  ! This routine evaluates the gradient term :math:`\nabla_\alpha c_{ij}` or 
+  ! :math:`\nabla_\alpha c_{ijk}` for the given atoms :math:`ij` or :math:`ijk` according to the given parameters.
+  !
+  ! The returned array has three dimensions:
   ! gradient( coordinates, atom with respect to which we differentiate, atom whose factor is differentiated )
   ! So for example, for a three body term atom1-atom2-atom3, gradient(1,2,3) contains
   ! the x-coordinate (1), of the factor for atom2 (2), with respect to moving atom3 (3).
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *bond_params a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *gradient the calculated bond order term :math:`\nabla_\alpha c`
   subroutine evaluate_bond_order_gradient(n_targets,separations,distances,bond_params,gradient,atoms)
     implicit none
     integer, intent(in) :: n_targets
-    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
+    double precision, intent(in) :: separations(3,n_targets-1), &
+         distances(n_targets-1)
     type(bond_order_parameters), intent(in) :: bond_params(n_targets-1)
     double precision, intent(out) :: gradient(3,n_targets,n_targets)
     type(atom), optional, intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, nablar1(3,3), nablar2(3,3), cosine, nablacosine(3,3), decay1, decay2,&
-         nabladecay(3,3), unitvector(3,2), xi1, gee1, nablaxi1(3,3), nablagee1(3,3), &
+    double precision :: r1, r2, nablar1(3,3), nablar2(3,3), &
+         cosine, nablacosine(3,3), decay1, decay2,&
+         nabladecay(3,3), unitvector(3,2), xi1, gee1, &
+         nablaxi1(3,3), nablagee1(3,3), &
          xi2, gee2, nablaxi2(3,3), nablagee2(3,3), &
          mu, a1, a2, cc1, dd1, h1, cc2, dd2, h2, dot, &
          ratio, exponent1a, exponent1b, exponent2a, exponent2b
-    double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3), tmp5(3), tmp6(3), tmpmat1(3,3), tmpmat2(3,3)
+    double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3), &
+         tmp5(3), tmp6(3), tmpmat1(3,3), tmpmat2(3,3)
 
     gradient = 0.d0
 
@@ -411,6 +740,10 @@ contains
        end if
 
     case(tersoff_index) ! tersoff bond-order factor
+
+       if(bond_params(1)%type_index /= bond_params(2)%type_index)then
+          return
+       end if
 
        if(.not.present(atoms))then
           return
@@ -442,9 +775,11 @@ contains
              unitvector(1:3,2) = tmp2 / r2
              dot = (tmp1 .o. tmp2)
              ratio = 1.d0 / ( r1 * r2 )
-             cosine = dot * ratio ! angle between ij and ik
+             ! cosine of the angle between ij and ik, theta_ijk
+             cosine = dot * ratio 
 
-             ! gradients of the r_ij and r_ik vectors with respect to the positions 
+             ! gradients of the r_ij and r_ik vectors with 
+             ! respect to the positions 
              ! of the three particles i, j, and k
 
              ! gradient 1 affects atoms ij, so atoms 2 and 1
@@ -464,7 +799,10 @@ contains
              nablacosine(1:3,2) = -(tmp3+tmp4)*ratio
              nablacosine(1:3,3) = tmp4*ratio
 
-             ! bond_params: beta_i, eta_i, mu_i, a_ij, c_ij, d_ij, h_ij
+          
+             ! bond_params: mu_i, a_ij, a_ik, &
+             !              c_ij^2, d_ij^2, h_ij, 
+             !              c_ik^2, d_ik^2, h_ik
              mu = bond_params(1)%parameters(3,1)
              a1 = bond_params(1)%parameters(1,2)
              a2 = bond_params(2)%parameters(1,2)
@@ -483,11 +821,14 @@ contains
              call smoothening_gradient(unitvector(1:3,1),r1,&
                   bond_params(1)%cutoff,bond_params(1)%soft_cutoff,tmp5)
 
-             ! gradient 1 (tmp5) affects atoms ij, so atoms 2 and 1
+             ! tmpmat1 ad tmpmat2 store the gradients of decay1
+             ! and decay2 with respect to moving any atom i, j, or k
+
+             ! gradient 1 (tmp5) affects atoms ij, so it affects atoms 2 and 1
              tmpmat1 = 0.d0
              tmpmat1(1:3,1) = tmp5
              tmpmat1(1:3,2) = -tmp5
-             ! gradient 2 (tmp6) affects atoms ik, so atoms 2 and 3
+             ! gradient 2 (tmp6) affects atoms ik, so it affects atoms 2 and 3
              tmpmat2 = 0.d0
              tmpmat2(1:3,2) = -tmp6
              tmpmat2(1:3,3) = tmp6
@@ -528,7 +869,25 @@ contains
 
   end subroutine evaluate_bond_order_gradient
 
-
+  ! Evaluates the forces due to an interaction between the given
+  ! atoms. In other words, if the total force on atom :math:`\alpha` is
+  !
+  ! .. math::
+  !
+  !    F_\alpha = \sum_{ijk} -\nabla_\alpha v_{ijk} = \sum f_{\alpha,ijk},
+  !
+  ! this routine evaluates :math:`f_{\alpha,ijk}` for :math:`\alpha = (i,j,k)` for the given
+  ! atoms i, j, and k.
+  !
+  ! To be consist the forces returned by evaluate_forces must be
+  ! gradients of the energies returned by evaluate_energy.
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *force the calculated force component :math:`f_{\alpha,ijk}`
   subroutine evaluate_forces(n_targets,separations,distances,interaction,force,atoms)
     implicit none
     integer, intent(in) :: n_targets
@@ -541,8 +900,11 @@ contains
 
     force = 0.d0
 
+    ! The interaction type is decided based on the type index.
+    ! This decides what kind of a function is applied and what 
+    ! the parameters provided actually mean.
     select case (interaction%type_index)
-    case (pair_lj_index)! lennard-jones
+    case (pair_lj_index) ! lennard-jones
 
        r1 = distances(1)
        if(r1 < interaction%cutoff .and. r1 > 0.d0)then
@@ -552,7 +914,7 @@ contains
           force(1:3,2) = -force(1:3,1)
        end if
 
-    case (pair_spring_index)! spring-potential
+    case (pair_spring_index) ! spring-potential
 
        r1 = distances(1)
        if(r1 < interaction%cutoff .and. r1 > 0.d0)then
@@ -561,11 +923,11 @@ contains
           force(1:3,2) = -force(1:3,1)
        end if
 
-    case (mono_const_index)! constant force
+    case (mono_const_index) ! constant force
 
        force(1:3,1) = interaction%parameters(1:3)
 
-    case (tri_bend_index)! bond bending
+    case (tri_bend_index) ! bond bending
 
        ! the bond bending is applied to all ordered triplets a1--a2--a3
        ! for which the central atom (a2) is of the correct type
@@ -623,6 +985,25 @@ contains
   end subroutine evaluate_forces
 
 
+  ! Evaluates the potential energy due to an interaction between the given
+  ! atoms. In other words, if the total potential energy is
+  !
+  ! .. math::
+  !
+  !    E = \sum_{ijk} v_{ijk}
+  !
+  ! this routine evaluates :math:`v_{ijk}` for the given
+  ! atoms i, j, and k.
+  ! 
+  ! To be consist the forces returned by evaluate_forces must be
+  ! gradients of the energies returned by evaluate_energy.
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *energy the calculated energy :math:`v_{ijk}`
   subroutine evaluate_energy(n_targets,separations,distances,interaction,energy,atoms)
     implicit none
     integer, intent(in) :: n_targets
@@ -635,6 +1016,9 @@ contains
 
     energy = 0.d0
 
+    ! The interaction type is decided based on the type index.
+    ! This decides what kind of a function is applied and what 
+    ! the parameters provided actually mean.
     select case (interaction%type_index)
     case (pair_lj_index) ! lennard-jones
 
@@ -645,7 +1029,7 @@ contains
           energy = interaction%parameters(1) * (r6*r6 - r6)
        end if
 
-    case (pair_spring_index)! spring-potential
+    case (pair_spring_index) ! spring-potential
 
        r1 = distances(1)
        if(r1 < interaction%cutoff .and. r1 > 0.d0)then
@@ -654,11 +1038,11 @@ contains
           energy = interaction%parameters(1) * 0.5d0 * (r2*r2 - r6*r6)
        end if
 
-    case (mono_const_index)! constant force
+    case (mono_const_index) ! constant force
 
        energy = - interaction%parameters(1:3) .o. atoms(1)%position(1:3)
 
-    case (tri_bend_index)! bond-bending
+    case (tri_bend_index) ! bond-bending
        
        ! the bond bending is applied to all ordered triplets a1--a2--a3
        ! for which the central atom (a2) is of the correct type
@@ -706,7 +1090,23 @@ contains
   end subroutine evaluate_energy
 
 
-
+  ! Function for smoothening potential and bond order cutoffs.
+  ! In principle any "nice" function which goes from 1 to 0
+  ! in a finite interval could be used. Here, we choose
+  !
+  ! .. math::
+  !
+  !   f(r) = \frac{1}{2} ( 1 + \cos \pi \frac{r-r_\mathrm{soft}}{r_\mathrm{hard}-r_\mathrm{soft}} ) 
+  !
+  ! for :math:`r \in [r_\mathrm{soft},r_\mathrm{hard}]`.
+  ! 
+  ! This routine takes as arguments :math:`r`, :math:`r_\mathrm{soft}`, and :math:`r_\mathrm{hard}`, and
+  ! returns the value of the smoothening function.
+  !
+  ! *r distance :math:`r`
+  ! *hard_cut the hard cutoff :math:`r_\mathrm{hard}`
+  ! *soft_cut the soft cutoff :math:`r_\mathrm{soft}`
+  ! *factor the calculated smoothening factor
   subroutine smoothening_factor(r,hard_cut,soft_cut,factor)
     implicit none
     double precision, intent(in) :: r, hard_cut, soft_cut
@@ -726,7 +1126,29 @@ contains
   end subroutine smoothening_factor
 
 
-
+  ! Derivative of the function for smoothening potential 
+  ! and bond order cutoffs.
+  ! In principle any "nice" function which goes from 1 to 0
+  ! in a finite interval could be used. Here, we choose
+  !
+  ! .. math::
+  !
+  !   f(r) = \frac{1}{2} ( 1 + \cos \pi \frac{r-r_\mathrm{soft}}{r_\mathrm{hard}-r_\mathrm{soft}} ) 
+  !
+  ! for :math:`r \in [r_\mathrm{soft},r_\mathrm{hard}]`.
+  ! The derivative is then
+  !
+  ! .. math::
+  !
+  !   f'(r) = \frac{\pi}{2 (r_\mathrm{soft}-r_\mathrm{hard})} \sin \pi \frac{r-r_\mathrm{soft}}{r_\mathrm{hard}-r_\mathrm{soft}}.
+  !
+  ! This routine takes as arguments :math:`r`, :math:`r_\mathrm{soft}`, and :math:`r_\mathrm{hard}`, and
+  ! returns the value of the derivative of the smoothening function.
+  !
+  ! *r distance :math:`r`
+  ! *hard_cut the hard cutoff :math:`r_\mathrm{hard}`
+  ! *soft_cut the soft cutoff :math:`r_\mathrm{soft}`
+  ! *factor the calculated derivative of the smoothening factor
   subroutine smoothening_derivative(r,hard_cut,soft_cut,factor)
     implicit none
     double precision, intent(in) :: r, hard_cut, soft_cut
@@ -747,6 +1169,38 @@ contains
 
 
 
+  ! Gradient of the function for smoothening potential 
+  ! and bond order cutoffs.
+  ! In principle any "nice" function which goes from 1 to 0
+  ! in a finite interval could be used. Here, we choose
+  !
+  ! .. math::
+  !
+  !   f(r) = \frac{1}{2} ( 1 + \cos \pi \frac{r-r_\mathrm{soft}}{r_\mathrm{hard}-r_\mathrm{soft}} ) 
+  !
+  ! for :math:`r \in [r_\mathrm{soft},r_\mathrm{hard}]`.
+  ! The derivative is then
+  !
+  ! .. math::
+  !
+  !   f'(r) = \frac{\pi}{2 (r_\mathrm{soft}-r_\mathrm{hard})} \sin \pi \frac{r-r_\mathrm{soft}}{r_\mathrm{hard}-r_\mathrm{soft}}.
+  !
+  ! and the gradient with respect to :math:`r`
+  !
+  ! .. math::
+  !
+  !   \nabla f(r) = f'(r) \nabla r = f'(r) \hat{r}
+  !
+  ! where :math:`\hat{r}` is the unit vector in the direction of :math:`\mathbf{r}`.
+  !
+  ! This routine takes as arguments :math:`\hat{r}`, :math:`r`, :math:`r_\mathrm{soft}`, and :math:`r_\mathrm{hard}`, and
+  ! returns the value of the gradient of the smoothening function.
+  ! 
+  ! *unit_vector the vector :math:`\hat{r}`
+  ! *r distance :math:`r`
+  ! *hard_cut the hard cutoff :math:`r_\mathrm{hard}`
+  ! *soft_cut the soft cutoff :math:`r_\mathrm{soft}`
+  ! *gradient the calculated derivative of the smoothening factor
   subroutine smoothening_gradient(unit_vector,r,hard_cut,soft_cut,gradient)
     implicit none
     double precision, intent(in) :: unit_vector(3), r, hard_cut, soft_cut
@@ -759,7 +1213,7 @@ contains
   end subroutine smoothening_gradient
 
 
-
+  ! Deallocates all memory associated with potential characterizes.
   subroutine clear_potential_characterizers()
     implicit none
 
@@ -773,6 +1227,7 @@ contains
   end subroutine clear_potential_characterizers
 
 
+  ! Deallocates all memory associated with bond order factor characterizes.
   subroutine clear_bond_order_factor_characterizers()
     implicit none
 
@@ -786,6 +1241,14 @@ contains
   end subroutine clear_bond_order_factor_characterizers
 
 
+  ! Creates potential characterizers.
+  !
+  ! This routine is meant to be run once, as pysic is
+  ! imported, to create the characterizers for
+  ! potentials. Once created, they are accessible
+  ! by both the python and fortran sides of pysic
+  ! as a tool for describing the general structure
+  ! of potential objects.
   subroutine initialize_potential_characterizers()
     implicit none
     integer :: index
@@ -794,32 +1257,76 @@ contains
     allocate(potential_descriptors(0:n_potential_types))
     index = 0
 
-    ! Lennard-Jones potential
+    ! **** Lennard-Jones potential ****
+
+    ! Index is a helper variable that is increased by one
+    ! after each descriptor is created. It is stored as
+    ! the type index of the potential and thus must be
+    ! unique for each descriptor. The reason for
+    ! using it here is that it allows one to just copy the 
+    ! structure of the code creating one descriptor
+    ! to make another one without having to change all the
+    ! indices by hand.
     index = index+1
+
+    ! This is a check-up that the indexing is consistent.
+    ! Should this test fail, it means that the named indices
+    ! pair_lj_index etc. are wrong, which will likely lead
+    ! to errors in interpreting potentials elsewhere.
+    ! This error cannot result from a user error, it is
+    ! a bug in programming.
     if(pair_lj_index /= index)then
        write(*,*) "Potential indices in the core do not match!"
     end if
+
+    ! Record type index
     potential_descriptors(index)%type_index = index
-    potential_descriptors(index)%bond_order_argument = .false.
+
+    ! Record the name of the potential.
+    ! This is a keyword used for accessing the type of potential
+    ! in pysic, also in the python interface.
     call pad_string('LJ', pot_name_length,potential_descriptors(index)%name)
+
+    ! Record the number of parameters
     potential_descriptors(index)%n_parameters = 2
+
+    ! Record the number of targets (i.e., is the potential 1-body, 2-body etc.)
     potential_descriptors(index)%n_targets = 2
+
+    ! Allocate space for storing the parameter names and descriptions.
     allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
     allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+
+    ! Record parameter names and descriptions.
+    ! Names are keywords with which one can intuitively 
+    ! and easily access the parameters in the python
+    ! interface.
+    ! Descriptions are short descriptions of the
+    ! physical or mathematical meaning of the parameters.
+    ! They can be viewed from the python interface to
+    ! remind the user how to parameterize the potential.
     call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
     call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
     call pad_string('sigma', param_name_length,potential_descriptors(index)%parameter_names(2))
     call pad_string('length scale constant', param_note_length,potential_descriptors(index)%parameter_notes(2))
+
+    ! Record a description of the entire potential.
+    ! This description can also be viewed in the python
+    ! interface as a reminder of the properties of the
+    ! potential.
+    ! The description should contain the mathematical
+    ! formulation of the potential as well as a short
+    ! verbal description.
     call pad_string('A standard Lennard-Jones potential: V(r) = epsilon * ( (sigma/r)^12 - (sigma/r)^6 )', &
          pot_note_length,potential_descriptors(index)%description)
 
-    ! spring potential
+    ! **** spring potential ****
+
     index = index+1
     if(pair_spring_index /= index)then
        write(*,*) "Potential indices in the core do not match!"
     end if
     potential_descriptors(index)%type_index = index
-    potential_descriptors(index)%bond_order_argument = .false.
     call pad_string('spring', pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 2
     potential_descriptors(index)%n_targets = 2
@@ -832,13 +1339,13 @@ contains
     call pad_string('A standard spring potential: V(r) = k/2 (r-R_0)^2', &
          pot_note_length,potential_descriptors(index)%description)
 
-    ! constant force potential
+    ! **** constant force potential ****
+
     index = index+1
     if(mono_const_index /= index)then
        write(*,*) "Potential indices in the core do not match!"
     end if
     potential_descriptors(index)%type_index = index
-    potential_descriptors(index)%bond_order_argument = .false.
     call pad_string('force', pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 3
     potential_descriptors(index)%n_targets = 1
@@ -853,13 +1360,13 @@ contains
     call pad_string('A constant force: F = [Fx, Fy, Fz]', &
          pot_note_length,potential_descriptors(index)%description)
     
-    ! bond-bending potential
+    ! **** bond-bending potential ****
+
     index = index+1
     if(tri_bend_index /= index)then
        write(*,*) "Potential indices in the core do not match!"
     end if
     potential_descriptors(index)%type_index = index
-    potential_descriptors(index)%bond_order_argument = .false.
     call pad_string('bond_bend', pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 2
     potential_descriptors(index)%n_targets = 3
@@ -872,13 +1379,13 @@ contains
     call pad_string('Bond bending potential: V(theta) = k/2 (cos theta - cos theta_0)^2', &
          pot_note_length,potential_descriptors(index)%description)
 
-    ! constant potential
+    ! **** constant potential ****
+
     index = index+1
     if(mono_none_index /= index)then
        write(*,*) "Potential indices in the core do not match!"
     end if
     potential_descriptors(index)%type_index = index
-    potential_descriptors(index)%bond_order_argument = .false.
     call pad_string('constant', pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 1
     potential_descriptors(index)%n_targets = 1
@@ -892,7 +1399,6 @@ contains
     ! null potential, for errorneous inquiries
     index = 0
     potential_descriptors(index)%type_index = index
-    potential_descriptors(index)%bond_order_argument = .false.
     call pad_string('null',pot_name_length,potential_descriptors(index)%name)
     potential_descriptors(index)%n_parameters = 1
     potential_descriptors(index)%n_targets = 0
@@ -908,6 +1414,14 @@ contains
   end subroutine initialize_potential_characterizers
   
 
+  ! Creates bond order factor characterizers.
+  !
+  ! This routine is meant to be run once, as pysic is
+  ! imported, to create the characterizers for
+  ! bond order factors. Once created, they are accessible
+  ! by both the python and fortran sides of pysic
+  ! as a tool for describing the general structure
+  ! of bond order factor objects.
   subroutine initialize_bond_order_factor_characterizers()
     implicit none
     integer :: index, i, max_params
@@ -917,42 +1431,88 @@ contains
 
     index = 0
 
-    ! Coordination
+    ! **** Coordination ****
+
+    ! Index is a helper variable that is increased by one
+    ! after each descriptor is created. It is stored as
+    ! the type index of the potential and thus must be
+    ! unique for each descriptor. The reason for
+    ! using it here is that it allows one to just copy the 
+    ! structure of the code creating one descriptor
+    ! to make another one without having to change all the
+    ! indices by hand.
     index = index+1
+
+    ! This is a check-up that the indexing is consistent.
+    ! Should this test fail, it means that the named indices
+    ! coordination_index etc. are wrong, which will likely lead
+    ! to errors in interpreting potentials elsewhere.
+    ! This error cannot result from a user error, it is
+    ! a bug in programming.
     if(coordination_index /= index)then
        write(*,*) "Bond-order indices in the core do not match!"
     end if
+
+    ! Record type index
     bond_order_descriptors(index)%type_index = index
+
+    ! Record the name of the bond order factor.
+    ! This is a keyword used for accessing the type of factor
+    ! in pysic, also in the python interface.
     call pad_string('neighbors',pot_name_length,bond_order_descriptors(index)%name)
-    allocate(bond_order_descriptors(index)%n_parameters(2))
-    bond_order_descriptors(index)%n_parameters(1) = 0
-    bond_order_descriptors(index)%n_parameters(2) = 0
-    bond_order_descriptors(index)%n_targets = 2
+
+    ! Record the number of targets
+    bond_order_descriptors(index)%n_targets = 2 
+
+    ! Allocate space for storing the numbers of parameters (for 1-body, 2-body etc.).
+    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+
+    ! Record the number of parameters
+    bond_order_descriptors(index)%n_parameters(1) = 0 ! no 1-body params
+    bond_order_descriptors(index)%n_parameters(2) = 0 ! no 2-body params
+
+    ! Record if the bond factor includes post processing (per-atom scaling)
     bond_order_descriptors(index)%includes_post_processing = .false.
-!    max_params = 1
-!    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-!    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
-!    call pad_string('none',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
-!    call pad_string('no parameters',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
+
+    ! Record a description of the entire bond order factor.
+    ! This description can also be viewed in the python
+    ! interface as a reminder of the properties of the
+    ! bond order factor.
+    ! The description should contain the mathematical
+    ! formulation of the factor as well as a short
+    ! verbal description.
     call pad_string('Counter for the number of neighbors: b_i = sum f(r_ij)', &
          pot_note_length,bond_order_descriptors(index)%description)
 
-    ! Tersoff bond-order factor
+
+    ! **** Tersoff bond-order factor ****
+
     index = index+1
     if(tersoff_index /= index)then
        write(*,*) "Bond-order indices in the core do not match!"
     end if
     bond_order_descriptors(index)%type_index = index
     call pad_string('tersoff',pot_name_length,bond_order_descriptors(index)%name)
-    allocate(bond_order_descriptors(index)%n_parameters(3))
-    bond_order_descriptors(index)%n_parameters(1) = 3
-    bond_order_descriptors(index)%n_parameters(2) = 4
-    bond_order_descriptors(index)%n_parameters(3) = 0
-    max_params = 4
     bond_order_descriptors(index)%n_targets = 3
+    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    bond_order_descriptors(index)%n_parameters(1) = 3 ! 3 1-body parameters
+    bond_order_descriptors(index)%n_parameters(2) = 4 ! 4 2-body parameters
+    bond_order_descriptors(index)%n_parameters(3) = 0 ! no 3-body parameters
+    max_params = 4 ! maxval(bond_order_descriptors(index)%n_parameters)
     bond_order_descriptors(index)%includes_post_processing = .true.
+
+    ! Allocate space for storing the parameter names and descriptions.
     allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
     allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+
+    ! Record parameter names and descriptions.
+    ! Names are keywords with which one can intuitively 
+    ! and easily access the parameters in the python
+    ! interface.
+    ! Descriptions are short descriptions of the
+    ! physical or mathematical meaning of the parameters.
+    ! They can be viewed from the python interface to
+    ! remind the user how to parameterize the potential.
     call pad_string('beta',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
     call pad_string('prefactor',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
     call pad_string('eta',param_name_length,bond_order_descriptors(index)%parameter_names(2,1))
@@ -967,26 +1527,29 @@ contains
     call pad_string('angle term denominator 1',param_note_length,bond_order_descriptors(index)%parameter_notes(3,2))
     call pad_string('h',param_name_length,bond_order_descriptors(index)%parameter_names(4,2))
     call pad_string('angle term denominator 2',param_note_length,bond_order_descriptors(index)%parameter_notes(4,2))
-!    call pad_string('none',param_name_length,bond_order_descriptors(index)%parameter_names(1,3))
-!    call pad_string('no parameters',param_note_length,bond_order_descriptors(index)%parameter_notes(1,3))
+
     call pad_string('Tersoff bond-order: b_i = [ 1+( beta_i sum xi_ijk*g_ijk)^eta_i ]^(-1/eta_i), '//&
          'xi_ijk = f(r_ik)*exp(alpha_ij^m_i (r_ij-r_ik)^m_i), '// &
          'g_ijk = 1+c_ij^2/d_ij^2-c_ij^2/(d_ij^2+(h_ij^2-cos theta_ijk))', &
          pot_note_length,bond_order_descriptors(index)%description)
     
 
-    ! Coordination correction
+    ! **** Coordination correction ****
     index = index+1
     if(c_scale_index /= index)then
        write(*,*) "Bond-order indices in the core do not match!"
     end if
+
     bond_order_descriptors(index)%type_index = index
     call pad_string('c_scale',pot_name_length,bond_order_descriptors(index)%name)
-    allocate(bond_order_descriptors(index)%n_parameters(1))
-    bond_order_descriptors(index)%n_parameters(1) = 4
+
     bond_order_descriptors(index)%n_targets = 1
+    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    bond_order_descriptors(index)%n_parameters(1) = 4 ! 4 1-body parameters
+
     bond_order_descriptors(index)%includes_post_processing = .true.
-    max_params = 4
+    max_params = 4 ! maxval(bond_order_descriptors(index)%n_parameters)
+
     allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
     allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
     call pad_string('epsilon',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
@@ -997,6 +1560,7 @@ contains
     call pad_string('coordination difference scale constant',param_note_length,bond_order_descriptors(index)%parameter_notes(3,1))
     call pad_string('gamma',param_name_length,bond_order_descriptors(index)%parameter_names(4,1))
     call pad_string('exponential decay constant',param_note_length,bond_order_descriptors(index)%parameter_notes(4,1))
+
     call pad_string('Coordination difference scaling function: '//&
          'b_i(n_i) = epsilon_i dN_i / (1 + exp(gamma_i dN_i)); dN_i = C_i(n_i - N_i)', &
          pot_note_length,bond_order_descriptors(index)%description)
@@ -1020,7 +1584,26 @@ contains
 
   end subroutine initialize_bond_order_factor_characterizers
 
+  
+  !******************************************************!
+  !                                                      !
+  ! Below are the inquiry routines with which one can    !
+  ! access the information stored in the potential and   !
+  ! bond order factor descriptors from the python        !
+  ! interface.                                           !
+  !                                                      !
+  ! These routines all follow the information path of    !
+  ! pysic.py method                                      !
+  !   -> PyInterface.f90 routine                         !
+  !     -> Potentials.f90 routine                        !
+  !       -> Potentials.f90 descriptors                  !
+  !                                                      !
+  !*******************************************************
 
+
+  ! Return the number of :data:`potential_descriptor`  known.
+  !
+  ! *n_pots number of potential types
   subroutine get_number_of_potentials(n_pots)
     implicit none
     integer, intent(out) :: n_pots
@@ -1030,6 +1613,9 @@ contains
   end subroutine get_number_of_potentials
 
 
+  ! Returns the number of :data:`bond_order_descriptor` known.
+  !
+  ! *n_bond number of bond order factor types
   subroutine get_number_of_bond_order_factors(n_bond)
     implicit none
     integer, intent(out) :: n_bond
@@ -1039,6 +1625,10 @@ contains
   end subroutine get_number_of_bond_order_factors
 
 
+  ! Returns the names of :data:`potential_descriptor` objects.
+  !
+  ! *n_pots number of potential types
+  ! *pots names of the potential types
   subroutine list_potentials(n_pots,pots)
     implicit none
     integer, intent(in) :: n_pots
@@ -1055,6 +1645,11 @@ contains
 
   end subroutine list_potentials
 
+
+  ! Returns the names of :data:`bond_order_descriptor` objects.
+  !
+  ! *n_bonds number of bond order factor types
+  ! *bonds names of the bond order factor types
   subroutine list_bond_order_factors(n_bonds,bonds)
     implicit none
     integer, intent(in) :: n_bonds
@@ -1072,6 +1667,10 @@ contains
   end subroutine list_bond_order_factors
 
 
+  ! Returns the index of a :data:`potential_descriptor` in the internal list of potential types :data:`potential_descriptors`.
+  !
+  ! *pot_name name of the potential - a keyword
+  ! *index index of the potential in the internal array
   subroutine get_index_of_potential(pot_name, index)
     implicit none
     character(len=*), intent(in) :: pot_name
@@ -1088,6 +1687,11 @@ contains
 
   end subroutine get_index_of_potential
 
+
+  ! Returns the index of a :data:`bond_order_descriptor` in the internal list of bond order factor types :data:`bond_order_descriptors`.
+  !
+  ! *bond_name name of the bond order factor - a keyword
+  ! *index index of the potential in the internal array
   subroutine get_index_of_bond_order_factor(bond_name, index)
     implicit none
     character(len=*), intent(in) :: bond_name
@@ -1105,6 +1709,10 @@ contains
   end subroutine get_index_of_bond_order_factor
 
 
+  ! Returns the :data:`potential_descriptor` of a given name.
+  !
+  ! *pot_name name of the potential
+  ! *descriptor the matching :data:`potential_descriptor` 
   subroutine get_descriptor(pot_name,descriptor)
     implicit none
     character(len=*), intent(in) :: pot_name
@@ -1121,6 +1729,11 @@ contains
 
   end subroutine get_descriptor
 
+
+  ! Returns the :data:`bond_order_descriptor` of a given name.
+  !
+  ! *bond_name name of the bond order factor
+  ! *descriptor the matching :data:`bond_order_descriptor`
   subroutine get_bond_descriptor(bond_name,descriptor)
     implicit none
     character(len=*), intent(in) :: bond_name
@@ -1138,6 +1751,10 @@ contains
   end subroutine get_bond_descriptor
 
 
+  ! Returns the names of parameters of a potential as a list of strings.
+  !
+  ! *pot_name name of the potential
+  ! *param_names names of the parameters
   subroutine get_names_of_parameters_of_potential(pot_name, param_names)
     implicit none
     character(len=*), intent(in) :: pot_name
@@ -1154,6 +1771,12 @@ contains
 
   end subroutine get_names_of_parameters_of_potential
 
+
+  ! Returns the names of parameters of a bond order factor as a list of strings.
+  !
+  ! *bond_name name of the bond order factor
+  ! *n_targets number of targets
+  ! *param_names names of the parameters
   subroutine get_names_of_parameters_of_bond_order_factor(bond_name, n_targets, param_names)
     implicit none
     character(len=*), intent(in) :: bond_name
@@ -1175,6 +1798,11 @@ contains
   end subroutine get_names_of_parameters_of_bond_order_factor
 
 
+  ! Returns the descriptions of the parameters of a potential
+  ! as a list of strings.
+  !
+  ! *pot_name name of the potential
+  ! *param_notes descriptions of the parameters
   subroutine get_descriptions_of_parameters_of_potential(pot_name, param_notes)
     implicit none
     character(len=*), intent(in) :: pot_name
@@ -1191,6 +1819,13 @@ contains
 
   end subroutine get_descriptions_of_parameters_of_potential
 
+
+  ! Returns the descriptions of the parameters of a bond order factor
+  ! as a list of strings.
+  ! 
+  ! *bond_name name of the bond order factor
+  ! *n_targets number of targets
+  ! *param_notes descriptions of the parameters
   subroutine get_descriptions_of_parameters_of_bond_order_factor(bond_name, &
        n_targets, param_notes)
     implicit none
@@ -1213,6 +1848,10 @@ contains
   end subroutine get_descriptions_of_parameters_of_bond_order_factor
 
 
+  ! Returns the number of parameters of a potential.
+  !
+  ! *pot_name name of the potential
+  ! *n_params number of parameters
   subroutine get_number_of_parameters_of_potential(pot_name,n_params)
     implicit none
     character(len=*), intent(in) :: pot_name
@@ -1224,7 +1863,13 @@ contains
 
   end subroutine get_number_of_parameters_of_potential
 
-
+  
+  ! Returns the number of parameters of a bond order factor as a list of strings,
+  ! each element showing the number of parameters for that number of bodies.
+  !
+  ! *bond_name name of the bond order factor
+  ! *n_targets number of targets
+  ! *n_params number of parameters
   subroutine get_number_of_parameters_of_bond_order_factor(bond_name,n_targets,n_params)
     implicit none
     character(len=*), intent(in) :: bond_name
@@ -1238,6 +1883,10 @@ contains
   end subroutine get_number_of_parameters_of_bond_order_factor
 
 
+  ! Returns the number of targets (i.e., bodies) of a potential.
+  !
+  ! *pot_name name of the potential
+  ! *n_target number of targets
   subroutine get_number_of_targets_of_potential(pot_name,n_target)
     implicit none
     character(len=*), intent(in) :: pot_name
@@ -1249,6 +1898,11 @@ contains
 
   end subroutine get_number_of_targets_of_potential
 
+
+  ! Returns the number of targets (i.e., bodies) of a bond order factor.
+  !
+  ! *bond_name name of the bond order factor
+  ! *n_target number of targets
   subroutine get_number_of_targets_of_bond_order_factor(bond_name,n_target)
     implicit none
     character(len=*), intent(in) :: bond_name
@@ -1260,6 +1914,12 @@ contains
 
   end subroutine get_number_of_targets_of_bond_order_factor
 
+
+  ! Returns the number of targets (i.e., bodies) of a potential 
+  ! specified by its index.
+  ! 
+  ! *pot_index index of the potential
+  ! *n_target numner of targets
   subroutine get_number_of_targets_of_potential_index(pot_index,n_target)
     implicit none
     integer, intent(in) :: pot_index
@@ -1269,6 +1929,12 @@ contains
 
   end subroutine get_number_of_targets_of_potential_index
 
+
+  ! Returns the number of targets (i.e., bodies) of a bond order factor
+  ! specified by its index.
+  !
+  ! *bond_index index of the bond order factor
+  ! *n_target number of targets
   subroutine get_number_of_targets_of_bond_order_factor_index(bond_index,n_target)
     implicit none
     integer, intent(in) :: bond_index
@@ -1279,6 +1945,11 @@ contains
   end subroutine get_number_of_targets_of_bond_order_factor_index
 
 
+  ! Returns true if the given keyword is the name of a potential
+  ! and false otherwise.
+  !
+  ! *string name of a potential
+  ! *is_valid true if string is a name of a potential
   subroutine is_valid_potential(string,is_valid)
     implicit none
     character(len=*), intent(in) :: string
@@ -1296,6 +1967,11 @@ contains
   end subroutine is_valid_potential
 
 
+  ! Returns true if the given keyword is the name of a bond order factor
+  ! and false otherwise.
+  !
+  ! *string name of a bond order factor
+  ! *is_valid true if string is a name of a bond order factor
   subroutine is_valid_bond_order_factor(string,is_valid)
     implicit none
     character(len=*), intent(in) :: string
@@ -1313,6 +1989,12 @@ contains
   end subroutine is_valid_bond_order_factor
 
 
+  ! Returns the index of a parameter of a potential in the
+  ! internal list of parameters.
+  !
+  ! *pot_name name of the potential
+  ! *param_name name of the parameter
+  ! *index the index of the parameter
   subroutine get_index_of_parameter_of_potential(pot_name,param_name,index)
     implicit none
     character(len=*), intent(in) :: pot_name
@@ -1333,6 +2015,16 @@ contains
 
   end subroutine get_index_of_parameter_of_potential
 
+
+  ! Returns the index of a parameter of a bond order factor in the
+  ! internal list of parameters. Since bond order factors can have
+  ! parameters for different number of targets, also the number of
+  ! targets of this parameter is returned.
+  !
+  ! *bond_name name of the bond order factor
+  ! *param_name name of the parameter
+  ! *index index of the parameter
+  ! *n_targets number of targets of the parameter
   subroutine get_index_of_parameter_of_bond_order_factor(bond_name,param_name,index,n_targets)
     implicit none
     character(len=*), intent(in) :: bond_name
@@ -1359,7 +2051,10 @@ contains
   end subroutine get_index_of_parameter_of_bond_order_factor
 
 
-
+  ! Returns the description of a potential.
+  !
+  ! *pot_name name of the potential
+  ! *description description of the potential
   subroutine get_description_of_potential(pot_name,description)
     implicit none
     character(len=*), intent(in) :: pot_name
@@ -1371,6 +2066,11 @@ contains
 
   end subroutine get_description_of_potential
 
+
+  ! Returns the description of a bond order factor.
+  !
+  ! *bond_name name of the bond order factor
+  ! *description description of the bond order actor
   subroutine get_description_of_bond_order_factor(bond_name,description)
     implicit none
     character(len=*), intent(in) :: bond_name
@@ -1382,6 +2082,27 @@ contains
 
   end subroutine get_description_of_bond_order_factor
 
+
+  ! Tests whether the given potential affects the specific atom.
+  !
+  ! For potentials, the atoms are specified as valid targets by 
+  ! the atomic symbol, index, or tag.
+  !
+  ! If position is not given, then the routine returns true if
+  ! the atom can appear in the potential in any role.
+  ! If position is given, then true is returned only if the atom
+  ! is valid for that particular position.
+  !
+  ! For instance, in a 3-body potential A-B-C, the potential
+  ! May be specified so that only certain elements are valid for
+  ! positions A and C while some other elements are valid for B.
+  ! In a water molecule, for instance, we could have an H-O-H
+  ! bond bending potential, but no H-H-O potentials.
+  !
+  ! *interaction the :data:`potential`
+  ! *atom_in the :data:`atom`
+  ! *affects true if the potential affects the atom
+  ! *position specifies the particular role of the atom in the interaction
   subroutine potential_affects_atom(interaction,atom_in,affects,position)
     implicit none
     type(potential), intent(in) :: interaction
@@ -1448,6 +2169,12 @@ contains
 
   end subroutine potential_affects_atom
 
+  ! Tests whether the given bond order factor is a member of a specific group,
+  ! i.e., if it affects the potential specifiesd by the group index.
+  !
+  ! *factor the :data:`bond_order_parameters`
+  ! *group_index the index for the potential
+  ! *in_group true if the factor is a member of the group
   subroutine bond_order_factor_is_in_group(factor,group_index,in_group)
     implicit none
     type(bond_order_parameters), intent(in) :: factor
@@ -1458,6 +2185,24 @@ contains
 
   end subroutine bond_order_factor_is_in_group
 
+
+  ! Tests whether the given bond order factor affects the specific atom.
+  !
+  ! For bond order factors, the atoms are specified as valid targets by 
+  ! the atomic symbol only.
+  !
+  ! If position is not given, then the routine returns true if
+  ! the atom can appear in the bond order factor in any role.
+  ! If position is given, then true is returned only if the atom
+  ! is valid for that particular position.
+  !
+  ! For instance, we may want to calculate the coordination of
+  ! Cu-O bonds for Cu but not for O.
+  !
+  ! *factor the :data:`bond_order_parameters`
+  ! *atom_in the :data:`atom`
+  ! *affects true if the bond order factor is affected by the atom
+  ! *position specifies the particular role of the atom in the bond order factor
   subroutine bond_order_factor_affects_atom(factor,atom_in,affects,position)
     implicit none
     type(bond_order_parameters), intent(in) :: factor

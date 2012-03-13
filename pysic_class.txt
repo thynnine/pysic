@@ -55,18 +55,15 @@ ____________
 Core
 ____
 
+- :data:`~pysic.Pysic.core`
 - :meth:`~pysic.Pysic.core_initialization_is_forced`
-- :meth:`~pysic.Pysic.core_is_available`
 - :meth:`~pysic.Pysic.force_core_initialization`
 - :meth:`~pysic.Pysic.initialize_fortran_core`
-- :meth:`~pysic.Pysic.owns_the_core`
-- :meth:`~pysic.Pysic.release_fortran_core`
 - :meth:`~pysic.Pysic.set_core`
 - :meth:`~pysic.Pysic.update_core_coordinates`
 - :meth:`~pysic.Pysic.update_core_neighbor_lists`
 - :meth:`~pysic.Pysic.update_core_potential_lists`
 - :meth:`~pysic.Pysic.update_core_supercell`
-- :meth:`~pysic.Pysic.view_fortran_core`
 
 
 

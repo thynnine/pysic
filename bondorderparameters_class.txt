@@ -233,7 +233,7 @@ To help in generating the tables, the utility method
 :meth:`~pysic.BondOrderParameters.expand_symbols_table` can be used.
 For instance, the full list of triplets above can be created with::
 
-   >>> pysic.BondOrderParameters.expand_symbols_table([['C', 'O', 'H'], ['C', 'O', 'H'], ['C', 'O', 'H'],])
+   >>> pysic.BondOrderParameters.expand_symbols_table([['C', 'O', 'H'], ['C', 'O', 'H'], ['C', 'O', 'H']])
 
 
 

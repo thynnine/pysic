@@ -4,7 +4,7 @@
 Pysic Module
 ============
 
-Pysic defines four classes: :class:`~pysic.Pysic`, which defines a calculator 
+Pysic is an object based calculator for atomistic many-body interactions. It is controlled via several classes: :class:`~pysic.Pysic`, which defines a calculator 
 for the `ASE`_ simulation environment [#]_, :class:`~pysic.Potential`, which defines
 potentials to be used by :class:`~pysic.Pysic` for calculating atomic interactions,
 :class:`~pysic.Coordinator` which can be used for modifying potentials with
@@ -57,6 +57,7 @@ Classes of the pysic module
    potential_class
    coordinator_class
    bondorderparameters_class
+   coremirror_class
 
 
 
@@ -100,17 +101,17 @@ The module defines a group of intrinsic errors to describe situations where
 one tries to use or set up the calculator with errorneous or insufficient
 information.
 
-.. autoclass:: InvalidParametersError
+.. autoexception:: InvalidParametersError
    :members:
-.. autoclass:: InvalidCoordinatorError
+.. autoexception:: InvalidCoordinatorError
    :members:
-.. autoclass:: InvalidPotentialError
+.. autoexception:: InvalidPotentialError
    :members:
-.. autoclass:: MissingAtomsError
+.. autoexception:: MissingAtomsError
    :members:
-.. autoclass:: MissingNeighborsError
+.. autoexception:: MissingNeighborsError
    :members:
-.. autoclass:: LockedCoreError
+.. autoexception:: LockedCoreError
    :members:
 
 

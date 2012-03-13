@@ -1,0 +1,75 @@
+
+.. _quaternions:
+        
+=====================================================
+quaternions (Quaternions.f90)
+=====================================================
+
+
+A module for basic quarternion operations
+and 3D spatial rotations using quaternion representation
+
+
+List of global variables in quaternions
+---------------------------------------
+- :data:`norm_tolerance`
+
+List of custom types in quaternions
+-----------------------------------
+- :data:`qtrn`
+
+List of subroutines in quaternions
+----------------------------------
+        
+- :func:`norm_quaternion`
+
+
+Full documentation of global variables in quaternions
+-----------------------------------------------------
+        
+        
+  .. data:: norm_tolerance
+
+    double precision    *scalar*  *parameter*  
+
+    *initial value* = 1.0d-8
+    
+    
+    
+
+Full documentation of custom types in quaternions
+-------------------------------------------------
+        
+        
+  .. data:: qtrn
+
+    The quarternion type. It only contains four
+    real components, but the main advantage for
+    defining it as a custom type is the possibility
+    to write routines and operators for quaternion
+    algebra.
+
+    Contained data:
+
+    y: double precision    *scalar*
+        an "imaginary" component of the quaternion
+    x: double precision    *scalar*
+        an "imaginary" component of the quaternion
+    z: double precision    *scalar*
+        an "imaginary" component of the quaternion
+    w: double precision    *scalar*
+        the "real" component of the quaternion
+
+Full documentation of subroutines in quaternions
+------------------------------------------------
+        
+        
+            
+  .. function:: norm_quaternion(qq)
+
+    norms the given quaternion
+
+    Parameters:
+
+    qq: TYPE(qtrn)  *intent()*    *scalar*  
+        quaternion to be normed to unity

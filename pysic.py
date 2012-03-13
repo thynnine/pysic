@@ -24,7 +24,7 @@ import copy
 
 class InvalidPotentialError(Exception):
     """An error raised when an invalid potential is about to be created or used.
-
+    
     Parameters:
 
     message: string
@@ -48,7 +48,7 @@ class InvalidCoordinatorError(Exception):
     """An error raised when an invalid coordination calculator is about to be created or used.
 
     Parameters:
-
+    
     message: string
         information describing why the error occurred
     coordinator: :class:`~pysic.Coordinator`
@@ -229,7 +229,7 @@ def is_potential(potential_name):
     """Same as :meth:`~pysic.is_valid_potential`
     
     Parameters:
-
+    
     potential_name: string
         the name of the potential
     """
@@ -378,13 +378,13 @@ def index_of_parameter(potential_name, parameter_name):
     For a bond order factor, a list of two integers is given.
     These give the number of targets (single element, pair etc.) the parameter
     is associated with and the list index.
-
+    
     Note especially that an index is returned, and these start counting from 0.
     So for a bond order factor, a parameter for pairs (2 targets) will return 1
     as the index for number of targets.
-
+    
     Parameters:
-
+    
     potential_name: string
         the name of the potential or bond order factor
     parameter_name: string
@@ -1624,6 +1624,17 @@ class CoreMirror:
     calculated, the :class:`~pysic.Pysic` calculator can simply check that
     it contains the same system as the CoreMirror to ensure that the
     core operates on the correct data.
+
+    All data given to CoreMirror is saved as deep copies, i.e., not as
+    the objects themselves but objects with exactly the same contents.
+    This way if the original objects are modified, the ones in CoreMirror
+    are not. This is the proper way to work, since the Fortran core
+    obviously does not change without pushing the changes in the Python
+    side to the core first.
+
+    .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html
+    .. _ASE NeighborList: https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists
+
     """
 
     def __init__(self):
@@ -1640,42 +1651,108 @@ class CoreMirror:
         except:
             pass
 
+    def __repr__(self):
+        return "CoreMirror()"
+
     def get_atoms(self):
-        """Returns the ASE atoms structure stored in the CoreMirror.
+        """Returns the `ASE Atoms`_ structure stored in the CoreMirror.
         """
         return self.structure
 
-    def view_fortran_core(self):
-        """Print some information on the data allocated in the Fortran core."""
+    def view_fortran(self):
+        """Print some information on the data allocated in the Fortran core.
+
+        This is mainly a debugging utility for directly seeing the status of the core.
+        It can be accessed through::
+
+           >>> pysic.Pysic.core.view_fortran()
+
+        The result is a bunch of data dumped to stdout. The function does
+        not return anything.
+        """
         pf.pysic_interface.examine_atoms()
         pf.pysic_interface.examine_cell()
         pf.pysic_interface.examine_potentials()
         pf.pysic_interface.examine_bond_order_factors()
 
     def set_atoms(self, atoms):
+        """Copies and stores the entire `ASE Atoms`_ instance.
+
+        Parameters:
+
+        atoms: `ASE Atoms`_ object
+            atomic structure to be saved"""
         self.structure = copy.deepcopy(atoms)
         self.potential_lists_ready = False
         self.neighbor_lists_waiting = False
 
     def set_atomic_positions(self, atoms):
+        """Copies and stores the positions of atoms in the `ASE Atoms`_ instance.
+
+        Parameters:
+
+        atoms: `ASE Atoms`_ object
+            atomic structure containing the positions to be saved.
+        """
         self.structure.set_positions(atoms.get_positions())
         
     def set_atomic_momenta(self, atoms):
+        """Copies and stores the momenta of atoms in the `ASE Atoms`_ instance.
+
+        Parameters:
+
+        atoms: `ASE Atoms`_ object
+            atomic structure containing the momenta to be saved.
+        """
         self.structure.set_momenta(atoms.get_momenta())
         
     def set_cell(self, atoms):
+        """Copies and stores the supercell in the `ASE Atoms`_ instance.
+
+        Parameters:
+
+        atoms: `ASE Atoms`_ object
+            atomic structure containing the supercell to be saved.
+        """
         self.structure.set_cell(atoms.get_cell())
         self.structure.set_pbc(atoms.get_pbc())
         self.neighbor_lists_waiting = False
         
     def set_potentials(self, potentials):
+        """Copies and stores :class:`~pysic.Potential` potentials.
+
+        The :class:`~pysic.Potential` instances are copied as a whole,
+        so any possible :class:`~pysic.Coordinator` and
+        :class:`~pysic.BondOrderParameters` objects are also stored.
+
+        Parameters:
+
+        atoms: list of :class:`~pysic.Potential` objects
+            Potentials to be saved.
+        """
         self.potentials = copy.deepcopy(potentials)
         self.potential_lists_ready = False        
 
     def set_neighbor_lists(self, lists):
+        """Copies and stores the neighbor lists.
+
+        Parameters:
+
+        atoms: `ASE NeighborList`_ object
+            Neighbor lists to be saved.
+        """
         self.neighbor_lists = copy.deepcopy(lists)
 
     def atoms_ready(self, atoms):
+        """Checks if the positions and momenta of the given atoms match those in the core.
+
+        True is returned if the structures match, False otherwise.
+
+        Parameters:
+
+        atoms: `ASE Atoms`_ object
+            The atoms to be compared.
+        """
         if self.structure == None:
             return False
         if((self.structure.get_atomic_numbers() != atoms.get_atomic_numbers()).any()):
@@ -1687,6 +1764,15 @@ class CoreMirror:
         return True
 
     def cell_ready(self,atoms):
+        """Checks if the given supercell matches that in the core.
+
+        True is returned if the structures match, False otherwise.
+
+        Parameters:
+
+        atoms: `ASE Atoms`_ object
+            The cell to be compared.
+        """
         if self.structure == None:
             return False
         if((self.structure.get_cell() != atoms.get_cell()).any()):
@@ -1696,11 +1782,29 @@ class CoreMirror:
         return True
 
     def potentials_ready(self, pots):
+        """Checks if the given potentials match those in the core.
+
+        True is returned if the potentials match, False otherwise.
+
+        Parameters:
+
+        atoms: list of :class:`~pysic.Potential` objects
+            The potentials to be compared.
+        """
         if self.potentials == None:
             return False
         return (self.potentials == pots)
 
     def neighbor_lists_ready(self, lists):
+        """Checks if the given neighbor lists match those in the core.
+
+        True is returned if the structures match, False otherwise.
+
+        Parameters:
+
+        atoms: `ASE NeighborList`_ object
+            The neighbor lists to be compared.
+        """
         if self.neighbor_lists == None:
             return False
         return self.neighbor_lists == lists
@@ -1738,6 +1842,16 @@ class Pysic:
     """
 
     core = CoreMirror()
+    """An object storing the data passed to the core.
+
+    Whenever a :class:`~pysic.Pysic` calculator alters the Fortran core,
+    it should also modify the :data:`~pysic.Pysic.core` object so that
+    it is always a valid representation of the actual core.
+    Then, whenever :class:`~pysic.Pysic` needs to check if the
+    representation in the core is up to date, it only needs to compare
+    against :data:`~pysic.Pysic.core` instead of accessing the
+    Fortran core itself.
+    """
 
     def __init__(self,atoms=None,potentials=None,full_initialization=False):
         self.neighbor_lists_waiting = False
@@ -1912,8 +2026,8 @@ class Pysic:
         """
         self.set_atoms(atoms)
         if self.calculation_required(atoms,'energy'):
-            self.calculate_energy()            
-        
+            self.calculate_energy()
+
         return self.energy
 
 
@@ -2238,8 +2352,7 @@ class Pysic:
                 for targets in alltargets:
                     int_orig_symbs = []
                     for orig_symbs in targets:
-                        for label in orig_symbs:
-                            int_orig_symbs.append( pu.str2ints(label,2) )
+                        int_orig_symbs.append( pu.str2ints(orig_symbs,2) )
 
                     perms = permutations(targets)
                     different = set(perms)
@@ -2328,8 +2441,7 @@ class Pysic:
 
                         int_orig_symbs = []
                         for orig_symbs in targets:
-                            for label in orig_symbs:
-                                int_orig_symbs.append( pu.str2ints(label,2) )
+                            int_orig_symbs.append( pu.str2ints(orig_symbs,2) )
                         
                         perms = permutations(targets)
                         different = set(perms)
@@ -2338,6 +2450,7 @@ class Pysic:
                             int_symbs = []
                             for label in symbs:
                                 int_symbs.append( pu.str2ints(label,2) )
+
                             pf.pysic_interface.add_bond_order_factor(bond.get_bond_order_type(),
                                                                    np.array( bond.get_parameters_as_list() ),
                                                                    np.array( bond.get_number_of_parameters() ),
@@ -2437,7 +2550,7 @@ class Pysic:
 
         pf.pysic_interface.create_atoms(masses,charges,positions,momenta,tags,elements)
         Pysic.core.set_atoms(self.structure)
-        
+
         self.update_core_supercell()
         self.update_core_potentials()
         self.update_core_neighbor_lists()

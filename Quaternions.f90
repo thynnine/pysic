@@ -1,10 +1,7 @@
 !
-! A module for basic quarternion operations <br />
-! and 3D spatial rotations using quaternion representation <br />
-! <br />
-! Teemu Hynninen <br />
+! A module for basic quarternion operations
+! and 3D spatial rotations using quaternion representation
 !
-
 MODULE quaternions
   IMPLICIT NONE
   double precision, parameter :: norm_tolerance = 1.0d-8
