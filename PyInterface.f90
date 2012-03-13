@@ -231,10 +231,10 @@ contains
 
 
   ! Creates atomic particles.
-  ! Atoms are handled as custom fortran types in the core. Currently
-  ! f2py does not support direct creation of types from python, so instead
-  ! all the necessary data is passed from python as arrays and reassembled
-  ! as types in fortran. This is not much of an added overhead - the
+  ! Atoms are handled as custom fortran types :data:`atom` in the core. Currently
+  ! `f2py`_ does not support direct creation of types from Python, so instead
+  ! all the necessary data is passed from Python as arrays and reassembled
+  ! as types in Fortran. This is not much of an added overhead - the
   ! memory allocation itself already makes this a routine one does not
   ! wish to call repeatedly. Instead, one should call the routines
   ! for updating atoms whenever the actual atoms do not change
@@ -822,7 +822,7 @@ contains
   end subroutine number_of_parameters_of_bond_order_factor
 
   ! Lists the names of parameters the given potential knows.
-  ! Output is an array of integers. This is because f2py doesn't
+  ! Output is an array of integers. This is because `f2py`_ doesn't
   ! currently support string arrays. So, the characters are translated to
   ! integers and back in fortran and python.
   ! This adds a bit of overhead, but the routine is only invoked
@@ -849,7 +849,7 @@ contains
 
 
   ! Lists the names of parameters the given bond order factor knows.
-  ! Output is an array of integers. This is because f2py doesn't
+  ! Output is an array of integers. This is because `f2py`_ doesn't
   ! currently support string arrays. So, the characters are translated to
   ! integers and back in fortran and python.
   ! This adds a bit of overhead, but the routine is only invoked
@@ -879,7 +879,7 @@ contains
 
   
   ! Lists descriptions for parameters the given potential.
-  ! Output is an array of integers. This is because f2py doesn't
+  ! Output is an array of integers. This is because `f2py`_ doesn't
   ! currently support string arrays. So, the characters are translated to
   ! integers and back in fortran and python.
   ! This adds a bit of overhead, but the routine is only invoked
@@ -906,7 +906,7 @@ contains
 
 
   ! Lists descriptions for parameters the given bond order factor.
-  ! Output is an array of integers. This is because f2py doesn't
+  ! Output is an array of integers. This is because `f2py`_ doesn't
   ! currently support string arrays. So, the characters are translated to
   ! integers and back in fortran and python.
   ! This adds a bit of overhead, but the routine is only invoked
