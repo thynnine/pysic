@@ -573,7 +573,9 @@ class BondOrderParameters:
         By default, the method takes a list of list and multiplies each list
         with the others (note the call for a static method)::
 
-            >>> pysic.BondOrderParameters.expand_symbols_table(['Si', ['O', 'C'], ['H', 'O']])
+            >>> pysic.BondOrderParameters.expand_symbols_table([  'Si',
+            ...                                                  ['O', 'C'],
+            ...                                                  ['H', 'O'] ])
             [['Si', 'O', 'H'],
              ['Si', 'C', 'H'],
              ['Si', 'O', 'O'],
@@ -595,7 +597,10 @@ class BondOrderParameters:
         However, for an A-B-A triplet, the A-B bond should only be defined once to prevent double counting.
         Like the default function, also here several triplets can be defined at once::
 
-         >>> pysic.BondOrderParameters.expand_symbols_table([['H', 'O'], 'Si', ['O', 'C']], type='triplet')
+         >>> pysic.BondOrderParameters.expand_symbols_table([ ['H', 'O'],
+         ...                                                   'Si',
+         ...                                                  ['O', 'C'] ],
+         ...                                                type='triplet')
          [['Si', 'H', 'O'],
           ['Si', 'O', 'H'],
           ['Si', 'H', 'C'],

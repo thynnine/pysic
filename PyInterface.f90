@@ -569,7 +569,8 @@ contains
   ! the coordinator / potential.
   !
   ! Calls :func:`core_get_bond_order_sums`
-  ! Calls :func:`core_calculate_bond_order_gradients`
+  ! 
+  ! and :func:`core_calculate_bond_order_gradients`
   !
   ! *n_atoms number of atoms
   ! *group_index an index denoting the potential to which the factor is connected
@@ -597,7 +598,8 @@ contains
   ! the coordinator / potential.
   !
   ! Calls :func:`core_get_bond_order_sums`
-  ! Calls :func:`core_calculate_bond_order_gradients_of_factor`
+  !
+  ! and :func:`core_calculate_bond_order_gradients_of_factor`
   !
   ! *n_atoms number of atoms
   ! *group_index an index denoting the potential to which the factor is connected

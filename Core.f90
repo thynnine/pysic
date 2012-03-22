@@ -210,7 +210,7 @@ contains
   !  a = [1.5, 0.5, 0.5]
   !  b = [0.4, 1.6, 3.3]
   ! 
-  ! the closest separation vector b-a between the particles is::
+  ! the closest separation vector :math:`\mathbf{r}_b-\mathbf{r}_a` between the particles is::
   !
   !   [-.1, .1, -.2]
   !

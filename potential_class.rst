@@ -1,0 +1,295 @@
+.. file:potential_class
+
+.. file:potential_class: description
+
+============================
+Potential class
+============================
+
+This class defines an atomistic potential to be used by :class:`~pysic.Pysic`.
+An interaction between two or more particles can be defined and the 
+targets of the interaction can be specified by chemical symbol, tag, or index. 
+The available types of potentials are always inquired from the
+Fortran core to ensure that any changes made to the core are
+automatically reflected in the Python interface.
+
+There are a number of utility functions in :mod:`~pysic` for inquiring
+the keywords and other data needed for creating the potentials. For example:
+
+- Inquire the names of available potentials: :meth:`~pysic.list_valid_potentials`
+- Inquire the names of parameters for a potential: :meth:`~pysic.names_of_parameters`
+- Ask for a short description of a potential: :meth:`~pysic.description_of_potential`
+
+.. file:potential cutoffs
+
+
+Cutoffs
+-------
+
+Many potentials decay towards zero in infinity, but in a numeric simulation
+they are cut at a finite range as specified by a cutoff radius. However, if the potential
+is not exactly zero at this range, a discontinuity will be introduced. 
+It is possible to avoid this by including a smoothening factor in the potential
+to force a decay to zero in a finite interval:
+
+.. math::
+
+   \tilde{V}(r) = f(r) V(r),
+
+where the smoothening factor is (for example)
+
+.. math::
+
+   f(r) = \begin{cases} 1, & r < r_\mathrm{soft} \\ \frac{1}{2}\left(1+\cos \pi\frac{r-r_\mathrm{soft}}{r_\mathrm{hard}-r_\mathrm{soft}}\right), & r_\mathrm{soft} < r < r_\mathrm{hard} \\ 0, & r > r_\mathrm{hard} \end{cases}.
+
+Pysic allows one to specify both a hard and a soft cutoff for all potentials to include such
+a smooth cutoff. If no soft cutoff if given or it is zero (or equal to the hard cutoff),
+no smoothening is applied.
+
+.. file:list of potentials
+
+
+
+List of currently available potentials
+--------------------------------------
+
+Below is a list of potentials currently implemented.
+
+.. file:constant force potential
+
+
+
+Constant force
+______________
+
+1-body potential defined as
+
+.. math ::
+   V(\mathbf{r}) = - \mathbf{F} \cdot \mathbf{r},
+
+i.e., a constant force :math:`F`.
+
+Keywords::
+
+    >>> names_of_parameters('force')
+    ['Fx', 'Fy', 'Fz']
+
+.. file:constant potential
+
+
+
+Constant potential
+__________________
+
+One body potential defined as
+
+.. math ::
+   
+   V(\mathbf{r}) = V,
+
+i.e., a constant potential.
+
+A constant potential is of course irrelevant in force calculation since the
+gradient is zero. However, one can add a :class:`~pysic.BondOrderParameters` bond order
+factor with the potential to create essentially a bond order potential.
+
+Keywords::
+
+    >>> names_of_parameters('constant')
+    ['V']
+
+.. file:Lennard-Jones potential
+
+
+Lennard-Jones
+_____________
+
+2-body interaction defined as
+
+.. math::
+
+   V(r) = \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r} \right)^{6} \right],
+
+where :math:`\varepsilon` is an energy constant defining the depth of the potential well and :math:`\sigma` is the distance where the potential changes from positive to negative in the repulsive region.
+
+Keywords::
+
+    >>> names_of_parameters('LJ')
+    ['epsilon', 'sigma']    
+
+
+.. plot::
+   
+   import matplotlib.pyplot as plt
+   x = []; y = []
+   start = 0.5
+   end = 2.0
+   steps = 100
+   dx = (end-start)/steps
+   for i in range(steps+1):
+       xval = start + i*dx
+       x.append( xval )
+       y.append( (1.0/xval)**12 - (1.0/xval)**6 )
+   plt.plot(x,y)
+   plt.plot(0)
+   plt.xlim(0.9,2.0)
+   plt.ylim(-0.3,0.3)
+   plt.title(r'Lennard-Jones potential: $\varepsilon = 1.0$, $\sigma = 1.0$')
+   plt.show()
+
+.. file:spring potential
+
+
+
+Spring
+______
+
+2-body interaction defined as
+
+.. math::
+
+    V(r) = \frac{1}{2} k (r-R_0)^{2} - \frac{1}{2} k (r_\mathrm{cut}-R_0)^2,
+
+where :math:`k` is a spring constant, :math:`R_0` is the equilibrium distance, and :math:`r_\mathrm{cut}` is the potential cutoff. The latter term is a constant whose purpose is to remove the discontinuity at cutoff.
+
+Keywords::
+
+    >>> names_of_parameters('spring')
+    ['k', 'R_0']
+
+.. plot::
+   
+   import matplotlib.pyplot as plt
+   x = []; y = []
+   start = 0.0
+   end = 2.0
+   steps = 100
+   dx = (end-start)/steps
+   for i in range(steps+1):
+       xval = start + i*dx
+       x.append( xval )
+       y.append( 0.5 * (xval-1.0)**2 )
+   plt.plot(x,y)
+   plt.title(r'Spring potential: $k = 1.0$, $R_0 = 1.0$')
+   plt.xlim(-0.5,2.5)
+   plt.ylim(-0.1,0.5)
+   plt.show()
+
+.. file:bond bending potential
+
+
+
+Bond bending
+____________
+
+3-body interaction defined as
+
+.. math::
+
+   V(\theta) = \frac{k}{2} ( \cos \theta - \cos \theta_0 )^2,
+
+where :math:`k` is an angular spring constant, :math:`\theta` is an angle defined by three points in space (atomic positions) and :math:`\theta_0` is the equilibrium angle. The potential therefore describes an angular spring force related to bending of bonds.
+
+Keywords::
+
+    >>>	names_of_parameters('bond_bend')
+    ['k', 'theta_0']
+
+Three bodies form a triangle and so there are three possible angles the potential could bend. To remove this ambiguousness, the angle is defined so that as the potential is given a list of targets, the middle target is considered to be at the tip of the angle. 
+
+Example::
+
+    >>> pot = Potential('bond_bend')
+    >>> pot.set_symbols(['H', 'O', 'H'])
+
+This creates a potential for H-O-H angles, but not for H-H-O angles.
+
+Also remember that the bond bending potential does not include any actual bonding potential between particles - it only generates an angular force component. It must be coupled with other potentials to build a full bonding potential.
+
+
+.. plot::
+   
+   import matplotlib.pyplot as plt
+   from math import cos, pi
+   theta = []; r1 = []; r2 = []
+   start = 0.0
+   end = 2.0*pi
+   steps = 100
+   dtheta = (end-start)/steps
+   for i in range(steps+1):
+       thval = start + i*dtheta
+       theta.append( thval )
+       r1.append( 0.5 * (cos(thval)-cos(0.0))**2 )
+       r2.append( 0.5 * (cos(thval)-cos(pi/2))**2 )
+
+   plt.polar(theta,r1)
+   plt.polar(theta,r2)   
+   plt.title(r'Bond bending potential: $k = 1.0$, [$\theta_0 = 0$; $\theta_0 = \pi/2$]')
+   plt.show()
+
+.. file:potential_class: autogenerated
+
+
+.. only:: html
+
+  List of methods
+  ---------------
+
+  Below is a list of methods in :class:`~pysic.Potential`, grouped according to
+  the type of functionality.
+
+  Interaction handling
+  ____________________
+
+  - :meth:`~pysic.Potential.get_cutoff`
+  - :meth:`~pysic.Potential.get_cutoff_margin`
+  - :meth:`~pysic.Potential.get_parameter_names`
+  - :meth:`~pysic.Potential.get_parameter_value`
+  - :meth:`~pysic.Potential.get_parameter_values`
+  - :meth:`~pysic.Potential.get_potential_type`
+  - :meth:`~pysic.Potential.get_soft_cutoff`
+  - :meth:`~pysic.Potential.set_cutoff`
+  - :meth:`~pysic.Potential.set_cutoff_margin`
+  - :meth:`~pysic.Potential.set_parameter_value`
+  - :meth:`~pysic.Potential.set_parameter_values`
+  - :meth:`~pysic.Potential.set_soft_cutoff`
+
+  Coordinator handling
+  _____________________
+
+  - :meth:`~pysic.Potential.get_coordinator`
+  - :meth:`~pysic.Potential.set_coordinator`
+
+  Target handling
+  __________________
+
+  - :meth:`~pysic.Potential.accepts_target_list`
+  - :meth:`~pysic.Potential.add_indices`
+  - :meth:`~pysic.Potential.add_symbols`
+  - :meth:`~pysic.Potential.add_tags`
+  - :meth:`~pysic.Potential.get_different_indices`
+  - :meth:`~pysic.Potential.get_different_symbols`
+  - :meth:`~pysic.Potential.get_different_tags`
+  - :meth:`~pysic.Potential.get_indices`
+  - :meth:`~pysic.Potential.get_number_of_targets`
+  - :meth:`~pysic.Potential.get_symbols`
+  - :meth:`~pysic.Potential.get_tags`
+  - :meth:`~pysic.Potential.set_indices`
+  - :meth:`~pysic.Potential.set_symbols`
+  - :meth:`~pysic.Potential.set_tags`
+
+
+  Description
+  ___________
+
+  - :meth:`~pysic.Potential.describe`
+
+
+Full documentation of the Potential class
+-----------------------------------------
+
+.. currentmodule:: pysic
+.. autoclass:: Potential
+   :members:
+   :undoc-members:
+

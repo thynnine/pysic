@@ -1,9 +1,31 @@
 !
 ! A module for basic quarternion operations
 ! and 3D spatial rotations using quaternion representation
+! Quaternions are a 4-component analogue to complex numbers
 !
+! .. math::
+!
+!  \mathbf{q} = w + x \mathbf{i} + y \mathbf{j} + z \mathbf{k} = [w,x,y,z]
+!
+! where the three imaginary components obey :math:`\mathbf{ijk} = \mathbf{i}^2 = \mathbf{j}^2 = \mathbf{k}^2 = -1`.
+! This leads to a structure similar to that of complex numbers, except that the quaternion product defined
+! according to the above rules is non-commutative :math:`\mathbf{q}_1\mathbf{q}_2 \ne \mathbf{q}_2\mathbf{q}_1`.
+!
+! It turns out that unit quaternions :math:`||\mathbf{q}|| = \sqrt{w^2+x^2+y^2+z^2} = 1` represent the space
+! of 3D rotations so that the rotation by angle :math:`\alpha` around unit axis :math:`\mathbf{u} = [x,y,z]`
+! is represented by the quaternion
+!
+! .. math::
+!
+!   \mathbf{q} = [\cos \frac{\alpha}{2}, x \sin \frac{\alpha}{2}, y \sin \frac{\alpha}{2}, z \sin \frac{\alpha}{2}]
+!
+! and joining rotations is represented as a a quaternion product
+! (rotating first by :math:`\mathbf{q}_1`, then by :math:`\mathbf{q}_2` yields the combined rotation 
+! of :math:`\mathbf{q}_{12} = \mathbf{q}_2 \mathbf{q}_1`).
 MODULE quaternions
   IMPLICIT NONE
+
+  ! *norm_tolerance the threshold value for the norm for treating vectors as zero vectors
   double precision, parameter :: norm_tolerance = 1.0d-8
   
   ! The quarternion type. It only contains four
@@ -114,7 +136,7 @@ END INTERFACE
 
 CONTAINS
 
-  ! Returns the quarternion q added by scalar r
+  ! Returns the quarternion :math:`\mathbf{q}` added by scalar :math:`r`
   ! component-wise
   ! *q a quaternion
   ! *r a real scalar
@@ -133,7 +155,7 @@ CONTAINS
 
   END FUNCTION qplus
 
-  ! Returns the quarternion q subtracted by scalar r
+  ! Returns the quarternion :math:`\mathbf{q}` subtracted by scalar :math:`r`
   ! component-wise
   ! *q a quaternion
   ! *r a real scalar
@@ -152,7 +174,7 @@ CONTAINS
 
   END FUNCTION qminus
 
-  ! Returns the quarternion q multiplied by scalar r
+  ! Returns the quarternion :math:`\mathbf{q}` multiplied by scalar :math:`r`
   ! component-wise
   ! *q a quaternion
   ! *r a real scalar
@@ -171,7 +193,7 @@ CONTAINS
 
   END FUNCTION qtimes
 
-  ! Returns the quarternion q multiplied by scalar r
+  ! Returns the quarternion :math:`\mathbf{q}` multiplied by scalar :math:`r`
   ! component-wise
   ! *q a quaternion
   ! *r a real scalar
@@ -191,7 +213,7 @@ CONTAINS
   END FUNCTION qtimesB
 
 
-  ! Returns the quarternion q divided by scalar r
+  ! Returns the quarternion :math:`\mathbf{q}` divided by scalar :math:`r`
   ! component-wise
   ! *q a quaternion
   ! *r a real scalar
@@ -210,8 +232,8 @@ CONTAINS
 
   END FUNCTION qdiv
 
-  ! Returns the quarternion product q1*q2
-  ! Note that the product is non-commutative: q1*q2 /= q2*q1
+  ! Returns the quarternion product :math:`\mathbf{q}_1\mathbf{q}_2`
+  ! Note that the product is non-commutative:  :math:`\mathbf{q}_1\mathbf{q}_2 \ne \mathbf{q}_2\mathbf{q}_1`
   ! *q1 a quaternion
   ! *q2 a quaternion
   ! *qn q1*q2
@@ -228,7 +250,7 @@ CONTAINS
 
   END FUNCTION qprod
 
-  ! Returns the quarternion conjugate of q: w+xi+yj+zk -> w-xi-yj-zk
+  ! Returns the quarternion conjugate of :math:`\mathbf{q}`: :math:`\mathbf{q}^* = w+x\mathbf{i}+y\mathbf{j}+z\mathbf{k} \to w-x\mathbf{i}-y\mathbf{j}-z\mathbf{k}`
   ! *q a quaternion
   ! *cq conjugate of q
   FUNCTION qconj(q) &
@@ -244,7 +266,7 @@ CONTAINS
 
   END FUNCTION qconj
 
-  ! Returns the quarternion norm of q: sqrt(w**2+x**2+y**2+z**2)
+  ! Returns the quarternion norm of :math:`\mathbf{q}`: :math:`||\mathbf{q}|| = \sqrt{w^2+x^2+y^2+z^2}`
   ! *q a quaternion
   ! *norm the norm of q
   FUNCTION qnorm(q) &
@@ -257,7 +279,7 @@ CONTAINS
 
   END FUNCTION qnorm
 
-  ! Returns the quarternion inverse of q: conj(q)/norm(q)
+  ! Returns the quarternion inverse of :math:`\mathbf{q}`: :math:`\mathbf{q}^*/||\mathbf{q}||`
   ! *q a quaternion
   ! *iq inverse of q  
   FUNCTION qinv(q) &
@@ -271,7 +293,7 @@ CONTAINS
   END FUNCTION qinv
 
   ! Returns the quarternion representing a rotation
-  ! around axis u by angle a
+  ! around axis :math:`\mathbf{u}` by angle :math:`\alpha`
   ! *a angle in radians
   ! *u 3D vector, defining an axis of rotation
   ! *q representing the rotation
@@ -291,8 +313,8 @@ CONTAINS
   END FUNCTION rot2q
 
   ! Returns the quarternion representing a rotation
-  ! around axis v by angle |v|. If v is 0,
-  ! the quaternion [1 0 0 0] will be returned.
+  ! around axis :math:`\mathbf{v}` by angle :math:`||\mathbf{v}||`. If :math:`\mathbf{v} = 0`,
+  ! the quaternion :math:`\mathbf{q} = [1 0 0 0]` will be returned.
   ! *v 3D vector, defining both the angle and axis of rotation
   ! *q representing the rotation
   FUNCTION vec2q(v) &
@@ -320,7 +342,7 @@ CONTAINS
   END FUNCTION vec2q
 
   ! Returns the angle of rotation described by the
-  ! UNIT quarternion q. Note that the unity of q
+  ! UNIT quarternion :math:`\mathbf{q}`. Note that the unity of :math:`\mathbf{q}`
   ! is not checked (as it would be time consuming to
   ! calculate the norm all the time if we know
   ! the quaternions used have unit length).
@@ -337,7 +359,7 @@ CONTAINS
   END FUNCTION q2angle
 
   ! Returns the axis of rotation described by the
-  ! UNIT quarternion q. Note that the unity of q
+  ! UNIT quarternion :math:`\mathbf{q}`. Note that the unity of :math:`\mathbf{q}`
   ! is not checked (as it would be time consuming to
   ! calculate the norm all the time if we know
   ! the quaternions used have unit length).
@@ -357,7 +379,7 @@ CONTAINS
   END FUNCTION q2axis
 
   ! Returns the rotation matrix described by the
-  ! UNIT quarternion q. Note that the unity of q
+  ! UNIT quarternion :math:`\mathbf{q}`. Note that the unity of :math:`\mathbf{q}`
   ! is not checked (as it would be time consuming to
   ! calculate the norm all the time if we know
   ! the quaternions used have unit length).
@@ -385,8 +407,8 @@ CONTAINS
 
   END FUNCTION q2matrix
 
-  ! Returns the 3D vector vec rotated according to
-  ! the UNIT quarternion q. Note that the unity of q
+  ! Returns the 3D vector rotated according to
+  ! the UNIT quarternion :math:`\mathbf{q}`. Note that the unity of :math:`\mathbf{q}`
   ! is not checked (as it would be time consuming to
   ! calculate the norm all the time if we know
   ! the quaternions used have unit length).
@@ -413,8 +435,8 @@ CONTAINS
 
   END FUNCTION rotate_q
 
-  ! Returns the vector vec rotated according to
-  ! the axis u and angle a.
+  ! Returns the vector rotated according to
+  ! the axis :math:`\mathbf{u}` and angle :math:`\alpha`.
   ! *u axis of rotation
   ! *a angle of rotation
   ! *vec vector to be rotated
@@ -429,10 +451,10 @@ CONTAINS
 
   END FUNCTION rotate_au
 
-  ! Returns the vector vec rotated according to
-  ! the vector da. The axis of rotation is given by
-  ! the direction of da and the angle by |da|.
-  ! *da rotation vector (angular velocity x time)
+  ! Returns the vector rotated according to
+  ! the vector :math:`\mathbf{d}`. The axis of rotation is given by
+  ! the direction of :math:`\mathbf{d}` and the angle by :math:`||\mathbf{d}||`.
+  ! *da rotation vector (e.g., angular velocity x time :math:`\mathbf{\omega} t`)
   ! *vec vector to be rotated
   ! *v the rotated vector  
   FUNCTION rotate_a(vec,da) &
@@ -446,7 +468,7 @@ CONTAINS
 
   END FUNCTION rotate_a
 
-  ! Normal dot product of vectors (DOT_PRODUCT for 3-vectors only)
+  ! Normal dot product of vectors :math:`\mathbf{v}\cdot\mathbf{u}` (Note: for 3-vectors only!)
   ! *v vector
   ! *u vector
   ! *product v . u
@@ -460,7 +482,7 @@ CONTAINS
 
   END FUNCTION dot
 
-  ! Normal cross product of vectors
+  ! Normal cross product of vectors :math:`\mathbf{v} \times \mathbf{u}` (Note: for 3-vectors only!)
   ! *v vector
   ! *u vector
   ! *product v x u
@@ -476,7 +498,7 @@ CONTAINS
 
   END FUNCTION cross
 
-  ! Norm of a vector, |v|
+  ! Norm of a vector, :math:`||\mathbf{v}||`
   ! *v vector
   ! *normi norm of v
   FUNCTION vnorm(v) &
