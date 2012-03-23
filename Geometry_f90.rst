@@ -164,9 +164,9 @@ Full documentation of custom types in geometry
     Contained data:
 
     periodic: logical    *size(3)*
-        
+        logical switch determining if periodic boundary conditions are applied in the directions of the three cell spanning vectors
     vector_lengths: double precision    *size(3)*
-        
+        the lengths of the cell spanning vectors (stored to avoid calculating the vector norms over and over)
     vectors: double precision    *size(3, 3)*
         vectors spanning the supercell containing the system as a matrix :math:`\mathbf{M}`
     inverse_cell: double precision    *size(3, 3)*
@@ -179,145 +179,307 @@ Full documentation of subroutines in geometry
             
   .. function:: absolute_coordinates(relative, cell, position)
 
+    Transforms from fractional to absolute coordinates.
+    
+    Absolute coordinates are the coordinates in the normal
+    :math:`xyz` base,
+    
+    .. math::
+    
+       \mathbf{r} = x\mathbf{i} + y\mathbf{j} + z\mathbf{k}.
+    
+    Fractional coordiantes are the coordiantes in the base
+    spanned by the vectors defining the supercell,
+    :math:`\mathbf{v}_1`, :math:`\mathbf{v}_2`, :math:`\mathbf{v}_3`,
+    
+    .. math::
+    
+       \mathbf{r} = \tilde{x}\mathbf{v}_1 + \tilde{y}\mathbf{v}_2 + \tilde{z}\mathbf{v}_3.
+    
+    Notably, for positions inside the supercell, the fractional
+    coordinates fall between 0 and 1.
+    
+    Transformation between the two bases is given by the cell
+    matrix
+    
+    .. math::
+    
+       \left[
+       \begin{array}{c}
+       x \\
+       y \\
+       z
+       \end{array} \right] = \mathbf{M}
+       \left[
+       \begin{array}{c}
+       \tilde{x} \\
+       \tilde{y} \\
+       \tilde{z}
+       \end{array} \right]
+    
 
     Parameters:
 
     relative: double precision  *intent(in)*    *size(3)*  
-        
+        the fractional coordinates
     cell: type(supercell)  *intent(in)*    *scalar*  
-        
+        the supercell
     **position**: double precision  **intent(out)**    *size(3)*  
-        
+        the absolute coordinates
             
   .. function:: assign_bond_order_factor_indices(n_bonds, atom_in, indices)
 
+    Save the indices of bond order factors affecting an atom.
+    
+    In bond order factor evaluation, it is important to loop
+    over bond parameters quickly. As the evaluation of factors
+    goes over atoms, atom pairs etc., it is useful to first
+    filter the parameters by the first atom participating
+    in the factor. Therefore, the atoms can be given
+    a list of bond order parameters for which they are a suitable target
+    as a 'first participant' (in a triplet A-B-C, A is the
+    first participant).
+    
 
     Parameters:
 
     n_bonds: integer  *intent(in)*    *scalar*  
-        
+        number of bond order factors
     **atom_in**: type(atom)  **intent(inout)**    *scalar*  
-        
+        the atom for which the bond order factors are assigned
     indices: integer  *intent(in)*    *size(n_bonds)*  
-        
+        the indices of the bond order factors
             
   .. function:: assign_neighbor_list(n_nbs, nbor_list, neighbors, offsets)
 
+    Creates a neighbor list for one atom.
+    
+    The neighbor list will contain an array of the indices
+    of the neighboring atoms as well as periodicity offsets,
+    as explained in :data:`neighbor_list`
+    
+    The routine takes the neighbor_list object to be created
+    as an argument. If the list is empty, it is initialized.
+    If the list already contains information, the list is emptied and
+    refilled. If the previous list has room to contain the new list
+    (as in, it has enough allocated memory), no memory reallocation
+    is done (since it will be slow if done repeatedly). Only if the
+    new list is too long to fit in the reserved memory, the pointers
+    are deallocated and reallocated.
+    
 
     Parameters:
 
     n_nbs: integer  *intent(in)*    *scalar*  
-        
+        number of neighbors
     **nbor_list**: type(neighbor_list)  **intent(inout)**    *scalar*  
-        
+        The list of neighbors to be created.
     neighbors: integer  *intent(in)*    *size(n_nbs)*  
-        
+        array containing the indices of the neighboring atoms
     offsets: integer  *intent(in)*    *size(3, n_nbs)*  
-        
+        periodicity offsets
             
   .. function:: assign_potential_indices(n_pots, atom_in, indices)
 
+    Save the indices of potentials affecting an atom.
+    
+    In force and energy evaluation, it is important to loop
+    over potentials quickly. As the evaluation of energies
+    goes over atoms, atom pairs etc., it is useful to first
+    filter the potentials by the first atom participating
+    in the interaction. Therefore, the atoms can be given
+    a list of potentials for which they are a suitable target
+    as a 'first participant' (in a triplet A-B-C, A is the
+    first participant).
+    
 
     Parameters:
 
     n_pots: integer  *intent(in)*    *scalar*  
-        
+        number of potentials
     **atom_in**: type(atom)  **intent(inout)**    *scalar*  
-        
+        the atom for which the potentials are assigned
     indices: integer  *intent(in)*    *size(n_pots)*  
-        
+        the indices of the potentials
             
   .. function:: generate_atoms(n_atoms, masses, charges, positions, momenta, tags, elements, atoms)
 
-    Creates atoms to construct the system to be simulated
+    Creates atoms to construct the system to be simulated.
+    
 
     Parameters:
 
     n_atoms: integer  *intent(in)*    *scalar*  
-        
+        number of atoms
     masses: double precision  *intent(in)*    *size(n_atoms)*  
-        
+        array of masses for the atoms
     charges: double precision  *intent(in)*    *size(n_atoms)*  
-        
+        array of charges for the atoms
     positions: double precision  *intent(in)*    *size(3, n_atoms)*  
-        
+        array of coordinates for the atoms
     momenta: double precision  *intent(in)*    *size(3, n_atoms)*  
-        
+        array of momenta for the atoms
     tags: integer  *intent(in)*    *size(n_atoms)*  
-        
+        array of integer tags for the atoms
     elements: character(len=label_length)  *intent(in)*    *size(n_atoms)*  
-        
+        array of chemical symbols for the atoms
     atoms: type(atom)  *intent()*  *pointer*  *size(:)*  
-        
+        array of the atom objects created
             
   .. function:: generate_supercell(vectors, inverse, periodicity, cell)
 
-    Creates the supercell
+    Creates the supercell containing the simulation geometry.
+    
+    The supercell is spanned by three vectors :math:`\mathbf{v}_1,\mathbf{v}_2,\mathbf{v}_3` stored as a
+    :math:`3 \times 3` matrix in format
+    
+    .. math::
+    
+      \mathbf{M} = \left[
+      \begin{array}{ccc}
+      v_{1,x} & v_{1,y} & v_{1,z} \\
+      v_{2,x} & v_{2,y} & v_{2,z} \\
+      v_{3,x} & v_{3,y} & v_{3,z}
+      \end{array}
+      \right].
+    
+    Also the inverse cell matrix :math:`\mathbf{M}^{-1}` must be given
+    for transformations between the absolute and fractional coordinates.
+    However, it is not checked that the given matrix and inverse truly
+    fulfill :math:`\mathbf{M}^{-1}\mathbf{M} = \mathbf{I}` - it is the
+    responsibility of the caller to give the true inverse.
+    Also the periodicity of the system in the directions of the
+    cell vectors need to be given.
+    
 
     Parameters:
 
     vectors: double precision  *intent(in)*    *size(3, 3)*  
-        
+        the cell spanning matrix :math:`\mathbf{M}`
     inverse: double precision  *intent(in)*    *size(3, 3)*  
-        
+        the inverse cell :math:`\mathbf{M}`
     periodicity: logical  *intent(in)*    *size(3)*  
-        
+        logical switch, true if the boundaries are periodic
     **cell**: type(supercell)  **intent(out)**    *scalar*  
-        
+        the created cell object
             
   .. function:: relative_coordinates(position, cell, relative)
 
+    Transforms from absolute to fractional coordinates.
+    
+    Absolute coordinates are the coordinates in the normal
+    :math:`xyz` base,
+    
+    .. math::
+    
+       \mathbf{r} = x\mathbf{i} + y\mathbf{j} + z\mathbf{k}.
+    
+    Fractional coordiantes are the coordiantes in the base
+    spanned by the vectors defining the supercell,
+    :math:`\mathbf{v}_1`, :math:`\mathbf{v}_2`, :math:`\mathbf{v}_3`,
+    
+    .. math::
+    
+       \mathbf{r} = \tilde{x}\mathbf{v}_1 + \tilde{y}\mathbf{v}_2 + \tilde{z}\mathbf{v}_3.
+    
+    Notably, for positions inside the supercell, the fractional
+    coordinates fall between 0 and 1.
+    
+    Transformation between the two bases is given by the inverse cell
+    matrix
+    
+    .. math::
+    
+       \left[
+       \begin{array}{c}
+       \tilde{x} \\
+       \tilde{y} \\
+       \tilde{z}
+       \end{array} \right] = \mathbf{M}^{-1}
+       \left[
+       \begin{array}{c}
+       x \\
+       y \\
+       z
+       \end{array} \right]
+    
 
     Parameters:
 
     position: double precision  *intent(in)*    *size(3)*  
-        
+        the absolute coordinates
     cell: type(supercell)  *intent(in)*    *scalar*  
-        
+        the supercell
     **relative**: double precision  **intent(out)**    *size(3)*  
-        
+        the fractional coordinates
             
   .. function:: separation_vector(r1, r2, offset, cell, separation)
 
-    Calculates the minimum separation vector between two atoms, r2-r1, including possible periodicity
+    Calculates the minimum separation vector between two atoms, :math:`\mathbf{r}_2-\mathbf{r}_1`, including possible periodicity.
+    
 
     Parameters:
 
     r1: double precision  *intent(in)*    *size(3)*  
-        
+        coordiantes of atom 1, :math:`\mathbf{r}_1`
     r2: double precision  *intent(in)*    *size(3)*  
-        
+        coordinates of atom 1, :math:`\mathbf{r}_2`
     offset: integer  *intent(in)*    *size(3)*  
-        
+        periodicity offset (see :data:`neighbor_list`)
     cell: type(supercell)  *intent(in)*    *scalar*  
-        
+        supercell spanning the system
     **separation**: double precision  **intent(out)**    *size(3)*  
-        
+        the calculated separation vector, :math:`\mathbf{r}_2-\mathbf{r}_1`
             
   .. function:: update_atomic_positions(n_atoms, positions, momenta, atoms)
 
-    Updates the positions and momenta of atoms
+    Updates the positions and momenta of the given atoms.
+    Other properties are not altered.
+    
+    This is meant to be used
+    during dynamic simulations or geometry optimization
+    where the atoms are only moved around, not changed in other ways.
+    
 
     Parameters:
 
     n_atoms: integer  *intent(in)*    *scalar*  
-        
+        number of atoms
     positions: double precision  *intent(in)*    *size(3, n_atoms)*  
-        
+        new coordinates for the atoms
     momenta: double precision  *intent(in)*    *size(3, n_atoms)*  
-        
+        new momenta for the atoms
     atoms: type(atom)  *intent()*  *pointer*  *size(:)*  
-        
+        the atoms to be edited
             
   .. function:: wrapped_coordinates(position, cell, wrapped)
 
-    Wraps a general coordinate inside the supercell if the system is periodic
+    Wraps a general coordinate inside the supercell if the system is periodic.
+    
+    In a periodic system, every particle has periodic images at intervals
+    defined by the cell vectors :math:`\mathbf{v}_1,\mathbf{v}_2,\mathbf{v}_3`.
+    That is, for a particle at :math:`\mathbf{r}`, there are periodic
+    images at
+    
+    .. math::
+    
+       \mathbf{R} = \mathbf{r} + a_1 \mathbf{v}_1 + a_2 \mathbf{v}_2 + a_3 \mathbf{v}_3
+    
+    for all :math:`a_1, a_2, a_3 \in \mathbf{Z}`.
+    These are equivalent positions in the sense that if a particle is
+    situated at any of one of them, the set of images is the same.
+    Exactly one of the images is inside the cell - this routine gives
+    the coordinates of that particular image.
+    
+    If the system is periodic in only some directions, the wrapping is
+    done only along those directions.
+    
 
     Parameters:
 
     position: double precision  *intent(in)*    *size(3)*  
-        
+        the absolute coordinates
     cell: type(supercell)  *intent(in)*    *scalar*  
-        
+        the supercell
     **wrapped**: double precision  **intent(out)**    *size(3)*  
-        
+        the wrapped absolute coordinates

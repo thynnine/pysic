@@ -13,6 +13,9 @@ class Dummy:
 
     def start_rng(self,number):
         pass
+
+    def start_bond_order_factors(self):
+        pass
     
 
 pysic_interface = Dummy()

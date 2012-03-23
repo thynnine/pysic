@@ -1,3 +1,13 @@
+!
+! Module for Message Parsing Interface parallellization
+! utilities.
+!
+! This module handles the initialization of the MPI environment
+! and assigns the cpus their indices. 
+! Parallellization is done by 
+! distributing atoms on the processors and the routine for
+! doing this randomly is provided. Also tools for monitoring
+! the loads of all the cpus and redistributing them are also implemented.
 module mpi
   use mt95
   implicit none
@@ -6,16 +16,33 @@ module mpi
   include 'mpif.h'
 #endif
 
+  ! *cpu_id identification number for the cpu, from 0 to :math:`n_\mathrm{cpus}-1`
+  ! *n_cpus number of cpus, :math:`n_\mathrm{cpus}`
+  ! *loadout an integer of the output channel for loads
   integer :: cpu_id, n_cpus, loadout = 2352
 #ifdef MPI
+  ! *mpistatus array for storing the mpi status return values
+  ! *mpistat mpi return value
   integer :: mpistatus(mpi_status_size), mpistat
 #endif
+  ! *my_atoms the number of atoms distributed to this cpu
+  ! *all_atoms the total number of atoms
   integer :: my_atoms, all_atoms
+  ! *load_length the number of times loads have been recorded
   integer :: load_length
+  ! *is_my_atom logical array, true for the indices of the atoms that are distributed to this cpu
+  ! *loads_mask logical array used in load rebalancing, true for cpus whose loads have not yet been balanced
   logical, allocatable :: is_my_atom(:), loads_mask(:)
+  ! *atom_buffer list used for passing atom indices during load balancing
   integer, allocatable :: atom_buffer(:)
+  ! *mpi_atoms_allocated logical switch for denoting that the mpi allocatable arrays have been allocated
   logical :: mpi_atoms_allocated = .false.
+  ! *track_loads logical switch, if true, the loads of cpus are written to a file during run
+  logical, parameter :: track_loads = .false.
+  ! *stopwatch cpu time storage
+  ! *my_load storage for the load of this particular cpu
   double precision :: stopwatch, my_load
+  ! *all_loads list of the loads of all cpus
   double precision, allocatable :: all_loads(:)
 
 
@@ -45,7 +72,10 @@ contains
     n_cpus = 1
     cpu_id = 0
 #endif
-    call open_loadmonitor()
+
+    if(track_loads)then
+       call open_loadmonitor()
+    end if
 
   end subroutine mpi_initialize
 
@@ -61,7 +91,10 @@ contains
        stop
     end if
 #endif
-    call close_loadmonitor()
+    
+    if(track_loads)then
+       call close_loadmonitor()
+    end if
 
   end subroutine mpi_finish
 
@@ -78,6 +111,7 @@ contains
 
 
   ! returns the global time through mpi_wtime
+  ! *clock the measured time
   subroutine mpi_wall_clock(clock)
     implicit none
     double precision, intent(out) :: clock
@@ -92,6 +126,7 @@ contains
 
 
   ! the master cpu broadcasts an integer value to all other cpus
+  ! *sync_int the broadcast integer
   subroutine mpi_master_bcast_int(sync_int)
     implicit none
     integer, intent(inout) :: sync_int
@@ -105,6 +140,7 @@ contains
 
 
   ! distributes atoms among processors
+  ! *n_atoms number of atoms
   subroutine mpi_distribute(n_atoms)
     implicit none
     integer, intent(in) :: n_atoms
@@ -138,7 +174,9 @@ contains
   end subroutine mpi_distribute
 
 
-
+  ! Initializes the load monitoring arrays.
+  !
+  ! *reallocate Logical switch for reallocating the arrays. If true, the related arrays are allocated. Otherwise only the load counters are set to zero.
   subroutine initialize_load(reallocate)
     implicit none
     logical, intent(in) :: reallocate
@@ -163,7 +201,9 @@ contains
   end subroutine initialize_load
 
 
-
+  ! Saves the given load.
+  !
+  ! *amount the load to be stored
   subroutine record_load(amount)
     implicit none
     double precision, intent(in) :: amount
@@ -174,7 +214,10 @@ contains
   end subroutine record_load
 
 
-
+  ! Load balancing.
+  !
+  ! The loads are gathered from all cpus and sorted. Then load (atoms)
+  ! is passed from the most loaded cpus to the least loaded ones.
   subroutine balance_loads()
     implicit none
     integer :: i, j, k, min_cpu, max_cpu, swap_count, random_skip
@@ -260,14 +303,17 @@ contains
     
     ! set all loads to zero
     call initialize_load(.false.)
-    call write_loadmonitor()
+
+    if(track_loads)then
+       call write_loadmonitor()
+    end if
 
 #endif
 
   end subroutine balance_loads
 
 
-  ! records the wall clock time to stopwatch
+  ! records the wall clock time to :data:`stopwatch`
   subroutine start_timer()
     implicit none
 
@@ -276,12 +322,13 @@ contains
   end subroutine start_timer
 
 
-  ! reads the elapsed wall clock time since the previous starting of the timer
+  ! reads the elapsed wall clock time since the previous starting of the 
+  ! timer (saved in :data:`stopwatch`)
   ! and then restarts the timer.
-  ! *timer the elapsed real time
+  ! *stamp the elapsed real time
   subroutine timer(stamp)
     implicit none
-    double precision :: stamp
+    double precision, intent(inout) :: stamp
 
     stamp = stopwatch       ! previous time
     call mpi_wall_clock(stopwatch)
@@ -295,6 +342,7 @@ contains
 
 
   ! Routine for writing force calculation workload analysis data to a file
+  ! called "mpi_load.out"
   SUBROUTINE write_loadmonitor()
     IMPLICIT NONE
     INTEGER :: ii

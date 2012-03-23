@@ -18,6 +18,14 @@ The code is developed as part of the `Mordred`_ project.
 .. _Mordred: http://webhotel2.tut.fi/fys/mordred/
 
 Pysic is in development and not suitable for production simulations yet.
+Similarly, also this documentation is being constantly updated.
+
+.. only:: html
+
+    This document is also available as a `pdf`_.
+
+    .. _pdf: http://butler.cc.tut.fi/~hynnine5/programs/pysic/doc/pysic.pdf
+
 
 
 Physical background

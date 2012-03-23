@@ -1,8 +1,37 @@
+!
+! A module containing utility functionas and constants.
+!
+! The module is a collection of standalone helper tools,
+! not physically relevant functionality.
+!
 module utility
   implicit none
+
+  ! *pi the constant :math:`\pi` calculated as :math:`\pi = 4 \arctan 1`
   double precision, parameter :: pi = 4.d0 * datan(1.d0)
 
 contains
+
+  ! Transforms an integer array to string through a codec::
+  !  
+  !    1 - a
+  !    2 - b
+  !    ...
+  !    101 - A
+  !    102 - B
+  !    ...
+  !    -1 - 1
+  !    -2 - 2
+  !    ...
+  !
+  ! Unrecognized numbers are treated as white spaces.
+  !
+  ! The function is used for communicating string arrays between
+  ! Python and Fortran oer f2py.
+  !
+  ! *length string length
+  ! *ints the integers
+  ! *string_out the string
   subroutine int2str(length,ints,string_out)
     implicit none
     integer, intent(in) :: length
@@ -152,6 +181,27 @@ contains
 
   end subroutine int2str
 
+
+  ! Transforms a string to an integer array through a codec::
+  !  
+  !    1 - a
+  !    2 - b
+  !    ...
+  !    101 - A
+  !    102 - B
+  !    ...
+  !    -1 - 1
+  !    -2 - 2
+  !    ...
+  !
+  ! Unrecognized characters are mapped to 0.
+  !
+  ! The function is used for communicating string arrays between
+  ! Python and Fortran oer f2py.
+  !
+  ! *length string length
+  ! *ints the integers
+  ! *string the string
   subroutine str2int(length,string,ints)
     implicit none
     integer, intent(in) :: length
@@ -297,6 +347,18 @@ contains
 
   end subroutine 
 
+  ! Adds spaces after the given string to
+  ! create a string of a certain length.
+  ! If the given string is longer than the
+  ! specified length, it is truncated.
+  !
+  ! This is used to ensure strings are of a
+  ! certain length, since character arrays in
+  ! Fortran may be forced to a certain length.
+  !
+  ! *str_in the original string
+  ! *str_length the required string length
+  ! *str_out the padded string
   subroutine pad_string(str_in,str_length,str_out)
     implicit none
     character(len=*), intent(in) :: str_in
