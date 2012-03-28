@@ -225,6 +225,32 @@ contains
   end subroutine update_atomic_positions
 
 
+
+  ! Updates the charges of the given atoms.
+  ! Other properties are not altered. 
+  !
+  ! *n_atoms number of atoms
+  ! *charges new charges for the atoms
+  ! *atoms the atoms to be edited
+  subroutine update_atomic_charges(n_atoms,charges,atoms)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(in) :: charges(n_atoms)
+    type(atom), pointer :: atoms(:)
+    integer :: i
+
+    if(size(atoms) /= n_atoms)then
+       write(*,*) "the number of atoms has changed, you should reinitialize the structure"
+    else
+       do i = 1, n_atoms
+          atoms(i)%charge = charges(i)
+       end do
+    end if
+
+  end subroutine update_atomic_charges
+
+
+
   ! Creates a neighbor list for one atom.
   !
   ! The neighbor list will contain an array of the indices
@@ -506,7 +532,7 @@ contains
     
     call relative_coordinates(position,cell,relative)
     do i = 1, 3
-       if cell%periodic(i) then
+       if( cell%periodic(i) )then
           relative(i) = relative(i) - floor(relative(i))
        end if
     end do

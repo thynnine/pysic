@@ -32,6 +32,7 @@ Classes of the pysic module
    potential_class
    coordinator_class
    bondorderparameters_class
+   chargerelaxation_class
    coremirror_class
 
 
@@ -62,6 +63,12 @@ Classes of the pysic module
  - :meth:`~pysic.descriptions_of_parameters`
  - :meth:`~pysic.description_of_potential` 
  
+ Charge relaxation inquiry
+ _________________________
+
+ - :meth:`~pysic.is_valid_charge_relaxation`
+ - :meth:`~pysic.is_charge_relaxation`
+
  Message Parsing Interface
  _________________________
  
@@ -99,7 +106,8 @@ The module defines a group of functions to directly access the Fortran core for
 information on available potentials.
 
 .. automodule:: pysic
-   :members: list_potentials, list_valid_potentials,is_potential,
+   :members: list_potentials, list_valid_potentials, is_potential,
+          is_charge_relaxation, is_valid_charge_relaxation,
    	     is_valid_potential, list_bond_order_factors, 
 	     list_valid_bond_order_factors, is_bond_order_factor,
    	     is_valid_bond_order_factor, number_of_targets,

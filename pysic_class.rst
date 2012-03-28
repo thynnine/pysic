@@ -1,12 +1,10 @@
 .. file:pysic_class
 
+.. file:pysic_class: description
+
 ========================
 Pysic class
 ========================
-
-.. file:pysic_class: description
-
-
 
 This class provides an interface both to the `ASE`_ environment and the
 Fortran core of Pysic through the :mod:`~pysic_fortran` module.

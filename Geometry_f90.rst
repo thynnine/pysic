@@ -38,6 +38,7 @@ A module for handling the geometric structure of the system.
     - :func:`generate_supercell`
     - :func:`relative_coordinates`
     - :func:`separation_vector`
+    - :func:`update_atomic_charges`
     - :func:`update_atomic_positions`
     - :func:`wrapped_coordinates`
 
@@ -430,6 +431,21 @@ Full documentation of subroutines in geometry
         supercell spanning the system
     **separation**: double precision  **intent(out)**    *size(3)*  
         the calculated separation vector, :math:`\mathbf{r}_2-\mathbf{r}_1`
+            
+  .. function:: update_atomic_charges(n_atoms, charges, atoms)
+
+    Updates the charges of the given atoms.
+    Other properties are not altered.
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        number of atoms
+    charges: double precision  *intent(in)*    *size(n_atoms)*  
+        new charges for the atoms
+    atoms: type(atom)  *intent()*  *pointer*  *size(:)*  
+        the atoms to be edited
             
   .. function:: update_atomic_positions(n_atoms, positions, momenta, atoms)
 

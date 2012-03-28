@@ -1,14 +1,12 @@
 .. file:bondorderparameters_class
 
+.. file:bondorderparameters_class: description
+
 
 
 ============================
 BondOrderParameters class
 ============================
-
-.. file:bondorderparameters_class: description
-
-
 
 This class defines a set of parameters for a bond order factor, to be used
 in conjunction with the :class:`~pysic.Coordinator` class. 

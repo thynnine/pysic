@@ -63,6 +63,7 @@ to, if the routine is just a redirect of the call.
     - :func:`calculate_bond_order_factors`
     - :func:`calculate_bond_order_gradients`
     - :func:`calculate_bond_order_gradients_of_factor`
+    - :func:`calculate_electronegativities`
     - :func:`calculate_energy`
     - :func:`calculate_forces`
     - :func:`calculate_stress`
@@ -104,6 +105,7 @@ to, if the routine is just a redirect of the call.
     - :func:`start_potentials`
     - :func:`start_rng`
     - :func:`sync_mpi`
+    - :func:`update_atom_charges`
     - :func:`update_atom_coordinates`
 
 
@@ -303,6 +305,20 @@ Full documentation of subroutines in pysic_interface
     **gradients**: double precision  **intent(out)**    *size(3, n_atoms)*  
         the calculated bond order gradients
             
+  .. function:: calculate_electronegativities(n_atoms, enegs)
+
+    Returns electronegativities of the particles
+    
+    Calls :func:`core_calculate_electronegativities`
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        number of atoms
+    **enegs**: double precision  **intent(out)**    *size(n_atoms)*  
+        array of electronegativities on all atoms
+            
   .. function:: calculate_energy(n_atoms, energy)
 
     Returns the total potential energy of the system
@@ -486,7 +502,7 @@ Full documentation of subroutines in pysic_interface
         name of the bond order factor
     n_targets: integer  *intent(in)*    *scalar*  
         number of targets
-    **param_notes**: integer  **intent(out)**    *size(100, 4)*  
+    **param_notes**: integer  **intent(out)**    *size(100, 12)*  
         descriptions of the parameters
             
   .. function:: descriptions_of_parameters_of_potential(pot_name, param_notes)
@@ -505,7 +521,7 @@ Full documentation of subroutines in pysic_interface
 
     pot_name: character(len=*)  *intent(in)*    *scalar*  
         name of the potential
-    **param_notes**: integer  **intent(out)**    *size(100, 3)*  
+    **param_notes**: integer  **intent(out)**    *size(100, 12)*  
         descriptions of the parameters
             
   .. function:: distribute_mpi(n_atoms)
@@ -707,7 +723,7 @@ Full documentation of subroutines in pysic_interface
         name of the bond order factor
     n_targets: integer  *intent(in)*    *scalar*  
         number of targets
-    **param_names**: integer  **intent(out)**    *size(10, 4)*  
+    **param_names**: integer  **intent(out)**    *size(10, 12)*  
         names of the parameters
             
   .. function:: names_of_parameters_of_potential(pot_name, param_names)
@@ -726,7 +742,7 @@ Full documentation of subroutines in pysic_interface
 
     pot_name: character(len=*)  *intent(in)*    *scalar*  
         name of the potential
-    **param_names**: integer  **intent(out)**    *size(10, 4)*  
+    **param_names**: integer  **intent(out)**    *size(10, 12)*  
         names of the parameters
             
   .. function:: number_of_bond_order_factors(n_bonds)
@@ -871,6 +887,22 @@ Full documentation of subroutines in pysic_interface
     
     Calls :func:`mpi_sync`
 
+            
+  .. function:: update_atom_charges(n_atoms, charges)
+
+    Updates the charges of existing atoms.
+    This method does not allocate memory and so the atoms
+    must already exist in the core.
+    
+    Calls :func:`core_update_atom_charges`
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        number of atoms
+    charges: double precision  *intent(in)*    *size(n_atoms)*  
+        new charges for the atoms
             
   .. function:: update_atom_coordinates(n_atoms, positions, momenta)
 

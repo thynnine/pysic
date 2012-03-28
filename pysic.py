@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-"""Pysic calculator and atomistic potential."""
 import pysic_fortran as pf
 import pysic_utility as pu
 import numpy as np
@@ -86,6 +85,30 @@ class InvalidParametersError(Exception):
             return self.message
         else:
             return self.messsage + " \n  the Parameters: " + str(self.params)
+
+
+
+class InvalidRelaxationError(Exception):
+    """An error raised when an invalid charge relaxation is about to be created.
+        
+        Parameters:
+        
+        message: string
+            information describing why the error occurred
+        params: :class:`~pysic.ChargeRelaxation`
+            the errorneous parameters
+        """
+    def __init__(self,message='',relaxation=None):
+        self.message = message
+        self.relaxation = relaxation
+    
+    def __str__(self):
+        if(self.params == None):
+            return self.message
+        else:
+            return self.messsage + " \n  the Relaxation: " + str(self.relaxation)
+
+
 
 
 class MissingAtomsError(Exception):
@@ -267,6 +290,34 @@ def is_valid_bond_order_factor(bond_order_name):
     return pf.pysic_interface.is_bond_order_factor(bond_order_name)
 
 
+def is_charge_relaxation(relaxation_name):
+    """Same as :meth:`~pysic.is_valid_charge_relaxation`
+        
+        Parameters:
+        
+        relaxation_name: string
+            the name of the relaxation mode
+        """
+    for mode in ChargeRelaxation.relaxation_modes:
+        if(relaxation_name == mode):
+            return True
+    return False
+
+
+def is_valid_charge_relaxation(relaxation_name):
+    """Tells if the given string is the name of a charge relaxation mode.
+        
+        Parameters:
+        
+        relaxation_name: string
+            the name of the relaxation mode
+        """
+    for mode in ChargeRelaxation.relaxation_modes:
+        if(relaxation_name == mode):
+            return True
+    return False
+
+
 
 def number_of_targets(potential_name):
     """Tells how many targets a potential or bond order factor acts on, i.e., is it pair or many-body.
@@ -287,7 +338,7 @@ def number_of_targets(potential_name):
 
 
 def number_of_parameters(potential_name,as_list=False):
-    """Tells how many parameters a potential or bond order factor incorporates.
+    """Tells how many parameters a potential, bond order factor or charge relaxation mode incorporates.
 
     A potential has a simple list of parameters and thus the function returns
     by default a single number. A bond order factor can incorporate parameters for
@@ -316,11 +367,17 @@ def number_of_parameters(potential_name,as_list=False):
         for i in range(n_targets):
             n_params[i] = pf.pysic_interface.number_of_parameters_of_bond_order_factor(potential_name,i+1)
         return n_params
+    elif(is_charge_relaxation(potential_name)):
+        n_params = len(ChargeRelaxation.relaxation_parameters[potential_name])
+        if as_list:
+            return [n_params]
+        else:
+            return n_params
     else:
         return 0
 
 def names_of_parameters(potential_name):
-    """Lists the names of the parameters of a potential or bond order factor.
+    """Lists the names of the parameters of a potential, bond order factor or charge relaxation mode.
 
     For a potential, a simple list of names is returned. For a bond order factor, the
     parameters are categorised according to the number of targets they apply to
@@ -367,6 +424,9 @@ def names_of_parameters(potential_name):
                     index += 1
             target_index += 1
         return param_names
+
+    elif(is_charge_relaxation(potential_name)):
+        return ChargeRelaxation.relaxation_parameters[potential_name]
             
     else:
         return []
@@ -391,7 +451,7 @@ def index_of_parameter(potential_name, parameter_name):
         the name of the parameter
     """
     
-    if(is_potential(potential_name)):
+    if(is_potential(potential_name) or is_charge_relaxation(potential_name)):
         param_names = names_of_parameters(potential_name)
         index = 0
         for name in param_names:
@@ -408,13 +468,14 @@ def index_of_parameter(potential_name, parameter_name):
                     return [target_index,index]
                 index += 1
             target_index += 1
+
     else:
         return None
 
 
 
 def descriptions_of_parameters(potential_name):
-    """Returns a list of strings containing physical names of the parameters of a potential or bond order factor,
+    """Returns a list of strings containing physical names of the parameters of a potential, bond order factor, or charge relaxation mode,
     e.g., 'spring constant' or 'decay length'.
     
     For a potential, a simple list of descriptions is returned. For a bond order factor, the
@@ -459,10 +520,18 @@ def descriptions_of_parameters(potential_name):
             target_index += 1
         return param_names
             
+    
+    elif(is_charge_relaxation(potential_name)):
+        return ChargeRelaxation.relaxation_parameter_descriptions[potential_name]
+        
     else:
         return []
 
     return param_notes
+
+#
+# ToDo: implement descriptions of bond order factor and charge relaxation types
+#
 
 def description_of_potential(potential_name, parameter_values=None, cutoff=None,
                              elements=None, tags=None, indices=None):
@@ -1518,6 +1587,7 @@ class Potential:
         """
         self.set_parameter_values(values)
 
+    
     def set_parameter_values(self,values):
         """Sets the numeric values of all parameters.
 
@@ -1619,6 +1689,212 @@ class Potential:
 
 
 
+class ChargeRelaxation:
+    """A class for handling charge dynamics and relaxation.
+        
+        Pysic does not implement molecular dynamics or geometric
+        optimization since they are handled by ASE.
+        Conceptually, the structural dynamics of the system are
+        properties of the atomic geometry and so it makes sense that
+        they are handled by ASE, which defines the atomic structure
+        in the first place, in the `ASE Atoms`_ class.
+        
+        On the other hand, charge dynamics are related to the electronic
+        structure of the system. Since ASE is meant to use methods such as 
+        density functional theory (DFT) in the calculators is employs, all
+        electronic properties are left at the responsibilty of the
+        calculator. This makes sense since in DFT the electron density is 
+        needed for calculations of forces and energies.
+        
+        Pysic is not a DFT calculator and there is no electron density
+        but the atomic charges can be made to develop dynamically. The
+        ChargeRelaxation class handles these dynamics.
+        
+        .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html
+        
+        Parameters:
+        
+        relaxation: string
+            a keyword specifying the mode of charge relaxation
+        calculator: :class:`~pysic.Pysic` object
+            a Pysic calculator 
+        parameters: list of doubles
+            numeric values for parameters
+    """
+
+    relaxation_modes = [ 'dynamic' ]
+    
+    relaxation_parameters = { relaxation_modes[0] : ['n_steps', 'timestep', 'inertia', 'friction', 'tolerance'] }
+    
+    relaxation_parameter_descriptions = { relaxation_modes[0] : ['time steps of charge dynamics between molecular dynamics', 
+                                                                 'time step of charge dynamics', 
+                                                                 'fictional charge mass', 
+                                                                 'friction coefficient for damped charge dynamics',
+                                                                 'convergence tolerance'] }
+    
+    def __init__(self, relaxation, calculator=None, parameters=None):
+        self.set_relaxation(relaxation)
+        self.set_calculator(calculator)
+        self.set_parameters(parameters)
+
+
+# ToDo: __repr__
+# Todo: __eq__
+# Todo: __ne__
+
+
+    def set_calculator(self, calculator):
+        """Assigns a :class:`~pysic.Pysic` calculator.
+            
+            Parameters:
+            
+            calculator: :class:`~pysic.Pysic` object
+                a Pysic calculator
+            """
+        self.calculator = calculator
+
+    
+    def set_relaxation(self, relaxation):
+        """Sets the relaxation method.
+            
+            The method also creates a dictionary of parameters initialized to 0.0
+            by invoking :meth:`~pysic.ChargeRelaxation.initialize_parameters`.
+            
+            Parameters:
+            
+            relaxation: string
+                a keyword specifying the mode of charge relaxation
+            """
+        if ChargeRelaxation.relaxation_modes.count(relaxation) == 1:
+            self.relaxation = relaxation
+            self.initialize_parameters()
+        else:
+            raise InvalidRelaxationError("no such relaxation mode "+relaxation)
+
+
+    def initialize_parameters(self):
+        """Creates a dictionary of parameters and initializes all values to 0.0.
+        """        
+        self.parameters = {}
+        for param in names_of_parameters(self.relaxation):
+            self.parameters[param] = 0.0
+
+
+    def set_parameters(self, parameters):
+        """Sets the numeric values for all parameters.
+            
+            Equivalent to :meth:`~pysic.ChargeRelaxation.set_parameter_values`
+            
+            Parameters:
+            
+            parameters: list of doubles
+                list of values to be assigned to parameters
+            """
+        self.set_parameter_values(parameters)
+
+
+    def set_parameter_values(self, parameters):
+        """Sets the numeric values for all parameters.                    
+            
+            Parameters:
+                    
+            parameters: list of doubles
+                list of values to be assigned to parameters
+            """
+        if parameters == None:
+            return
+        if self.parameters == None:
+            self.initialize_parameters()
+        if len(parameters) != len(self.parameters):
+            raise InvalidRelaxationError("The relaxation mode "+self.relaxation+" requires "+
+                                         len(self.parameters)+" parameters.")
+        for key, value in zip(self.parameters.get_keys(), parameters):
+            self.parameters[key] = parameters
+
+
+    def set_parameter_value(self, parameter_name, value):
+        """Sets a given parameter to the desired value.
+                    
+            Parameters:
+                        
+            parameter_name: string
+                name of the parameter
+            value: double
+                the new value of the parameter
+            """
+        self.parameters[parameter_name] = value
+
+    
+    def get_calculator(self):
+        """Returns the :class:`~pysic.Pysic` calculator assigned to this :class:`~pysic.ChargeRelaxation`.
+            """
+        return self.calculator
+    
+    def get_relaxation(self):
+        """Returns the keyword specifying the mode of relaxation.
+            """
+        return self.relaxation
+    
+    def get_parameters(self):
+        """Returns a list containing the numeric values of the parameters.
+            """
+        return self.parameters
+        
+    
+    
+    # ToDo: save charge velocities
+    # ToDo: compare performance to pure Fortran dynamics
+    def charge_relaxation(self, atoms):
+        """Performs the charge relaxation.
+
+            The relaxation is always performed on the system associated with
+            the :class:`~pysic.Pysic` calculator joint with this :class:`~pysic.ChargeRelaxation`.   
+            
+            Parameters:
+            
+            atoms: `ASE Atoms`_ object
+                The system whose charges are to be relaxed. 
+                Note! This needs to be the actual `ASE Atoms`_ object, not the copy
+                stored in :class:`~pysic.Pysic`. The reason is that the
+                relaxed charges must be fed back to the system, and so
+                having access to the copy only will result in the
+                relaxed charges not being updated in the actual Atoms object.
+            """
+        if self.relaxation == ChargeRelaxation.relaxation_modes[0]: # damped dynamic relaxation
+            dt = self.parameters['timestep']
+            dt2 = dt*dt
+            mq = self.parameters['inertia']
+            inv_mq = 1.0/mq
+            n_steps = self.parameters['n_steps']
+            tolerance = self.parameters['tolerance']
+            friction = self.parameters['friction']
+            future_friction = 1.0 / (1.0 + 0.5 * friction * dt)
+
+            error = 2.0 * tolerance
+            step = 0
+            charges = atoms.get_charges() # starting charges
+            charge_rates = np.array( len(atoms)*[0.0] ) # starting "velocities" \dot{q}
+            charge_forces = self.calculator.get_electronegativity_differences(atoms)
+            
+            while (error > tolerance and step < n_steps):
+                charges += charge_rates * dt + \
+                           (charge_forces - friction * charge_rates) * inv_mq * dt2
+                charge_rates = (1.0 - 0.5 * friction * dt) * charge_rates + \
+                            charge_forces * 0.5 * inv_mq * dt
+
+                atoms.set_charges(charges)
+                charge_forces = self.calculator.get_electronegativity_differences(atoms)
+            
+                charge_rates = future_friction * \
+                            ( charge_rates + charge_forces * 0.5 * inv_mq * dt )
+
+                step += 1
+                error = charge_forces.max()
+    
+        else:
+            pass
+
+
 
 class CoreMirror:
     """A class representing the status of the core.
@@ -1691,6 +1967,16 @@ class CoreMirror:
         self.potential_lists_ready = False
         self.neighbor_lists_waiting = False
 
+    def set_charges(self, charges):
+        """Copies and stores the charges of atoms in the `ASE Atoms`_ instance.
+            
+            Parameters:
+            
+            atoms: `ASE Atoms`_ object
+                atomic structure containing the positions to be saved.
+            """
+        self.structure.set_charges(charges)
+    
     def set_atomic_positions(self, atoms):
         """Copies and stores the positions of atoms in the `ASE Atoms`_ instance.
 
@@ -1766,8 +2052,27 @@ class CoreMirror:
             return False
         if((self.structure.get_momenta() != atoms.get_momenta()).any()):
             return False
+    
         return True
-
+                        
+    def charges_ready(self, atoms):
+        """Checks if the charges of the given atoms match those in the core.
+            
+            True is returned if the charges match, False otherwise.
+            
+            Parameters:
+            
+            atoms: `ASE Atoms`_ object
+                The atoms to be compared.
+            """
+        
+        if self.structure == None:
+            return False
+        if ((self.structure.get_charges() != atoms.get_charges()).any()):
+            return False
+        
+        return True
+            
     def cell_ready(self,atoms):
         """Checks if the given supercell matches that in the core.
 
@@ -1865,18 +2170,19 @@ class Pysic:
         self.potentials = None
         self.set_atoms(atoms)
         self.set_potentials(potentials)
-        self.forces = 0.0
-        self.stress = 0.0
-        self.energy = 0.0
-        self.forces_calculated = False
-        self.energy_calculated = False
-        self.stress_calculated = False
+        self.forces = None
+        self.stress = None
+        self.energy = None
+        self.electronegativities = None
+
         self.force_core_initialization = full_initialization
 
 
     def __eq__(self,other):
         try:
             if self.structure != other.structure:
+                return False
+            if any(self.structure.get_charges() != other.structure.get_charges()):
                 return False
             if self.neighbor_list != other.neighbor_list:
                 return False
@@ -1942,11 +2248,13 @@ class Pysic:
         
         for mark in list_of_quantities:
             if mark == 'energy':
-                do_it.append(not self.energy_calculated)
+                do_it.append(self.energy == None)
             elif mark == 'forces':
-                do_it.append(not self.forces_calculated)
+                do_it.append(self.forces == None)
+            elif mark == 'electronegativities':
+                do_it.append(self.electronegativities == None)
             elif mark == 'stress':
-                do_it.append(not self.stress_calculated)
+                do_it.append(self.stress == None)
             else:
                 do_it.append(False)
 
@@ -1958,6 +2266,8 @@ class Pysic:
         # changing the core which would lead to unnecessary
         # recalculations.
         if(not Pysic.core.atoms_ready(self.structure)):
+            do_it.append(True)
+        if(not Pysic.core.charges_ready(self.structure)):
             do_it.append(True)
         if(not Pysic.core.cell_ready(self.structure)):
             do_it.append(True)
@@ -1986,6 +2296,25 @@ class Pysic:
     def get_potentials(self):
         """Returns the list of potentials assigned to the calculator."""
         return self.potentials
+
+    
+    
+    def get_electronegativities(self, atoms=None):
+        """Returns the electronegativities of atoms.
+        """
+        self.set_atoms(atoms)
+        if self.calculation_required(atoms,'electronegativities'):
+            self.calculate_electronegativities()
+        
+        return self.electronegativities
+    
+
+    def get_electronegativity_differences(self, atoms=None):
+        """Returns the electronegativity differences of atoms from the average of the entire system.
+        """
+        enegs = self.get_electronegativities(atoms)
+        average_eneg = enegs.sum()/len(enegs)
+        return enegs - average_eneg
 
     
     def get_forces(self, atoms=None):
@@ -2060,8 +2389,24 @@ class Pysic:
 
     
     def set_atoms(self, atoms=None):
-        """Assigns the calculator with the given structure .
-
+        """Assigns the calculator with the given structure.
+            
+        This method is always called when any method is given the
+        atomic structure as an argument. If the argument is missing
+        or None, nothing is done. Otherwise a copy of the given structure
+        is saved (according to the instructions in 
+        `ASE API <https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#calculator-interface>`_.)
+            
+        If a structure is already in memory and it is different to the given
+        one (as compared with ``__ne__``), it is noted that all quantities
+        are unknown for the new system. If the structure is the same as the
+        one already known, nothing is done.
+        This is because if one wants to
+        access the energy of forces of the same system repeatedly, it is unnecessary
+        to always calculate them from scratch. Therefore the calculator saves
+        the computed values along with a flag stating that the values have been
+        computed.
+            
         Parameters:
 
         atoms: `ASE atoms`_ object
@@ -2070,10 +2415,13 @@ class Pysic:
         if atoms == None:
             pass
         else:
-            if(self.structure != atoms):
-                self.forces_calculated = False
-                self.energy_calculated = False
-                self.stress_calculated = False
+            if(self.structure != atoms or
+               (self.structure.get_charges() != atoms.get_charges()).any()):
+                self.forces = None
+                self.energy = None
+                self.stress = None
+                self.electronegativities = None
+                
 
                 # NB: this avoids updating the potential lists every time an atom moves
                 try:
@@ -2103,9 +2451,11 @@ class Pysic:
         if potentials == None:
             pass
         else:
-            self.forces_calculated = False
-            self.energy_calculated = False
-            self.stress_calculated = False
+            self.forces = None
+            self.energy = None
+            self.stress = None
+            self.electronegativities = None
+            
             Pysic.core.potential_lists_ready = False
             self.neighbor_lists_waiting = False
 
@@ -2129,9 +2479,10 @@ class Pysic:
             self.potentials = []
 
         self.potentials.append(potential)
-        self.forces_calculated = False
-        self.energy_calculated = False
-        self.stress_calculated = False
+        self.forces = None
+        self.energy = None
+        self.stress = None
+        self.electronegativities = None
         Pysic.core.potential_lists_ready = False
         self.neighbor_lists_waiting = False
         
@@ -2207,6 +2558,16 @@ class Pysic:
             return cuts
 
 
+    def calculate_electronegativities(self):
+        """Calculates electronegativities.
+            
+        Calls the Fortran core to calculate forces for the currently assigned structure.
+        """
+        self.set_core()
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        self.electronegativities = pf.pysic_interface.calculate_electronegativities(n_atoms).transpose()
+        
+    
     def calculate_forces(self):
         """Calculates forces.
 
@@ -2215,7 +2576,6 @@ class Pysic:
         self.set_core()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.forces = pf.pysic_interface.calculate_forces(n_atoms).transpose()
-        self.forces_calculated = True
         
 
     def calculate_energy(self):
@@ -2226,7 +2586,6 @@ class Pysic:
         self.set_core()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.energy = pf.pysic_interface.calculate_energy(n_atoms)
-        self.energy_calculated = True
 
 
     def calculate_stress(self):
@@ -2239,7 +2598,6 @@ class Pysic:
         # ToDo: implement stress tensor calculation based on the forces and positions
         #
         self.stress = 0.0
-        self.stress_calculated = True
     
 
 
@@ -2261,9 +2619,12 @@ class Pysic:
             
         if do_full_init:
             self.initialize_fortran_core()
-        else:
+        else:            
             if not Pysic.core.atoms_ready(self.structure):
                 self.update_core_coordinates()
+            
+            if not Pysic.core.charges_ready(self.structure):
+                self.update_core_charges()
 
             if not Pysic.core.cell_ready(self.structure):
                 self.update_core_supercell()
@@ -2490,9 +2851,10 @@ class Pysic:
         positions = np.array( self.structure.get_positions() ).transpose()
         momenta = np.array( self.structure.get_momenta() ).transpose()
 
-        self.forces_calculated = False
-        self.energy_calculated = False
-        self.stress_calculated = False
+        self.forces = None
+        self.energy = None
+        self.stress = None
+        self.electronegativities = None
 
         pf.pysic_interface.update_atom_coordinates(positions,momenta)
 
@@ -2503,8 +2865,25 @@ class Pysic:
             self.create_neighbor_lists(self.get_individual_cutoffs(0.5))
         
         self.update_core_neighbor_lists()
+     
+
+                    
+
+    def update_core_charges(self):
+        """Updates atomic charges in the core."""
         
+        charges = np.array( self.structure.get_charges() )
+
+        self.forces = None
+        self.energy = None
+        self.stress = None
+        self.electronegativities = None
         
+        pf.pysic_interface.update_atom_charges(charges)
+        
+        Pysic.core.set_charges(charges)
+            
+            
     def update_core_supercell(self):
         """Updates the supercell in the Fortran core."""
         vectors = np.array( self.structure.get_cell() ).transpose()
@@ -2576,7 +2955,7 @@ class Pysic:
             system = atoms.copy()
             orig_system = atoms.copy()
 
-        self.energy_calculated = False
+        self.energy == None
         energy_xp = self.get_potential_energy(system)
         system[atom_index].x += shift
         energy_xp = self.get_potential_energy(system)
@@ -2596,7 +2975,7 @@ class Pysic:
         energy_zm = self.get_potential_energy(system)
         system[atom_index].z += shift
 
-        self.energy_calculated = False
+        self.energy == None
         self.get_potential_energy(orig_system)
         
         return [ -(energy_xp-energy_xm)/(2.0*shift),
@@ -2618,7 +2997,7 @@ class Pysic:
             system = atoms.copy()
             orig_system = atoms.copy()
 
-        self.energy_calculated = False
+        self.energy == None
         crd = coordinator
         system[moved_index].x += shift
         self.set_atoms(system)
@@ -2656,7 +3035,7 @@ class Pysic:
         bond_zm = crd.get_bond_order_factors()[atom_index]
         system[moved_index].z += shift
 
-        self.energy_calculated = False
+        self.energy == None
         self.set_atoms(orig_system)
         self.set_core()
 
@@ -2664,6 +3043,41 @@ class Pysic:
         return [ (bond_xp-bond_xm)/(2.0*shift),
                  (bond_yp-bond_ym)/(2.0*shift),
                  (bond_zp-bond_zm)/(2.0*shift) ]
+
+
+
+    
+    def get_numerical_electronegativity(self, atom_index, shift=0.001, atoms=None):
+        """Numerically calculates the derivative of energy with respect to charging a single particle.
+            
+            This is for debugging the electronegativities."""
+        
+        if(atoms == None):
+            system = self.structure.copy()
+            orig_system = self.structure.copy()
+        else:
+            system = atoms.copy()
+            orig_system = atoms.copy()
+        
+        charges = system.get_charges()
+        self.energy == None
+        energy_xp = self.get_potential_energy(system)
+        charges[atom_index] += 1.0*shift
+        system.set_charges(charges)
+        energy_p = self.get_potential_energy(system)
+        charges[atom_index] -= 2.0*shift
+        system.set_charges(charges)
+        energy_m = self.get_potential_energy(system)
+        charges[atom_index] += 1.0*shift
+        system.set_charges(charges)
+        
+        
+        self.energy == None
+        self.get_potential_energy(orig_system)
+        
+        return (energy_p-energy_m)/(2.0*shift)
+
+
 
 
 

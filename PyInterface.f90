@@ -286,6 +286,25 @@ contains
   end subroutine update_atom_coordinates
 
 
+  ! Updates the charges of existing atoms.
+  ! This method does not allocate memory and so the atoms
+  ! must already exist in the core.
+  ! 
+  ! Calls :func:`core_update_atom_charges`
+  !
+  ! *n_atoms number of atoms
+  ! *charges new charges for the atoms
+  subroutine update_atom_charges(n_atoms,charges)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(in) :: charges(n_atoms)
+
+    call core_update_atom_charges(n_atoms,charges) ! in Core.f90
+
+  end subroutine update_atom_charges
+
+
+
   ! Counts the number of atoms in the current core
   ! 
   ! Calls :func:`core_get_number_of_atoms`
@@ -649,6 +668,23 @@ contains
   end subroutine calculate_forces
 
 
+  ! Returns electronegativities of the particles
+  ! 
+  ! Calls :func:`core_calculate_electronegativities`
+  ! 
+  ! *n_atoms number of atoms
+  ! *enegs array of electronegativities on all atoms
+  subroutine calculate_electronegativities(n_atoms,enegs)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(out) :: enegs(n_atoms)
+
+    call core_calculate_electronegativities(n_atoms,enegs) ! in Core.f90
+
+  end subroutine calculate_electronegativities
+
+
+
   ! Calculates the stress tensor of the cell
   !
   ! ToDo: implement this through force calculation and coordinates
@@ -837,7 +873,7 @@ contains
   subroutine names_of_parameters_of_potential(pot_name,param_names)
     implicit none
     character(len=*), intent(in) :: pot_name
-    integer, intent(out) :: param_names(10,4) ! param_name_length, n_max_param
+    integer, intent(out) :: param_names(10,12) ! param_name_length, n_max_param
     character(len=10), pointer :: param_name_str(:) ! param_name_length
     integer :: i
     
@@ -866,7 +902,7 @@ contains
     implicit none
     character(len=*), intent(in) :: bond_name
     integer, intent(in) :: n_targets
-    integer, intent(out) :: param_names(10,4) ! param_name_length, n_max_param
+    integer, intent(out) :: param_names(10,12) ! param_name_length, n_max_param
     character(len=10), pointer :: param_name_str(:) ! param_name_length
     integer :: i
     
@@ -894,7 +930,7 @@ contains
   subroutine descriptions_of_parameters_of_potential(pot_name,param_notes)
     implicit none
     character(len=*), intent(in) :: pot_name
-    integer, intent(out) :: param_notes(100,3) ! param_note_length, n_max_param
+    integer, intent(out) :: param_notes(100,12) ! param_note_length, n_max_param
     character(len=100), pointer :: param_note_str(:) ! param_note_length
     integer :: i
     
@@ -923,7 +959,7 @@ contains
     implicit none
     character(len=*), intent(in) :: bond_name
     integer, intent(in) :: n_targets
-    integer, intent(out) :: param_notes(100,4) ! param_note_length, n_max_param
+    integer, intent(out) :: param_notes(100,12) ! param_note_length, n_max_param
     character(len=100), pointer :: param_note_str(:) ! param_note_length
     integer :: i
     

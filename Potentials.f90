@@ -68,7 +68,7 @@
 !
 !    \mathbf{F}_{\alpha} = - \nabla_\alpha V = - \sum_p \left( \sum_i ((\nabla_\alpha b^p_i) v^p_i + b^p_i (\nabla_\alpha v^p_i) ) + \ldots \right).
 !
-! The contributions :math:`f^p_\alpha = -\nabla_\alpha v^p`, :math:`c^p`, 
+! The contributions :math:`\mathbf{f}^p_\alpha = -\nabla_\alpha v^p`, :math:`c^p`, 
 ! and :math:`\nabla_\alpha c^p` are
 ! calculated in :func:`evaluate_forces`, :func:`evaluate_bond_order_factor`, 
 ! and :func:`evaluate_bond_order_gradient`.
@@ -111,9 +111,9 @@ module potentials
   ! *param_note_length maximum length allowed for the descriptions of parameters
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
-       n_potential_types = 5, &
+       n_potential_types = 6, &
        n_bond_order_types = 3, &
-       n_max_params = 4, &
+       n_max_params = 12, &
        pot_note_length = 500, &
        param_note_length = 100
 
@@ -136,7 +136,8 @@ module potentials
        pair_spring_index = 2, &
        mono_const_index = 3, &
        tri_bend_index = 4, &
-       mono_none_index = 5
+       pair_exp_index = 5, &
+       mono_none_index = 6
 
   ! Indices for bond order factor types.
   ! Similar to potential types above.
@@ -270,6 +271,9 @@ module potentials
   
 contains
 
+
+  ! !!!: create_potential
+
   ! Returns a :data:`potential`.
   !
   ! The routine takes as arguments all the necessary parameters
@@ -345,6 +349,20 @@ contains
        nullify(new_potential%derived_parameters)
        allocate(new_potential%derived_parameters(1))
        new_potential%derived_parameters(1) = cos(parameters(2))
+    case(pair_exp_index) ! charge-dep. exp.
+       nullify(new_potential%derived_parameters)
+       allocate(new_potential%derived_parameters(4))
+       ! eta_i = [ln R_i,max/(R_i,max - R_i,min) ] / [ln Q_i,max - ln(Q_i,max - Q_i,min) ] 
+       new_potential%derived_parameters(1) = ( log(parameters(3)/(parameters(3)-parameters(4))) ) / &
+            ( log(parameters(5)/(parameters(5)-parameters(6))) ) 
+       new_potential%derived_parameters(2) = ( log(parameters(7)/(parameters(7)-parameters(8))) ) / &
+            ( log(parameters(9)/(parameters(9)-parameters(10))) )
+       ! beta_i = (R_i,min - R_i,max)^(1/eta_i) / (Q_i,max - Q_i,min)
+       new_potential%derived_parameters(3) = (parameters(4) - parameters(3))**(1.d0/new_potential%derived_parameters(1)) / &
+            (parameters(5) - parameters(6))
+       new_potential%derived_parameters(4) = (parameters(8) - parameters(7))**(1.d0/new_potential%derived_parameters(2)) / &
+            (parameters(9) - parameters(10))
+
     case default
        nullify(new_potential%derived_parameters)
        allocate(new_potential%derived_parameters(1))
@@ -379,6 +397,7 @@ contains
   end subroutine create_potential
 
 
+  ! !!!: create_bond_order_factor
 
   ! Returns a :data:`bond_order_parameters`.
   !
@@ -451,6 +470,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine create_bond_order_factor
 
 
+  ! !!!: post_process_bond_order_factor
+
   ! Bond-order post processing, i.e., 
   ! application of per-atom scaling functions.
   !
@@ -496,6 +517,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine post_process_bond_order_factor
 
+
+  ! !!!: post_process_bond_order_gradient
 
   ! Bond-order post processing, i.e., 
   ! application of per-atom scaling functions.
@@ -555,6 +578,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine post_process_bond_order_gradient
 
+
+  ! !!!: evaluate_bond_order_factor
 
   ! Returns a bond order factor term.
   ! 
@@ -680,6 +705,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine evaluate_bond_order_factor
 
+
+  ! !!!: evaluate_bond_order_gradient
 
   ! Returns the gradients of bond order terms with respect to moving an atom.
   ! 
@@ -869,25 +896,129 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine evaluate_bond_order_gradient
 
+
+  ! !!!: evaluate_electronegativity
+
+  ! If a potential, say, :math:`U_{ijk}` depends on the charges of atoms :math:`q_i` 
+  ! it will not only create a force,
+  ! but also a difference in chemical potential :math:`\mu_i` for the atomic partial charges.
+  ! Similarly to :func:`evaluate_forces`, this function evaluates the chemical
+  ! 'force' on the atomic charges
+  !
+  ! .. math::
+  !
+  !    \chi_{\alpha,ijk} = -\mu_{\alpha,ijk} = -\frac{\partial U_{ijk}}{\partial q_\alpha}
+  !
+  ! To be consist the forces returned by :func:`evaluate_electronegativity` must be
+  ! derivatives of the energies returned by :func:`evaluate_energy`.
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *eneg the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+  subroutine evaluate_electronegativity(n_targets,separations,distances,interaction,eneg,atoms)
+    implicit none
+    integer, intent(in) :: n_targets
+    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: eneg(n_targets)
+    type(atom), intent(in) :: atoms(n_targets)
+    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, ratio, d1, d2, d3, d4, d5, d6
+    logical :: inverse_params
+    
+    eneg = 0.d0
+
+    ! The interaction type is decided based on the type index.
+    ! This decides what kind of a function is applied and what 
+    ! the parameters provided actually mean.
+    select case (interaction%type_index)
+    case (pair_exp_index) ! charge-dependent exponential potential
+       
+       ! If we have parameters for a pair A-B and we get a pair B-A, we
+       ! must flip the per atom parameters
+       inverse_params = .true.
+       if(interaction%filter_elements)then
+          if(interaction%original_elements(1) == atoms(1)%element)then
+             inverse_params = .false.
+          end if
+       end if
+       if(interaction%filter_tags)then
+          if(interaction%original_tags(1) == atoms(1)%tags)then
+             inverse_params = .false.
+          end if
+       end if
+       if(interaction%filter_indices)then
+          if(interaction%original_indices(1) == atoms(1)%index)then
+             inverse_params = .false.
+          end if
+       end if
+
+       r1 = distances(1)
+       if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+          if(inverse_params)then
+             r2 = interaction%parameters(7) ! R_i,max
+             r3 = interaction%parameters(3) ! R_j,max
+             r4 = interaction%parameters(9) ! Q_i,max
+             r5 = interaction%parameters(5) ! Q_j,max
+             r6 = interaction%derived_parameters(2) ! eta_i
+             r7 = interaction%derived_parameters(1) ! eta_j
+             r8 = interaction%derived_parameters(4) ! beta_i
+             r9 = interaction%derived_parameters(3) ! beta_j
+             d3 = interaction%parameters(12) ! xi_i
+             d4 = interaction%parameters(11) ! xi_j
+          else
+             r2 = interaction%parameters(3) ! R_i,max
+             r3 = interaction%parameters(7) ! R_j,max
+             r4 = interaction%parameters(5) ! Q_i,max
+             r5 = interaction%parameters(9) ! Q_j,max
+             r6 = interaction%derived_parameters(1) ! eta_i
+             r7 = interaction%derived_parameters(2) ! eta_j
+             r8 = interaction%derived_parameters(3) ! beta_i
+             r9 = interaction%derived_parameters(4) ! beta_j
+             d3 = interaction%parameters(11) ! xi_i
+             d4 = interaction%parameters(12) ! xi_j
+          end if
+
+          d5 = r8 * (r4 - atoms(1)%charge)
+          d6 = r9 * (r5 - atoms(2)%charge)
+          d1 = r2 + abs(d5)**r6
+          d2 = r3 + abs(d6)**r7
+          eneg(1) = interaction%parameters(1)* &
+               exp(-interaction%parameters(2)*r1 + &
+               0.5d0*(d3*d1 + d4*d2) ) ! this is just the energy
+          eneg(2) = - eneg(1) * d4 * 0.5d0 * r7 * abs(d6)**(r7-1.d0) * sign(1.d0,d6) * (-r9)
+          eneg(1) = - eneg(1) * d3 * 0.5d0 * r6 * abs(d5)**(r6-1.d0) * sign(1.d0,d5) * (-r8)
+       end if
+
+    end select
+
+  end subroutine evaluate_electronegativity
+
+
+
+  ! !!!: evaluate_forces
+
   ! Evaluates the forces due to an interaction between the given
   ! atoms. In other words, if the total force on atom :math:`\alpha` is
   !
   ! .. math::
   !
-  !    F_\alpha = \sum_{ijk} -\nabla_\alpha v_{ijk} = \sum f_{\alpha,ijk},
+  !    \mathbf{F}_\alpha = \sum_{ijk} -\nabla_\alpha v_{ijk} = \sum \mathbf{f}_{\alpha,ijk},
   !
-  ! this routine evaluates :math:`f_{\alpha,ijk}` for :math:`\alpha = (i,j,k)` for the given
+  ! this routine evaluates :math:`\mathbf{f}_{\alpha,ijk}` for :math:`\alpha = (i,j,k)` for the given
   ! atoms i, j, and k.
   !
-  ! To be consist the forces returned by evaluate_forces must be
-  ! gradients of the energies returned by evaluate_energy.
+  ! To be consist the forces returned by :func:`evaluate_forces` must be
+  ! gradients of the energies returned by :func:`evaluate_energy`.
   !
   ! *n_targets number of targets
   ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
   ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
-  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *interaction a :data:`potential` containing the parameters
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
-  ! *force the calculated force component :math:`f_{\alpha,ijk}`
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
   subroutine evaluate_forces(n_targets,separations,distances,interaction,force,atoms)
     implicit none
     integer, intent(in) :: n_targets
@@ -895,8 +1026,9 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: force(3,n_targets)
     type(atom), optional, intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, r3, r4, r6, ratio
+    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, ratio, d1, d2, d3, d4
     double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3)
+    logical :: inverse_params
 
     force = 0.d0
 
@@ -976,6 +1108,66 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
           end if
        end if
 
+    case (pair_exp_index) ! charge-dependent exponential potential
+       
+       ! If we have parameters for a pair A-B and we get a pair B-A, we
+       ! must flip the per atom parameters
+       inverse_params = .true.
+       if(.not.present(atoms))then
+          return
+       end if
+       if(interaction%filter_elements)then
+          if(interaction%original_elements(1) == atoms(1)%element)then
+             inverse_params = .false.
+          end if
+       end if
+       if(interaction%filter_tags)then
+          if(interaction%original_tags(1) == atoms(1)%tags)then
+             inverse_params = .false.
+          end if
+       end if
+       if(interaction%filter_indices)then
+          if(interaction%original_indices(1) == atoms(1)%index)then
+             inverse_params = .false.
+          end if
+       end if
+
+       r1 = distances(1)
+       if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+          if(inverse_params)then
+             r2 = interaction%parameters(7) ! R_i,max
+             r3 = interaction%parameters(3) ! R_j,max
+             r4 = interaction%parameters(9) ! Q_i,max
+             r5 = interaction%parameters(5) ! Q_j,max
+             r6 = interaction%derived_parameters(2) ! eta_i
+             r7 = interaction%derived_parameters(1) ! eta_j
+             r8 = interaction%derived_parameters(4) ! beta_i
+             r9 = interaction%derived_parameters(3) ! beta_j
+             d3 = interaction%parameters(12) ! xi_i
+             d4 = interaction%parameters(11) ! xi_j
+          else
+             r2 = interaction%parameters(3) ! R_i,max
+             r3 = interaction%parameters(7) ! R_j,max
+             r4 = interaction%parameters(5) ! Q_i,max
+             r5 = interaction%parameters(9) ! Q_j,max
+             r6 = interaction%derived_parameters(1) ! eta_i
+             r7 = interaction%derived_parameters(2) ! eta_j
+             r8 = interaction%derived_parameters(3) ! beta_i
+             r9 = interaction%derived_parameters(4) ! beta_j
+             d3 = interaction%parameters(11) ! xi_i
+             d4 = interaction%parameters(12) ! xi_j
+          end if
+
+          d1 = r2 + abs(r8 * (r4 - atoms(1)%charge))**r6
+          d2 = r3 + abs(r9 * (r5 - atoms(2)%charge))**r7
+          force(1:3,1) = -interaction%parameters(2)*interaction%parameters(1)* &
+               exp(-interaction%parameters(2)*r1 + &
+               0.5d0*(d3*d1 + d4*d2) ) * &
+               separations(1:3,1) / r1
+          force(1:3,2) = -force(1:3,1)
+
+       end if
+
     case (mono_none_index) ! constant potential
 
        force(1:3,1) = 0.d0
@@ -984,6 +1176,7 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine evaluate_forces
 
+  ! !!!: evaluate_energy
 
   ! Evaluates the potential energy due to an interaction between the given
   ! atoms. In other words, if the total potential energy is
@@ -995,8 +1188,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   ! this routine evaluates :math:`v_{ijk}` for the given
   ! atoms i, j, and k.
   ! 
-  ! To be consist the forces returned by evaluate_forces must be
-  ! gradients of the energies returned by evaluate_energy.
+  ! To be consist the forces returned by :func:`evaluate_forces` must be
+  ! gradients of the energies returned by :func:`evaluate_energy`.
   !
   ! *n_targets number of targets
   ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
@@ -1011,7 +1204,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: energy
     type(atom), optional, intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, r3, r6, ratio
+    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, ratio, d1, d2, d3, d4
+    logical :: inverse_params
     integer :: i
 
     energy = 0.d0
@@ -1081,6 +1275,63 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
           end if
        end if
 
+    case (pair_exp_index) ! charge-dependent exponential potential
+       
+       ! If we have parameters for a pair A-B and we get a pair B-A, we
+       ! must flip the per atom parameters
+       inverse_params = .true.
+       if(.not.present(atoms))then
+          return
+       end if
+       if(interaction%filter_elements)then
+          if(interaction%original_elements(1) == atoms(1)%element)then
+             inverse_params = .false.
+          end if
+       end if
+       if(interaction%filter_tags)then
+          if(interaction%original_tags(1) == atoms(1)%tags)then
+             inverse_params = .false.
+          end if
+       end if
+       if(interaction%filter_indices)then
+          if(interaction%original_indices(1) == atoms(1)%index)then
+             inverse_params = .false.
+          end if
+       end if
+
+       r1 = distances(1)
+       if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+          if(inverse_params)then
+             r2 = interaction%parameters(7) ! R_i,max
+             r3 = interaction%parameters(3) ! R_j,max
+             r4 = interaction%parameters(9) ! Q_i,max
+             r5 = interaction%parameters(5) ! Q_j,max
+             r6 = interaction%derived_parameters(2) ! eta_i
+             r7 = interaction%derived_parameters(1) ! eta_j
+             r8 = interaction%derived_parameters(4) ! beta_i
+             r9 = interaction%derived_parameters(3) ! beta_j
+             d3 = interaction%parameters(12) ! xi_i
+             d4 = interaction%parameters(11) ! xi_j
+          else
+             r2 = interaction%parameters(3) ! R_i,max
+             r3 = interaction%parameters(7) ! R_j,max
+             r4 = interaction%parameters(5) ! Q_i,max
+             r5 = interaction%parameters(9) ! Q_j,max
+             r6 = interaction%derived_parameters(1) ! eta_i
+             r7 = interaction%derived_parameters(2) ! eta_j
+             r8 = interaction%derived_parameters(3) ! beta_i
+             r9 = interaction%derived_parameters(4) ! beta_j
+             d3 = interaction%parameters(11) ! xi_i
+             d4 = interaction%parameters(12) ! xi_j
+          end if
+
+          d1 = r2 + abs(r8 * (r4 - atoms(1)%charge))**r6
+          d2 = r3 + abs(r9 * (r5 - atoms(2)%charge))**r7
+          energy = interaction%parameters(1)* &
+               exp(-interaction%parameters(2)*r1 + &
+               0.5d0*(d3*d1 + d4*d2) )
+       end if
+
     case (mono_none_index) ! constant potential
 
        energy = interaction%parameters(1)
@@ -1089,6 +1340,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine evaluate_energy
 
+
+  ! !!!: smoothening_factor
 
   ! Function for smoothening potential and bond order cutoffs.
   ! In principle any "nice" function which goes from 1 to 0
@@ -1125,6 +1378,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine smoothening_factor
 
+
+  ! !!!: smoothening_derivative
 
   ! Derivative of the function for smoothening potential 
   ! and bond order cutoffs.
@@ -1168,6 +1423,7 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine smoothening_derivative
 
 
+  ! !!!: smoothening_gradient
 
   ! Gradient of the function for smoothening potential 
   ! and bond order cutoffs.
@@ -1213,6 +1469,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine smoothening_gradient
 
 
+  ! !!!: clear_potential_characterizers
+
   ! Deallocates all memory associated with potential characterizes.
   subroutine clear_potential_characterizers()
     implicit none
@@ -1227,6 +1485,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine clear_potential_characterizers
 
 
+  ! !!!: clear_bond_order_factor_characterizers
+
   ! Deallocates all memory associated with bond order factor characterizes.
   subroutine clear_bond_order_factor_characterizers()
     implicit none
@@ -1240,6 +1500,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine clear_bond_order_factor_characterizers
 
+
+  ! !!!: initialize_potential_characterizers
 
   ! Creates potential characterizers.
   !
@@ -1379,6 +1641,60 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     call pad_string('Bond bending potential: V(theta) = k/2 (cos theta - cos theta_0)^2', &
          pot_note_length,potential_descriptors(index)%description)
 
+
+    ! **** charge dependent exp potential ****
+
+    index = index+1
+    if(pair_exp_index /= index)then
+       write(*,*) "Potential indices in the core do not match!"
+    end if
+    potential_descriptors(index)%type_index = index
+    call pad_string('exponential', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 12
+    potential_descriptors(index)%n_targets = 2
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+    call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('zeta', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('inverse decay length', param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('Rmax1', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('maximum covalent radius for atom i', &
+         param_note_length,potential_descriptors(index)%parameter_notes(3))
+    call pad_string('Rmin1', param_name_length,potential_descriptors(index)%parameter_names(4))
+    call pad_string('minimum covalent radius for atom i', &
+         param_note_length,potential_descriptors(index)%parameter_notes(4))
+    call pad_string('Qmax1', param_name_length,potential_descriptors(index)%parameter_names(5))
+    call pad_string('maximum covalent charge for atom i', &
+         param_note_length,potential_descriptors(index)%parameter_notes(5))
+    call pad_string('Qmin1', param_name_length,potential_descriptors(index)%parameter_names(6))
+    call pad_string('minimum covalent charge for atom i', &
+         param_note_length,potential_descriptors(index)%parameter_notes(6))
+    call pad_string('Rmax2', param_name_length,potential_descriptors(index)%parameter_names(7))
+    call pad_string('maximum covalent radius for atom j', &
+         param_note_length,potential_descriptors(index)%parameter_notes(7))
+    call pad_string('Rmin2', param_name_length,potential_descriptors(index)%parameter_names(8))
+    call pad_string('minimum covalent radius for atom j', &
+         param_note_length,potential_descriptors(index)%parameter_notes(8))
+    call pad_string('Qmax2', param_name_length,potential_descriptors(index)%parameter_names(9))
+    call pad_string('maximum covalent charge for atom j', &
+         param_note_length,potential_descriptors(index)%parameter_notes(9))
+    call pad_string('Qmin2', param_name_length,potential_descriptors(index)%parameter_names(10))
+    call pad_string('minimum covalent charge for atom j', &
+         param_note_length,potential_descriptors(index)%parameter_notes(10))
+    call pad_string('xi1', param_name_length,potential_descriptors(index)%parameter_names(11))
+    call pad_string('inverse charge decay for atom i', &
+         param_note_length,potential_descriptors(index)%parameter_notes(11))
+    call pad_string('xi2', param_name_length,potential_descriptors(index)%parameter_names(12))
+    call pad_string('inverse charge decay for atom j', &
+         param_note_length,potential_descriptors(index)%parameter_notes(12))
+    call pad_string('Charge-dependent exponential potential: '//&
+         'V(r,q) = epsilon exp(-zeta r + (xi_i D_i(q_i) + xi_j D_j(q_j))/2 ) '//&
+         'D_i(q) = R_i,max + |beta_i (Q_i,max - q)|^eta_i '//&
+         'beta_i = (R_i,min - R_i,max)^(1/eta_i) / (Q_i,max - Q_i,min) '//&
+         'eta_i = [ ln R_i,max - ln (R_i,max - R_i,min) ] / [ ln Q_i,max - ln (Q_i,max - Q_i,min) ]',&
+         pot_note_length,potential_descriptors(index)%description)
+
     ! **** constant potential ****
 
     index = index+1
@@ -1413,6 +1729,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine initialize_potential_characterizers
   
+
+  ! !!!: initialize_bond_order_factor_characterizers
 
   ! Creates bond order factor characterizers.
   !
@@ -1528,8 +1846,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     call pad_string('h',param_name_length,bond_order_descriptors(index)%parameter_names(4,2))
     call pad_string('angle term denominator 2',param_note_length,bond_order_descriptors(index)%parameter_notes(4,2))
 
-    call pad_string('Tersoff bond-order: b_i = [ 1+( beta_i sum xi_ijk*g_ijk)^eta_i ]^(-1/eta_i), '//&
-         'xi_ijk = f(r_ik)*exp(alpha_ij^m_i (r_ij-r_ik)^m_i), '// &
+    call pad_string('Tersoff bond-order: b_i = [ 1+( beta_i sum xi_ijk*g_ijk)^eta_i ]^(-1/eta_i), \n'//&
+         'xi_ijk = f(r_ik)*exp(alpha_ij^m_i (r_ij-r_ik)^m_i), \n'// &
          'g_ijk = 1+c_ij^2/d_ij^2-c_ij^2/(d_ij^2+(h_ij^2-cos theta_ijk))', &
          pot_note_length,bond_order_descriptors(index)%description)
     
@@ -1601,6 +1919,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   !*******************************************************
 
 
+  ! !!!: get_number_of_potentials
+
   ! Return the number of :data:`potential_descriptor`  known.
   !
   ! *n_pots number of potential types
@@ -1613,6 +1933,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine get_number_of_potentials
 
 
+  ! !!!: get_number_of_bond_order_factors
+
   ! Returns the number of :data:`bond_order_descriptor` known.
   !
   ! *n_bond number of bond order factor types
@@ -1624,6 +1946,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine get_number_of_bond_order_factors
 
+
+  ! !!!: list_potentials
 
   ! Returns the names of :data:`potential_descriptor` objects.
   !
@@ -1646,6 +1970,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine list_potentials
 
 
+  ! !!!: list_bond_order_factors
+
   ! Returns the names of :data:`bond_order_descriptor` objects.
   !
   ! *n_bonds number of bond order factor types
@@ -1666,6 +1992,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine list_bond_order_factors
 
+
+  ! !!!: get_index_of_potential
 
   ! Returns the index of a :data:`potential_descriptor` in the internal list of potential types :data:`potential_descriptors`.
   !
@@ -1688,6 +2016,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine get_index_of_potential
 
 
+  ! !!!: get_index_of_bond_order_factor
+
   ! Returns the index of a :data:`bond_order_descriptor` in the internal list of bond order factor types :data:`bond_order_descriptors`.
   !
   ! *bond_name name of the bond order factor - a keyword
@@ -1708,6 +2038,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine get_index_of_bond_order_factor
 
+
+  ! !!!: get_descriptor
 
   ! Returns the :data:`potential_descriptor` of a given name.
   !
@@ -1730,6 +2062,9 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine get_descriptor
 
 
+
+  ! !!!: get_bond_descriptor
+
   ! Returns the :data:`bond_order_descriptor` of a given name.
   !
   ! *bond_name name of the bond order factor
@@ -1751,6 +2086,9 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine get_bond_descriptor
 
 
+
+  ! !!!: get_names_of_parameters_of_potential
+
   ! Returns the names of parameters of a potential as a list of strings.
   !
   ! *pot_name name of the potential
@@ -1771,6 +2109,9 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine get_names_of_parameters_of_potential
 
+
+
+  ! !!!: get_names_of_parameters_of_bond_order_factor
 
   ! Returns the names of parameters of a bond order factor as a list of strings.
   !
@@ -1798,6 +2139,9 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine get_names_of_parameters_of_bond_order_factor
 
 
+
+  ! !!!: get_descriptions_of_parameters_of_potentials
+
   ! Returns the descriptions of the parameters of a potential
   ! as a list of strings.
   !
@@ -1819,6 +2163,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine get_descriptions_of_parameters_of_potential
 
+
+  ! !!!: get_descriptions_of_parameters_of_bond_order_factor
 
   ! Returns the descriptions of the parameters of a bond order factor
   ! as a list of strings.
@@ -1848,6 +2194,9 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine get_descriptions_of_parameters_of_bond_order_factor
 
 
+
+  ! !!!: get_number_of_parameters_of_potential
+
   ! Returns the number of parameters of a potential.
   !
   ! *pot_name name of the potential
@@ -1864,6 +2213,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine get_number_of_parameters_of_potential
 
   
+  ! !!!: get_number_of_parameters_of_bond_order_factor
+
   ! Returns the number of parameters of a bond order factor as a list of strings,
   ! each element showing the number of parameters for that number of bodies.
   !
@@ -1883,6 +2234,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine get_number_of_parameters_of_bond_order_factor
 
 
+  ! !!!: get_number_of_targets_of_potential
+
   ! Returns the number of targets (i.e., bodies) of a potential.
   !
   ! *pot_name name of the potential
@@ -1898,6 +2251,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine get_number_of_targets_of_potential
 
+
+  ! !!!: get_number_of_targets_of_bond_order_factor
 
   ! Returns the number of targets (i.e., bodies) of a bond order factor.
   !
@@ -1915,6 +2270,9 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine get_number_of_targets_of_bond_order_factor
 
 
+
+  ! !!!: get_number_of_targets_of_potential_index
+
   ! Returns the number of targets (i.e., bodies) of a potential 
   ! specified by its index.
   ! 
@@ -1930,6 +2288,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine get_number_of_targets_of_potential_index
 
 
+  ! !!!: get_number_of_targets_of_bond_order_factor_index
+
   ! Returns the number of targets (i.e., bodies) of a bond order factor
   ! specified by its index.
   !
@@ -1944,6 +2304,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine get_number_of_targets_of_bond_order_factor_index
 
+
+  ! !!!: is_valid_potential
 
   ! Returns true if the given keyword is the name of a potential
   ! and false otherwise.
@@ -1967,6 +2329,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine is_valid_potential
 
 
+  ! !!!: is_valid_bond_order_factor
+
   ! Returns true if the given keyword is the name of a bond order factor
   ! and false otherwise.
   !
@@ -1988,6 +2352,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine is_valid_bond_order_factor
 
+
+  ! !!!: get_index_of_parameter_of_potential
 
   ! Returns the index of a parameter of a potential in the
   ! internal list of parameters.
@@ -2015,6 +2381,9 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine get_index_of_parameter_of_potential
 
+
+
+  ! !!!: get_index_of_parameter_of_bond_order_factor
 
   ! Returns the index of a parameter of a bond order factor in the
   ! internal list of parameters. Since bond order factors can have
@@ -2051,6 +2420,9 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine get_index_of_parameter_of_bond_order_factor
 
 
+
+  ! !!!: get_description_of_potential
+
   ! Returns the description of a potential.
   !
   ! *pot_name name of the potential
@@ -2067,10 +2439,13 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine get_description_of_potential
 
 
+
+  ! !!!: get_description_of_bond_order_factors
+
   ! Returns the description of a bond order factor.
   !
   ! *bond_name name of the bond order factor
-  ! *description description of the bond order actor
+  ! *description description of the bond order factor
   subroutine get_description_of_bond_order_factor(bond_name,description)
     implicit none
     character(len=*), intent(in) :: bond_name
@@ -2082,6 +2457,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine get_description_of_bond_order_factor
 
+
+  ! !!!: potential_affects_atom
 
   ! Tests whether the given potential affects the specific atom.
   !
@@ -2169,6 +2546,10 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine potential_affects_atom
 
+
+
+  ! !!!: bond_order_factor_is_in_group
+
   ! Tests whether the given bond order factor is a member of a specific group,
   ! i.e., if it affects the potential specifiesd by the group index.
   !
@@ -2185,6 +2566,9 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine bond_order_factor_is_in_group
 
+
+
+  ! !!!: bond_order_factor_affects_atom
 
   ! Tests whether the given bond order factor affects the specific atom.
   !

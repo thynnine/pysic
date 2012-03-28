@@ -61,6 +61,7 @@ to Python are simply calling routines here.
     - :func:`core_calculate_bond_order_factors`
     - :func:`core_calculate_bond_order_gradients`
     - :func:`core_calculate_bond_order_gradients_of_factor`
+    - :func:`core_calculate_electronegativities`
     - :func:`core_calculate_energy`
     - :func:`core_calculate_forces`
     - :func:`core_clear_atoms`
@@ -83,6 +84,7 @@ to Python are simply calling routines here.
     - :func:`core_post_process_bond_order_gradients`
     - :func:`core_post_process_bond_order_gradients_of_factor`
     - :func:`core_release_all_memory`
+    - :func:`core_update_atom_charges`
     - :func:`core_update_atom_coordinates`
     - :func:`list_atoms`
     - :func:`list_bonds`
@@ -487,6 +489,32 @@ Full documentation of subroutines in pysic_core
         precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
     **total_gradient**: double precision  **intent(out)**    *size(3, n_atoms)*  
         the calculated bond order gradients :math:`\nabla_\alpha b_i`
+            
+  .. function:: core_calculate_electronegativities(n_atoms, total_enegs)
+
+    Calculates electronegativity forces acting on all atomic charges of the system.
+    
+    The routine calculates the electronegativities
+    
+    .. math::
+    
+       \chi_{\alpha} = -\frac{\partial V}{\partial q_\alpha}
+    
+    for all atoms :math:`\alpha`. This is done according to the
+    the structure and potentials allocated in the core, so the
+    routine does not accept arguments. Instead, the core modifying
+    routines such as :func:`core_generate_atoms` must be called
+    first to set up the calculation.
+    
+    called from PyInterface: :func:`calculate_electronegativities`
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        number of atoms
+    **total_enegs**: double precision  **intent(out)**    *size(n_atoms)*  
+        an array containing the calculated charge forces for all atoms
             
   .. function:: core_calculate_energy(n_atoms, total_energy)
 
@@ -899,6 +927,20 @@ Full documentation of subroutines in pysic_core
 
     Release all allocated pointer arrays in the core.
 
+            
+  .. function:: core_update_atom_charges(n_atoms, charges)
+
+    Updates the charges of atomic particles.
+    
+    called from PyInterface: :func:`update_atom_charges`
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        number of atoms
+    charges: double precision  *intent(in)*    *size(n_atoms)*  
+        new charges for the atoms
             
   .. function:: core_update_atom_coordinates(n_atoms, positions, momenta)
 
