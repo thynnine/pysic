@@ -8,6 +8,7 @@ except:
 from math import sqrt, pi, sin, cos, exp
 import numpy as np
 
+
 neighbor_marginal = 0.5
 
 codec_s2i = {'1' : -1,

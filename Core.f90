@@ -202,7 +202,7 @@ contains
     double precision, intent(in) :: vectors(3,3), inverse(3,3)
     logical, intent(in) :: periodicity(3)
 
-    call generate_supercell(vectors,inverse,periodicity,cell)
+    call generate_supercell(vectors,inverse,periodicity,cell) ! in Geometry.f90
 
   end subroutine core_create_cell
 

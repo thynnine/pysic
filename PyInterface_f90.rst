@@ -398,7 +398,7 @@ Full documentation of subroutines in pysic_interface
   .. function:: create_cell(vectors, inverse, periodicity)
 
     Creates a supercell for containing the calculation geometry
-    Also the inverse cell matrix (reciprocal cell) must be given,
+    Also the inverse cell matrix must be given,
     although it is not checked that the given inverse actually
     is the true inverse.
     
@@ -410,7 +410,7 @@ Full documentation of subroutines in pysic_interface
     vectors: double precision  *intent(in)*    *size(3, 3)*  
         A 3x3 matrix containing the vectors spanning the supercell. The first index runs over xyz and the second index runs over the three vectors.
     inverse: double precision  *intent(in)*    *size(3, 3)*  
-        A 3x3 matrix containing the inverse matrix of the one given in vectors, i.e. :math:`A*B = I` for the two matrices. Since the latter represents a cell of non-zero volume, this inverse must exist. It is not tested that the given matrix actually is the inverse, the user must make sure it is.
+        A 3x3 matrix containing the inverse matrix of the one given in vectors, i.e. :math:`M^{-1}*M = I` for the two matrices. Since the latter represents a cell of non-zero volume, this inverse must exist. It is not tested that the given matrix actually is the inverse, the user must make sure it is.
     periodicity: logical  *intent(in)*    *size(3)*  
         A 3-element vector containing logical tags specifying if the system is periodic in the directions of the three vectors spanning the supercell.
             

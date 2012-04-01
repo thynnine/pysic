@@ -158,6 +158,9 @@ class LockedCoreError(Exception):
     def __str__(self):
         return self.message
 
+
+# !!!: automatic initialization functions
+
 # Below are general methods for accessing information about the built-in potentials.
 # Note that the methods directly inquire the Fortran core, and thus all changes made
 # to the core should automatically be taken into account, as long as the proper
@@ -173,7 +176,6 @@ pf.pysic_interface.start_mpi()
 # automatically initialize the fortran rng
 # it needs to be possible to force a seed by the user - to be implemented
 pf.pysic_interface.start_rng(5301)#rnd.randint(1, 999999))
-
 
 
 def finish_mpi():
@@ -1719,39 +1721,96 @@ class ChargeRelaxation:
         calculator: :class:`~pysic.Pysic` object
             a Pysic calculator 
         parameters: list of doubles
-            numeric values for parameters
+            numeric values for parameters        
+        atoms: `ASE Atoms`_ object
+            The system whose charges are to be relaxed. 
+            Note! The relaxation is always done using the atoms copy in 
+            :class:`~pysic.Pysic`, but if the original structure needs to be
+            updated as well, the relaxation algorithm must have access to it.
     """
 
     relaxation_modes = [ 'dynamic' ]
+    """Names of the charge relaxation algorithms available. 
+        
+        These are keywords needed when creating the 
+        :class:`~pysic.ChargeRelaxation` objects as type specifiers."""
     
     relaxation_parameters = { relaxation_modes[0] : ['n_steps', 'timestep', 'inertia', 'friction', 'tolerance'] }
+    """Names of the parameters of the charge relaxation algorithms."""
     
     relaxation_parameter_descriptions = { relaxation_modes[0] : ['time steps of charge dynamics between molecular dynamics', 
                                                                  'time step of charge dynamics', 
                                                                  'fictional charge mass', 
                                                                  'friction coefficient for damped charge dynamics',
                                                                  'convergence tolerance'] }
+    """Short descriptions of the relaxation parameters."""
     
-    def __init__(self, relaxation, calculator=None, parameters=None):
+    def __init__(self, relaxation, calculator=None, parameters=None, atoms=None):
         self.set_relaxation(relaxation)
         self.set_calculator(calculator)
         self.set_parameters(parameters)
+        self.set_atoms(atoms)
+
+    
+    def __eq__(self,other):
+        if self.relaxation != other.relaxation:
+            return False
+        if self.calculator != other.calculator:
+            return False
+        if self.parameters != other.parameters:
+            return False
+        if self.atoms != other.atoms:
+            return False
+
+        return True
 
 
-# ToDo: __repr__
-# Todo: __eq__
-# Todo: __ne__
+    def __ne__(self,other):
+        return not self == other
 
-
-    def set_calculator(self, calculator):
+            
+    def __repr__(self):
+        return "ChargeRelaxation('{m}',calculator={c},parameters={p},atoms={a})".format(
+            m=self.relaxation, 
+            c=str(self.calculator), 
+            p=str(self.parameters),
+            a=str(self.atoms) )
+            
+            
+    def set_calculator(self, calculator, reciprocal=False):
         """Assigns a :class:`~pysic.Pysic` calculator.
+            
+            The calculator is necessary for calculation of electronegativities.
+            It is also possible to automatically assign the charge relaxation
+            method to the calculator by setting ``reciprocal = True``. 
+            
+            Note though
+            that it does make a difference whether the calculator knows the
+            charge relaxation or not: If the :class:`~pysic.Pysic` has a connection
+            to the :class:`~pysic.ChargeRelaxation`, every time force or energy calculations
+            are requested the charges are first relaxed by automatically invoking
+            :meth:`~pysic.ChargeRelaxation.charge_relaxation`. If there is no link,
+            it is up to the user to start the relaxation.
             
             Parameters:
             
             calculator: :class:`~pysic.Pysic` object
                 a Pysic calculator
+            reciprocal: logical
+                if True, also the :class:`~pysic.ChargeRelaxation` is passed to the
+                :class:`~pysic.Pysic` through :meth:`~pysic.Pysic.set_charge_relaxation`.
             """
+        
+        # remove possible return link from the calculator
+        try:
+            if self.calculator != calculator:
+                self.calculator.set_charge_relaxation(None)
+        except:
+            pass
         self.calculator = calculator
+        if reciprocal:
+            calculator.set_charge_relaxation(self)
+
 
     
     def set_relaxation(self, relaxation):
@@ -1841,25 +1900,70 @@ class ChargeRelaxation:
         return self.parameters
         
     
-    
-    # ToDo: save charge velocities
-    # ToDo: compare performance to pure Fortran dynamics
-    def charge_relaxation(self, atoms):
-        """Performs the charge relaxation.
-
-            The relaxation is always performed on the system associated with
-            the :class:`~pysic.Pysic` calculator joint with this :class:`~pysic.ChargeRelaxation`.   
+    def set_atoms(self, atoms, pass_to_calculator=False):
+        """Lets the relaxation algorithm know the atomic structure to be updated.
+            
+            The relaxation algorithm always works with the structure stored in the
+            :class:`~pysic.Pysic` calculator it knows. If ``pass_to_calculator = True``,
+            this method also updates the structure known by the calculator. However,
+            this is not the main purpose of letting the :class:`~pysic.ChargeRelaxation`
+            know the structure -
+            it is not even necessary that the structure known by the relaxation algorithm
+            is the same as that known by the calculator.
+            
+            The structure given to the algorithm is the structure whose charges it 
+            automatically updates after relaxing the charges in
+            :meth:`~pysic.ChargeRelaxation.charge_relaxation`. In other words, if no
+            structure is given, the relaxation will update the charges in the strucure
+            known by :class:`~pysic.Pysic`, but this is always just a copy and so the
+            original structure is left untouched.
+            
             
             Parameters:
             
             atoms: `ASE Atoms`_ object
                 The system whose charges are to be relaxed. 
-                Note! This needs to be the actual `ASE Atoms`_ object, not the copy
-                stored in :class:`~pysic.Pysic`. The reason is that the
-                relaxed charges must be fed back to the system, and so
-                having access to the copy only will result in the
-                relaxed charges not being updated in the actual Atoms object.
+                Note! The relaxation is always done using the atoms copy in 
+                :class:`~pysic.Pysic`, but if the original structure needs to be
+                updated as well, the relaxation algorithm must have access to it.
+            pass_to_calculator: logical
+                if True, the atoms are also set for the calculator via 
+                :meth:`~pysic.Pysic.set_atoms`
             """
+        self.atoms = atoms
+        if pass_to_calculator:
+            self.calculator.set_atoms(atoms)
+    
+    def get_atoms(self):
+        """Returns the atoms object known by the algorithm.
+            
+        This is the `ASE Atoms`_ which will be automatically updated when
+        charge relaxation is invoked.
+        """
+        return self.atoms
+    
+    # ToDo: save charge velocities
+    # ToDo: compare performance to pure Fortran dynamics
+    def charge_relaxation(self):
+        """Performs the charge relaxation.
+
+            The relaxation is always performed on the system associated with
+            the :class:`~pysic.Pysic` calculator joint with this :class:`~pysic.ChargeRelaxation`.
+            The calculated equilibrium charges are returned as a numeric array.
+            
+            If an `ASE Atoms`_ structure is known by the 
+            :class:`~pysic.ChargeRelaxation` 
+            (given through :meth:`~pysic.ChargeRelaxation.set_atoms`), the charges of
+            the structure are updated according to the calculation result.
+            If the structure is not known, the charges are updated in the
+            structure stored in the :class:`~pysic.Pysic` calculator, but not in any other
+            object. Since :class:`~pysic.Pysic` only stores a copy of the structure it 
+            is given, the original `ASE Atoms`_ object will not be updated.
+            """
+        
+        atoms = self.calculator.get_atoms()
+        charges = atoms.get_charges() # starting charges
+        
         if self.relaxation == ChargeRelaxation.relaxation_modes[0]: # damped dynamic relaxation
             dt = self.parameters['timestep']
             dt2 = dt*dt
@@ -1872,7 +1976,6 @@ class ChargeRelaxation:
 
             error = 2.0 * tolerance
             step = 0
-            charges = atoms.get_charges() # starting charges
             charge_rates = np.array( len(atoms)*[0.0] ) # starting "velocities" \dot{q}
             charge_forces = self.calculator.get_electronegativity_differences(atoms)
             
@@ -1894,6 +1997,10 @@ class ChargeRelaxation:
         else:
             pass
 
+        if self.atoms != None:
+            self.atoms.set_charges(charges)
+
+        return charges
 
 
 class CoreMirror:
@@ -1913,6 +2020,12 @@ class CoreMirror:
     obviously does not change without pushing the changes in the Python
     side to the core first.
 
+        
+    Since exactly one CoreMirror should exist during the simulation, 
+    deletion of the instance (which should happen at program termination automatically)
+    will automatically trigger release of memory in the Fortran core
+    as well as termination of the MPI framework.
+        
     .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html
     .. _ASE NeighborList: https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists
 
@@ -1925,20 +2038,26 @@ class CoreMirror:
         self.potential_lists_ready = False
         self.bond_order_factor_lists_ready = False
         self.neighbor_lists_waiting = False
+        self.mpi_ready = False
         
+
     def __del__(self):
         try:
             pf.pysic_interface.release()
+            pf.pysic_interface.finish_mpi()
         except:
             pass
 
+
     def __repr__(self):
         return "CoreMirror()"
+
 
     def get_atoms(self):
         """Returns the `ASE Atoms`_ structure stored in the CoreMirror.
         """
         return self.structure
+
 
     def view_fortran(self):
         """Print some information on the data allocated in the Fortran core.
@@ -1955,6 +2074,7 @@ class CoreMirror:
         pf.pysic_interface.examine_cell()
         pf.pysic_interface.examine_potentials()
         pf.pysic_interface.examine_bond_order_factors()
+
 
     def set_atoms(self, atoms):
         """Copies and stores the entire `ASE Atoms`_ instance.
@@ -2034,6 +2154,7 @@ class CoreMirror:
         """
         self.neighbor_lists = copy.deepcopy(lists)
 
+        
     def atoms_ready(self, atoms):
         """Checks if the positions and momenta of the given atoms match those in the core.
 
@@ -2132,8 +2253,8 @@ class Pysic:
     Simulation geometries must be defined as `ASE Atoms`_. This object contains both the
     atomistic coordinates and supercell parameters.
 
-    Potentials must be defined as a list of :class:`~pysic.Potential` objects. The full potential
-    is a sum of the individual potentials.
+    Potentials must be defined as a list of :class:`~pysic.Potential` objects. 
+    The total potential of the system is then the sum of the individual potentials.
     
     .. _ASE: https://wiki.fysik.dtu.dk/ase/
     .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html
@@ -2145,10 +2266,9 @@ class Pysic:
     potentials: list of :class:`~pysic.Potential` objects
         list of potentials for describing interactions
     force_initialization: boolean
-        If true, calculations always fully initialize the fortran core.
-        If false, only the coordinates of atoms and cell vectors are updated
-        in the core upon calculation, if possible. Especially the charges of
-        atoms will be remembered by the core.
+        If true, calculations always fully initialize the Fortran core.
+        If false, the Pysic tries to evaluate what needs updating by
+        consulting the :data:`~pysic.Pysic.core` instance of :class:`~pysic.CoreMirror`.
     """
 
     core = CoreMirror()
@@ -2162,14 +2282,17 @@ class Pysic:
     against :data:`~pysic.Pysic.core` instead of accessing the
     Fortran core itself.
     """
-
-    def __init__(self,atoms=None,potentials=None,full_initialization=False):
+    def __init__(self,atoms=None,potentials=None,charge_relaxation=None,full_initialization=False):
         self.neighbor_lists_waiting = False
         self.structure = None
         self.neighbor_list = None
         self.potentials = None
+        self.charge_relaxation = None
+        
         self.set_atoms(atoms)
         self.set_potentials(potentials)
+        self.set_charge_relaxation(charge_relaxation)
+        
         self.forces = None
         self.stress = None
         self.energy = None
@@ -2487,6 +2610,43 @@ class Pysic:
         self.neighbor_lists_waiting = False
         
     
+    def set_charge_relaxation(self,charge_relaxation):
+        """Add a charge relaxation algorithm to the calculator.
+            
+            If a charge relaxation scheme has been added to the :class:`~pysic.Pysic`
+            calculator, it will be automatically asked to do the charge relaxation 
+            before the calculation of energies or forces via 
+            :meth:`~pysic.ChargeRelaxation.charge_relaxation`.
+            
+            It is also possible to pass the :class:`~pysic.Pysic` calculator to the 
+            :class:`~pysic.ChargeRelaxation` algorithm without creating the opposite
+            link using :meth:`~pysic.ChargeRelaxation.set_calculator`. 
+            In that case, the calculator does not automatically relax the charges, but
+            the user can manually trigger the relaxation with 
+            :meth:`~pysic.ChargeRelaxation.charge_relaxation`.
+            
+            If you wish to remove automatic charge relaxation, just call this method
+            again with None as argument.
+            
+            Parameters:
+            
+            charge_relaxation: :class:`~pysic.ChargeRelaxation` object
+                the charge relaxation algorithm
+            """
+
+        try:
+            charge_relaxation.set_calculator(self, reciprocal=False)
+        except:
+            pass
+        self.charge_relaxation = charge_relaxation
+
+                
+    def get_charge_relaxation(self):
+        """Returns the :class:`~pysic.ChargeRelaxation` object connected to the calculator.
+            """
+        return self.charge_relaxation
+    
+    
     def create_neighbor_lists(self,cutoffs=None,marginal=pu.neighbor_marginal):
         """Initializes the neighbor lists.
 
@@ -2572,8 +2732,13 @@ class Pysic:
         """Calculates forces.
 
         Calls the Fortran core to calculate forces for the currently assigned structure.
+            
+        If a link exists to a :class:`~pysic.ChargeRelaxation`, it is first made to
+        relax the atomic charges before the forces are calculated.
         """
         self.set_core()
+        if self.charge_relaxation != None:
+            self.charge_relaxation.charge_relaxation()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.forces = pf.pysic_interface.calculate_forces(n_atoms).transpose()
         
@@ -2582,8 +2747,13 @@ class Pysic:
         """Calculates the potential energy.
 
         Calls the Fortran core to calculate the potential energy for the currently assigned structure.
+ 
+        If a link exists to a :class:`~pysic.ChargeRelaxation`, it is first made to
+        relax the atomic charges before the forces are calculated.
         """
         self.set_core()
+        if self.charge_relaxation != None:
+            self.charge_relaxation.charge_relaxation()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.energy = pf.pysic_interface.calculate_energy(n_atoms)
 
@@ -2611,6 +2781,8 @@ class Pysic:
         """        
         do_full_init = False
         if self.force_core_initialization:
+            do_full_init = True
+        elif not Pysic.core.mpi_ready:
             do_full_init = True
         elif Pysic.core.get_atoms() == None:
             do_full_init = True
@@ -2940,6 +3112,7 @@ class Pysic:
         self.update_core_neighbor_lists()
         self.update_core_potential_lists()
         pf.pysic_interface.distribute_mpi(self.structure.get_number_of_atoms())
+        Pysic.core.mpi_ready = True
 
 
 

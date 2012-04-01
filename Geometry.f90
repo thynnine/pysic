@@ -3,6 +3,7 @@
 !
 module geometry
   use quaternions
+  use utility
   implicit none
 
   ! *label_length the number of characters available for denoting chemical symbols
@@ -95,10 +96,12 @@ module geometry
   !
   ! *vectors vectors spanning the supercell containing the system as a matrix :math:`\mathbf{M}`
   ! *inverse_cell the inverse of the cell matrix :math:`\mathbf{M}^{-1}`
+  ! *reciprocal_cell the reciprocal cell as a matrix, :math:`\mathbf{M}_R = 2 \pi( \mathbf{M}^{-1} )^T`. That is, if :math:`\mathbf{b}_i` are the reciprocal lattice vectors and :math:`\mathbf{a}_j` the real space lattice vectors, then :math:`\mathbf{b}_i \mathbf{a}_j = 2 \pi \delta_{ij}`.
   ! *vector_lengths the lengths of the cell spanning vectors (stored to avoid calculating the vector norms over and over)
   ! *periodic logical switch determining if periodic boundary conditions are applied in the directions of the three cell spanning vectors
   type supercell
-     double precision :: vectors(3,3), inverse_cell(3,3), vector_lengths(3)
+     double precision :: vectors(3,3), inverse_cell(3,3), &
+        reciprocal_cell(3,3),vector_lengths(3)
      logical :: periodic(3)
   end type supercell
 
@@ -124,6 +127,7 @@ contains
   ! However, it is not checked that the given matrix and inverse truly
   ! fulfill :math:`\mathbf{M}^{-1}\mathbf{M} = \mathbf{I}` - it is the
   ! responsibility of the caller to give the true inverse.
+  !
   ! Also the periodicity of the system in the directions of the
   ! cell vectors need to be given.
   !
@@ -140,6 +144,7 @@ contains
 
     cell%vectors = vectors
     cell%inverse_cell = inverse
+    cell%reciprocal_cell = 2*pi*transpose(inverse)
     cell%periodic = periodicity
     do i = 1, 3
        cell%vector_lengths(i) = (.norm.vectors(1:3,i))
