@@ -6,6 +6,8 @@ import ase.calculators.neighborlist as nbl
 from itertools import permutations
 import random as rnd
 import copy
+import debug as d
+
 
 #
 # PySiC : Pythonic Simulation Code
@@ -320,6 +322,36 @@ def is_valid_charge_relaxation(relaxation_name):
     return False
 
 
+def is_coulomb_summation(summation_name):
+    """Same as :meth:`~pysic.is_valid_coulomb_summation`
+        
+        Parameters:
+        
+        summation_name: string
+            the name of the summation mode
+        """
+    for mode in CoulombSummation.summation_modes:
+        if(summation_name == mode):
+            return True
+    return False
+
+
+
+def is_valid_coulomb_summation(summation_name):
+    """Tells if the given string is the name of a coulomb summation mode.
+        
+        Parameters:
+        
+        summation_name: string
+            the name of the summation mode
+        """
+    for mode in CoulombSummation.summation_modes:
+        if(summation_name == mode):
+            return True
+    return False
+    
+
+
 
 def number_of_targets(potential_name):
     """Tells how many targets a potential or bond order factor acts on, i.e., is it pair or many-body.
@@ -340,7 +372,7 @@ def number_of_targets(potential_name):
 
 
 def number_of_parameters(potential_name,as_list=False):
-    """Tells how many parameters a potential, bond order factor or charge relaxation mode incorporates.
+    """Tells how many parameters a potential, bond order factor, charge relaxation mode or coulomb summation mode incorporates.
 
     A potential has a simple list of parameters and thus the function returns
     by default a single number. A bond order factor can incorporate parameters for
@@ -375,11 +407,17 @@ def number_of_parameters(potential_name,as_list=False):
             return [n_params]
         else:
             return n_params
+    elif(is_coulomb_summation(potential_name)):
+        n_params = len(CoulombSummation.summation_parameters[potential_name])
+        if as_list:
+            return [n_params]
+        else:
+            return n_params
     else:
         return 0
 
 def names_of_parameters(potential_name):
-    """Lists the names of the parameters of a potential, bond order factor or charge relaxation mode.
+    """Lists the names of the parameters of a potential, bond order factor, charge relaxation mode or coulomb summation mode.
 
     For a potential, a simple list of names is returned. For a bond order factor, the
     parameters are categorised according to the number of targets they apply to
@@ -429,6 +467,9 @@ def names_of_parameters(potential_name):
 
     elif(is_charge_relaxation(potential_name)):
         return ChargeRelaxation.relaxation_parameters[potential_name]
+
+    elif(is_coulomb_summation(potential_name)):
+        return CoulombSummation.summation_parameters[potential_name]
             
     else:
         return []
@@ -525,7 +566,10 @@ def descriptions_of_parameters(potential_name):
     
     elif(is_charge_relaxation(potential_name)):
         return ChargeRelaxation.relaxation_parameter_descriptions[potential_name]
-        
+    
+    elif(is_coulomb_summation(potential_name)):
+        return CoulombSummation.summation_parameter_descriptions[potential_name]
+
     else:
         return []
 
@@ -597,6 +641,179 @@ parameters ({n_par}):
 
 
 
+class CoulombSummation:
+    """Class for representing a collection of parameters for evaluating Coulomb potentials.
+
+    Summing :math:`1/r` potentials in periodic systems requires more 
+    advanced techniques than just direct summation of pair interactions.
+    The starndard method for evaluating these kinds of potentials is through
+    Ewald summation, where the long range part of the potential is evaluated
+    in reciprocal space.
+    
+    Instances of this class are used for wrapping the parameters controlling
+    the summations. Passing such an instance to the :class:`~pysic.Pysic`
+    calculator activates the evaluation of Coulomb interactions.
+    
+    Currently, only Ewald summation is available as a calculation method.
+        
+    Parameters:
+        
+    method: string
+        keyword specifying the method of summation
+    parameters: list of doubles
+        numeric values of summation parameters
+    scaler: list of doubles
+        numeric values for scaling the atomic charges in summation
+    """
+
+    summation_modes = [ 'ewald' ]
+    """Names of the summation methods. These are keywords used for setting up the summation algorithms."""
+    summation_parameters = { summation_modes[0] : ['real_cutoff',
+                                                   'k_cutoff',
+                                                   'sigma',
+                                                   'epsilon'] }
+    """Names of the parameters of the summation algorithm."""
+    summation_parameter_descriptions = { summation_modes[0] : ['real space cutoff radius',
+                                                   'reciprocal space cutoff radius',
+                                                   'ewald summation split parameter',
+                                                   'vacuum permittivity'] }
+    """Short descriptions of the parameters of the summation algorithm."""
+    
+    def __init__(self,method='ewald',parameters=None,scaler=None):
+        self.set_summation(method)
+        self.set_parameters(parameters)
+        self.set_scaling_factors(scaler)
+    
+    
+    def __eq__(self,other):
+        try:
+            if self.method != other.method:
+                return False
+            if self.parameters != other.parameters:
+                return False
+            if self.scaler != other.scaler:
+                return False
+        except:
+            return False
+                    
+        return True
+    
+    
+    def __ne__(self,other):
+        return not self == other
+
+
+    def __repr__(self):
+        return "CoulombSummation(method='{m}',parameters={p},scaler={s})".format(m=self.method,
+                                                                                 p=str(self.parameters),
+                                                                                 s=str(self.scaler))
+
+
+# ToDo: make an InvalidSummationError
+    def set_summation(self,method):
+        """Sets the summation method.
+            
+            The method also creates a dictionary of parameters initialized to 0.0
+            by invoking :meth:`~pysic.CoulombSummation.initialize_parameters`.
+            
+            Parameters:
+            
+            method: string
+                a keyword specifying the mode of summation
+            """
+        if CoulombSummation.summation_modes.count(method) == 1:
+            self.method = method
+            self.initialize_parameters()
+        else:
+            raise InvalidParametersError("no such summation mode "+method)
+
+
+    def initialize_parameters(self):
+        """Creates a dictionary of parameters and initializes all values to 0.0.
+        """        
+        self.parameters = {}
+        for param in names_of_parameters(self.method):
+            self.parameters[param] = 0.0
+
+                
+
+    def set_parameters(self, parameters):
+        """Sets the numeric values for all parameters.
+        
+        Equivalent to :meth:`~pysic.CoulombSummation.set_parameter_values`
+        
+        Parameters:
+        
+        parameters: list of doubles
+            list of values to be assigned to parameters
+        """
+        self.set_parameter_values(parameters)
+    
+    
+    def set_parameter_values(self, parameters):
+        """Sets the numeric values for all parameters.                    
+            
+            Parameters:
+            
+            parameters: list of doubles
+                list of values to be assigned to parameters
+            """
+        if parameters == None:
+            return
+        if self.parameters == None:
+            self.initialize_parameters()
+        if len(parameters) != len(self.parameters):
+            raise InvalidParametersError("The summation mode "+self.method+" requires "+
+                                         len(self.parameters)+" parameters.")
+        for key, value in zip(self.parameters.get_keys(), parameters):
+            self.parameters[key] = parameters
+    
+
+    def set_parameter_value(self, parameter_name, value):
+        """Sets a given parameter to the desired value.
+        
+        Parameters:
+        
+        parameter_name: string
+            name of the parameter
+        value: double
+            the new value of the parameter
+        """
+        self.parameters[parameter_name] = value
+
+
+    def set_scaling_factors(self,scaler):
+        """Set the list of scaling parameters for atomic charges.
+
+            Parameters:
+            
+            scaler: list of doubles
+                the list of scaling factors
+            """
+        self.scaler = scaler
+                
+
+    def get_scaling_factors(self):
+        """Returns the list of scaling parameters for atomic charges.
+            """
+        return self.scaler
+                
+                
+    def get_summation(self):
+        """Returns the mode of summation."""
+        return self.method
+
+    def get_parameters(self):
+        """Returns a list containing the numeric values of the parameters.
+        """
+        return self.parameters
+
+    def get_realspace_cutoff(self):
+        """Returns the real space cutoff.
+            """
+        if self.method == CoulombSummation.summation_modes[0]: #ewald
+            return self.parameters['real_cutoff']
+        return 0.0
 
 
 class BondOrderParameters:
@@ -629,121 +846,6 @@ class BondOrderParameters:
         a list of elements on which the factor is applied
     """
 
-    @staticmethod    
-    def expand_symbols_table(symbol_list,type=None):
-        """Creates a table of symbols for a BondOrderParameters object.
-
-        The syntax for defining the targets of bond order factors is precise
-        but somewhat cumbersome due to the large number of permutations one gets
-        when the number of bodies increases. Oftentimes one does not need such
-        fine control over all the parameters since many of them have the same
-        numerical values. Therefore it is convenient to be able to define
-        the targets in a more compact way.
-
-        This method generates the detailed target tables from compact syntax.
-        By default, the method takes a list of list and multiplies each list
-        with the others (note the call for a static method)::
-
-            >>> pysic.BondOrderParameters.expand_symbols_table([  'Si',
-            ...                                                  ['O', 'C'],
-            ...                                                  ['H', 'O'] ])
-            [['Si', 'O', 'H'],
-             ['Si', 'C', 'H'],
-             ['Si', 'O', 'O'],
-             ['Si', 'C', 'O']]
-
-        Other custom types of formatting can be defined with the type parameter.
-
-        For type 'triplet', the target list is created for triplets A-B-C from an input list of the form::
-
-         ['A', 'B', 'C']
-
-        Remember that in the symbol table accepted by the BondOrderParameters, one needs to define
-        the B-A and B-C bonds separately and so B appears as the first symbol in the output and the other
-        two appear as second and third (both cases)::
-
-         [['B', 'A', 'C'],
-           'B', 'C', 'A']]
-           
-        However, for an A-B-A triplet, the A-B bond should only be defined once to prevent double counting.
-        Like the default function, also here several triplets can be defined at once::
-
-         >>> pysic.BondOrderParameters.expand_symbols_table([ ['H', 'O'],
-         ...                                                   'Si',
-         ...                                                  ['O', 'C'] ],
-         ...                                                type='triplet')
-         [['Si', 'H', 'O'],
-          ['Si', 'O', 'H'],
-          ['Si', 'H', 'C'],
-          ['Si', 'C', 'H'],
-          ['Si', 'O', 'O'],
-          ['Si', 'O', 'C'],
-          ['Si', 'C', 'O']]
-        
-
-        Parameters:
-
-        symbol_list: list of strings
-            list to be expanded to a table
-        type: string
-            specifies a custom way of generating the table
-        """
-        if not isinstance(symbol_list,list):
-            return [symbol_list]
-        n_slots = len(symbol_list)
-        n_subslots = []
-        for sub in symbol_list:
-            if isinstance(sub,list):
-                n_subslots.append(len(sub))
-            else:
-                n_subslots.append(1)
-        
-        table = []
-        if(type == None):
-            slot_indices = n_slots*[0]
-            while (slot_indices[n_slots-1] < n_subslots[n_slots-1]):
-                row = []
-                for i in range(n_slots):
-                    if isinstance(symbol_list[i],list):
-                        symb = symbol_list[i][slot_indices[i]]
-                    else:
-                        symb = symbol_list[i]
-                    row.append(symb)
-                table.append(row)
-                slot_indices[0] += 1
-                for i in range(n_slots):
-                    if slot_indices[i] >= n_subslots[i]:
-                        if(i < n_slots-1):
-                            slot_indices[i] = 0
-                            slot_indices[i+1] += 1
-                        else:
-                            pass
-        elif(type == 'triplet'):
-            if n_slots != 3:
-                return None
-            for i in range(n_subslots[1]):
-                for j in range(n_subslots[0]):
-                    for k in range(n_subslots[2]):
-                        
-                        if isinstance(symbol_list[1],list):
-                            symb1 = symbol_list[1][i]
-                        else:
-                            symb1 = symbol_list[1]
-                        if isinstance(symbol_list[0],list):
-                            symb0 = symbol_list[0][j]
-                        else:
-                            symb0 = symbol_list[0]
-                        if isinstance(symbol_list[2],list):
-                            symb2 = symbol_list[2][k]
-                        else:
-                            symb2 = symbol_list[2]
-
-                        table.append([symb1,symb0,symb2])
-                        if symb0 != symb2:
-                            table.append([symb1,symb2,symb0])
-
-
-        return table
 
     def __init__(self,bond_order_type,cutoff=0.0,cutoff_margin=0.0,parameters=None,symbols=None):
         self.params = []
@@ -778,8 +880,6 @@ class BondOrderParameters:
 
     def __eq__(self,other):
         try:
-            if other == None:
-                return False
             if self.bond_order_type != other.bond_order_type:
                 return False
             if self.cutoff != other.cutoff:
@@ -1100,8 +1200,6 @@ class Coordinator:
 
     def __eq__(self,other):
         try:
-            if other == None:
-                return False
             if self.group_index != other.group_index:
                 return False
             if self.bond_order_params != other.bond_order_params:
@@ -1295,8 +1393,6 @@ class Potential:
 
     def __eq__(self,other):
         try:
-            if other == None:
-                return False
             if self.symbols != other.symbols:
                 return False
             if self.tags != other.tags:
@@ -1745,7 +1841,7 @@ class ChargeRelaxation:
                                                                  'convergence tolerance'] }
     """Short descriptions of the relaxation parameters."""
     
-    def __init__(self, relaxation, calculator=None, parameters=None, atoms=None):
+    def __init__(self, relaxation='dynamic', calculator=None, parameters=None, atoms=None):
         self.set_relaxation(relaxation)
         self.set_calculator(calculator)
         self.set_parameters(parameters)
@@ -1753,13 +1849,17 @@ class ChargeRelaxation:
 
     
     def __eq__(self,other):
-        if self.relaxation != other.relaxation:
-            return False
-        if self.calculator != other.calculator:
-            return False
-        if self.parameters != other.parameters:
-            return False
-        if self.atoms != other.atoms:
+        
+        try:
+            if self.relaxation != other.relaxation:
+                return False
+            if self.calculator != other.calculator:
+                return False
+            if self.parameters != other.parameters:
+                return False
+            if self.atoms != other.atoms:
+                return False
+        except:
             return False
 
         return True
@@ -2035,9 +2135,10 @@ class CoreMirror:
         self.structure = None
         self.potentials = None
         self.neighbor_lists = None
+        self.coulomb = None
+        self.cutoffs = None
         self.potential_lists_ready = False
         self.bond_order_factor_lists_ready = False
-        self.neighbor_lists_waiting = False
         self.mpi_ready = False
         
 
@@ -2085,7 +2186,6 @@ class CoreMirror:
             atomic structure to be saved"""
         self.structure = copy.deepcopy(atoms)
         self.potential_lists_ready = False
-        self.neighbor_lists_waiting = False
 
     def set_charges(self, charges):
         """Copies and stores the charges of atoms in the `ASE Atoms`_ instance.
@@ -2127,7 +2227,6 @@ class CoreMirror:
         """
         self.structure.set_cell(atoms.get_cell())
         self.structure.set_pbc(atoms.get_pbc())
-        self.neighbor_lists_waiting = False
         
     def set_potentials(self, potentials):
         """Copies and stores :class:`~pysic.Potential` potentials.
@@ -2142,7 +2241,7 @@ class CoreMirror:
             Potentials to be saved.
         """
         self.potentials = copy.deepcopy(potentials)
-        self.potential_lists_ready = False        
+        self.potential_lists_ready = False
 
     def set_neighbor_lists(self, lists):
         """Copies and stores the neighbor lists.
@@ -2155,6 +2254,17 @@ class CoreMirror:
         self.neighbor_lists = copy.deepcopy(lists)
 
         
+    def set_coulomb(self,coulomb):
+        """Copies and stores the Coulomb summation algorithm.
+        
+        Parameters:
+            
+        coulomb: :class:`~pysic.CoulombSummation`
+            Coulomb summation algorithm to be saved            
+            """
+        self.coulomb = copy.deepcopy(coulomb)
+    
+    
     def atoms_ready(self, atoms):
         """Checks if the positions and momenta of the given atoms match those in the core.
 
@@ -2166,6 +2276,8 @@ class CoreMirror:
             The atoms to be compared.
         """
         if self.structure == None:
+            return False
+        if(len(self.structure) != len(atoms)):
             return False
         if((self.structure.get_atomic_numbers() != atoms.get_atomic_numbers()).any()):
             return False
@@ -2188,6 +2300,8 @@ class CoreMirror:
             """
         
         if self.structure == None:
+            return False
+        if len(self.structure) != len(atoms):
             return False
         if ((self.structure.get_charges() != atoms.get_charges()).any()):
             return False
@@ -2240,6 +2354,21 @@ class CoreMirror:
             return False
         return self.neighbor_lists == lists
 
+            
+            
+
+            
+    def coulomb_summation_ready(self,coulomb):
+        """Checks if the given Coulomb summation matches that in the core.
+            
+            True is returned if the summation algorithms match, False otherwise.
+            
+            Parameters: :class:`~pysic.CoulombSummation`
+                the summation algorithm to be compared
+            """
+        if self.coulomb == None:
+            return False
+        return self.coulomb == coulomb
 
 
 class Pysic:
@@ -2282,16 +2411,22 @@ class Pysic:
     against :data:`~pysic.Pysic.core` instead of accessing the
     Fortran core itself.
     """
-    def __init__(self,atoms=None,potentials=None,charge_relaxation=None,full_initialization=False):
-        self.neighbor_lists_waiting = False
+    def __init__(self,atoms=None,potentials=None,charge_relaxation=None,
+                 coulomb=None,full_initialization=False):
+        
+        self.neighbor_lists_ready = False
+        self.saved_cutoffs = None
+        
         self.structure = None
         self.neighbor_list = None
         self.potentials = None
         self.charge_relaxation = None
+        self.coulomb = None
         
         self.set_atoms(atoms)
         self.set_potentials(potentials)
         self.set_charge_relaxation(charge_relaxation)
+        self.set_coulomb_summation(coulomb)
         
         self.forces = None
         self.stress = None
@@ -2550,15 +2685,20 @@ class Pysic:
                 try:
                     if((self.structure.get_atomic_numbers() != atoms.get_atomic_numbers()).any()):
                         Pysic.core.potential_lists_ready = False
-                        
+                        self.neighbor_lists_waiting = False
+
                     if((self.structure.get_tags() != atoms.get_tags()).any()):
                         Pysic.core.potential_lists_ready = False
+                        self.neighbor_lists_waiting = False                
 
                     if(not Pysic.core.potentials_ready(self.potentials)):
                         Pysic.core.potential_lists_ready = False
+                        self.neighbor_lists_waiting = False
 
                 except:
                     Pysic.core.potential_lists_ready = False
+                    self.neighbor_lists_waiting = False
+            
 
                 self.structure = atoms.copy()
 
@@ -2579,8 +2719,8 @@ class Pysic:
             self.stress = None
             self.electronegativities = None
             
-            Pysic.core.potential_lists_ready = False
-            self.neighbor_lists_waiting = False
+            new_cutoffs = self.get_individual_cutoffs(0.5)
+            self.neighbor_lists_waiting = not self.neighbor_lists_expanded(new_cutoffs)
 
             try:
                 assert isinstance(potentials,list)
@@ -2606,9 +2746,33 @@ class Pysic:
         self.energy = None
         self.stress = None
         self.electronegativities = None
-        Pysic.core.potential_lists_ready = False
-        self.neighbor_lists_waiting = False
+        new_cutoffs = self.get_individual_cutoffs(0.5)
+        self.neighbor_lists_waiting = not self.neighbor_lists_expanded(new_cutoffs)
         
+    
+    def set_coulomb_summation(self,coulomb):
+        """Set the Coulomb summation algorithm for the calculator.
+            
+            If a Coulomb summation algorithm is set, the Coulomb interactions
+            between all charged atoms are evaluated automatically during
+            energy and force evaluation. If not, the charges do not directly
+            interact.
+            
+            Parameters:
+            
+            coulomb: :class:`~pysic.CoulombSummation`
+                the Coulomb summation algorithm
+            """
+        self.coulomb = coulomb
+        new_cutoffs = self.get_individual_cutoffs(0.5)
+        self.neighbor_lists_waiting = not self.neighbor_lists_expanded(new_cutoffs)
+    
+
+    def get_coulomb_summation(self):
+        """Returns the Coulomb summation algorithm of this calculator.
+            """
+        return self.coulomb
+    
     
     def set_charge_relaxation(self,charge_relaxation):
         """Add a charge relaxation algorithm to the calculator.
@@ -2668,6 +2832,7 @@ class Pysic:
             cutoffs = self.get_individual_cutoffs(0.5)
         self.neighbor_list = nbl.NeighborList(cutoffs,skin=marginal,sorted=False,self_interaction=False,bothways=True)
         self.neighbor_lists_waiting = True
+        self.set_cutoffs(cutoffs)
 
 
     def get_individual_cutoffs(self,scaler=1.0):
@@ -2686,13 +2851,20 @@ class Pysic:
         if self.structure == None:
             return None
         elif self.potentials == None:
-            return self.structure.get_number_of_atoms()*[0.0]
+            if self.coulomb == None:
+                return self.structure.get_number_of_atoms()*[0.0]
+            else:
+                return self.structure.get_number_of_atoms()*[self.coulomb.get_realspace_cutoff()]
         else:
             cuts = []
             for symbol, tags, index in zip(self.structure.get_chemical_symbols(),
                                            self.structure.get_tags(),
                                            range(self.structure.get_number_of_atoms())):
-                max_cut = 0.0
+            
+                if self.coulomb == None:
+                    max_cut = 0.0
+                else:
+                    max_cut = self.coulomb.get_realspace_cutoff()
                 
                 for potential in self.potentials:
                     active_potential = False
@@ -2779,6 +2951,7 @@ class Pysic:
         Otherwise, only the atomic coordinates and momenta are updated.
         Potentials, neighbor lists etc. are also updated if they have been edited.
         """        
+        
         do_full_init = False
         if self.force_core_initialization:
             do_full_init = True
@@ -2791,10 +2964,11 @@ class Pysic:
             
         if do_full_init:
             self.initialize_fortran_core()
-        else:            
+        else:
+            
             if not Pysic.core.atoms_ready(self.structure):
                 self.update_core_coordinates()
-            
+
             if not Pysic.core.charges_ready(self.structure):
                 self.update_core_charges()
 
@@ -2804,6 +2978,10 @@ class Pysic:
             if not Pysic.core.potentials_ready(self.potentials):
                 self.update_core_potentials()
 
+            if self.coulomb != None:
+                if not Pysic.core.coulomb_summation_ready(self.coulomb):
+                    self.update_core_coulomb()
+            
             if not Pysic.core.potential_lists_ready:
                 self.update_core_potential_lists()
 
@@ -2812,8 +2990,7 @@ class Pysic:
 
             if not Pysic.core.neighbor_lists_ready(self.neighbor_list):
                 self.update_core_neighbor_lists()
-
-
+                
 
     def update_core_potential_lists(self):
         """Initializes the potential lists.
@@ -2832,6 +3009,18 @@ class Pysic:
 
     def update_core_potentials(self):
         """Generates potentials for the Fortran core."""
+                
+        Pysic.core.potential_lists_ready = False
+        if self.potentials == None:
+            pf.pysic_interface.allocate_potentials(0)
+            pf.pysic_interface.allocate_bond_order_factors(0)
+            return
+
+        if len(self.potentials) == 0:
+            pf.pysic_interface.allocate_potentials(0)
+            pf.pysic_interface.allocate_bond_order_factors(0)
+            return
+        
         n_pots = 0
         coord_list = []
         pot_index = 0
@@ -3008,6 +3197,40 @@ class Pysic:
                                                        len(coord_list))
 
         Pysic.core.set_potentials(self.potentials)
+
+            
+    def update_core_coulomb(self):
+        """Updates the Coulomb summation parameters in the Fortran core.
+            """
+        
+        if self.coulomb != None:
+            if self.coulomb.method == CoulombSummation.summation_modes[0]: # ewald summation
+                rcut = self.coulomb.parameters['real_cutoff']
+                kcut = self.coulomb.parameters['k_cutoff']
+                sigma = self.coulomb.parameters['sigma']
+                epsilon = self.coulomb.parameters['epsilon']
+                
+                scales = self.coulomb.get_scaling_factors()
+                
+                # calculate the truncation limits for the k-space sum
+                reci_cell = self.structure.get_reciprocal_cell()
+                volume = np.dot( reci_cell[0], np.cross( reci_cell[1], reci_cell[2] ) )
+                k1 = int( kcut * np.linalg.norm( np.cross( reci_cell[1], reci_cell[2] ) ) / volume + 0.5 )
+                k2 = int( kcut * np.linalg.norm( np.cross( reci_cell[0], reci_cell[2] ) ) / volume + 0.5 )
+                k3 = int( kcut * np.linalg.norm( np.cross( reci_cell[0], reci_cell[1] ) ) / volume + 0.5 )
+
+                if scales == None:
+                    scales = [1.0]*self.structure.get_number_of_atoms()
+                elif(len(scales) != self.structure.get_number_of_atoms()):
+                    raise InvalidParametersError("Length of the scaling factor vector does not match the number of atoms.")
+                
+                pf.pysic_interface.set_ewald_parameters(rcut,
+                                                        np.array([k1,k2,k3]),
+                                                        sigma,
+                                                        epsilon,
+                                                        scales)
+
+                Pysic.core.set_coulomb(self.coulomb)
         
     
     def update_core_coordinates(self):
@@ -3037,7 +3260,6 @@ class Pysic:
             self.create_neighbor_lists(self.get_individual_cutoffs(0.5))
         
         self.update_core_neighbor_lists()
-     
 
                     
 
@@ -3066,20 +3288,22 @@ class Pysic:
         
         Pysic.core.set_cell(self.structure)
         Pysic.core.set_neighbor_lists(None)
-
+            
 
     def update_core_neighbor_lists(self):
         """Updates the neighbor lists in the Fortran core.
 
          If uninitialized, the lists are created first via :meth:`~pysic.Pysic.create_neighbor_lists`.
          """
-        
         if not Pysic.core.atoms_ready(self.structure):
             raise MissingAtomsError("Creating neighbor lists before updating atoms in the core.")
+        cutoffs = self.get_individual_cutoffs(0.5)
         if not self.neighbor_lists_waiting:
-            self.create_neighbor_lists(self.get_individual_cutoffs(0.5))
-
+            self.create_neighbor_lists(cutoffs)
+            self.set_cutoffs(cutoffs)
+    
         self.neighbor_list.update(self.structure)
+    
         for index in range(self.structure.get_number_of_atoms()):
             [nbors,offs] = self.neighbor_list.get_neighbors(index)                
             pf.pysic_interface.create_neighbor_list(index+1,np.array(nbors),np.array(offs).transpose())
@@ -3103,6 +3327,7 @@ class Pysic:
         elements = np.array( elements ).transpose()
 
         self.create_neighbor_lists(self.get_individual_cutoffs(0.5))
+        self.neighbor_lists_waiting = True
 
         pf.pysic_interface.create_atoms(masses,charges,positions,momenta,tags,elements)
         Pysic.core.set_atoms(self.structure)
@@ -3111,41 +3336,43 @@ class Pysic:
         self.update_core_potentials()
         self.update_core_neighbor_lists()
         self.update_core_potential_lists()
+        self.update_core_coulomb()
         pf.pysic_interface.distribute_mpi(self.structure.get_number_of_atoms())
         Pysic.core.mpi_ready = True
 
 
 
-    def get_numerical_energy_gradient(self, atom_index, shift=0.001, atoms=None):
-        """Numerically calculates the gradient of energy with respect to moving a single particle.
+    def get_numerical_energy_gradient(self, atom_index, shift=0.0001, atoms=None):
+        """Numerically calculates the negative gradient of energy with respect to moving a single particle.
 
         This is for debugging the forces."""
 
         if(atoms == None):
-            system = self.structure.copy()
+            system = self.structure
             orig_system = self.structure.copy()
         else:
             system = atoms.copy()
             orig_system = atoms.copy()
-
+            self.set_atoms(system)
+        
         self.energy == None
-        energy_xp = self.get_potential_energy(system)
+        energy_xp = self.get_potential_energy()
         system[atom_index].x += shift
-        energy_xp = self.get_potential_energy(system)
+        energy_xp = self.get_potential_energy()
         system[atom_index].x -= 2.0*shift
-        energy_xm = self.get_potential_energy(system)
+        energy_xm = self.get_potential_energy()
         system[atom_index].x += shift
 
         system[atom_index].y += shift
-        energy_yp = self.get_potential_energy(system)
+        energy_yp = self.get_potential_energy()
         system[atom_index].y -= 2.0*shift
-        energy_ym = self.get_potential_energy(system)
+        energy_ym = self.get_potential_energy()
         system[atom_index].y += shift
 
         system[atom_index].z += shift
-        energy_zp = self.get_potential_energy(system)
+        energy_zp = self.get_potential_energy()
         system[atom_index].z -= 2.0*shift
-        energy_zm = self.get_potential_energy(system)
+        energy_zm = self.get_potential_energy()
         system[atom_index].z += shift
 
         self.energy == None
@@ -3156,6 +3383,45 @@ class Pysic:
                  -(energy_zp-energy_zm)/(2.0*shift) ]
 
 
+            
+    def set_cutoffs(self, cutoffs):
+        """Copy and save the list of individual cutoff radii.
+            
+            Parameters:
+            
+            cutoffs: list of doubles
+            new cutoffs
+            """
+        self.saved_cutoffs = copy.deepcopy(cutoffs)
+            
+            
+    def neighbor_lists_expanded(self, cutoffs):
+        """Check if the cutoffs have been expanded.
+                    
+        If the cutoffs have been made longer than before,
+        the neighbor lists have to be recalculated.
+        This method checks the individual cutoffs of all atoms
+        to check if the cutoffs have changed.
+        
+        Parameters:
+        
+        cutoffs: list of doubles
+            new cutoffs
+        """
+        if self.saved_cutoffs == None:
+            return True
+        if cutoffs == None:
+            return True
+                                
+        if len(self.saved_cutoffs) != len(cutoffs):
+            return True
+        for old_cut, new_cut in zip(self.saved_cutoffs, cutoffs):
+            if old_cut < new_cut:
+                return True
+                
+        return False
+
+            
 
 
     def get_numerical_bond_order_gradient(self, coordinator, atom_index, moved_index, shift=0.001, atoms=None):
@@ -3234,7 +3500,8 @@ class Pysic:
         
         charges = system.get_charges()
         self.energy == None
-        energy_xp = self.get_potential_energy(system)
+        self.set_atoms(system)
+        self.set_core()
         charges[atom_index] += 1.0*shift
         system.set_charges(charges)
         energy_p = self.get_potential_energy(system)
@@ -3248,7 +3515,7 @@ class Pysic:
         self.energy == None
         self.get_potential_energy(orig_system)
         
-        return (energy_p-energy_m)/(2.0*shift)
+        return (energy_m-energy_p)/(2.0*shift)
 
 
 

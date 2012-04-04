@@ -98,10 +98,11 @@ module geometry
   ! *inverse_cell the inverse of the cell matrix :math:`\mathbf{M}^{-1}`
   ! *reciprocal_cell the reciprocal cell as a matrix, :math:`\mathbf{M}_R = 2 \pi( \mathbf{M}^{-1} )^T`. That is, if :math:`\mathbf{b}_i` are the reciprocal lattice vectors and :math:`\mathbf{a}_j` the real space lattice vectors, then :math:`\mathbf{b}_i \mathbf{a}_j = 2 \pi \delta_{ij}`.
   ! *vector_lengths the lengths of the cell spanning vectors (stored to avoid calculating the vector norms over and over)
+  ! *volume volume of the cell
   ! *periodic logical switch determining if periodic boundary conditions are applied in the directions of the three cell spanning vectors
   type supercell
      double precision :: vectors(3,3), inverse_cell(3,3), &
-        reciprocal_cell(3,3),vector_lengths(3)
+        reciprocal_cell(3,3),vector_lengths(3), volume
      logical :: periodic(3)
   end type supercell
 
@@ -149,6 +150,7 @@ contains
     do i = 1, 3
        cell%vector_lengths(i) = (.norm.vectors(1:3,i))
     end do
+    cell%volume = abs( (vectors(1:3,1).x.vectors(1:3,2)).o.vectors(1:3,3) )
 
   end subroutine generate_supercell
 
@@ -545,6 +547,62 @@ contains
 
   end subroutine wrapped_coordinates
 
+  ! A utility function for sorting the atoms.
+  !
+  ! The function return ``true`` if ``index1 < index2`` and ``false`` otherwise.
+  ! If ``index1 == index2``, the comparison is made through the separation vector.
+  ! The vector is examined element at a time, and if a positive number is found,
+  ! ``true`` is returned, if a negative one, ``false``. For values of zero, the next
+  ! element is examined.
+  !
+  ! The purpose for this function is to sort the atoms to prevent double counting when summing 
+  ! over pairs. In principle, a sum over pairs :math:`(i,j)` can be done with 
+  ! :math:`\frac{1}{2} \sum_{i \ne j}`, but this leads to evaluation of all elements twice 
+  ! (both :math:`(i,j)` and :math:`(j,i)` are considered separately).
+  ! It is more efficient to evaluate :math:`\sum_{i < j}`, where only one of :math:`(i,j)` and :math:`(j,i)`
+  ! fullfill the condition.
+  !
+  ! A special case arises if interactions are so long ranged that an atom can see its own periodic
+  ! images. Then, one will need to sum terms for atom pairs where both atoms have the same index
+  ! :math:`\sum_\mathrm{images} \sum_{i,j}` if they are in different periodic copies of the actual
+  ! simulation cell. In order to still pick only one of the pairs :math:`(i,i')` and :math:`(i',i)`,
+  ! we compare the offset vectors. If atom :math:`i'` is in the neighboring cell of :math:`i` in the
+  ! first cell vector direction, it has an offset of :math:`[1,0,0]` and vice versa :math:`i` has
+  ! an offset of :math:`[-1,0,0]` from :math:`i'`. Instead of the index, the sorting :math:`i' < i`
+  ! is then done by comparing these offset vectors, element by element.
+  !
+  ! *index1 index of first atom
+  ! *index2 index of second atom
+  ! *offset pbc offset vector from atom1 to atom2
+  function pick(index1,index2,offset)
+    implicit none
+    logical :: pick
+    integer, intent(in) :: index1, index2
+    integer, intent(in) :: offset(3)
+    integer :: i
+
+    pick = .false.
+    if(index2 > index1)then
+       pick = .true.
+       return
+    else if(index2 == index1 .and. offset(1) >= 0.d0)then
+       if(offset(1) > 0.d0)then
+          pick = .true.
+          return
+       else if(offset(1) == 0.d0)then
+          if(offset(2) > 0.d0)then
+             pick = .true.
+             return
+          else if(offset(2) == 0.d0)then
+             if(offset(3) > 0.d0)then
+                pick = .true.
+                return
+             end if
+          end if          
+       end if
+    end if
+
+  end function pick
 
 
 end module geometry

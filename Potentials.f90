@@ -96,8 +96,10 @@
 ! must be updated accordingly.
 !
 module potentials
-  use utility
   use geometry
+  use quaternions
+  use utility
+  use mpi
   implicit none
 
 
@@ -988,8 +990,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
           eneg(1) = interaction%parameters(1)* &
                exp(-interaction%parameters(2)*r1 + &
                0.5d0*(d3*d1 + d4*d2) ) ! this is just the energy
-          eneg(2) = - eneg(1) * d4 * 0.5d0 * r7 * abs(d6)**(r7-1.d0) * sign(1.d0,d6) * (-r9)
-          eneg(1) = - eneg(1) * d3 * 0.5d0 * r6 * abs(d5)**(r6-1.d0) * sign(1.d0,d5) * (-r8)
+          eneg(2) = eneg(1) * d4 * 0.5d0 * r7 * abs(d6)**(r7-1.d0) * sign(1.d0,d6) * r9
+          eneg(1) = eneg(1) * d3 * 0.5d0 * r6 * abs(d5)**(r6-1.d0) * sign(1.d0,d5) * r8
        end if
 
     end select
@@ -2616,6 +2618,507 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     end if
 
   end subroutine bond_order_factor_affects_atom
+
+  ! Calculates the energy of :math:`\frac{1}{r}` potentials through Ewald summation.
+  !
+  ! If a periodic system contains charges interacting via the :math:`\frac{1}{r}` Coulomb potential,
+  ! direct summation of the interactions
+  !
+  ! .. math::
+  !    :label: direct_sum
+  !
+  !    E = \sum_{(i,j)} \frac{1}{4\pi\epsilon_0}\frac{q_i q_j}{r_{ij}},
+  !
+  ! where the sum is over pairs of charges :math:`q_i, q_j` 
+  ! (charges of the entire system, not just the simulation cell) and the distance between the charges is 
+  ! :math:`r_{ij} = |\mathbf{r}_j - \mathbf{r}_i|`,
+  ! does not work in general because the sum :eq:`direct_sum` converges very slowly. [#]_ Therefore truncating the
+  ! sum may lead to severe errors.
+  !
+  ! The standard technique for overcoming this problem is the so called Ewald summation method.
+  ! The idea is to split the long ranged and singular Coulomb potential to a short ranged singular and
+  ! long ranged smooth parts, and calculate the long ranged part in reciprocal space via Fourier transformations.
+  ! This is possible since the system is periodic and the same supercell repeats infinitely in all directions.
+  ! In practice the calculation can be done by adding (and subtracting) Gaussian charge densities over the
+  ! point charges to screen the
+  ! potential in real space. That is, the original charge density 
+  ! :math:`\rho(\mathbf{r}) = \sum_i q_i \delta(\mathbf{r} - \mathbf{r}_i)` is split by
+  !
+  ! .. math::
+  !   :nowrap:
+  !
+  !   \begin{eqnarray}
+  !   \rho(\mathbf{r}) & = & \rho_s(\mathbf{r}) + \rho_l(\mathbf{r}) \\
+  !   \rho_s(\mathbf{r}) & = & \sum_i \left[ q_i \delta(\mathbf{r} - \mathbf{r}_i) - q_i G_\sigma(\mathbf{r} - \mathbf{r}_i) \right] \\
+  !   \rho_l(\mathbf{r}) & = & \sum_i q_i G_\sigma(\mathbf{r} - \mathbf{r}_i) \\
+  !   G_\sigma(\mathbf{r}) & = & \frac{1}{(2 \pi \sigma^2)^{3/2}} \exp\left( -\frac{|\mathbf{r}|^2}{2 \sigma^2} \right)
+  !   \end{eqnarray}
+  !
+  ! Here :math:`\rho_l` generates a long range interaction since at large distances the Gaussian densities
+  ! :math:`G_\sigma` appear the same as point charges 
+  ! (:math:`\lim_{\sigma/r \to 0} G_\sigma(\mathbf{r}) = \delta(\mathbf{r})`). 
+  ! Since the charge density is smooth, so will be the potential it creates.
+  ! The density :math:`\rho_s` exhibits short ranged interactions for the same reason: 
+  ! At distances longer than the width of the
+  ! Gaussians the point charges are screened by the Gaussians which exactly cancel them
+  ! (:math:`\lim_{\sigma/r \to 0} \delta(\mathbf{r}) - G_\sigma(\mathbf{r}) = 0`).
+  !
+  ! The short ranged interactions are directly calculated in real space
+  !
+  ! .. math::
+  !    :nowrap:
+  !
+  !    \begin{eqnarray}
+  !    E_s & = & \frac{1}{4 \pi \varepsilon_0} \int \frac{\rho_s(\mathbf{r}) \rho_s(\mathbf{r}')}{|\mathbf{r} - \mathbf{r}'|} \mathrm{d}^3 r \mathrm{d}^3 r' \\
+  !        & = & \frac{1}{4 \pi \varepsilon_0} \sum_{(i,j)} \frac{q_i q_j}{r_{ij}} \mathrm{erfc} \left( \frac{r_{ij}}{\sigma \sqrt{2}} \right).
+  !    \end{eqnarray}
+  !
+  ! The complementary error function :math:`\mathrm{erfc}(r) = 1 - \mathrm{erf}(r) = 1 - \frac{2}{\sqrt{\pi}} \int_0^r e^{-t^2/2} \mathrm{d}t` makes the sum converge rapidly as :math:`\frac{r_{ij}}{\sigma} \to \infty`.
+  !
+  ! The long ranged interaction can be calculated in reciprocal space by Fourier transformation. The result is
+  !
+  ! .. math::
+  !    :nowrap:
+  !
+  !    \begin{eqnarray}
+  !    E_l & = & \frac{1}{2 V \varepsilon_0} \sum_{\mathbf{k} \ne 0} \frac{e^{-\sigma^2 k^2 / 2}}{k^2} |S(\mathbf{k})|^2 - \frac{1}{4 \pi \varepsilon_0} \frac{1}{\sqrt{2 \pi} \sigma} \sum_i^N q_i^2\\
+  !    S(\mathbf{k}) & = & \sum_i^N q_i e^{\mathrm{i} \mathbf{k} \cdot \mathbf{r}_i} 
+  !    \end{eqnarray}
+  ! 
+  ! The first sum in :math:`E_l` runs over the reciprocal lattice 
+  ! :math:`\mathbf{k} = k_1 \mathbf{b}_1 + k_2 \mathbf{b}_2 + k_3 \mathbf{b}_3` where :math:`\mathbf{b}_i`
+  ! are the vectors spanning the reciprocal cell (:math:`[\mathbf{b}_1 \mathbf{b}_2 \mathbf{b}_3] = ([\mathbf{v}_1 \mathbf{v}_2 \mathbf{v}_3]^{-1})^T` where :math:`\mathbf{v}_i` are the real space cell vectors).
+  ! The latter sum is the self energy of each point charge in the potential of the particular Gaussian that 
+  ! screens the charge, and the sum runs
+  ! over all charges in the supercell spanning the periodic system. 
+  ! (The self energy must be removed because it is present in the first sum even though when evaluating
+  ! the potential at the position of a charge
+  ! due to the other charges, no screening Gaussian function should be placed over the charge itself.)
+  ! Likewise the sum in the structure factor :math:`S(\mathbf{k})` runs over all charges in the supercell.
+  ! 
+  ! The total energy is then the sum of the short and long range energies
+  !
+  ! .. math::
+  !
+  !    E = E_s + E_l.
+  !
+  ! .. [#] In fact, the sum converges only conditionally meaning the result depends on the order of summation. Physically this is not a problem, because one never has infinite lattices.
+  !
+  ! *n_atoms number of atoms
+  ! *atoms list of atoms
+  ! *cell the supercell containing the system
+  ! *real_cutoff Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
+  ! *reciprocal_cutoff The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
+  ! *gaussian_width The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
+  ! *electric_constant The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
+  ! *filter a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
+  ! *scaler a list of numerical values to scale the individual charges of the atoms
+  ! *include_dipole_correction if true, a dipole correction term is included in the energy
+  ! *total_energy the calculated energy
+  subroutine calculate_ewald_energy(n_atoms,atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
+       electric_constant,filter,scaler,include_dipole_correction,total_energy)
+    implicit none
+    type(atom) :: atoms(n_atoms)
+    type(supercell), intent(in) :: cell
+    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(n_atoms)
+    integer, intent(in) :: n_atoms, reciprocal_cutoff(3)
+    double precision, intent(out) :: total_energy
+    logical, intent(in) :: filter(n_atoms), include_dipole_correction
+    double precision :: energy(7), tmp_energy(7), charge1, charge2, inv_eps_2v, inv_eps_4pi, &
+         separation(3), distance, inv_sigma_sqrt_2pi, inv_sigma_sqrt_2, &
+         s_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
+         tmp_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
+         k_vector(3), dot, coords2(3)
+    integer :: index1, index2, j, k1, k2, k3, offset(3)
+    type(atom) :: atom1, atom2
+    type(neighbor_list) :: nbors1
+    logical :: evaluate
+
+    energy = 0.d0
+    tmp_energy = 0.d0
+    total_energy = 0.d0
+    s_factor = 0.d0
+    tmp_factor = 0.d0    
+
+    inv_eps_4pi = 1.d0 / (4.d0 * pi * electric_constant)
+    inv_eps_2v = 1.d0 / (2.d0 * cell%volume * electric_constant)
+    inv_sigma_sqrt_2 = 1.d0 / (sqrt(2.d0) * gaussian_width)
+    inv_sigma_sqrt_2pi = 1.d0 / (sqrt(2.d0 * pi) * gaussian_width)
+
+    ! loop over atoms
+    do index1 = 1, n_atoms
+       if(is_my_atom(index1) .and. filter(index1))then
+          atom1 = atoms(index1)
+          nbors1 = atom1%neighbor_list
+          charge1 = atom1%charge*scaler(index1)
+
+          !
+          ! calculate the real space sum
+          !
+          if(charge1 /= 0.d0)then
+             ! loop over neighbors
+             do j = 1, nbors1%n_neighbors
+                
+                ! neighboring atom
+                index2 = nbors1%neighbors(j)
+                
+                ! prevent double counting (pick index1 < index2)
+                if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
+
+                   atom2 = atoms(index2)
+                   charge2 = atom2%charge*scaler(index2)
+                   ! calculate atom1-atom2 separation vector
+                   ! and distance
+                   call separation_vector(atom1%position, &
+                        atom2%position, &
+                        nbors1%pbc_offsets(1:3,j), &
+                        cell, &
+                        separation) ! in Geometry.f90
+                   distance = .norm.separation
+                   
+                   if(distance < real_cutoff)then
+                      !write(*,'(A,I8,I8,F8.2,F8.2,F8.2,F10.3)') "pair ", index1, index2, separation, distance
+
+                      ! q_i q_j / r * erfc(r / (sqrt(2) sigma))
+                      energy(1) = energy(1) + charge1*charge2/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
+                   end if
+
+                end if
+
+             end do
+
+             !
+             ! calculate the structure factors
+             !
+             do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+                do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+                   do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                      if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
+                         
+                         k_vector = k1*cell%reciprocal_cell(1:3,1) + &
+                              k2*cell%reciprocal_cell(1:3,2) + &
+                              k3*cell%reciprocal_cell(1:3,3)
+                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+
+                         ! S(k) = q exp(i k.r) = q [cos(k.r) + i sin(k.r)]
+                         tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
+                              (/ charge1 * cos(dot), charge1 * sin(dot) /)
+                         
+                      end if
+                   end do
+                end do
+             end do
+
+             !
+             ! calculate the self energy
+             !
+             energy(2) = energy(2) + charge1*charge1
+             
+             !
+             ! calculate the charged background correction
+             !
+             energy(4) = energy(4) + charge1 
+             
+             !
+             ! calculate the dipole correction
+             !
+             if(include_dipole_correction)then
+                energy(5:7) = energy(5:7) + charge1 * atom1%position(1:3)
+             end if
+             
+          end if
+
+       end if
+    end do
+
+#ifdef MPI
+    ! collect structure factors from all cpus in MPI
+    call mpi_allreduce(tmp_factor,s_factor,size(s_factor),mpi_double_precision,&
+         mpi_sum,mpi_comm_world,mpistat)
+#else
+    s_factor = tmp_factor
+#endif
+    
+    !
+    ! calculate the reciprocal space sum
+    !
+    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+          do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+             if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
+                      
+                k_vector = k1*cell%reciprocal_cell(1:3,1) + &
+                     k2*cell%reciprocal_cell(1:3,2) + &
+                     k3*cell%reciprocal_cell(1:3,3)
+                distance = .norm.k_vector
+
+                ! exp(- sigma^2 k^2 / 2) / k^2 |S(k)|^2
+                ! |z|^2 = x^2 + y^2
+                energy(3) = energy(3) + exp(-gaussian_width*gaussian_width*distance*distance*0.5d0) / &
+                     (distance*distance) * &
+                     (s_factor(1,k1,k2,k3)*s_factor(1,k1,k2,k3) + s_factor(2,k1,k2,k3)*s_factor(2,k1,k2,k3))
+    
+             end if
+          end do
+       end do
+    end do
+
+#ifdef MPI
+    ! collect energies from all cpus in MPI (energy -> tmp_energy)
+    call mpi_allreduce(energy,tmp_energy,size(energy),mpi_double_precision,&
+         mpi_sum,mpi_comm_world,mpistat)
+#else
+    tmp_energy = energy
+#endif
+
+    ! multiply with leading coefficients
+    energy(1) = tmp_energy(1) * inv_eps_4pi ! real space
+    energy(2) = -tmp_energy(2) * inv_eps_4pi * inv_sigma_sqrt_2pi ! self energy
+    energy(3) = tmp_energy(3) * inv_eps_2v ! reciprocal space
+    energy(4) = - tmp_energy(4)*tmp_energy(4) * 0.5d0 * inv_eps_2v * gaussian_width*gaussian_width ! charged background
+    energy(5) = (tmp_energy(5:7).o.tmp_energy(5:7)) * inv_eps_2v / 3.d0 ! dipole correction
+    energy(6) = 0.d0
+    energy(7) = 0.d0
+
+    !write(*,'(A,F10.5,F10.5,F10.5,F10.5,F10.5)') "components", energy(1:5)
+
+    total_energy = total_energy + sum(energy)
+
+
+  end subroutine calculate_ewald_energy
+ 
+
+  ! Calculates the forces due to long ranged :math:`\frac{1}{r}` potentials.
+  ! These forces are the gradients of the energies :math:`U` given by :func:`calculate_ewald_energy`
+  !
+  ! .. math::
+  !
+  !    \mathbf{F}_\alpha = - \nabla_\alpha U
+  !
+  ! *n_atoms number of atoms
+  ! *atoms list of atoms
+  ! *cell the supercell containing the system
+  ! *real_cutoff Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
+  ! *reciprocal_cutoff The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
+  ! *gaussian_width The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
+  ! *electric_constant The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
+  ! *filter a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
+  ! *scaler a list of numerical values to scale the individual charges of the atoms
+  ! *include_dipole_correction if true, a dipole correction term is included in the energy
+  ! *total_forces the calculated forces
+  subroutine calculate_ewald_forces(n_atoms,atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
+       electric_constant,filter,scaler,include_dipole_correction,total_forces)
+    implicit none
+    type(atom) :: atoms(n_atoms)
+    type(supercell), intent(in) :: cell
+    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(n_atoms)
+    integer, intent(in) :: n_atoms, reciprocal_cutoff(3)
+    double precision, intent(out) :: total_forces(3,n_atoms)
+    logical, intent(in) :: filter(n_atoms), include_dipole_correction
+    double precision :: forces(3,3,n_atoms), sum_forces(3,3,n_atoms), tmp_forces(3), charge1, charge2, &
+         inv_eps_2v, inv_eps_4pi, sin_dot, cos_dot, &
+         separation(3), distance, inv_dist, inv_sigma_sqrt_2pi, &
+         inv_sigma_sqrt_2, inv_sigma_sqrt_2perpi, inv_sigma_sq_2, &
+         s_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
+         tmp_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
+         nabla_factor(3, 2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
+         tmp_nabla_factor(3, 2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
+         k_vector(3), dot, &
+         dipole(1:3), tmp_dipole(1:3)
+    integer :: index1, index2, j, k1, k2, k3
+    type(atom) :: atom1, atom2
+    type(neighbor_list) :: nbors1
+
+    forces = 0.d0
+    tmp_forces = 0.d0
+    total_forces = 0.d0
+    s_factor = 0.d0
+    tmp_factor = 0.d0
+    nabla_factor = 0.d0
+    tmp_nabla_factor = 0.d0
+
+    inv_eps_4pi = 1.d0 / (4.d0 * pi * electric_constant)
+    inv_eps_2v = 1.d0 / (2.d0 * cell%volume * electric_constant)
+    inv_sigma_sqrt_2 = 1.d0 / (sqrt(2.d0) * gaussian_width)
+    inv_sigma_sqrt_2pi = 1.d0 / (sqrt(2.d0 * pi) * gaussian_width)
+    inv_sigma_sqrt_2 = 1.d0 / (sqrt(2.d0) * gaussian_width)
+    inv_sigma_sq_2 = inv_sigma_sqrt_2*inv_sigma_sqrt_2
+    inv_sigma_sqrt_2perpi = 2.d0 * inv_sigma_sqrt_2pi
+
+    !
+    ! calculate the real space sum
+    !
+
+    ! loop over atoms
+    do index1 = 1, n_atoms
+       if(is_my_atom(index1) .and. filter(index1))then
+          atom1 = atoms(index1)
+          nbors1 = atom1%neighbor_list
+          charge1 = atom1%charge*scaler(index1)
+
+          if(charge1 /= 0.d0)then
+             ! loop over neighbors
+             do j = 1, nbors1%n_neighbors
+                
+                ! neighboring atom
+                index2 = nbors1%neighbors(j)
+                
+                ! prevent double counting
+                if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
+                   atom2 = atoms(index2)
+                   charge2 = atom2%charge*scaler(index2)
+                   
+                   ! calculate atom1-atom2 separation vector
+                   ! and distance
+                   call separation_vector(atom1%position, &
+                        atom2%position, &
+                        nbors1%pbc_offsets(1:3,j), &
+                        cell, &
+                        separation) ! in Geometry.f90
+                   distance = .norm.separation
+                   inv_dist = 1.d0 / distance
+                   
+                   if(distance < real_cutoff)then
+                      ! q_i q_j * 
+                      ! ( erfc(r/(sigma*sqrt(2)))/r^2 + 
+                      ! 1/sigma sqrt(2/pi) exp(-r^2/(2 sigma^2))/r ) \hat{r} 
+                      tmp_forces =  -inv_eps_4pi * charge1*charge2 * ( &
+                           ( 1 - erf(distance*inv_sigma_sqrt_2) ) * inv_dist*inv_dist + &
+                           inv_sigma_sqrt_2perpi * exp( -distance*distance*inv_sigma_sq_2 ) * inv_dist  ) * &
+                           separation * inv_dist
+                      
+                      forces(1:3,1,index1) = forces(1:3,1,index1) + tmp_forces
+                      forces(1:3,1,index2) = forces(1:3,1,index2) - tmp_forces
+                   end if
+
+                end if
+                
+             end do
+
+             !
+             ! calculate the dipole correction terms
+             !
+             if(include_dipole_correction)then
+                tmp_dipole(1:3) = tmp_dipole(1:3) + charge1 * atom1%position(1:3)
+             end if
+
+             !
+             ! calculate the structure factors
+             !             
+             do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+                do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+                   do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                      if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
+                         
+                         k_vector = k1*cell%reciprocal_cell(1:3,1) + &
+                              k2*cell%reciprocal_cell(1:3,2) + &
+                              k3*cell%reciprocal_cell(1:3,3)
+                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                         sin_dot = sin(dot)
+                         cos_dot = cos(dot)
+                         
+                         ! this is the complex conjugate of S(k):
+                         ! S*(k) = q exp(- i k.r) = q [cos(k.r) - i sin(k.r)]
+                         tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
+                              (/ charge1 * cos_dot, - charge1 * sin_dot /)
+                         
+                         ! \nabla S(k) = i q k [cos(k.r) + i sin(k.r)]
+                         tmp_nabla_factor(1:3,1,index1,k1,k2,k3) = &
+                              -charge1 * sin_dot * k_vector ! real part
+                         tmp_nabla_factor(1:3,2,index1,k1,k2,k3) = &
+                              charge1 * cos_dot * k_vector ! imaginary part              
+                         
+                      end if
+                   end do
+                end do
+             end do
+          
+          end if
+
+          ! self energy or charged background do not contribute to forces
+          
+       end if
+    end do
+
+#ifdef MPI
+    ! collect structure factors from all cpus in MPI (tmp_factor -> factor)
+    call mpi_allreduce(tmp_factor,s_factor,size(s_factor),mpi_double_precision,&
+         mpi_sum,mpi_comm_world,mpistat)
+    call mpi_allreduce(tmp_nabla_factor,nabla_factor,size(nabla_factor),mpi_double_precision,&
+         mpi_sum,mpi_comm_world,mpistat)
+    if(include_dipole_correction)then
+       call mpi_allreduce(tmp_dipole,dipole,1,mpi_double_precision,&
+            mpi_sum,mpi_comm_world,mpistat)
+    end if
+#else
+    s_factor = tmp_factor
+    nabla_factor = tmp_nabla_factor
+    dipole = tmp_dipole
+#endif
+
+    do index1 = 1, n_atoms
+    
+       !
+       ! calculate the dipole correction
+       ! 
+       if(include_dipole_correction)then
+          forces(1:3,3,index1) = atoms(index1)%charge*scaler(index1) * inv_eps_2v / (-1.5d0) * dipole(1:3)
+       end if
+
+
+       !
+       ! calculate the reciprocal space sum
+       !
+       do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+          do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+             do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
+                   
+                   k_vector = k1*cell%reciprocal_cell(1:3,1) + &
+                        k2*cell%reciprocal_cell(1:3,2) + &
+                        k3*cell%reciprocal_cell(1:3,3)
+                   distance = .norm.k_vector
+                   
+                   ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
+                   ! Re[ z1 z2 ] = x1 x2 - y1 y2
+                   forces(1:3,2,index1) = forces(1:3,2,index1) - inv_eps_2v * &
+                        exp(-gaussian_width*gaussian_width*distance*distance*0.5d0) / &
+                        (distance*distance) * 2.d0 * &
+                        (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1,index1,k1,k2,k3) - &
+                        s_factor(2,k1,k2,k3)*nabla_factor(1:3,2,index1,k1,k2,k3))
+                   
+                end if
+             end do
+          end do
+       end do
+    end do
+
+#ifdef MPI
+    ! collect forces from all cpus in MPI
+    call mpi_allreduce(forces,sum_forces,size(forces),mpi_double_precision,&
+         mpi_sum,mpi_comm_world,mpistat)
+    total_forces(1:3,1:n_atoms) = sum_forces(1:3,1,1:n_atoms) + &
+         sum_forces(1:3,2,1:n_atoms) + sum_forces(1:3,3,1:n_atoms)
+#else
+    total_forces(1:3,1:n_atoms) = forces(1:3,1,1:n_atoms) + &
+         forces(1:3,2,1:n_atoms) + forces(1:3,3,1:n_atoms)
+#endif
+
+
+  end subroutine calculate_ewald_forces
+
 
 
 

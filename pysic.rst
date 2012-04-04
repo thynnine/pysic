@@ -30,6 +30,7 @@ Classes of the pysic module
 
    pysic_class
    potential_class
+   coulombsummation_class
    coordinator_class
    bondorderparameters_class
    chargerelaxation_class

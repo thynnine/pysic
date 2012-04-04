@@ -84,6 +84,7 @@ to, if the routine is just a redirect of the call.
     - :func:`finish_mpi`
     - :func:`get_cell_vectors`
     - :func:`get_cpu_id`
+    - :func:`get_ewald_energy`
     - :func:`get_mpi_list_of_atoms`
     - :func:`get_number_of_atoms`
     - :func:`get_number_of_cpus`
@@ -100,6 +101,7 @@ to, if the routine is just a redirect of the call.
     - :func:`number_of_targets_of_bond_order_factor`
     - :func:`number_of_targets_of_potential`
     - :func:`release`
+    - :func:`set_ewald_parameters`
     - :func:`start_bond_order_factors`
     - :func:`start_mpi`
     - :func:`start_potentials`
@@ -613,6 +615,23 @@ Full documentation of subroutines in pysic_interface
     **id**: integer  **intent(out)**    *scalar*  
         cpu id number in MPI - 0 in serial mode
             
+  .. function:: get_ewald_energy(real_cut, reciprocal_cut, sigma, epsilon, energy)
+
+    Debugging routine for Ewald
+
+    Parameters:
+
+    real_cut: double precision  *intent(in)*    *scalar*  
+        
+    reciprocal_cut: integer  *intent(in)*    *size(3)*  
+        
+    sigma: double precision  *intent(in)*    *scalar*  
+        
+    epsilon: double precision  *intent(in)*    *scalar*  
+        
+    **energy**: double precision  **intent(out)**    *scalar*  
+        
+            
   .. function:: get_mpi_list_of_atoms(n_atoms, cpu_atoms)
 
     Returns a logical array containing true for every
@@ -833,6 +852,26 @@ Full documentation of subroutines in pysic_interface
     
     Calls :func:`core_release_all_memory`
 
+            
+  .. function:: set_ewald_parameters(n_atoms, real_cut, reciprocal_cut, sigma, epsilon, scaler)
+
+    Sets the parameters for Ewald summation in the core.
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    real_cut: double precision  *intent(in)*    *scalar*  
+        the real-space cutoff
+    reciprocal_cut: integer  *intent(in)*    *size(3)*  
+        the k-space cutoffs
+    sigma: double precision  *intent(in)*    *scalar*  
+        the split parameter
+    epsilon: double precision  *intent(in)*    *scalar*  
+        electric constant
+    scaler: double precision  *intent(in)*    *size(n_atoms)*  
+        scaling factors for the individual charges
             
   .. function:: start_bond_order_factors()
 

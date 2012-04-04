@@ -1015,4 +1015,32 @@ contains
   end subroutine release
 
 
+  ! Sets the parameters for Ewald summation in the core. 
+  !
+  ! *real_cut the real-space cutoff
+  ! *reciprocal_cut the k-space cutoffs
+  ! *sigma the split parameter
+  ! *epsilon electric constant  
+  ! *scaler scaling factors for the individual charges
+  subroutine set_ewald_parameters(n_atoms, real_cut, reciprocal_cut, sigma, epsilon, scaler)
+    implicit none
+    double precision, intent(in) :: real_cut, sigma, epsilon, scaler(n_atoms)
+    integer, intent(in) :: reciprocal_cut(3), n_atoms
+
+    call core_set_ewald_parameters(n_atoms, real_cut, reciprocal_cut, sigma, epsilon, scaler) ! in Core.f90
+
+  end subroutine set_ewald_parameters
+
+
+  ! Debugging routine for Ewald
+  subroutine get_ewald_energy(real_cut, reciprocal_cut, sigma, epsilon, energy)
+    implicit none
+    double precision, intent(in) :: real_cut, sigma, epsilon
+    integer, intent(in) :: reciprocal_cut(3)
+    double precision, intent(out) :: energy
+
+    call core_get_ewald_energy(real_cut, reciprocal_cut, sigma, epsilon, energy)
+    
+  end subroutine get_ewald_energy
+
 end module pysic_interface

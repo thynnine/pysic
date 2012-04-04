@@ -237,12 +237,12 @@ In principle, one can attach a different set of parameters to each of these.
 Often though the parameters are mostly the same,
 and writing these kinds of lists for all possible combinations is cumbersome. 
 To help in generating the tables, the utility method 
-:meth:`~pysic.BondOrderParameters.expand_symbols_table` can be used.
+:meth:`~pysic_utility.expand_symbols_table` can be used.
 For instance, the full list of triplets above can be created with::
 
-   >>> pysic.BondOrderParameters.expand_symbols_table([['C', 'O', 'H'], 
-   ...                                                 ['C', 'O', 'H'], 
-   ...                                                 ['C', 'O', 'H']])
+   >>> pysic_utility.expand_symbols_table([['C', 'O', 'H'], 
+   ...                                     ['C', 'O', 'H'], 
+   ...                                     ['C', 'O', 'H']])
 
 .. file:list of bond order factors
 

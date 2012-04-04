@@ -36,6 +36,13 @@ to Python are simply calling routines here.
     - :data:`bond_factors_allocated`
     - :data:`bond_storage_allocated`
     - :data:`cell`
+    - :data:`evaluate_ewald`
+    - :data:`ewald_allocated`
+    - :data:`ewald_cutoff`
+    - :data:`ewald_epsilon`
+    - :data:`ewald_k_cutoffs`
+    - :data:`ewald_scaler`
+    - :data:`ewald_sigma`
     - :data:`group_index_save_slot`
     - :data:`interactions`
     - :data:`n_bond_factors`
@@ -79,11 +86,13 @@ to Python are simply calling routines here.
     - :func:`core_get_bond_order_gradients`
     - :func:`core_get_bond_order_sums`
     - :func:`core_get_cell_vectors`
+    - :func:`core_get_ewald_energy`
     - :func:`core_get_number_of_atoms`
     - :func:`core_post_process_bond_order_factors`
     - :func:`core_post_process_bond_order_gradients`
     - :func:`core_post_process_bond_order_gradients_of_factor`
     - :func:`core_release_all_memory`
+    - :func:`core_set_ewald_parameters`
     - :func:`core_update_atom_charges`
     - :func:`core_update_atom_coordinates`
     - :func:`list_atoms`
@@ -137,6 +146,52 @@ Full documentation of global variables in pysic_core
     type(supercell)    *scalar*    
     
     a :data:`supercell` object representing the simulation cell
+    
+  .. data:: evaluate_ewald
+
+    logical    *scalar*    
+
+    *initial value* = .false.
+    
+    switch for enabling Ewald summation of coulomb interactions
+    
+  .. data:: ewald_allocated
+
+    logical    *scalar*    
+
+    *initial value* = .false.
+    
+    
+    
+  .. data:: ewald_cutoff
+
+    double precision    *scalar*    
+    
+    
+    
+  .. data:: ewald_epsilon
+
+    double precision    *scalar*    
+    
+    
+    
+  .. data:: ewald_k_cutoffs
+
+    integer    *size(3)*    
+    
+    
+    
+  .. data:: ewald_scaler
+
+    double precision  *pointer*  *size(:)*    
+    
+    
+    
+  .. data:: ewald_sigma
+
+    double precision    *scalar*    
+    
+    
     
   .. data:: group_index_save_slot
 
@@ -797,6 +852,23 @@ Full documentation of subroutines in pysic_core
     **vectors**: double precision  **intent(out)**    *size(3, 3)*  
         A 3x3 matrix containing the vectors spanning the supercell. The first index runs over xyz and the second index runs over the three vectors.
             
+  .. function:: core_get_ewald_energy(real_cut, reciprocal_cut, sigma, epsilon, energy)
+
+    Debug routine for Ewald
+
+    Parameters:
+
+    real_cut: double precision  *intent(in)*    *scalar*  
+        
+    reciprocal_cut: integer  *intent(in)*    *size(3)*  
+        
+    sigma: double precision  *intent(in)*    *scalar*  
+        
+    epsilon: double precision  *intent(in)*    *scalar*  
+        
+    **energy**: double precision  **intent(out)**    *scalar*  
+        
+            
   .. function:: core_get_number_of_atoms(n_atoms)
 
     Returns the number of atoms in the array allocated in the core.
@@ -927,6 +999,26 @@ Full documentation of subroutines in pysic_core
 
     Release all allocated pointer arrays in the core.
 
+            
+  .. function:: core_set_ewald_parameters(n_atoms, real_cut, reciprocal_cut, sigma, epsilon, scaler)
+
+    Sets the parameters for Ewald summation in the core.
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    real_cut: double precision  *intent(in)*    *scalar*  
+        the real-space cutoff
+    reciprocal_cut: integer  *intent(in)*    *size(3)*  
+        the k-space cutoffs
+    sigma: double precision  *intent(in)*    *scalar*  
+        the split parameter
+    epsilon: double precision  *intent(in)*    *scalar*  
+        electric constant
+    scaler: double precision  *intent(in)*    *size(n_atoms)*  
+        scaling factors for the individual charges
             
   .. function:: core_update_atom_charges(n_atoms, charges)
 

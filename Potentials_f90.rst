@@ -110,6 +110,8 @@ must be updated accordingly.
     Modules used by potentials
     --------------------------
     - :ref:`geometry`
+    - :ref:`mpi`
+    - :ref:`quaternions`
     - :ref:`utility`
 
     List of global variables in potentials
@@ -148,6 +150,8 @@ must be updated accordingly.
         
     - :func:`bond_order_factor_affects_atom`
     - :func:`bond_order_factor_is_in_group`
+    - :func:`calculate_ewald_energy`
+    - :func:`calculate_ewald_forces`
     - :func:`clear_bond_order_factor_characterizers`
     - :func:`clear_potential_characterizers`
     - :func:`create_bond_order_factor`
@@ -541,6 +545,154 @@ Full documentation of subroutines in potentials
         the index for the potential
     **in_group**: logical  **intent(out)**    *scalar*  
         true if the factor is a member of the group
+            
+  .. function:: calculate_ewald_energy(n_atoms, atoms, cell, real_cutoff, reciprocal_cutoff, gaussian_width, electric_constant, filter, scaler, include_dipole_correction, total_energy)
+
+    Calculates the energy of :math:`\frac{1}{r}` potentials through Ewald summation.
+    
+    If a periodic system contains charges interacting via the :math:`\frac{1}{r}` Coulomb potential,
+    direct summation of the interactions
+    
+    .. math::
+       :label: direct_sum
+    
+       E = \sum_{(i,j)} \frac{1}{4\pi\epsilon_0}\frac{q_i q_j}{r_{ij}},
+    
+    where the sum is over pairs of charges :math:`q_i, q_j`
+    (charges of the entire system, not just the simulation cell) and the distance between the charges is
+    :math:`r_{ij} = |\mathbf{r}_j - \mathbf{r}_i|`,
+    does not work in general because the sum :eq:`direct_sum` converges very slowly. [#]_ Therefore truncating the
+    sum may lead to severe errors.
+    
+    The standard technique for overcoming this problem is the so called Ewald summation method.
+    The idea is to split the long ranged and singular Coulomb potential to a short ranged singular and
+    long ranged smooth parts, and calculate the long ranged part in reciprocal space via Fourier transformations.
+    This is possible since the system is periodic and the same supercell repeats infinitely in all directions.
+    In practice the calculation can be done by adding (and subtracting) Gaussian charge densities over the
+    point charges to screen the
+    potential in real space. That is, the original charge density
+    :math:`\rho(\mathbf{r}) = \sum_i q_i \delta(\mathbf{r} - \mathbf{r}_i)` is split by
+    
+    .. math::
+      :nowrap:
+    
+      \begin{eqnarray}
+      \rho(\mathbf{r}) & = & \rho_s(\mathbf{r}) + \rho_l(\mathbf{r}) \\
+      \rho_s(\mathbf{r}) & = & \sum_i \left[ q_i \delta(\mathbf{r} - \mathbf{r}_i) - q_i G_\sigma(\mathbf{r} - \mathbf{r}_i) \right] \\
+      \rho_l(\mathbf{r}) & = & \sum_i q_i G_\sigma(\mathbf{r} - \mathbf{r}_i) \\
+      G_\sigma(\mathbf{r}) & = & \frac{1}{(2 \pi \sigma^2)^{3/2}} \exp\left( -\frac{|\mathbf{r}|^2}{2 \sigma^2} \right)
+      \end{eqnarray}
+    
+    Here :math:`\rho_l` generates a long range interaction since at large distances the Gaussian densities
+    :math:`G_\sigma` appear the same as point charges
+    (:math:`\lim_{\sigma/r \to 0} G_\sigma(\mathbf{r}) = \delta(\mathbf{r})`).
+    Since the charge density is smooth, so will be the potential it creates.
+    The density :math:`\rho_s` exhibits short ranged interactions for the same reason:
+    At distances longer than the width of the
+    Gaussians the point charges are screened by the Gaussians which exactly cancel them
+    (:math:`\lim_{\sigma/r \to 0} \delta(\mathbf{r}) - G_\sigma(\mathbf{r}) = 0`).
+    
+    The short ranged interactions are directly calculated in real space
+    
+    .. math::
+       :nowrap:
+    
+       \begin{eqnarray}
+       E_s & = & \frac{1}{4 \pi \varepsilon_0} \int \frac{\rho_s(\mathbf{r}) \rho_s(\mathbf{r}')}{|\mathbf{r} - \mathbf{r}'|} \mathrm{d}^3 r \mathrm{d}^3 r' \\
+           & = & \frac{1}{4 \pi \varepsilon_0} \sum_{(i,j)} \frac{q_i q_j}{r_{ij}} \mathrm{erfc} \left( \frac{r_{ij}}{\sigma \sqrt{2}} \right).
+       \end{eqnarray}
+    
+    The complementary error function :math:`\mathrm{erfc}(r) = 1 - \mathrm{erf}(r) = 1 - \frac{2}{\sqrt{\pi}} \int_0^r e^{-t^2/2} \mathrm{d}t` makes the sum converge rapidly as :math:`\frac{r_{ij}}{\sigma} \to \infty`.
+    
+    The long ranged interaction can be calculated in reciprocal space by Fourier transformation. The result is
+    
+    .. math::
+       :nowrap:
+    
+       \begin{eqnarray}
+       E_l & = & \frac{1}{2 V \varepsilon_0} \sum_{\mathbf{k} \ne 0} \frac{e^{-\sigma^2 k^2 / 2}}{k^2} |S(\mathbf{k})|^2 - \frac{1}{4 \pi \varepsilon_0} \frac{1}{\sqrt{2 \pi} \sigma} \sum_i^N q_i^2\\
+       S(\mathbf{k}) & = & \sum_i^N q_i e^{\mathrm{i} \mathbf{k} \cdot \mathbf{r}_i}
+       \end{eqnarray}
+    
+    The first sum in :math:`E_l` runs over the reciprocal lattice
+    :math:`\mathbf{k} = k_1 \mathbf{b}_1 + k_2 \mathbf{b}_2 + k_3 \mathbf{b}_3` where :math:`\mathbf{b}_i`
+    are the vectors spanning the reciprocal cell (:math:`[\mathbf{b}_1 \mathbf{b}_2 \mathbf{b}_3] = ([\mathbf{v}_1 \mathbf{v}_2 \mathbf{v}_3]^{-1})^T` where :math:`\mathbf{v}_i` are the real space cell vectors).
+    The latter sum is the self energy of each point charge in the potential of the particular Gaussian that
+    screens the charge, and the sum runs
+    over all charges in the supercell spanning the periodic system.
+    (The self energy must be removed because it is present in the first sum even though when evaluating
+    the potential at the position of a charge
+    due to the other charges, no screening Gaussian function should be placed over the charge itself.)
+    Likewise the sum in the structure factor :math:`S(\mathbf{k})` runs over all charges in the supercell.
+    
+    The total energy is then the sum of the short and long range energies
+    
+    .. math::
+    
+       E = E_s + E_l.
+    
+    .. [#] In fact, the sum converges only conditionally meaning the result depends on the order of summation. Physically this is not a problem, because one never has infinite lattices.
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        number of atoms
+    atoms: type(atom)  *intent()*    *size(n_atoms)*  
+        list of atoms
+    cell: type(supercell)  *intent(in)*    *scalar*  
+        the supercell containing the system
+    real_cutoff: double precision  *intent(in)*    *scalar*  
+        Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
+    reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
+        The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
+    gaussian_width: double precision  *intent(in)*    *scalar*  
+        The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
+    electric_constant: double precision  *intent(in)*    *scalar*  
+        The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
+    filter: logical  *intent(in)*    *size(n_atoms)*  
+        a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
+    scaler: double precision  *intent(in)*    *size(n_atoms)*  
+        a list of numerical values to scale the individual charges of the atoms
+    include_dipole_correction: logical  *intent(in)*    *scalar*  
+        if true, a dipole correction term is included in the energy
+    **total_energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy
+            
+  .. function:: calculate_ewald_forces(n_atoms, atoms, cell, real_cutoff, reciprocal_cutoff, gaussian_width, electric_constant, filter, scaler, include_dipole_correction, total_forces)
+
+    Calculates the forces due to long ranged :math:`\frac{1}{r}` potentials.
+    These forces are the gradients of the energies :math:`U` given by :func:`calculate_ewald_energy`
+    
+    .. math::
+    
+       \mathbf{F}_\alpha = - \nabla_\alpha U
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        number of atoms
+    atoms: type(atom)  *intent()*    *size(n_atoms)*  
+        list of atoms
+    cell: type(supercell)  *intent(in)*    *scalar*  
+        the supercell containing the system
+    real_cutoff: double precision  *intent(in)*    *scalar*  
+        Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
+    reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
+        The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
+    gaussian_width: double precision  *intent(in)*    *scalar*  
+        The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
+    electric_constant: double precision  *intent(in)*    *scalar*  
+        The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
+    filter: logical  *intent(in)*    *size(n_atoms)*  
+        a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
+    scaler: double precision  *intent(in)*    *size(n_atoms)*  
+        a list of numerical values to scale the individual charges of the atoms
+    include_dipole_correction: logical  *intent(in)*    *scalar*  
+        if true, a dipole correction term is included in the energy
+    **total_forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
+        the calculated forces
             
   .. function:: clear_bond_order_factor_characterizers()
 

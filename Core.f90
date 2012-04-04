@@ -61,6 +61,22 @@ module pysic_core
   ! *use_saved_bond_order_gradients Array storing the atom index of the bond gradient stored for indices (group index, target index). Since gradients are needed for all factors (N) with respect to moving all atoms (N), storing them all would require an N x N matrix. Therefore only some are stored. This array is used for searching the stroage to see if the needed gradient is there or needs to be calculated.
   integer, pointer :: use_saved_bond_order_gradients(:,:)
 
+
+  ! ToDo: allow other methods than Ewald for 1/r-summations and make a general framework
+
+  ! *evaluate_ewald switch for enabling Ewald summation of coulomb interactions
+  ! *ewald_k_cutoffs the number of reciprocal cells used in the k-space sum of Coulomb interactions in the Ewald method
+  ! *ewald_cutoff the real-space cutoff for Ewald summation
+  ! *ewald_sigma the splitting parameter :math:`\sigma` for Ewald summation
+  ! *ewald_epsilon the electric constant :math:`\varepsilon_0` used in Ewald summation
+  ! *ewald_scaler scaling factors for individual charges in Ewald summation
+  ! *ewald_allocated logical tag for tracking allocation of the arrays
+  logical :: evaluate_ewald = .false.
+  integer :: ewald_k_cutoffs(3)
+  double precision :: ewald_cutoff, ewald_sigma, ewald_epsilon
+  double precision, pointer :: ewald_scaler(:)
+  logical :: ewald_allocated = .false.
+
 contains
 
 ! !!!: core_release_all_memory
@@ -1430,6 +1446,7 @@ contains
     type(bond_order_parameters) :: bond_params(2)
     integer, pointer :: bond_indices(:), bond_indices2(:)
     logical :: is_active, is_in_group, many_bodies_found, separation3_unknown
+    integer :: offset(3)
 
     bond_orders = 0.d0
     total_bond_orders = 0.d0
@@ -1450,11 +1467,12 @@ contains
 
              ! neighboring atom
              index2 = nbors1%neighbors(j)
+             offset(1:3) = nbors1%pbc_offsets(1:3,j)
 
              ! Since we loop over the neighbors of all atoms, we will find the pair
              ! atom1-atom2 = atom2-atom1 twice.
              ! To prevent the double counting, we filter by index2 > index1.
-             if(index2 > index1)then
+             if(pick(index1,index2,offset))then
 
                 atom2 = atoms(index2)
                 atom_list(1) = atom1
@@ -1579,7 +1597,9 @@ contains
                       ! the condition for finding each triplet once is such that
                       ! index 3 must be higher than the index of the atom whose
                       ! neighbors are NOT currently searched
-                      if(index3 > index2)then
+                      ! For the offset check, we want atom2->atom3 offset, which is
+                      ! (atom1->atom3) - (atom1->atom2), the latter baing stored in offset
+                      if(pick(index2,index3,nbors1%pbc_offsets(1:3,l)-offset))then
 
                          ! third atom of the triplet
                          atom3 = atoms(index3)
@@ -1687,7 +1707,9 @@ contains
                       ! the condition for finding each triplet once is such that
                       ! index 3 must be higher than the index of the atom whose
                       ! neighbors are NOT currently searched
-                      if(index3 > index1)then
+                      ! For the offset check we need atom1->atom3 which equals
+                      ! (atom1->atom2) + (atom2->atom3), the former being stored in offset
+                      if(pick(index1,index3,nbors2%pbc_offsets(1:3,l)+offset))then
 
                          ! Third atom of the triplet.
                          atom3 = atoms(index3)
@@ -2171,7 +2193,8 @@ contains
     type(neighbor_list) :: nbors1, nbors2
     type(potential) :: interaction
     integer, pointer :: interaction_indices(:)
-    logical :: is_active, many_bodies_found, separation3_unknown
+    logical :: is_active, many_bodies_found, separation3_unknown, filter(n_atoms)
+    integer :: offset(3)
 
     forces = 0.d0
     total_forces = 0.d0
@@ -2272,11 +2295,12 @@ contains
                           
              ! neighboring atom
              index2 = nbors1%neighbors(j)
+             offset(1:3) = nbors1%pbc_offsets(1:3,j)
 
              ! Since we loop over the neighbors of all atoms, we will find the pair
              ! atom1-atom2 = atom2-atom1 twice.
              ! To prevent the double counting, we filter by index2 > index1.
-             if(index2 > index1)then
+             if(pick(index1,index2,offset))then
                 
                 ! Empty bond gradient storage for atom2 slot (since we have a new atom2)
                 call core_empty_bond_order_gradient_storage(2)
@@ -2480,7 +2504,9 @@ contains
                       ! the condition for finding each triplet once is such that
                       ! index 3 must be higher than the index of the atom whose
                       ! neighbors are NOT currently searched
-                      if(index3 > index2)then
+                      ! For the offset check we need atom2->atom3 which equals
+                      ! (atom1->atom3) - (atom1->atom2), the latter being stored in offset
+                      if(pick(index2,index3,nbors1%pbc_offsets(1:3,l)-offset))then
 
                          ! third atom of the triplet
                          atom3 = atoms(index3)
@@ -2678,7 +2704,9 @@ contains
                       ! the condition for finding each triplet once is such that
                       ! index 3 must be higher than the index of the atom whose
                       ! neighbors are NOT currently searched
-                      if(index3 > index1)then
+                      ! For the offset check we need atom1->atom3 which equals
+                      ! (atom1->atom2) + (atom2->atom3), the former being stored in offset
+                      if(pick(index1,index3,nbors2%pbc_offsets(1:3,l)+offset))then
 
                          ! third atom of the triplet
                          atom3 = atoms(index3)
@@ -2891,6 +2919,14 @@ contains
     total_forces = forces
 #endif
 
+    if(evaluate_ewald)then
+       filter = .true.
+       call calculate_ewald_forces(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
+            ewald_epsilon,filter,ewald_scaler,.true.,forces)
+       total_forces = total_forces + forces
+    end if
+
+
     ! Empty the bond order factor storage and stop searching them from memory.
     ! This is done so that if the geometry changes due to atoms moving, for instance,
     ! then the obsolete factors are not used in error.
@@ -2940,6 +2976,7 @@ contains
     type(potential) :: interaction
     integer, pointer :: interaction_indices(:)
     logical :: is_active, many_bodies_found, separation3_unknown
+    integer :: offset(3)
 
     enegs = 0.d0
     total_enegs = 0.d0
@@ -3014,11 +3051,12 @@ contains
                           
              ! neighboring atom
              index2 = nbors1%neighbors(j)
+             offset(1:3) = nbors1%pbc_offsets(1:3,j)
 
              ! Since we loop over the neighbors of all atoms, we will find the pair
              ! atom1-atom2 = atom2-atom1 twice.
              ! To prevent the double counting, we filter by index2 > index1.
-             if(index2 > index1)then
+             if(pick(index1,index2,offset))then
                 
                 atom2 = atoms(index2)
                 atom_list(1) = atom1
@@ -3165,7 +3203,9 @@ contains
                       ! the condition for finding each triplet once is such that
                       ! index 3 must be higher than the index of the atom whose
                       ! neighbors are NOT currently searched
-                      if(index3 > index2)then
+                      ! For the offset check we need atom2->atom3 which equals
+                      ! (atom1->atom3) - (atom1->atom2), the latter being stored in offset
+                      if(pick(index2,index3,nbors1%pbc_offsets(1:3,l)-offset))then
 
                          ! third atom of the triplet
                          atom3 = atoms(index3)
@@ -3294,7 +3334,9 @@ contains
                       ! the condition for finding each triplet once is such that
                       ! index 3 must be higher than the index of the atom whose
                       ! neighbors are NOT currently searched
-                      if(index3 > index1)then
+                      ! For the offset check we need atom1->atom3 which equals
+                      ! (atom1->atom2) + (atom2->atom3), the former being stored in offset
+                      if(pick(index1,index3,nbors2%pbc_offsets(1:3,l)+offset))then
 
                          ! third atom of the triplet
                          atom3 = atoms(index3)
@@ -3487,6 +3529,9 @@ contains
     type(potential) :: interaction
     integer, pointer :: interaction_indices(:)
     logical :: is_active, many_bodies_found, separation3_unknown
+    double precision :: max_cutoff, sigma
+    logical :: filter(n_atoms)
+    integer :: reci_length(3), offset(3)
 
     energy = 0.d0
     total_energy = 0.d0
@@ -3553,11 +3598,12 @@ contains
                           
              ! neighboring atom
              index2 = nbors1%neighbors(j)
+             offset(1:3) = nbors1%pbc_offsets(1:3,j)
 
              ! Since we loop over the neighbors of all atoms, we will find the pair
              ! atom1-atom2 = atom2-atom1 twice.
              ! To prevent the double counting, we filter by index2 > index1.
-             if(index2 > index1)then
+             if(pick(index1,index2,offset))then
 
                 atom2 = atoms(index2)
                 atom_list(1) = atom1
@@ -3698,7 +3744,9 @@ contains
                       ! the condition for finding each triplet once is such that
                       ! index 3 must be higher than the index of the atom whose
                       ! neighbors are NOT currently searched
-                      if(index3 > index2)then
+                      ! For the offset check we need atom2->atom3 which equals
+                      ! (atom1->atom3) + (atom1->atom2), the latter being stored in offset
+                      if(pick(index1,index3,nbors2%pbc_offsets(1:3,l)+offset))then
 
                          ! third atom of the triplet
                          atom3 = atoms(index3)
@@ -3807,7 +3855,9 @@ contains
                       ! the condition for finding each triplet once is such that
                       ! index 3 must be higher than the index of the atom whose
                       ! neighbors are NOT currently searched
-                      if(index3 > index1)then
+                      ! For the offset check we need atom1->atom3 which equals
+                      ! (atom1->atom2) + (atom2->atom3), the former being stored in offset
+                      if(pick(index1,index3,nbors2%pbc_offsets(1:3,l)+offset))then
 
                          ! third atom of the triplet
                          atom3 = atoms(index3)
@@ -3921,6 +3971,13 @@ contains
 #else
     total_energy = energy
 #endif
+    
+    if(evaluate_ewald)then
+       filter = .true.
+       call calculate_ewald_energy(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
+            ewald_epsilon,filter,ewald_scaler,.true.,energy)
+       total_energy = total_energy + energy
+    end if
 
     ! Empty the bond order factor storage and stop searching them from memory.
     ! This is done so that if the geometry changes due to atoms moving, for instance,
@@ -3929,6 +3986,7 @@ contains
     call core_empty_bond_order_storage()
 
   end subroutine core_calculate_energy
+
 
   ! !!!: list_atoms
 
@@ -4017,6 +4075,53 @@ contains
     end do
 
   end subroutine list_bonds
+
+  ! Debug routine for Ewald
+  subroutine core_get_ewald_energy(real_cut, reciprocal_cut, sigma, epsilon, energy)
+    implicit none
+    double precision, intent(in) :: real_cut, sigma, epsilon
+    integer, intent(in) :: reciprocal_cut(3)
+    double precision, intent(out) :: energy
+    logical :: filter(size(atoms))
+    double precision :: scaler(size(atoms))
+
+    filter = .true.
+    scaler = 1.d0
+
+    call calculate_ewald_energy(size(atoms),atoms,cell,real_cut,reciprocal_cut,sigma,&
+         epsilon,filter,scaler,.true.,energy)
+
+  end subroutine core_get_ewald_energy
+
+
+
+  ! Sets the parameters for Ewald summation in the core. 
+  !
+  ! *real_cut the real-space cutoff
+  ! *reciprocal_cut the k-space cutoffs
+  ! *sigma the split parameter
+  ! *epsilon electric constant
+  ! *scaler scaling factors for the individual charges
+  subroutine core_set_ewald_parameters(n_atoms, real_cut, reciprocal_cut, sigma, epsilon, scaler)
+    implicit none
+    double precision, intent(in) :: real_cut, sigma, epsilon, scaler(n_atoms)
+    integer, intent(in) :: reciprocal_cut(3), n_atoms
+
+    evaluate_ewald = .true.
+    ewald_k_cutoffs = reciprocal_cut
+    ewald_cutoff = real_cut
+    ewald_sigma = sigma
+    ewald_epsilon = epsilon
+    if(ewald_allocated)then
+       deallocate(ewald_scaler)
+    else
+       nullify(ewald_scaler)
+    end if
+    allocate(ewald_scaler(n_atoms))
+    ewald_scaler = scaler
+    ewald_allocated = .true.
+
+  end subroutine core_set_ewald_parameters
 
 
 end module pysic_core
