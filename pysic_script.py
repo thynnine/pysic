@@ -67,8 +67,8 @@ print ""
 print system.get_cell()
 print system.get_reciprocal_cell()
 print np.linalg.inv(system.get_cell()).transpose()
-
 """
+
 
 
 system = ase.Atoms('Na4Cl4',[[0.5,0.5,0.5],
@@ -80,7 +80,7 @@ system = ase.Atoms('Na4Cl4',[[0.5,0.5,0.5],
                              [0.5,0.5,1.5],
                              [1.5,1.5,1.5]])
 
-system.set_charges([1,1,1,1,-1,-1,-1,-1])
+system.set_charges([2,1,1,1,-1,-1,-1,-1])
 system.set_cell([2,2,2])
 system.set_pbc([True,True,True])
 
@@ -94,7 +94,19 @@ ewald.set_parameter_value('sigma',0.3)
 ewald.set_parameter_value('epsilon',1.0/(math.pi*4.0))
 calc.set_coulomb_summation(ewald)
 
+
 calc.set_core()
+
+
+print "initial charges: \n", system.get_charges()
+print "energy: \n", system.get_potential_energy()
+print "forces: \n", system.get_forces()[0:2]
+print "numeric forces: \n", np.array( [ calc.get_numerical_energy_gradient(0),  calc.get_numerical_energy_gradient(1) ] )
+print "e-negativities: \n", calc.get_electronegativities(system)[0:2]
+print "numeric e-negativities: \n", np.array( [ calc.get_numerical_electronegativity(0), calc.get_numerical_electronegativity(1) ] )
+print "e-negativity differences: \n", calc.get_electronegativity_differences(system)
+print ""
+
 
 """
 for sigma in [0.1, 0.3, 0.9]:
@@ -117,14 +129,18 @@ for sigma in [0.1, 0.3, 0.9]:
                                                                               er=str(ewald_ene/4+1.747564594633))
 """            
 
+
 #pot = pysic.Potential('force',parameters=[1.0,2.0,3.0],symbols=[['Na'],['Cl']])
 #calc.add_potential(pot)
 
+system.set_charges([1,1,1,1,-1,-1,-1,-1])
 ewald_ene = system.get_potential_energy()
 print "accuracy: \n", ewald_ene/4 +1.747564594633
 
 #print ewald_ene
 system[0].x += 0.1
+system[0].y += 0.2
+system[0].z += 0.3
 #ewald_ene = system.get_potential_energy()
 #print ewald_ene
 

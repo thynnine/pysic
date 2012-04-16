@@ -2337,7 +2337,10 @@ class CoreMirror:
             The potentials to be compared.
         """
         if self.potentials == None:
-            return False
+            if pots == None:
+                return True
+            else:
+                return False
         return (self.potentials == pots)
 
     def neighbor_lists_ready(self, lists):
@@ -2515,7 +2518,7 @@ class Pysic:
                 do_it.append(self.stress == None)
             else:
                 do_it.append(False)
-
+        
         # If the core does not match the Pysic calculator,
         # we may have changed the system or potentials
         # associated with the calculator without telling it.
@@ -2524,12 +2527,16 @@ class Pysic:
         # changing the core which would lead to unnecessary
         # recalculations.
         if(not Pysic.core.atoms_ready(self.structure)):
+            #print "atoms"
             do_it.append(True)
         if(not Pysic.core.charges_ready(self.structure)):
+            #print "charges"
             do_it.append(True)
         if(not Pysic.core.cell_ready(self.structure)):
+            #print "cell"
             do_it.append(True)
-        if(not Pysic.core.potentials_ready(self.structure)):
+        if(not Pysic.core.potentials_ready(self.potentials)):
+            #print "potentials"
             do_it.append(True)
             
         return any(do_it)
@@ -3496,7 +3503,7 @@ class Pysic:
             orig_system = self.structure.copy()
         else:
             system = atoms.copy()
-            orig_system = atoms.copy()
+            orig_system = self.structure.copy()
         
         charges = system.get_charges()
         self.energy == None
@@ -3513,7 +3520,8 @@ class Pysic:
         
         
         self.energy == None
-        self.get_potential_energy(orig_system)
+        self.set_atoms(orig_system)
+        self.set_core()
         
         return (energy_m-energy_p)/(2.0*shift)
 

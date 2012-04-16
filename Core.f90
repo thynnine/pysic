@@ -2922,7 +2922,7 @@ contains
     if(evaluate_ewald)then
        filter = .true.
        call calculate_ewald_forces(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
-            ewald_epsilon,filter,ewald_scaler,.true.,forces)
+            ewald_epsilon,filter,ewald_scaler,.false.,forces)
        total_forces = total_forces + forces
     end if
 
@@ -2977,6 +2977,7 @@ contains
     integer, pointer :: interaction_indices(:)
     logical :: is_active, many_bodies_found, separation3_unknown
     integer :: offset(3)
+    logical :: filter(n_atoms)
 
     enegs = 0.d0
     total_enegs = 0.d0
@@ -3481,6 +3482,16 @@ contains
     total_enegs = enegs
 #endif
 
+    ! ewald summation
+    if(evaluate_ewald)then
+        filter = .true.
+        enegs = 0.d0
+        call calculate_ewald_electronegativities(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
+             ewald_epsilon,filter,ewald_scaler,.false.,enegs)
+        total_enegs = total_enegs + enegs
+    end if
+
+
     ! Empty the bond order factor storage and stop searching them from memory.
     ! This is done so that if the geometry changes due to atoms moving, for instance,
     ! then the obsolete factors are not used in error.
@@ -3488,13 +3499,6 @@ contains
     call core_empty_bond_order_storage()
 
   end subroutine core_calculate_electronegativities
-
-
-
-
-
-
-
 
 
 
@@ -3975,7 +3979,7 @@ contains
     if(evaluate_ewald)then
        filter = .true.
        call calculate_ewald_energy(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
-            ewald_epsilon,filter,ewald_scaler,.true.,energy)
+            ewald_epsilon,filter,ewald_scaler,.false.,energy)
        total_energy = total_energy + energy
     end if
 
