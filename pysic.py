@@ -2726,7 +2726,7 @@ class Pysic:
             self.stress = None
             self.electronegativities = None
             
-            new_cutoffs = self.get_individual_cutoffs(0.5)
+            new_cutoffs = self.get_individual_cutoffs(1.0)
             self.neighbor_lists_waiting = not self.neighbor_lists_expanded(new_cutoffs)
 
             try:
@@ -2753,7 +2753,7 @@ class Pysic:
         self.energy = None
         self.stress = None
         self.electronegativities = None
-        new_cutoffs = self.get_individual_cutoffs(0.5)
+        new_cutoffs = self.get_individual_cutoffs(1.0)
         self.neighbor_lists_waiting = not self.neighbor_lists_expanded(new_cutoffs)
         
     
@@ -2771,7 +2771,7 @@ class Pysic:
                 the Coulomb summation algorithm
             """
         self.coulomb = coulomb
-        new_cutoffs = self.get_individual_cutoffs(0.5)
+        new_cutoffs = self.get_individual_cutoffs(1.0)
         self.neighbor_lists_waiting = not self.neighbor_lists_expanded(new_cutoffs)
     
 
@@ -2835,9 +2835,21 @@ class Pysic:
         marginal: double
             the skin width of the neighbor list
         """
-        if cutoffs == None:
-            cutoffs = self.get_individual_cutoffs(0.5)
-        self.neighbor_list = nbl.NeighborList(cutoffs,skin=marginal,sorted=False,self_interaction=False,bothways=True)
+        fastlist = False
+        if self.structure.get_number_of_atoms() > 100:
+            fastlist = True
+        if fastlist:
+            try:
+                if cutoffs == None:
+                    cutoffs = self.get_individual_cutoffs(1.0)
+                self.neighbor_list = pu.FastNeighborList(cutoffs,skin=marginal)
+            except:
+                fastlist = False
+    
+        if not fastlist:
+            if cutoffs == None:
+                cutoffs = self.get_individual_cutoffs(1.0)
+            self.neighbor_list = nbl.NeighborList(cutoffs,skin=marginal,sorted=False,self_interaction=False,bothways=True)
         self.neighbor_lists_waiting = True
         self.set_cutoffs(cutoffs)
 
@@ -2993,7 +3005,7 @@ class Pysic:
                 self.update_core_potential_lists()
 
             if not self.neighbor_lists_waiting:
-                self.create_neighbor_lists(self.get_individual_cutoffs(0.5))
+                self.create_neighbor_lists(self.get_individual_cutoffs(1.0))
 
             if not Pysic.core.neighbor_lists_ready(self.neighbor_list):
                 self.update_core_neighbor_lists()
@@ -3264,7 +3276,7 @@ class Pysic:
         Pysic.core.set_atomic_momenta(self.structure)
 
         if not self.neighbor_lists_waiting:
-            self.create_neighbor_lists(self.get_individual_cutoffs(0.5))
+            self.create_neighbor_lists(self.get_individual_cutoffs(1.0))
         
         self.update_core_neighbor_lists()
 
@@ -3304,7 +3316,7 @@ class Pysic:
          """
         if not Pysic.core.atoms_ready(self.structure):
             raise MissingAtomsError("Creating neighbor lists before updating atoms in the core.")
-        cutoffs = self.get_individual_cutoffs(0.5)
+        cutoffs = self.get_individual_cutoffs(1.0)
         if not self.neighbor_lists_waiting:
             self.create_neighbor_lists(cutoffs)
             self.set_cutoffs(cutoffs)
@@ -3333,7 +3345,7 @@ class Pysic:
 
         elements = np.array( elements ).transpose()
 
-        self.create_neighbor_lists(self.get_individual_cutoffs(0.5))
+        self.create_neighbor_lists(self.get_individual_cutoffs(1.0))
         self.neighbor_lists_waiting = True
 
         pf.pysic_interface.create_atoms(masses,charges,positions,momenta,tags,elements)
