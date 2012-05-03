@@ -70,7 +70,7 @@ module geometry
   ! *bond_indices the indices of the bond order factors for which this atom is a valid target at first position (see :func:`bond_order_factor_affects_atom`)
   type atom
      double precision :: mass, charge, position(3), momentum(3)
-     integer :: index, tags, n_pots, n_bonds
+     integer :: index, tags, n_pots, n_bonds, subcell_indices(3)
      logical :: potentials_listed, bond_order_factors_listed
      character(len=label_length) :: element
      type(neighbor_list) :: neighbor_list
@@ -104,7 +104,17 @@ module geometry
      double precision :: vectors(3,3), inverse_cell(3,3), &
         reciprocal_cell(3,3),vector_lengths(3), volume
      logical :: periodic(3)
+     integer :: n_splits(3), max_subcell_atom_count
+     type(subcell), pointer :: subcells(:,:,:)
   end type supercell
+
+  type subcell
+     integer :: indices(3), offsets(3,-1:1,-1:1,-1:1), n_atoms, max_atoms
+     double precision :: vectors(3,3), vector_lengths(3)
+     integer :: neighbors(3,-1:1,-1:1,-1:1)
+     integer, pointer :: atoms(:)
+     logical :: include(-1:1,-1:1,-1:1)
+  end type subcell
 
 contains
 
@@ -151,6 +161,8 @@ contains
        cell%vector_lengths(i) = (.norm.vectors(1:3,i))
     end do
     cell%volume = abs( (vectors(1:3,1).x.vectors(1:3,2)).o.vectors(1:3,3) )
+    cell%n_splits = 0
+    nullify(cell%subcells)
 
   end subroutine generate_supercell
 
@@ -392,9 +404,12 @@ contains
     integer, intent(in) :: offset(3)
     type(supercell), intent(in) :: cell
     double precision, intent(out) :: separation(3)
+    double precision :: wrap1(3), wrap2(3)
     integer :: i
 
-    separation = r2 - r1
+    call wrapped_coordinates(r1,cell,wrap1)
+    call wrapped_coordinates(r2,cell,wrap2)
+    separation = wrap2 - wrap1
     do i = 1, 3
        separation = separation + offset(i)*cell%vectors(1:3,i)
     end do
@@ -603,6 +618,252 @@ contains
     end if
 
   end function pick
+  
+
+  subroutine get_optimal_splitting(cell,max_cut,splits)
+    implicit none
+    type(supercell), intent(in) :: cell
+    double precision, intent(in) :: max_cut
+    integer, intent(out) :: splits(3)
+    double precision :: normal(3), length
+    integer :: i, v1, v2
+
+    do i = 1,3
+       v1 = mod(i,3)+1
+       v2 = mod(i+1,3)+1
+       
+       ! the normal to the plane defined by the other two vectors
+       normal = ((cell%vectors(1:3,v1)).x.(cell%vectors(1:3,v2)))
+       ! the length of the projection of the vector on the normal
+       length = abs( ((cell%vectors(1:3,i)).o.(normal)) ) / .norm.normal
+       ! the number of times the length contains the cutoff
+       if(max_cut < 0.1d-4)then ! there are probably no interactions...
+          splits(i) = int( floor( 10.0*length ) )
+       else
+          splits(i) = int( floor( length/max_cut ) )
+       end if
+       ! do not split more than 40 times, otherwise we may end up using an enormous 
+       ! amount of memory (100**3 = 1000000...)
+       splits(i) = min(40, splits(i))
+
+    end do
+
+  end subroutine get_optimal_splitting
+
+
+  ! Split the cell in subcells according to the given number of divisions.
+  ! 
+  ! The argument 'splits' should be a list of three integers determining how many
+  ! times the cell is split. For instance, if splits = [3,3,5], the cell is divided in
+  ! 3*3*5 = 45 subcells: 3 cells along the first two cell vectors and 5 along the third.
+  ! 
+  ! The Cell itself is not changed, but an array 'subcells' is created, containing
+  ! the subcells which are Cell instances themselves. These cells will contain additional
+  ! data arrays 'neighbors' and 'offsets'. These are 3-dimensional arrays with each dimension
+  ! running from -1 to 1. The neighbors array contains references to the neighboring subcell
+  ! Cell instances.
+  ! The offsets contain coordinate offsets with respect to the periodic boundaries. In other words,
+  ! if a subcell is at the border of the original Cell, it will have neighbors at the other side
+  ! of the cell due to periodic boundary conditions. But from the point of view of the subcell,
+  ! the neighboring cell is not on the other side of the master cell, but a periodic image of that
+  ! cell. Therefore, any coordinates in the the subcell to which the neighbors array refers to must
+  ! in fact be shifted by a vector of the master cell. The offsets list contains the multipliers
+  ! for the cell vectors to make these shifts.
+  !
+  ! Example in 2D for simplicity: ``split = [3,4]`` creates subcells::
+  !
+  !  (0,3) (1,3) (2,3)
+  !  (0,2) (1,2) (2,2)
+  !  (0,1) (1,1) (2,1)
+  !  (0,0) (1,0) (2,0)
+  ! 
+  ! subcell (0,3) will have the neighbors::
+  !  (2,0) (0,0) (1,0)
+  !  (2,3) (0,3) (1,3)
+  !  (2,2) (0,2) (1,2)
+  !
+  ! and offsets::
+  !  [-1,1] [0,1] [0,1]
+  !  [-1,0] [0,0] [0,0]
+  !  [-1,0] [0,0] [0,0]
+  !
+  ! Note that the central 'neighbor' is the cell itself.
+  !
+  ! If a boundary is not periodic, extra subcells with indices 0 and split+1
+  ! are created to pad the simulation cell. These will contain the atoms that
+  ! are outside the simulation cell.
+  subroutine divide_cell(cell,splits)
+    implicit none
+    type(supercell), intent(inout) :: cell
+    integer, intent(in) :: splits(3)
+    double precision :: new_vecs(3,3), new_lengths(3)
+    integer :: i,j,k, i_n,j_n,k_n, nbor_index(3), axis, offsets(3)
+
+    if(cell%n_splits(1) == 0)then
+       ! let every subcell have the initial capacity to store 20 atoms
+       cell%max_subcell_atom_count = 20
+       nullify(cell%subcells)
+    else
+       cell%max_subcell_atom_count = 20
+       do k = 0, splits(3)+1
+          do j = 0, splits(2)+1
+             do i = 0, splits(1)+1
+                if(cell%subcells(i,j,k)%max_atoms > 0)then
+                   cell%max_subcell_atom_count = max(cell%max_subcell_atom_count,cell%subcells(i,j,k)%max_atoms)
+                   deallocate(cell%subcells(i,j,k)%atoms)
+                else
+                   nullify(cell%subcells(i,j,k)%atoms)
+                end if
+             end do
+          end do
+       end do
+       deallocate(cell%subcells)
+    end if
+    allocate(cell%subcells(0:splits(1)+1,0:splits(2)+1,0:splits(3)+1))
+
+    cell%n_splits = splits
+
+    ! the vectors spanning the subcells
+    do i = 1,3
+       new_vecs(1:3,i) = cell%vectors(1:3,i)/splits(i)
+       new_lengths(i) = .norm.new_vecs(1:3,i)
+    end do
+    
+    ! create subcells
+    do k = 0, splits(3)+1
+       do j = 0, splits(2)+1
+          do i = 0, splits(1)+1
+
+             cell%subcells(i,j,k)%indices = (/ i,j,k /)
+             cell%subcells(i,j,k)%vectors = new_vecs
+             cell%subcells(i,j,k)%vector_lengths = new_lengths
+             allocate(cell%subcells(i,j,k)%atoms(cell%max_subcell_atom_count))
+             cell%subcells(i,j,k)%atoms = -1
+             cell%subcells(i,j,k)%n_atoms = 0
+             cell%subcells(i,j,k)%max_atoms = cell%max_subcell_atom_count
+
+          end do
+       end do
+    end do
+
+
+    ! find neighbors of subcells
+    do k = 0, splits(3)+1
+       do j = 0, splits(2)+1
+          do i = 0, splits(1)+1
+
+             ! loop over neighbors
+             do k_n = -1,1
+                do j_n = -1,1
+                   do i_n = -1,1
+
+                      ! plain neighbor indices
+                      nbor_index(1) = i+i_n
+                      nbor_index(2) = j+j_n
+                      nbor_index(3) = k+k_n
+
+                      ! initialize offsets and including/excluding tags
+                      offsets = 0
+                      cell%subcells(i,j,k)%include = .true.
+
+                      ! loop over three directions and check for periodicity
+                      do axis = 1,3
+                         
+                         if(cell%periodic(axis))then
+
+                            do while(nbor_index(axis) > splits(axis))
+                               nbor_index(axis) = nbor_index(axis) - splits(axis)
+                               offsets(axis) = offsets(axis) + 1
+                            end do
+                            do while(nbor_index(axis) < 1)
+                               nbor_index(axis) = nbor_index(axis) + splits(axis)
+                               offsets(axis) = offsets(axis) - 1
+                            end do
+
+                         else
+                            
+                            ! if not periodic, make a note if the neighboring cell is non-existent
+                            ! (out of bounds)
+                            if(nbor_index(axis) < 0 .or. nbor_index(axis) > splits(axis)+1)then
+                               cell%subcells(i,j,k)%include(i_n,j_n,k_n) = .false.
+                            end if
+
+                         end if
+
+                      end do ! do axis = 1, 3
+                      
+                      ! store indices to the adjacent subcells
+                      cell%subcells(i,j,k)%neighbors(1:3,i_n,j_n,k_n) = nbor_index(1:3)
+                      cell%subcells(i,j,k)%offsets(1:3,i_n,j_n,k_n) = offsets(1:3)
+
+                   end do
+                end do
+             end do
+
+          end do
+       end do
+    end do
+
+  end subroutine divide_cell
+
+
+  subroutine expand_subcell_atom_capacity(atoms_list,old_size,new_size)
+    implicit none
+    integer, pointer :: atoms_list(:)
+    integer, intent(in) :: new_size, old_size
+    integer :: tmp_list(old_size)
+
+    tmp_list(1:old_size) = atoms_list(1:old_size)
+    deallocate(atoms_list)
+    allocate(atoms_list(new_size))
+    atoms_list = -1
+    atoms_list(1:old_size) = tmp_list(1:old_size)
+
+  end subroutine expand_subcell_atom_capacity
+
+
+
+  subroutine find_subcell_for_atom(cell,at)
+    implicit none
+    type(supercell), intent(inout) :: cell
+    type(atom), intent(inout) :: at
+    double precision :: wrapped(3), fractional(3)
+    integer :: i, indices(3)
+    type(subcell), pointer :: thesubcell
+
+    ! get the wrapped fractional coordinates
+    call wrapped_coordinates(at%position,cell,wrapped)
+    call relative_coordinates(wrapped,cell,fractional)
+
+    ! get the indices of the subcells
+    do i = 1,3
+       if(cell%periodic(i))then
+          indices(i) = mod( int(floor( fractional(i)*cell%n_splits(i) )), cell%n_splits(i) )+1
+       else
+          indices(i) = min( cell%n_splits(i)+1, max( 0, int(floor( fractional(i)*cell%n_splits(i) ))+1 ) )
+       end if
+    end do
+    thesubcell => cell%subcells(indices(1),indices(2),indices(3))
+    thesubcell%n_atoms = thesubcell%n_atoms+1
+    thesubcell%atoms( thesubcell%n_atoms ) = at%index
+    at%subcell_indices = indices
+
+    ! if the storage capacity is full, expand the subcell atom list size
+    if(thesubcell%n_atoms == thesubcell%max_atoms)then
+
+       call expand_subcell_atom_capacity(thesubcell%atoms,&
+            thesubcell%n_atoms, &
+            thesubcell%max_atoms + 20)
+
+       thesubcell%max_atoms = thesubcell%max_atoms + 20
+
+       if(thesubcell%max_atoms > cell%max_subcell_atom_count)then
+          cell%max_subcell_atom_count = thesubcell%max_atoms
+
+       end if
+    end if
+
+  end subroutine find_subcell_for_atom
 
 
 end module geometry

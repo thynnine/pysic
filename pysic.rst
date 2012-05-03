@@ -34,6 +34,7 @@ Classes of the pysic module
    coordinator_class
    bondorderparameters_class
    chargerelaxation_class
+   fastneighborlist_class
    coremirror_class
 
 

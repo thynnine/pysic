@@ -7,6 +7,7 @@ from itertools import permutations
 import random as rnd
 import copy
 import debug as d
+import math
 
 
 #
@@ -2103,6 +2104,52 @@ class ChargeRelaxation:
         return charges
 
 
+class FastNeighborList(nbl.NeighborList):
+    """ASE has a neighbor list class built in, but its implementation is
+        currently inefficient, and building of the list is an :math:`O(n^2)`
+        operation. This neighbor list class overrides the 
+        :meth:`~pysic_utility.FastNeighborList.build` method with
+        an :math:`O(n)` time routine. The fast routine is based on a
+        spatial partitioning algorithm.
+        
+        The way cutoffs are handled is also somewhat different to the original
+        ASE list. In ASE, the distances for two atoms are compared against
+        the sum of the individual cutoffs + neighbor list skin. This list, however,
+        searches for the neighbors of each atom at a distance of the cutoff of the
+        given atom only, plus skin.
+        """
+    
+    def __init__(self, cutoffs, skin=pu.neighbor_marginal):
+        nbl.NeighborList.__init__(self, 
+                              cutoffs=cutoffs, 
+                              skin=skin, 
+                              sorted=False, 
+                              self_interaction=False,
+                              bothways=True)    
+    
+    def build(self,atoms):
+        
+        if not Pysic.core.atoms_ready(atoms):
+            raise MissingAtomsError("Atoms have not been initialized in the core.")
+        if Pysic.core.get_atoms() != atoms:
+            raise MissingAtomsError("Atoms in the core do not match.")
+        
+        self.positions = atoms.get_positions()
+        self.pbc = atoms.get_pbc()
+        self.cell = atoms.get_cell()
+        
+        pf.pysic_interface.generate_neighbor_lists(self.cutoffs)
+                
+        self.neighbors = [np.empty(0, int) for a in range(len(atoms))]
+        self.displacements = [np.empty((0, 3), int) for a in range(len(atoms))]
+        
+        for i in range(len(atoms)):
+            n_nbs = pf.pysic_interface.get_number_of_neighbors_of_atom(i)
+            if n_nbs > 0:
+                (self.neighbors[i], self.displacements[i]) = pf.pysic_interface.get_neighbor_list_of_atom(i,n_nbs)
+        self.nupdates += 1
+        
+
 class CoreMirror:
     """A class representing the status of the core.
 
@@ -2835,21 +2882,29 @@ class Pysic:
         marginal: double
             the skin width of the neighbor list
         """
-        fastlist = False
-        if self.structure.get_number_of_atoms() > 100:
-            fastlist = True
+        fastlist = True
+        if cutoffs == None:
+            cutoffs = self.get_individual_cutoffs(1.0)
+        max_cut = np.max(cutoffs)
+        
+        for i in range(3):
+            vec = self.structure.get_cell()[i]
+            other_vec1 = self.structure.get_cell()[(i+1)%3]
+            other_vec2 = self.structure.get_cell()[(i+2)%3]
+            normal = np.cross(other_vec1,other_vec2)
+            length = math.fabs(np.dot(vec,normal))/math.sqrt(np.dot(normal,normal))
+            if length < max_cut:
+                fastlist = False
+                
         if fastlist:
             try:
-                if cutoffs == None:
-                    cutoffs = self.get_individual_cutoffs(1.0)
-                self.neighbor_list = pu.FastNeighborList(cutoffs,skin=marginal)
+                self.neighbor_list = FastNeighborList(cutoffs,skin=marginal)
             except:
                 fastlist = False
     
         if not fastlist:
-            if cutoffs == None:
-                cutoffs = self.get_individual_cutoffs(1.0)
             self.neighbor_list = nbl.NeighborList(cutoffs,skin=marginal,sorted=False,self_interaction=False,bothways=True)
+
         self.neighbor_lists_waiting = True
         self.set_cutoffs(cutoffs)
 
@@ -2978,9 +3033,12 @@ class Pysic:
             do_full_init = True
         elif Pysic.core.get_atoms() == None:
             do_full_init = True
+        elif self.structure.get_number_of_atoms() != Pysic.core.structure.get_number_of_atoms():
+            do_full_init = True
         elif self.structure.get_number_of_atoms() != pf.pysic_interface.get_number_of_atoms():
             do_full_init = True
             
+                        
         if do_full_init:
             self.initialize_fortran_core()
         else:
@@ -3320,12 +3378,18 @@ class Pysic:
         if not self.neighbor_lists_waiting:
             self.create_neighbor_lists(cutoffs)
             self.set_cutoffs(cutoffs)
+            self.neighbor_lists_waiting = True
     
         self.neighbor_list.update(self.structure)
     
-        for index in range(self.structure.get_number_of_atoms()):
-            [nbors,offs] = self.neighbor_list.get_neighbors(index)                
-            pf.pysic_interface.create_neighbor_list(index+1,np.array(nbors),np.array(offs).transpose())
+        if isinstance(self.neighbor_list,FastNeighborList):
+            # if we used the fast list, the core is already updated
+            pass
+        else:
+            # if we have used the ASE list, it must be passed on to the core
+            for index in range(self.structure.get_number_of_atoms()):
+                [nbors,offs] = self.neighbor_list.get_neighbors(index)                
+                pf.pysic_interface.create_neighbor_list(index+1,np.array(nbors),np.array(offs).transpose())
 
         Pysic.core.set_neighbor_lists(self.neighbor_list)
         
@@ -3345,19 +3409,20 @@ class Pysic:
 
         elements = np.array( elements ).transpose()
 
-        self.create_neighbor_lists(self.get_individual_cutoffs(1.0))
-        self.neighbor_lists_waiting = True
+        #self.create_neighbor_lists(self.get_individual_cutoffs(1.0))
+        #self.neighbor_lists_waiting = True
 
         pf.pysic_interface.create_atoms(masses,charges,positions,momenta,tags,elements)
         Pysic.core.set_atoms(self.structure)
 
+        pf.pysic_interface.distribute_mpi(self.structure.get_number_of_atoms())
+        Pysic.core.mpi_ready = True
+                
         self.update_core_supercell()
         self.update_core_potentials()
         self.update_core_neighbor_lists()
         self.update_core_potential_lists()
         self.update_core_coulomb()
-        pf.pysic_interface.distribute_mpi(self.structure.get_number_of_atoms())
-        Pysic.core.mpi_ready = True
 
 
 

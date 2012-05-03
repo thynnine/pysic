@@ -45,10 +45,8 @@ to, if the routine is just a redirect of the call.
 
     Modules used by pysic_interface
     -------------------------------
-    - :ref:`geometry`
     - :ref:`mpi`
     - :ref:`mt95`
-    - :ref:`potentials`
     - :ref:`pysic_core`
     - :ref:`utility`
 
@@ -82,12 +80,15 @@ to, if the routine is just a redirect of the call.
     - :func:`examine_cell`
     - :func:`examine_potentials`
     - :func:`finish_mpi`
+    - :func:`generate_neighbor_lists`
     - :func:`get_cell_vectors`
     - :func:`get_cpu_id`
     - :func:`get_ewald_energy`
     - :func:`get_mpi_list_of_atoms`
+    - :func:`get_neighbor_list_of_atom`
     - :func:`get_number_of_atoms`
     - :func:`get_number_of_cpus`
+    - :func:`get_number_of_neighbors_of_atom`
     - :func:`is_bond_order_factor`
     - :func:`is_potential`
     - :func:`list_valid_bond_order_factors`
@@ -590,6 +591,17 @@ Full documentation of subroutines in pysic_interface
     Calls :func:`mpi_finish`
 
             
+  .. function:: generate_neighbor_lists(n_atoms, cutoffs)
+
+    calculates and allocates neighbor lists
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    cutoffs: double precision  *intent(in)*    *size(n_atoms)*  
+        
+            
   .. function:: get_cell_vectors(vectors)
 
     Returns the vectors defining the simulation supercell.
@@ -646,6 +658,20 @@ Full documentation of subroutines in pysic_interface
     **cpu_atoms**: logical  **intent(out)**    *size(n_atoms)*  
         array of logical values showing which atoms are marked to be handled by this cpu
             
+  .. function:: get_neighbor_list_of_atom(atom_index, n_neighbors, neighbors, offsets)
+
+
+    Parameters:
+
+    atom_index: integer  *intent(in)*    *scalar*  
+        
+    n_neighbors: integer  *intent(in)*    *scalar*  
+        
+    **neighbors**: integer  **intent(out)**    *size(n_neighbors)*  
+        
+    **offsets**: integer  **intent(out)**    *size(3, n_neighbors)*  
+        
+            
   .. function:: get_number_of_atoms(n_atoms)
 
     Counts the number of atoms in the current core
@@ -667,6 +693,16 @@ Full documentation of subroutines in pysic_interface
 
     **ncpu**: integer  **intent(out)**    *scalar*  
         the total number of cpus available
+            
+  .. function:: get_number_of_neighbors_of_atom(atom_index, n_neighbors)
+
+
+    Parameters:
+
+    atom_index: integer  *intent(in)*    *scalar*  
+        
+    **n_neighbors**: integer  **intent(out)**    *scalar*  
+        
             
   .. function:: is_bond_order_factor(string, is_ok)
 

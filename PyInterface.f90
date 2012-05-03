@@ -33,9 +33,7 @@
 !
 module pysic_interface
   use pysic_core
-  use geometry
   use utility
-  use potentials
   use mpi
   use mt95
   implicit none
@@ -1042,5 +1040,40 @@ contains
     call core_get_ewald_energy(real_cut, reciprocal_cut, sigma, epsilon, energy)
     
   end subroutine get_ewald_energy
+
+
+  ! calculates and allocates neighbor lists
+  subroutine generate_neighbor_lists(n_atoms,cutoffs)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(in) :: cutoffs(n_atoms)
+    double precision :: max_cutoff
+
+    max_cutoff = maxval(cutoffs)
+    call core_create_space_partitioning(max_cutoff)
+    call core_build_neighbor_lists(n_atoms,cutoffs)
+
+  end subroutine generate_neighbor_lists
+
+
+  subroutine get_number_of_neighbors_of_atom(atom_index,n_neighbors)
+    implicit none
+    integer, intent(in) :: atom_index
+    integer, intent(out) :: n_neighbors
+
+    call core_get_number_of_neighbors(atom_index+1,n_neighbors)
+
+  end subroutine get_number_of_neighbors_of_atom
+
+  subroutine get_neighbor_list_of_atom(atom_index, n_neighbors, neighbors, offsets)
+    implicit none
+    integer, intent(in) :: atom_index, n_neighbors
+    integer, intent(out) :: neighbors(n_neighbors), offsets(3,n_neighbors)
+
+    ! shift the indices by one since python starts indexing at 0 while fortran does so at 1
+    call core_get_neighbor_list_of_atom(atom_index+1, n_neighbors, neighbors, offsets)
+    neighbors = neighbors-1
+
+  end subroutine get_neighbor_list_of_atom
 
 end module pysic_interface

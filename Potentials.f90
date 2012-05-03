@@ -3298,22 +3298,25 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     do index1 = 1, n_atoms
 
        !
-       ! calculate the total charged background term
+       ! calculate the total charged background and dipole correction terms
        !
        enegs(index1) = enegs(index1) + scaler(index1) * inv_eps_2v * &
-            ( gaussian_width*gaussian_width *qsum(1) - &
-            0.666666666666666667d0 * ( atom1%position(1) * qsum(2) + &
-            atom1%position(2) * qsum(3) + &
-            atom1%position(3) * qsum(4) )
+            ( - gaussian_width*gaussian_width *qsum(1) )
 
+    end do
+
+    if(include_dipole_correction)then
        !
-       ! calculate the dipole correction
-       ! 
-       !if(include_dipole_correction)then
-       !   qsum(2:4) = 0.d0
-       !   enegs(index1) = enegs(index1) - scaler(index1) * inv_eps_2v * 0.666666666666666667d0 * (atom1%position(1:3).o.qsum(2:4))
-       !end if
+       ! dipole correction terms
+       !
+       enegs(index1) = enegs(index1) + scaler(index1) * inv_eps_2v * &
+            ( -0.666666666666666667d0 ) * &
+            ( atom1%position(1) * qsum(2) + &
+            atom1%position(2) * qsum(3) + &
+            atom1%position(3) * qsum(4) ) 
+    end if
 
+    do index1 = 1, n_atoms
        !
        ! calculate the reciprocal space sum
        !

@@ -25,5 +25,7 @@ In addition to the Python documentation, also the variables, types, and routines
  - :class:`pysic.Potential`
  - :class:`pysic.Coordinator`
  - :class:`pysic.BondOrderParameters`
+ - :class:`pysic.ChargeRelaxation`
+ - :class:`pysic.FastNeighborList`
  - :class:`pysic.CoreMirror`
 

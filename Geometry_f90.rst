@@ -26,6 +26,7 @@ A module for handling the geometric structure of the system.
     --------------------------------
     - :data:`atom`
     - :data:`neighbor_list`
+    - :data:`subcell`
     - :data:`supercell`
 
     List of subroutines in geometry
@@ -35,8 +36,12 @@ A module for handling the geometric structure of the system.
     - :func:`assign_bond_order_factor_indices`
     - :func:`assign_neighbor_list`
     - :func:`assign_potential_indices`
+    - :func:`divide_cell`
+    - :func:`expand_subcell_atom_capacity`
+    - :func:`find_subcell_for_atom`
     - :func:`generate_atoms`
     - :func:`generate_supercell`
+    - :func:`get_optimal_splitting`
     - :func:`relative_coordinates`
     - :func:`separation_vector`
     - :func:`update_atomic_charges`
@@ -85,12 +90,14 @@ Full documentation of custom types in geometry
         the indices of the potentials for which this atom is a valid target at first position (see :func:`potential_affects_atom`)
     potentials_listed: logical    *scalar*
         logical tag for checking if the potentials affecting the atom have been listed in potential_indices
+    bond_indices: integer  *pointer*  *size(:)*
+        the indices of the bond order factors for which this atom is a valid target at first position (see :func:`bond_order_factor_affects_atom`)
     element: character(len=label_length)    *scalar*
         the chemical symbol of the atom
     charge: double precision    *scalar*
         charge of the atom
-    bond_indices: integer  *pointer*  *size(:)*
-        the indices of the bond order factors for which this atom is a valid target at first position (see :func:`bond_order_factor_affects_atom`)
+    subcell_indices: integer    *size(3)*
+        
     mass: double precision    *scalar*
         mass of th atom
     n_bonds: integer    *scalar*
@@ -148,6 +155,29 @@ Full documentation of custom types in geometry
         offsets for periodic boundaries for each neighbor
     n_neighbors: integer    *scalar*
         the number of neighbors in the lists
+  .. data:: subcell
+
+
+    Contained data:
+
+    neighbors: integer    *size(3, -1:1, -1:1, -1:1)*
+        
+    vector_lengths: double precision    *size(3)*
+        
+    offsets: integer    *size(3, -1:1, -1:1, -1:1)*
+        
+    max_atoms: integer    *scalar*
+        
+    vectors: double precision    *size(3, 3)*
+        
+    atoms: integer  *pointer*  *size(:)*
+        
+    n_atoms: integer    *scalar*
+        
+    indices: integer    *size(3)*
+        
+    include: logical    *size(-1:1, -1:1, -1:1)*
+        
   .. data:: supercell
 
     Supercell containing the simulation.
@@ -172,8 +202,14 @@ Full documentation of custom types in geometry
 
     vector_lengths: double precision    *size(3)*
         the lengths of the cell spanning vectors (stored to avoid calculating the vector norms over and over)
+    max_subcell_atom_count: integer    *scalar*
+        
+    n_splits: integer    *size(3)*
+        
     inverse_cell: double precision    *size(3, 3)*
         the inverse of the cell matrix :math:`\mathbf{M}^{-1}`
+    subcells: type(subcell)  *pointer*  *size(:, :, :)*
+        
     vectors: double precision    *size(3, 3)*
         vectors spanning the supercell containing the system as a matrix :math:`\mathbf{M}`
     volume: double precision    *scalar*
@@ -313,6 +349,79 @@ Full documentation of subroutines in geometry
     indices: integer  *intent(in)*    *size(n_pots)*  
         the indices of the potentials
             
+  .. function:: divide_cell(cell, splits)
+
+    Split the cell in subcells according to the given number of divisions.
+    
+    The argument 'splits' should be a list of three integers determining how many
+    times the cell is split. For instance, if splits = [3,3,5], the cell is divided in
+    3*3*5 = 45 subcells: 3 cells along the first two cell vectors and 5 along the third.
+    
+    The Cell itself is not changed, but an array 'subcells' is created, containing
+    the subcells which are Cell instances themselves. These cells will contain additional
+    data arrays 'neighbors' and 'offsets'. These are 3-dimensional arrays with each dimension
+    running from -1 to 1. The neighbors array contains references to the neighboring subcell
+    Cell instances.
+    The offsets contain coordinate offsets with respect to the periodic boundaries. In other words,
+    if a subcell is at the border of the original Cell, it will have neighbors at the other side
+    of the cell due to periodic boundary conditions. But from the point of view of the subcell,
+    the neighboring cell is not on the other side of the master cell, but a periodic image of that
+    cell. Therefore, any coordinates in the the subcell to which the neighbors array refers to must
+    in fact be shifted by a vector of the master cell. The offsets list contains the multipliers
+    for the cell vectors to make these shifts.
+    
+    Example in 2D for simplicity: ``split = [3,4]`` creates subcells::
+    
+     (0,3) (1,3) (2,3)
+     (0,2) (1,2) (2,2)
+     (0,1) (1,1) (2,1)
+     (0,0) (1,0) (2,0)
+    
+    subcell (0,3) will have the neighbors::
+     (2,0) (0,0) (1,0)
+     (2,3) (0,3) (1,3)
+     (2,2) (0,2) (1,2)
+    
+    and offsets::
+     [-1,1] [0,1] [0,1]
+     [-1,0] [0,0] [0,0]
+     [-1,0] [0,0] [0,0]
+    
+    Note that the central 'neighbor' is the cell itself.
+    
+    If a boundary is not periodic, extra subcells with indices 0 and split+1
+    are created to pad the simulation cell. These will contain the atoms that
+    are outside the simulation cell.
+
+    Parameters:
+
+    **cell**: type(supercell)  **intent(inout)**    *scalar*  
+        
+    splits: integer  *intent(in)*    *size(3)*  
+        
+            
+  .. function:: expand_subcell_atom_capacity(atoms_list, old_size, new_size)
+
+
+    Parameters:
+
+    atoms_list: integer  *intent()*  *pointer*  *size(:)*  
+        
+    old_size: integer  *intent(in)*    *scalar*  
+        
+    new_size: integer  *intent(in)*    *scalar*  
+        
+            
+  .. function:: find_subcell_for_atom(cell, at)
+
+
+    Parameters:
+
+    **cell**: type(supercell)  **intent(inout)**    *scalar*  
+        
+    **at**: type(atom)  **intent(inout)**    *scalar*  
+        
+            
   .. function:: generate_atoms(n_atoms, masses, charges, positions, momenta, tags, elements, atoms)
 
     Creates atoms to construct the system to be simulated.
@@ -374,6 +483,18 @@ Full documentation of subroutines in geometry
         logical switch, true if the boundaries are periodic
     **cell**: type(supercell)  **intent(out)**    *scalar*  
         the created cell object
+            
+  .. function:: get_optimal_splitting(cell, max_cut, splits)
+
+
+    Parameters:
+
+    cell: type(supercell)  *intent(in)*    *scalar*  
+        
+    max_cut: double precision  *intent(in)*    *scalar*  
+        
+    **splits**: integer  **intent(out)**    *size(3)*  
+        
             
   .. function:: relative_coordinates(position, cell, relative)
 

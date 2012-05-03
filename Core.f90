@@ -4128,4 +4128,177 @@ contains
   end subroutine core_set_ewald_parameters
 
 
+  subroutine core_create_space_partitioning(max_cutoff)
+    implicit none
+    double precision, intent(in) :: max_cutoff
+    integer :: splits(3), i,j,k,in,jn,kn
+
+    call get_optimal_splitting(cell,max_cutoff,splits)
+    call divide_cell(cell,splits)
+    do i = 1, size(atoms)
+       call find_subcell_for_atom(cell,atoms(i))
+    end do
+
+
+  end subroutine core_create_space_partitioning
+
+
+  subroutine core_build_neighbor_lists(n_atoms,cutoffs)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(in) :: cutoffs(n_atoms)
+    integer :: cell_indices(3), i,j, i_n, j_n, k_n, neighbor_offset(3), atom1_index, atom2_index, &
+         n_nbs(n_atoms), max_n_nbors=100, global_max, total_n_nbs(n_atoms)
+    integer, pointer, save ::  nbors_and_offsets(:,:,:)
+    type(subcell) :: atom_cell, neighbor_cell
+    logical :: neighbor_include, first_run = .true.
+    double precision :: separation(3), distance
+    
+    if(first_run)then
+       nullify(nbors_and_offsets)
+       allocate(nbors_and_offsets(4,max_n_nbors,n_atoms))
+       first_run = .false.
+    else if(size(nbors_and_offsets(1,1,:)) /= n_atoms)then
+       deallocate(nbors_and_offsets)
+       allocate(nbors_and_offsets(4,max_n_nbors,n_atoms))
+    end if
+
+    n_nbs = 0
+    nbors_and_offsets = 0
+
+    do atom1_index = 1, size(atoms)
+
+       if(is_my_atom(atom1_index))then
+          
+          cell_indices = atoms(atom1_index)%subcell_indices
+          atom_cell = cell%subcells(cell_indices(1),cell_indices(2),cell_indices(3))       
+
+          do k_n = -1,1
+             do j_n = -1,1
+                do i_n = -1,1
+                   
+                   cell_indices(1:3) = atom_cell%neighbors(1:3,i_n,j_n,k_n)
+                   neighbor_cell = cell%subcells(cell_indices(1),cell_indices(2),cell_indices(3))
+                   neighbor_offset = atom_cell%offsets(1:3,i_n,j_n,k_n)
+                   neighbor_include = atom_cell%include(i_n,j_n,k_n)               
+
+                   if(neighbor_include)then
+                      
+                      do j = 1, neighbor_cell%n_atoms
+                         atom2_index = neighbor_cell%atoms(j)
+
+                         ! prevent double counting
+                         if(pick(atom1_index,atom2_index,neighbor_offset))then
+                            call separation_vector(atoms(atom1_index)%position, &
+                                 atoms(atom2_index)%position, &
+                                 neighbor_offset, &
+                                 cell, &
+                                 separation)
+                            ! distance squared
+                            distance = separation.o.separation
+
+                            ! atom2 is neighbor of atom1
+                            if(distance < cutoffs(atom1_index)*cutoffs(atom1_index))then
+                               n_nbs(atom1_index) = n_nbs(atom1_index)+1
+                               nbors_and_offsets(1,n_nbs(atom1_index),atom1_index) = atom2_index
+                               nbors_and_offsets(2:4,n_nbs(atom1_index),atom1_index) = neighbor_offset(1:3)
+                               if(n_nbs(atom1_index) == max_n_nbors)then
+                                  call expand_neighbor_storage(nbors_and_offsets,max_n_nbors,max_n_nbors+50,n_atoms)
+                                  max_n_nbors = max_n_nbors + 50
+                               end if
+                            end if
+
+                            ! atom1 is neighbor of atom2
+                            if(distance < cutoffs(atom2_index)*cutoffs(atom2_index))then
+                               n_nbs(atom2_index) = n_nbs(atom2_index)+1
+                               nbors_and_offsets(1,n_nbs(atom2_index),atom2_index) = atom1_index
+                               nbors_and_offsets(2:4,n_nbs(atom2_index),atom2_index) = neighbor_offset
+                               if(n_nbs(atom2_index) == max_n_nbors)then
+                                  call expand_neighbor_storage(nbors_and_offsets,max_n_nbors,max_n_nbors+50,n_atoms)
+                                  max_n_nbors = max_n_nbors + 50
+                               end if
+                            end if
+
+                         end if ! pick
+
+                      end do ! j = 1, neighbor_cell%n_atoms
+                      
+                   end if
+                   
+                end do
+             end do
+          end do
+          
+          
+       end if ! is_my_atom
+    end do ! atom1_index
+    
+#ifdef MPI
+
+    ! get the total array size by summing the neighbors found by all cpus
+    call mpi_allreduce(n_nbs,total_n_nbs,n_atoms,mpi_integer,mpi_sum,mpi_comm_world,mpistat)
+    tmp_max = max(max_n_nbors, maxval(total_n_nbs))
+    ! get the maximum array size (in case some array expanded during search)
+    call mpi_allreduce(tmp_max,global_max,1,mpi_integer,mpi_max,mpi_comm_world,mpistat)
+    if(global_max > max_n_nbors)then
+       call expand_neighbor_storage(nbors_and_offsets,max_n_nbors,global_max,n_atoms)
+       max_n_nbors = global_max
+    end if
+
+    ! stack the lists on cpu 0 and broadcast them to all cpus
+    call mpi_stack(nbors_and_offsets,n_nbs,4,n_atoms,max_n_nbors)
+    call mpi_bcast(nbors_and_offsets,n_atoms*max_n_nbors,mpi_integer,0,mpi_comm_world,mpistat)
+    call mpi_bcast(n_nbs,n_atoms,mpi_integer,0,mpi_comm_world,mpistat)
+
+#endif
+
+    do atom1_index = 1, n_atoms
+       call core_create_neighbor_list(n_nbs(atom1_index),atom1_index,&
+            nbors_and_offsets(1,1:n_nbs(atom1_index),atom1_index),&
+            nbors_and_offsets(2:4,1:n_nbs(atom1_index),atom1_index))
+       !write(*,*) "atom ", atom1_index, ":", nbors_and_offsets(1,1:n_nbs(atom1_index),atom1_index)-1
+    end do
+
+  end subroutine core_build_neighbor_lists
+
+
+  subroutine expand_neighbor_storage(nbors_and_offsets,length,new_length,n_atoms)
+    implicit none
+    integer, intent(in) :: n_atoms
+    integer, intent(in) :: length, new_length
+    integer, pointer ::  nbors_and_offsets(:,:,:), tmp_nbors(:,:,:)
+
+    nullify(tmp_nbors)
+    allocate(tmp_nbors(4,length,n_atoms))
+    tmp_nbors(1:4,1:length,1:n_atoms) = nbors_and_offsets(1:4,1:length,1:n_atoms)
+    deallocate(nbors_and_offsets)
+    allocate(nbors_and_offsets(4,new_length,n_atoms))
+    nbors_and_offsets = 0
+    nbors_and_offsets(1:4,1:length,1:n_atoms) = tmp_nbors(1:4,1:length,1:n_atoms)
+    deallocate(tmp_nbors)
+
+  end subroutine expand_neighbor_storage
+
+
+  subroutine core_get_number_of_neighbors(atom_index,n_neighbors)
+    implicit none
+    integer, intent(in) :: atom_index
+    integer, intent(out) :: n_neighbors
+
+    n_neighbors = atoms(atom_index)%neighbor_list%n_neighbors
+
+  end subroutine core_get_number_of_neighbors
+
+
+  subroutine core_get_neighbor_list_of_atom(atom_index, n_neighbors, neighbors, offsets)
+    implicit none
+    integer, intent(in) :: atom_index, n_neighbors
+    integer, intent(out) :: neighbors(n_neighbors), offsets(3,n_neighbors)
+
+    neighbors(1:n_neighbors) = atoms(atom_index)%neighbor_list%neighbors(1:n_neighbors)
+    offsets(1:3,1:n_neighbors) = atoms(atom_index)%neighbor_list%pbc_offsets(1:3,1:n_neighbors)
+
+  end subroutine core_get_neighbor_list_of_atom
+
+
 end module pysic_core

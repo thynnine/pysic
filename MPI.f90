@@ -379,5 +379,95 @@ contains
 
 
 
+#ifdef MPI
+  ! stacks the "lists" from all cpus together according to the lengths given in "items"
+  ! and gathers the complete list to cpu 0
+  ! For example::
+  ! 
+  ! cpu 0          cpu 1          cpu 0
+  ! abc....        12.....        abc12..
+  ! de.....        3456...   ->   de3456.
+  ! fghij..        78.....        fghij78
+  !
+  ! The stacking is done for the second array index: list(1,:,1).
+  ! The stacking works so that first every cpu 2n+1 sends its data to cpu 2n,
+  ! then 2*(2n+1) sends data to 2*2n, and so on, until the final cpu 2^m sends its data to cpu 0::
+  !
+  !  cpu
+  !  0 1 2 3 4 5 6 7 8 9 10
+  !  |-/ |-/ |-/ |-/ |-/ |
+  !  |---/   |---/   |---/
+  !  |-------/       |
+  !  |---------------/
+  !  x
+  !
+  ! *list 3d arrays containing lists to be stacked 
+  ! *items the numbers of items to be stacked in each list
+  ! *length the number of lists (size of list(1,1,:))
+  ! *width max size of lists (size of list(1,:,1))
+  ! *depth dimensionality of the stacked objects (size of list(:,1,1))
+  SUBROUTINE mpi_stack(list,items,depth,length,width)
+    IMPLICIT NONE
+    INTEGER, POINTER :: list(:,:,:), items(:)
+    INTEGER, INTENT(IN) :: length,width,depth
+    INTEGER :: remainder, templist(width,length),tempitems(length), ii,level
+    LOGICAL :: fine
+
+    fine = .false.
+    level = 1 ! level of communications: cpu level*(2n+1) sends to cpu level*n
+
+    DO WHILE(.not.fine) ! "fine" is a marker for ending the receiving-sending loop for this cpu
+
+       level = 2*level ! advance to next level
+       remainder = cpu_id - (cpu_id/level)*level ! the remainder for cpu_id/level
+       
+       ! level gets values 2^k, so the remainders develop as follows:
+       ! level  cpu/remainder
+       !        0 1 2 3 4 5 6 7 8 9
+       ! 2      0 1 0 1 0 1 0 1 0 1
+       ! 4      0 1 2 3 0 1 2 3 0 1
+       ! 8      0 1 2 3 4 5 6 7 0 1
+       ! 16     0 1 2 3 4 5 6 7 8 9
+       !  ...
+       ! So, the cpu should receive or wait when the remainder is zero
+       ! and send and finish once the remainder becomes positive
+
+       IF(remainder == 0)THEN
+          IF(n_cpus > cpu_id + level/2 )THEN ! is there a cpu that should be sending?
+             ! receive the lists and the numbers of elements in the lists
+             CALL MPI_RECV(templist,length*width*depth,MPI_INTEGER,cpu_id+level/2,&
+                  5501+level,MPI_COMM_WORLD,mpistatus,mpistat)
+             CALL MPI_RECV(tempitems,length,MPI_INTEGER,cpu_id+level/2,&
+                  5502+level,MPI_COMM_WORLD,mpistatus,mpistat)
+
+             DO ii = 1, length ! stack the lists
+                IF(tempitems(ii) > 0)THEN
+                   list(1:depth,items(ii)+1:items(ii)+tempitems(ii),ii) = templist(1:depth,1:tempitems(ii),ii)
+                   items(ii) = items(ii) + tempitems(ii)
+                END IF
+             END DO             
+          ELSE ! there are no more cpus that would send data to this one
+             IF(cpu_id /= 0)THEN
+                ! since this is not the master cpu, it must wait until it is its turn to send its data forward
+                ! so, skip this level and repeat the loop (will advance the level)
+             ELSE
+                fine = .true. ! the master cpu has received all the data, finish now
+             END IF
+          END IF
+       ELSE ! the first time the remainder is more than zero, send the data and finish for this cpu
+          CALL MPI_SEND(list,length*width*depth,MPI_INTEGER,cpu_id-level/2,&
+               5501+level,MPI_COMM_WORLD,mpistat)
+          CALL MPI_SEND(items,length,MPI_INTEGER,cpu_id-level/2,&
+               5502+level,MPI_COMM_WORLD,mpistat)
+          fine = .true.
+       END IF
+    END DO
+
+    RETURN
+
+  END SUBROUTINE mpi_stack
+#endif
+
+
 
 end module mpi

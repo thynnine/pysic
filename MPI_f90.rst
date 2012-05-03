@@ -53,6 +53,7 @@ the loads of all the cpus and redistributing them are also implemented.
     - :func:`mpi_finish`
     - :func:`mpi_initialize`
     - :func:`mpi_master_bcast_int`
+    - :func:`mpi_stack`
     - :func:`mpi_sync`
     - :func:`mpi_wall_clock`
     - :func:`open_loadmonitor`
@@ -224,6 +225,43 @@ Full documentation of subroutines in mpi
 
     **sync_int**: integer  **intent(inout)**    *scalar*  
         the broadcast integer
+            
+  .. function:: mpi_stack(list, items, depth, length, width)
+
+    stacks the "lists" from all cpus together according to the lengths given in "items"
+    and gathers the complete list to cpu 0
+    For example::
+    
+    cpu 0          cpu 1          cpu 0
+    abc....        12.....        abc12..
+    de.....        3456...   ->   de3456.
+    fghij..        78.....        fghij78
+    
+    The stacking is done for the second array index: list(1,:,1).
+    The stacking works so that first every cpu 2n+1 sends its data to cpu 2n,
+    then 2*(2n+1) sends data to 2*2n, and so on, until the final cpu 2^m sends its data to cpu 0::
+    
+     cpu
+     0 1 2 3 4 5 6 7 8 9 10
+     |-/ |-/ |-/ |-/ |-/ |
+     |---/   |---/   |---/
+     |-------/       |
+     |---------------/
+     x
+    
+
+    Parameters:
+
+    list: INTEGER  *intent()*    *size(:, :, :)*  
+        3d arrays containing lists to be stacked
+    items: INTEGER  *intent()*    *size(:)*  
+        the numbers of items to be stacked in each list
+    depth: INTEGER  *intent()*    *scalar*  
+        dimensionality of the stacked objects (size of list(:,1,1))
+    length: INTEGER  *intent()*    *scalar*  
+        the number of lists (size of list(1,1,:))
+    width: INTEGER  *intent()*    *scalar*  
+        max size of lists (size of list(1,:,1))
             
   .. function:: mpi_sync()
 

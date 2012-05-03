@@ -150,6 +150,7 @@ must be updated accordingly.
         
     - :func:`bond_order_factor_affects_atom`
     - :func:`bond_order_factor_is_in_group`
+    - :func:`calculate_ewald_electronegativities`
     - :func:`calculate_ewald_energy`
     - :func:`calculate_ewald_forces`
     - :func:`clear_bond_order_factor_characterizers`
@@ -546,6 +547,41 @@ Full documentation of subroutines in potentials
     **in_group**: logical  **intent(out)**    *scalar*  
         true if the factor is a member of the group
             
+  .. function:: calculate_ewald_electronegativities(n_atoms, atoms, cell, real_cutoff, reciprocal_cutoff, gaussian_width, electric_constant, filter, scaler, include_dipole_correction, total_enegs)
+
+    Calculates the electronegativities due to long ranged :math:`\frac{1}{r}` potentials.
+    These electronegativities are the derivatives of the energies :math:`U` given by :func:`calculate_ewald_energy`
+    
+    .. math::
+    
+       \chi_\alpha = - \frac{\partial U}{\partial q_\alpha}
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        number of atoms
+    atoms: type(atom)  *intent(in)*    *size(n_atoms)*  
+        list of atoms
+    cell: type(supercell)  *intent(in)*    *scalar*  
+        the supercell containing the system
+    real_cutoff: double precision  *intent(in)*    *scalar*  
+        Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
+    reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
+        The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
+    gaussian_width: double precision  *intent(in)*    *scalar*  
+        The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
+    electric_constant: double precision  *intent(in)*    *scalar*  
+        The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
+    filter: logical  *intent(in)*    *size(n_atoms)*  
+        a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
+    scaler: double precision  *intent(in)*    *size(n_atoms)*  
+        a list of numerical values to scale the individual charges of the atoms
+    include_dipole_correction: logical  *intent(in)*    *scalar*  
+        if true, a dipole correction term is included in the energy
+    **total_enegs**: double precision  **intent(out)**    *size(n_atoms)*  
+        
+            
   .. function:: calculate_ewald_energy(n_atoms, atoms, cell, real_cutoff, reciprocal_cutoff, gaussian_width, electric_constant, filter, scaler, include_dipole_correction, total_energy)
 
     Calculates the energy of :math:`\frac{1}{r}` potentials through Ewald summation.
@@ -638,7 +674,7 @@ Full documentation of subroutines in potentials
 
     n_atoms: integer  *intent(in)*    *scalar*  
         number of atoms
-    atoms: type(atom)  *intent()*    *size(n_atoms)*  
+    atoms: type(atom)  *intent(in)*    *size(n_atoms)*  
         list of atoms
     cell: type(supercell)  *intent(in)*    *scalar*  
         the supercell containing the system
@@ -673,7 +709,7 @@ Full documentation of subroutines in potentials
 
     n_atoms: integer  *intent(in)*    *scalar*  
         number of atoms
-    atoms: type(atom)  *intent()*    *size(n_atoms)*  
+    atoms: type(atom)  *intent(in)*    *size(n_atoms)*  
         list of atoms
     cell: type(supercell)  *intent(in)*    *scalar*  
         the supercell containing the system

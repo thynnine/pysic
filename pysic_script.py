@@ -94,9 +94,11 @@ ewald.set_parameter_value('sigma',0.3)
 ewald.set_parameter_value('epsilon',1.0/(math.pi*4.0))
 calc.set_coulomb_summation(ewald)
 
-
 calc.set_core()
+"""
 
+
+"""
 
 print "initial charges: \n", system.get_charges()
 print "energy: \n", system.get_potential_energy()
@@ -149,101 +151,118 @@ print "numeric forces: \n", np.array( [ calc.get_numerical_energy_gradient(0),  
 
 #pysic.Pysic.core.view_fortran()
 """
+    
+
+"""
+import ase.calculators.neighborlist as nbl
+import pysic_fortran as pf
+import interface as s
+import time
+import pysic_utility as pu
+
+n_atoms = 75712
+system = s.system()[0:n_atoms]
+#print system.get_cell()
+#system.set_cell(atoms.get_cell())
+#system.set_cell([[41,23,2],[5,45,-15],[0,13,37]])
+#system.set_cell([20,20,20])
+system.set_pbc([True,True,True])
+
+calc = pysic.Pysic()
+system.set_calculator(calc)
+    
+    
+masses = np.array( system.get_masses() )
+charges = np.array( system.get_charges() )
+positions = np.array( system.get_positions() ).transpose()
+momenta = np.array( system.get_momenta() ).transpose()
+tags = np.array( system.get_tags() )
+elements = system.get_chemical_symbols()
+    
+for index in range(len(elements)):
+    elements[index] = pu.str2ints(elements[index],2)
+    
+elements = np.array( elements ).transpose()
+
+pf.pysic_interface.create_atoms(masses,
+                                charges,
+                                positions,
+                                momenta,
+                                tags,
+                                elements)
+calc.update_core_supercell()
+pf.pysic_interface.distribute_mpi(system.get_number_of_atoms())
+
+cutoffs = [6.0]*n_atoms
+
+print ""
+print "building ASE list"
+t1 = time.time()
+#nbors1 = nbl.NeighborList([4.0]*n_atoms,skin=1.0,bothways=True,self_interaction=False)
+#nbors1.build(system)
+t2 = time.time()
+print "done ", t2-t1
+print "building Fortran list"
+t3 = time.time()
+pf.pysic_interface.generate_neighbor_lists(cutoffs)
+t4 = time.time()
+print "done ", t4-t3
+
+"""    
+    
+"""
+import random
+random.seed(5801)
+for i in range(n_atoms):
+    rnd = random.randint(0,n_atoms/5)
+    ase = sorted(nbors1.get_neighbors(i)[0])
+    n_nbs = pf.pysic_interface.get_number_of_neighbors_of_atom(i)
+    fortran = sorted(pf.pysic_interface.get_neighbor_list_of_atom(i,n_nbs)[0])
+
+    if rnd == 0 or ase != fortran:
+        print "atom ",i
+        print "ASE:    ", ase
+        print "Fortran:", fortran
+"""
+    
+#print """The run times were (in seconds)
+#  ASE:     {a}
+#  Python:  {p}
+#  Fortran: {f}""".format(a=str(t2-t1),p=str(t3-t2),f=str(t4-t3))
+
+
+
+
+
 
 import ase.calculators.neighborlist as nbl
-import pysic_utility as pu
+import pysic_fortran as pf
 import interface as s
 import time
 
-atoms = s.system()[0:8000]
-atoms.pbc = [True,True,True]
-#atoms.set_cell([[30,20,2],[5,35,-15],[0,13,30]])
+system = s.system()
+system.set_pbc([True,True,True])
 
+calc = pysic.Pysic()
+pot = pysic.Potential('LJ')
+pot.set_symbols([['Si','Si'],
+                 ['Si','O'],
+                 ['Hf','Hf'],
+                 ['Hf','O'],
+                 ['O','O']])
+pot.set_cutoff(8.0)
+pot.set_cutoff_margin(2.0)
+pot.set_parameter_value('epsilon',1.0)
+pot.set_parameter_value('sigma',3.0)
+calc.add_potential(pot)
+system.set_calculator(calc)
 
-"""
-atoms = ase.Atoms('Na4Cl4',[[0.5,0.5,0.5],
-                             [1.5,1.5,0.5],
-                             [1.5,0.5,1.5],
-                             [0.5,1.5,1.5],
-                             [1.5,0.5,0.5],
-                             [0.5,1.5,0.5],
-                             [0.5,0.5,1.5],
-                             [1.5,1.5,1.5]])
-
-atoms.set_cell([2,2,2])
-atoms.set_pbc([True,True,True])
-"""
-
-natoms = atoms.get_number_of_atoms()
-print natoms, "atoms"
-nbors1 = nbl.NeighborList([2.0]*natoms,skin=0.5,bothways=True,self_interaction=False)
+print "set up"
+t0 = time.time()
+calc.set_core()
+print "neighbor lists ready"
 t1 = time.time()
-print "building list 1"
-nbors1.build(atoms)
+print system.get_potential_energy()
 t2 = time.time()
-print "done", t2-t1
-
-nbors2 = pu.FastNeighborList([4.0]*natoms,skin=0.5)
-
-t3 = time.time()
-print "building list 2"
-nbors2.build(atoms)
-t4 = time.time()
-print "done", t4-t3
-
-
-subs = nbors2.cell.subcells
-print "splits \n"
-print len(subs), len(subs[0]), len(subs[0][0])
-print "atom 0 subcell \n"
-print nbors2.cell.atom_subcell_indices[0]
-print "subcell 0,0,0 matrix\n"
-print nbors2.cell.subcells[0][0][0].matrix
-print "subcell 0,0,0 atoms\n"
-print nbors2.cell.subcells[0][0][0].atoms
-#print "subcell 0,0,0 offsets\n"
-#print nbors2.cell.subcells[0][0][0].offsets
-#print "subcell 0,0,0 include\n"
-#print nbors2.cell.subcells[0][0][0].include_nbor
-print "subcell 0,0,0 neighbor cells, indices, include, offsets \n"
-for i in range(-1,2):
-    for j in range(-1,2):
-        for k in range(-1,2):
-            print i,j,k, \
-                nbors2.cell.subcells[0][0][0].neighbors[i][j][k].subcell_indices, \
-                nbors2.cell.subcells[0][0][0].include_nbor[i][j][k], \
-                nbors2.cell.subcells[0][0][0].offsets[i][j][k]
-
-
-print "atom 0 neighbors\n"
-print sorted(nbors2.get_neighbors(0)[0])
-print sorted(nbors1.get_neighbors(0)[0])
-ds = []
-"""
-for n in sorted(nbors2.get_neighbors(0)[0]):
-    i = 0
-    off = [0,0,0]
-    for index in range(len(nbors2.get_neighbors(0)[0])):
-        #print i, n, index, nbors2.get_neighbors(0)[0][index]
-        if nbors2.get_neighbors(0)[0][index] == n:
-            i = index
-            off = np.array(nbors2.get_neighbors(0)[1][i])
-    print n,i,off,nbors2.cell.get_distance(atoms[0],atoms[n],off)
-"""
-print "\n"
-#print sorted(nbors2.get_neighbors(224)[0])
-#print sorted(nbors1.get_neighbors(224)[0])
-print "last atom neighbors\n"
-print sorted(nbors2.get_neighbors(natoms-1)[0])
-print sorted(nbors1.get_neighbors(natoms-1)[0])
-
-print "runtimes", t2-t1, t4-t3
-
-
-
-
-
-
-
-
+print "time: ", t1-t0, t2-t1, t2-t0
 

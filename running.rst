@@ -32,7 +32,7 @@ within Python to perform complicated calculations. Instead of writing an input f
 a complicated and error prone collection of numbers - the user needs
 to build the simulation in Python. Pysic can then be used in evaluating the energies,
 forces and other physical quantities of the given system. Python syntax is in general simple and
-simplicity and user friendlyness has also been a key goal in the design of Pysic syntax.
+simplicity and user friendliness has also been a key goal in the design of Pysic syntax.
 
 Since Python is a programming language, having Pysic be a part of the language makes it straightforward
 to write scripts that generate the physical system to be studied and also extract the needed information

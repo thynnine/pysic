@@ -137,12 +137,12 @@ Keywords::
    plt.title(r'Lennard-Jones potential: $\varepsilon = 1.0$, $\sigma = 1.0$')
    plt.show()
 
-.. file:spring potential
+.. file:harmonic potential
 
 
 
-Spring
-______
+Harmonic
+_________
 
 2-body interaction defined as
 
@@ -170,7 +170,7 @@ Keywords::
        x.append( xval )
        y.append( 0.5 * (xval-1.0)**2 )
    plt.plot(x,y)
-   plt.title(r'Spring potential: $k = 1.0$, $R_0 = 1.0$')
+   plt.title(r'Harmonic potential: $k = 1.0$, $R_0 = 1.0$')
    plt.xlim(-0.5,2.5)
    plt.ylim(-0.1,0.5)
    plt.show()

@@ -65,6 +65,7 @@ to Python are simply calling routines here.
     - :func:`core_allocate_potentials`
     - :func:`core_assign_bond_order_factor_indices`
     - :func:`core_assign_potential_indices`
+    - :func:`core_build_neighbor_lists`
     - :func:`core_calculate_bond_order_factors`
     - :func:`core_calculate_bond_order_gradients`
     - :func:`core_calculate_bond_order_gradients_of_factor`
@@ -77,6 +78,7 @@ to Python are simply calling routines here.
     - :func:`core_clear_potentials`
     - :func:`core_create_cell`
     - :func:`core_create_neighbor_list`
+    - :func:`core_create_space_partitioning`
     - :func:`core_empty_bond_order_gradient_storage`
     - :func:`core_empty_bond_order_storage`
     - :func:`core_fill_bond_order_storage`
@@ -87,7 +89,9 @@ to Python are simply calling routines here.
     - :func:`core_get_bond_order_sums`
     - :func:`core_get_cell_vectors`
     - :func:`core_get_ewald_energy`
+    - :func:`core_get_neighbor_list_of_atom`
     - :func:`core_get_number_of_atoms`
+    - :func:`core_get_number_of_neighbors`
     - :func:`core_post_process_bond_order_factors`
     - :func:`core_post_process_bond_order_gradients`
     - :func:`core_post_process_bond_order_gradients_of_factor`
@@ -95,6 +99,7 @@ to Python are simply calling routines here.
     - :func:`core_set_ewald_parameters`
     - :func:`core_update_atom_charges`
     - :func:`core_update_atom_coordinates`
+    - :func:`expand_neighbor_storage`
     - :func:`list_atoms`
     - :func:`list_bonds`
     - :func:`list_cell`
@@ -442,6 +447,16 @@ Full documentation of subroutines in pysic_core
     called from PyInterface: :func:`create_potential_list`
 
             
+  .. function:: core_build_neighbor_lists(n_atoms, cutoffs)
+
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    cutoffs: double precision  *intent(in)*    *size(n_atoms)*  
+        
+            
   .. function:: core_calculate_bond_order_factors(n_atoms, group_index, total_bond_orders)
 
     Calculates the bond order sums of all atoms for the given group.
@@ -704,6 +719,14 @@ Full documentation of subroutines in pysic_core
     offsets: integer  *intent(in)*    *size(3, n_nbs)*  
         An array containing vectors specifying the offsets of the neighbors in periodic systems.
             
+  .. function:: core_create_space_partitioning(max_cutoff)
+
+
+    Parameters:
+
+    max_cutoff: double precision  *intent(in)*    *scalar*  
+        
+            
   .. function:: core_empty_bond_order_gradient_storage(index)
 
     Clears bond order factor gradients (the precalculated gradient values)
@@ -869,6 +892,20 @@ Full documentation of subroutines in pysic_core
     **energy**: double precision  **intent(out)**    *scalar*  
         
             
+  .. function:: core_get_neighbor_list_of_atom(atom_index, n_neighbors, neighbors, offsets)
+
+
+    Parameters:
+
+    atom_index: integer  *intent(in)*    *scalar*  
+        
+    n_neighbors: integer  *intent(in)*    *scalar*  
+        
+    **neighbors**: integer  **intent(out)**    *size(n_neighbors)*  
+        
+    **offsets**: integer  **intent(out)**    *size(3, n_neighbors)*  
+        
+            
   .. function:: core_get_number_of_atoms(n_atoms)
 
     Returns the number of atoms in the array allocated in the core.
@@ -880,6 +917,16 @@ Full documentation of subroutines in pysic_core
 
     **n_atoms**: integer  **intent(out)**    *scalar*  
         number of atoms
+            
+  .. function:: core_get_number_of_neighbors(atom_index, n_neighbors)
+
+
+    Parameters:
+
+    atom_index: integer  *intent(in)*    *scalar*  
+        
+    **n_neighbors**: integer  **intent(out)**    *scalar*  
+        
             
   .. function:: core_post_process_bond_order_factors(n_atoms, group_index, raw_sums, total_bond_orders)
 
@@ -1049,6 +1096,20 @@ Full documentation of subroutines in pysic_core
         new coordinates for the atoms
     momenta: double precision  *intent(in)*    *size(3, n_atoms)*  
         new momenta for the atoms
+            
+  .. function:: expand_neighbor_storage(nbors_and_offsets, length, new_length, n_atoms)
+
+
+    Parameters:
+
+    nbors_and_offsets: integer  *intent()*  *pointer*  *size(:, :, :)*  
+        
+    length: integer  *intent(in)*    *scalar*  
+        
+    new_length: integer  *intent(in)*    *scalar*  
+        
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
             
   .. function:: list_atoms()
 

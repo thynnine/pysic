@@ -6,6 +6,20 @@ Version history
 This is a list of the main updates in the different versions of Pysic.
 
 
+Version 0.4.1
+-------------
+
+- Implemented an order :math:`\mathcal{O}(n)` neighbor finding algorithm in Fortran (see :class:`pysic.FastNeighborList`)
+
+
+
+Version 0.4
+-----------
+
+- Implemented the Ewald summation of :math:`\frac{1}{r}` potentials (see :class:`pysic.CoulombSummation`)
+- The framework allows for the addition of other summation methods later on, but for now only standard Ewald is available
+
+
 Version 0.3
 -----------
 
