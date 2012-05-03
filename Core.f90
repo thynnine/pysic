@@ -4148,7 +4148,7 @@ contains
     integer, intent(in) :: n_atoms
     double precision, intent(in) :: cutoffs(n_atoms)
     integer :: cell_indices(3), i,j, i_n, j_n, k_n, neighbor_offset(3), atom1_index, atom2_index, &
-         n_nbs(n_atoms), max_n_nbors=100, global_max, total_n_nbs(n_atoms)
+         n_nbs(n_atoms), max_n_nbors=100, global_max, total_n_nbs(n_atoms), tmp_max
     integer, pointer, save ::  nbors_and_offsets(:,:,:)
     type(subcell) :: atom_cell, neighbor_cell
     logical :: neighbor_include, first_run = .true.

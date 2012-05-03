@@ -408,9 +408,10 @@ contains
   ! *depth dimensionality of the stacked objects (size of list(:,1,1))
   SUBROUTINE mpi_stack(list,items,depth,length,width)
     IMPLICIT NONE
-    INTEGER, POINTER :: list(:,:,:), items(:)
+    INTEGER, POINTER :: list(:,:,:)
     INTEGER, INTENT(IN) :: length,width,depth
-    INTEGER :: remainder, templist(width,length),tempitems(length), ii,level
+    INTEGER, INTENT(INOUT) :: items(:)
+    INTEGER :: remainder, templist(depth,width,length),tempitems(length), ii,level
     LOGICAL :: fine
 
     fine = .false.
