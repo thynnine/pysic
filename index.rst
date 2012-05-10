@@ -7,7 +7,7 @@ Pysic (Pythonic simulation code)
 Pysic is a calculator incorporating various empirical pair and many-body
 potentials in an object-based Python environment and user interface while
 implementing an efficient numeric core written in Fortran. The immediate aim
-of the Pysic project is to implement advanced variable-charge potentials. 
+of the Pysic project is to implement advanced variable charge potentials. 
 
 Pysic is designed to interface with the `ASE`_ simulation environment.
 
@@ -17,7 +17,12 @@ The code is developed as part of the `Mordred`_ project.
 
 .. _Mordred: http://webhotel2.tut.fi/fys/mordred/
 
-Pysic is in development and not suitable for production simulations yet.
+Pysic is an open source code with emphasis on making the program simple to learn and control as well as the source code readable, extendable and conforming to good programming standards. The source code is freely available at the `Gitorious`_ repository.
+
+.. _Gitorious: https://gitorious.org/pysic/
+
+Pysic is in development. Simulations can be run with it, but many parts 
+of the program are not yet fully tested and so bugs must be expected.
 Similarly, also this documentation is being constantly updated.
 
 .. only:: html

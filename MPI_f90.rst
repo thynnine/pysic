@@ -229,13 +229,13 @@ Full documentation of subroutines in mpi
   .. function:: mpi_stack(list, items, depth, length, width)
 
     stacks the "lists" from all cpus together according to the lengths given in "items"
-    and gathers the complete list to cpu 0
+    and gathers the complete list to cpu 0.
     For example::
     
-    cpu 0          cpu 1          cpu 0
-    abc....        12.....        abc12..
-    de.....        3456...   ->   de3456.
-    fghij..        78.....        fghij78
+     cpu 0          cpu 1          cpu 0
+     abc....        12.....        abc12..
+     de.....        3456...   ->   de3456.
+     fghij..        78.....        fghij78
     
     The stacking is done for the second array index: list(1,:,1).
     The stacking works so that first every cpu 2n+1 sends its data to cpu 2n,

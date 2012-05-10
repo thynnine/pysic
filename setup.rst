@@ -5,9 +5,9 @@
 Getting Pysic
 =============
 
-Pysic is currently in development and not yet suitable for actual simulations.
+Pysic is currently in development and not yet properly tested.
 Nonetheless, the source code is available through `Gitorious`_ if you wish to
-play with it. The code is provided with no warranty or support.
+play with it. However, the code is provided with no warranty or support.
 
 .. _Gitorious: https://gitorious.org/pysic/pysic
 
@@ -29,7 +29,7 @@ part of `numpy`_.) For compiling an MPI compatible version, an MPI-Fortran
 compiler is needed.
 
 When compiling Pysic, one must wrap the interface module :ref:`pysic_interface`
-with `f2py`_ and compile all other Fortran source directly to .mod modules.
+with `f2py`_ and compile all other Fortran source directly to ``.mod`` modules.
 This can be achieved with::
 
    > f2py -m pysic_fortran -h pysic_fortran.pyf PyInterface.F90

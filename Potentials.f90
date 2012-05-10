@@ -102,6 +102,13 @@ module potentials
   use mpi
   implicit none
 
+  !*********************************!
+  ! EDIT WHEN ADDING NEW POTENTIALS !
+  !*********************************!
+
+  !***********************************!
+  ! EDIT WHEN ADDING NEW BOND FACTORS !
+  !***********************************!
 
   ! Parameters for potential descriptors
   ! *pot_name_length maximum length allowed for the names of potentials
@@ -118,6 +125,11 @@ module potentials
        n_max_params = 12, &
        pot_note_length = 500, &
        param_note_length = 100
+
+
+  !*********************************!
+  ! EDIT WHEN ADDING NEW POTENTIALS !
+  !*********************************!
 
   ! Indices for potential types.
   ! These are used internally so that when
@@ -140,6 +152,11 @@ module potentials
        tri_bend_index = 4, &
        pair_exp_index = 5, &
        mono_none_index = 6
+
+
+  !***********************************!
+  ! EDIT WHEN ADDING NEW BOND FACTORS !
+  !***********************************!
 
   ! Indices for bond order factor types.
   ! Similar to potential types above.
@@ -345,6 +362,10 @@ contains
     new_potential%original_tags = orig_tags
     new_potential%original_indices = orig_indices
 
+    !*********************************!
+    ! EDIT WHEN ADDING NEW POTENTIALS !
+    !*********************************!
+
     ! calculate derived parameters if necessary
     select case (new_potential%type_index)
     case(tri_bend_index) ! bond bending
@@ -459,6 +480,11 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     new_bond%original_elements = orig_elements
     new_bond%includes_post_processing = descriptor%includes_post_processing
 
+
+    !***********************************!
+    ! EDIT WHEN ADDING NEW BOND FACTORS !
+    !***********************************!
+
     ! calculate derived parameters if necessary
     select case (new_bond%type_index)
     case(tersoff_index) ! tersoff
@@ -501,6 +527,11 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     type(bond_order_parameters), intent(in) :: bond_params
     double precision, intent(out) :: factor_out
     double precision :: beta, eta, dN
+
+
+    !***********************************!
+    ! EDIT WHEN ADDING NEW BOND FACTORS !
+    !***********************************!
     
     select case(bond_params%type_index)
     case(tersoff_index) ! tersoff factor
@@ -556,6 +587,10 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     type(bond_order_parameters), intent(in) :: bond_params
     double precision, intent(out) :: factor_out(3)
     double precision :: beta, eta, inv_eta, dN, expo, inv_exp
+
+    !***********************************!
+    ! EDIT WHEN ADDING NEW BOND FACTORS !
+    !***********************************!
     
     select case(bond_params%type_index)
     case(tersoff_index)
@@ -615,6 +650,10 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     double precision :: tmp1(3), tmp2(3)
 
     factor = 0.d0
+
+    !***********************************!
+    ! EDIT WHEN ADDING NEW BOND FACTORS !
+    !***********************************!
 
     select case (bond_params(1)%type_index)
     case(coordination_index) ! number of neighbors
@@ -752,6 +791,10 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
          tmp5(3), tmp6(3), tmpmat1(3,3), tmpmat2(3,3)
 
     gradient = 0.d0
+
+    !***********************************!
+    ! EDIT WHEN ADDING NEW BOND FACTORS !
+    !***********************************!
 
     select case (bond_params(1)%type_index)
     case(coordination_index) ! number of neighbors
@@ -932,6 +975,11 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     
     eneg = 0.d0
 
+
+    !*********************************!
+    ! EDIT WHEN ADDING NEW POTENTIALS !
+    !*********************************!
+
     ! The interaction type is decided based on the type index.
     ! This decides what kind of a function is applied and what 
     ! the parameters provided actually mean.
@@ -1033,6 +1081,10 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     logical :: inverse_params
 
     force = 0.d0
+
+    !*********************************!
+    ! EDIT WHEN ADDING NEW POTENTIALS !
+    !*********************************!
 
     ! The interaction type is decided based on the type index.
     ! This decides what kind of a function is applied and what 
@@ -1211,6 +1263,10 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     integer :: i
 
     energy = 0.d0
+
+    !*********************************!
+    ! EDIT WHEN ADDING NEW POTENTIALS !
+    !*********************************!
 
     ! The interaction type is decided based on the type index.
     ! This decides what kind of a function is applied and what 
@@ -1521,6 +1577,14 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     allocate(potential_descriptors(0:n_potential_types))
     index = 0
 
+
+
+    !*********************************!
+    ! EDIT WHEN ADDING NEW POTENTIALS !
+    !*********************************!
+
+
+
     ! **** Lennard-Jones potential ****
 
     ! Index is a helper variable that is increased by one
@@ -1750,6 +1814,12 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     allocate(bond_order_descriptors(0:n_bond_order_types))
 
     index = 0
+
+
+    !***********************************!
+    ! EDIT WHEN ADDING NEW BOND FACTORS !
+    !***********************************!
+
 
     ! **** Coordination ****
 
@@ -3139,8 +3209,8 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   ! *electric_constant The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
   ! *filter a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
   ! *scaler a list of numerical values to scale the individual charges of the atoms
-  ! *include_dipole_correction if true, a dipole correction term is included in the energy
-  ! *total_energy the calculated energy
+  ! *include_dipole_correction if true, a dipole correction term is included
+  ! *total_enegs the calculated electronegativities
   subroutine calculate_ewald_electronegativities(n_atoms,atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
        electric_constant,filter,scaler,include_dipole_correction,total_enegs)
     implicit none

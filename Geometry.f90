@@ -68,6 +68,7 @@ module geometry
   ! *neighbor_list the list of neighbors for the atom
   ! *potential_indices the indices of the potentials for which this atom is a valid target at first position (see :func:`potential_affects_atom`)
   ! *bond_indices the indices of the bond order factors for which this atom is a valid target at first position (see :func:`bond_order_factor_affects_atom`)
+  ! *subcell_indices indices of the subcell containing the atom, used for fast neighbor searching (see :data:`subcell`)
   type atom
      double precision :: mass, charge, position(3), momentum(3)
      integer :: index, tags, n_pots, n_bonds, subcell_indices(3)
@@ -100,6 +101,9 @@ module geometry
   ! *vector_lengths the lengths of the cell spanning vectors (stored to avoid calculating the vector norms over and over)
   ! *volume volume of the cell
   ! *periodic logical switch determining if periodic boundary conditions are applied in the directions of the three cell spanning vectors
+  ! *n_splits the number of subcells there are in the subdivisioning of the cell, in the directions of the spanning vectors
+  ! *max_subcell_atom_count the maximum number of atoms any of the subcells has
+  ! *subcells an array of :data:`subcell` subvolumes which partition the supercell
   type supercell
      double precision :: vectors(3,3), inverse_cell(3,3), &
         reciprocal_cell(3,3),vector_lengths(3), volume
@@ -108,6 +112,27 @@ module geometry
      type(subcell), pointer :: subcells(:,:,:)
   end type supercell
 
+
+  ! Subvolume, which is a part of the supercell containing the simulation.
+  ! 
+  ! The subcells are used in partitioning of the simulation space in subvolumes.
+  ! This divisioning of the simulation cell is needed for quickly finding the 
+  ! neighbors of atoms (see also :class:`pysic.FastNeighborList`).
+  ! The fast neighbor search is based on dividing the system, locating the subcell
+  ! in which each atom is located, and then searching for neighbors for each atom
+  ! by only checking the adjacent subcells. For small subvolumes (short cutoffs)
+  ! this method is much faster than a brute force algorithm that checks all atom
+  ! pairs. It also scales :math:`\mathcal{O}(n)`.
+  !
+  ! *indices integer coordinates of the subcell in the subcell divisioning of the supercell
+  ! *offsets integer offsets of the neighboring subcells - if a neighboring subcell is beyond a periodic border, the offset records the fact
+  ! *n_atoms the number of atoms contained by the subcell
+  ! *max_atoms the maximum number of atoms the cell can contain in the currently allocated memory space
+  ! *vectors the vectors spanning the subcell
+  ! *vector_lengths lengths of the vectors spanning the subcell
+  ! *neighbors indices of the 3 x 3 x 3 neighboring subcells (note that the neighboring subcell 0,0,0 is the cell itself)
+  ! *atoms indices of the atoms in this subcell
+  ! *include A logical array noting if the neighboring subcells should be included in the neighbor search. Usually all neighbors are included, but in a non-periodic system, there is only a limited number of cells and once the system border is reached, this tag will be set to ``.false.`` to notify that there is no neighbor to be found.
   type subcell
      integer :: indices(3), offsets(3,-1:1,-1:1,-1:1), n_atoms, max_atoms
      double precision :: vectors(3,3), vector_lengths(3)

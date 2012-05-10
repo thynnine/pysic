@@ -578,9 +578,9 @@ Full documentation of subroutines in potentials
     scaler: double precision  *intent(in)*    *size(n_atoms)*  
         a list of numerical values to scale the individual charges of the atoms
     include_dipole_correction: logical  *intent(in)*    *scalar*  
-        if true, a dipole correction term is included in the energy
+        if true, a dipole correction term is included
     **total_enegs**: double precision  **intent(out)**    *size(n_atoms)*  
-        
+        the calculated electronegativities
             
   .. function:: calculate_ewald_energy(n_atoms, atoms, cell, real_cutoff, reciprocal_cutoff, gaussian_width, electric_constant, filter, scaler, include_dipole_correction, total_energy)
 

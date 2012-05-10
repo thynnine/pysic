@@ -97,7 +97,7 @@ Full documentation of custom types in geometry
     charge: double precision    *scalar*
         charge of the atom
     subcell_indices: integer    *size(3)*
-        
+        indices of the subcell containing the atom, used for fast neighbor searching (see :data:`subcell`)
     mass: double precision    *scalar*
         mass of th atom
     n_bonds: integer    *scalar*
@@ -157,27 +157,38 @@ Full documentation of custom types in geometry
         the number of neighbors in the lists
   .. data:: subcell
 
+    Subvolume, which is a part of the supercell containing the simulation.
+    
+    The subcells are used in partitioning of the simulation space in subvolumes.
+    This divisioning of the simulation cell is needed for quickly finding the
+    neighbors of atoms (see also :class:`pysic.FastNeighborList`).
+    The fast neighbor search is based on dividing the system, locating the subcell
+    in which each atom is located, and then searching for neighbors for each atom
+    by only checking the adjacent subcells. For small subvolumes (short cutoffs)
+    this method is much faster than a brute force algorithm that checks all atom
+    pairs. It also scales :math:`\mathcal{O}(n)`.
+    
 
     Contained data:
 
     neighbors: integer    *size(3, -1:1, -1:1, -1:1)*
-        
+        indices of the 3 x 3 x 3 neighboring subcells (note that the neighboring subcell 0,0,0 is the cell itself)
     vector_lengths: double precision    *size(3)*
-        
+        lengths of the vectors spanning the subcell
     offsets: integer    *size(3, -1:1, -1:1, -1:1)*
-        
+        integer offsets of the neighboring subcells - if a neighboring subcell is beyond a periodic border, the offset records the fact
     max_atoms: integer    *scalar*
-        
+        the maximum number of atoms the cell can contain in the currently allocated memory space
     vectors: double precision    *size(3, 3)*
-        
+        the vectors spanning the subcell
     atoms: integer  *pointer*  *size(:)*
-        
+        indices of the atoms in this subcell
     n_atoms: integer    *scalar*
-        
+        the number of atoms contained by the subcell
     indices: integer    *size(3)*
-        
+        integer coordinates of the subcell in the subcell divisioning of the supercell
     include: logical    *size(-1:1, -1:1, -1:1)*
-        
+        A logical array noting if the neighboring subcells should be included in the neighbor search. Usually all neighbors are included, but in a non-periodic system, there is only a limited number of cells and once the system border is reached, this tag will be set to ``.false.`` to notify that there is no neighbor to be found.
   .. data:: supercell
 
     Supercell containing the simulation.
@@ -203,13 +214,13 @@ Full documentation of custom types in geometry
     vector_lengths: double precision    *size(3)*
         the lengths of the cell spanning vectors (stored to avoid calculating the vector norms over and over)
     max_subcell_atom_count: integer    *scalar*
-        
+        the maximum number of atoms any of the subcells has
     n_splits: integer    *size(3)*
-        
+        the number of subcells there are in the subdivisioning of the cell, in the directions of the spanning vectors
     inverse_cell: double precision    *size(3, 3)*
         the inverse of the cell matrix :math:`\mathbf{M}^{-1}`
     subcells: type(subcell)  *pointer*  *size(:, :, :)*
-        
+        an array of :data:`subcell` subvolumes which partition the supercell
     vectors: double precision    *size(3, 3)*
         vectors spanning the supercell containing the system as a matrix :math:`\mathbf{M}`
     volume: double precision    *scalar*

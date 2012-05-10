@@ -2,6 +2,8 @@
 
 .. file:run_forewords
 
+.. _running:
+
 Running Pysic
 -------------
 
@@ -104,7 +106,7 @@ Let's say we want to simulate a bunch of atoms. To do this, we need to know wher
 
 For complicated data hierarchies one may need to do this kind of index juggling for several rounds, which leads to code that is difficult to read and very susceptible to bugs. Furthermore, if one would want to edit the lists of atoms by, say, removing an atom from the system, all the arrays containing data related to atoms would have to be checked in case they contain the to be deleted particle and updated accordingly.
 
-In the object oriented approach, one defines a data structure (called a *class* in Python) capable of storing various types of information in a single instance. So one can define an 'atom' datatype which contains the coordinates (as real numbers), momenta, etc. in one neat package. One can also define a 'neighbor list' datatype which contains a list of 'atom' datatypes. And the 'atom' datatype can contain a 'neighbor list' [#]_. Now, the problem of finding the coordinates of a neighbor is solved in a more intuitive way by asking the atom who the neigbor is and the neighbor its coordinates. This might look something like this::
+In the object oriented approach, one defines a data structure (called a *class* in Python) capable of storing various types of information in a single instance. So one can define an 'atom' datatype which contains the coordinates (as real numbers), momenta, etc. in one neat package. One can also define a 'neighbor list' datatype which contains a list of 'atom' datatypes. And the 'atom' datatype can contain a 'neighbor list' (although, this is not exactly how ASE handles neighbor lists). Now, the problem of finding the coordinates of a neighbor is solved in a more intuitive way by asking the atom who the neigbor is and the neighbor its coordinates. This might look something like this::
 
   neighbor_atom_coordinates = atom.get_neighbor(neighbor_index).get_coordinates()
 
@@ -112,5 +114,4 @@ The above example also demonstrates *methods* - object specific functions allowi
 
 The classes and their methods defined in Pysic are documented in detail in :ref:`syntax`, and their basic use is shown in the collection of provided :ref:`examples`. The central class in Pysic is :class:`~pysic.Pysic`, which is an energy and force calculator for `ASE`_. The interactions according to which the energies are calculated are constructed through the class :class:`~pysic.Potential`. Utilizing these classes is necessary to run meaningful calculations, though also other classes are defined for special purposes.
 
-.. [#] Although, this is not exactly how ASE handles neighbor lists...
 
