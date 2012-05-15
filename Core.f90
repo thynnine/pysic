@@ -77,6 +77,13 @@ module pysic_core
   double precision, pointer :: ewald_scaler(:)
   logical :: ewald_allocated = .false.
 
+
+  ! indices for specifying the type of quantity evaluated during local structure loops
+  integer, parameter :: energy_evaluation_index = 1
+  integer, parameter :: force_evaluation_index = 2
+  integer, parameter :: electronegativity_evaluation_index = 3
+  
+
 contains
 
 ! !!!: core_release_all_memory
@@ -2157,1378 +2164,39 @@ contains
   end subroutine core_post_process_bond_order_gradients_of_factor
 
 
-! !!!: core_calculate_forces
+! !!!: core_loop_over_local_interactions
 
-  ! Calculates forces acting on all atoms of the system.
+! ToDo: add atom quadruplets to local loops
+
+  ! Loops over atoms, atomic pairs, atomic triplets, and atomic quadruplets
+  ! and calculates the contributions from local potentials to energy, forces, 
+  ! or electronegativities. This routine is called from the routines
   !
-  ! The routine calculates the potential gradient
-  !
-  ! .. math::
-  !
-  !    \mathbf{F}_\alpha = - \nabla_\alpha V
-  !
-  ! for all atoms :math:`\alpha`. This is done according to the
-  ! the structure and potentials allocated in the core, so the
-  ! routine does not accept arguments. Instead, the core modifying
-  ! routines such as :func:`core_generate_atoms` must be called
-  ! first to set up the calculation.
-  !
-  ! called from PyInterface: :func:`calculate_forces`
+  !  - :meth:`core_calculate_energy`
+  !  - :meth:`core_calculate_forces`
+  !  - :meth:`core_calculate_electronegaivities`
   !
   ! *n_atoms number of atoms
-  ! *total_forces an array containing the calculated forces for all atoms
-  subroutine core_calculate_forces(n_atoms,total_forces)
+  ! *calculation_type index to specify if the loop calculates energies, forces, or e-negativities
+  ! *total_energy calculated energy
+  ! *total_forces calculated forces
+  ! *total_enegs calculated electronegativities
+  subroutine core_loop_over_local_interactions(n_atoms,calculation_type,total_energy,total_forces,total_enegs)
     implicit none
-    integer, intent(in) :: n_atoms
-    double precision, intent(out) :: total_forces(3,n_atoms)
+    integer, intent(in) :: n_atoms, calculation_type
+    double precision, intent(out) :: total_energy, total_forces(3,n_atoms), total_enegs(n_atoms)
+
     integer :: j, k, l, n_targets, index1, index2, index3, &
          indexB1, indexB2, indexB3, iB, jB, kB
-    double precision :: forces(3,n_atoms), tmp_forces(3,3), &
+    double precision :: energy, tmp_energy, &
+         forces(3,n_atoms), tmp_forces(3,3), &
+         enegs(n_atoms), tmp_enegs(3), &
          separations(3,2), distances(2), directions(3,2), &
          dummy_sep(3,0), dummy_dist(0), &
-         cut_factors(2), cut_gradients(3,2), tmp_energy, stopwatch_0, stopwatch_1
+         cut_factors(2), cut_gradients(3,2), stopwatch_0, stopwatch_1
     double precision :: bo_factors(n_atoms), bo_sums(n_atoms), bo_gradients(3,n_atoms,3)
     type(atom) :: atom1, atom2, atom3, atomB1, atomB2, atomB3
     type(atom) :: atom_list(3), atom_listB(3)
-    type(neighbor_list) :: nbors1, nbors2
-    type(potential) :: interaction
-    integer, pointer :: interaction_indices(:)
-    logical :: is_active, many_bodies_found, separation3_unknown, filter(n_atoms)
-    integer :: offset(3)
-
-    forces = 0.d0
-    total_forces = 0.d0
-
-    ! For MPI load balancing, the execution time of each cpu
-    ! is recorded. After the forces have been calculated, the
-    ! workload of all cpus are examined and load is transferred
-    ! between the cpus in order to make the workloads as equal
-    ! as possible.
-    call start_timer()
-
-    ! Before starting the force calculation proper,
-    ! all bond order factors are calculated and
-    ! stored in arrays.
-    ! Thus, they need not be recalculated during the
-    ! force evaluation loops.
-    bo_factors = 1.d0
-    bo_sums = 0.d0
-    bo_gradients = 0.d0
-    use_saved_bond_order_factors = .true.
-    call core_fill_bond_order_storage(n_atoms)
-
-    ! loop over atoms
-    do index1 = 1, size(atoms)
-
-       ! in MPI, only consider the atoms allocated to this particular cpu
-       if(is_my_atom(index1))then
-          
-          ! Bond order gradients are not stored since there are potentially
-          ! so many. Some most recent ones are saved, though.
-          ! At the start of the first atom loop, we clear the storage.
-          call core_empty_bond_order_gradient_storage()
-          
-          atom1 = atoms(index1)
-          nbors1 = atom1%neighbor_list
-          interaction_indices => atom1%potential_indices
-          
-          !*********************!
-          ! 1-body interactions !
-          !*********************!
-
-          ! loop over potentials affecting atom1
-          do k = 1, size(interaction_indices)
-             
-             interaction = interactions(interaction_indices(k))
-
-             ! filter the potentials according to number of targets
-             call get_number_of_targets_of_potential_index(interaction%type_index,n_targets)             
-             if( n_targets == 1 )then
-
-                ! evaluate the 1-body energy involving atom1
-                call evaluate_forces(1,dummy_sep,dummy_dist,&
-                     interaction,tmp_forces(1:3,1),atoms(index1:index1)) ! in Potentials.f90
-
-                ! If there is a bond order factor associated with the potential,
-                ! we add the contribution is brings:
-                !
-                ! V = \sum_i b_i v_i
-                ! F_a = - \nabla_a V 
-                !     = - \sum_i (\nabla_a b_i) v_i + b_i (\nabla_a v_i)
-                !     = - \sum_i (\nabla_a b_i) v_i + b_i f_a,i
-                !
-                if(interaction%pot_index > -1)then
-                   call core_get_bond_order_factors(n_atoms,&
-                        interaction%pot_index,&
-                        bo_factors)
-                   call core_get_bond_order_gradients(n_atoms,&
-                        interaction%pot_index,&
-                        index1,& ! atom index
-                        1, & ! slot_index
-                        bo_gradients(1:3,1:n_atoms,1))
-
-                   ! Add the bond order gradient terms involving the atom1 self energy for all atoms.
-                   ! That is, add the (\nabla_a b_i) v_i term with the given i (atom1) for all a.
-                   call evaluate_energy(1,dummy_sep,dummy_dist,interaction,&
-                        tmp_energy,atoms(index1:index1))  ! in Potentials.f90
-                   forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) - tmp_energy*bo_gradients(1:3,1:n_atoms,1)
-
-                else
-                   bo_factors = 1.d0
-                   bo_sums = 0.d0
-                   bo_gradients = 0.d0
-                end if
-
-                ! Add the force due to potential gradient
-                forces(1:3,index1) = forces(1:3,index1) + tmp_forces(1:3,1)*bo_factors(index1)
-                
-             end if
-          end do
-          
-          ! loop over neighbors
-          do j = 1, nbors1%n_neighbors
-             
-             ! Note that we loop over the neighbors in the outer loop and
-             ! over the interactions in the inner loop. This is to avoid calculating
-             ! the interatomic distances repeatedly for multiple potentials affecting
-             ! the same pair of atoms.
-                          
-             ! neighboring atom
-             index2 = nbors1%neighbors(j)
-             offset(1:3) = nbors1%pbc_offsets(1:3,j)
-
-             ! Since we loop over the neighbors of all atoms, we will find the pair
-             ! atom1-atom2 = atom2-atom1 twice.
-             ! To prevent the double counting, we filter by index2 > index1.
-             if(pick(index1,index2,offset))then
-                
-                ! Empty bond gradient storage for atom2 slot (since we have a new atom2)
-                call core_empty_bond_order_gradient_storage(2)
-                
-                atom2 = atoms(index2)
-                atom_list(1) = atom1
-                atom_list(2) = atom2
-
-                ! calculate atom1-atom2 separation vector
-                ! and distance
-                call separation_vector(atom1%position, &
-                     atom2%position, &
-                     nbors1%pbc_offsets(1:3,j), &
-                     cell, &
-                     separations(1:3,1)) ! in Geometry.f90
-                distances(1) = .norm.(separations(1:3,1))
-                if(distances(1) == 0.d0)then
-                   directions(1:3,1) = (/ 0.d0, 0.d0, 0.d0 /)
-                else
-                   directions(1:3,1) = separations(1:3,1) / distances(1)
-                end if
-                
-                many_bodies_found = .false.
-
-                !*********************!
-                ! 2-body interactions !
-                !*********************!
-
-                ! loop over potentials affecting atom1
-                do k = 1, size(interaction_indices)
-                   
-                   interaction = interactions(interaction_indices(k))
-
-                   ! filter the potentials by:
-                   ! is atom2 affected by the potential,
-                   ! is it a 2-body potential
-                   call potential_affects_atom(interaction,atom2,is_active,2) ! in Potentials.f90
-                   if( is_active .and. interaction%cutoff > distances(1) )then
-                      call get_number_of_targets_of_potential_index(interaction%type_index,&
-                           n_targets) ! in Potentials.f90
-                      if( n_targets == 2 )then
-
-                         ! We will need the energy contribution from atom1-atom2
-                         ! interaction if smooth cutoffs or bond factors are used,
-                         ! since we are mulplying the potential.
-                         if((interaction%pot_index > -1) .or. &
-                            interaction%smoothened)then
-                            call evaluate_energy(2,separations(1:3,1),distances(1),&
-                                 interaction,tmp_energy,atom_list(1:2)) ! in Potentials.f90
-                         else
-                            tmp_energy = 0.d0
-                         end if
-
-                         ! If a smooth cutoff is present, we add the
-                         ! contribution it brings:
-                         ! 
-                         ! V = \sum_ij v_ij f(r_ij)
-                         ! F_a = - \nabla_a V 
-                         !     = - \sum_ij v_ij f'(r_ij) (\nabla_a r_ij) + (\nabla_a v_ij) f(r_ij) 
-                         !     = - \sum_ij v_ij f'(r_ij) (\nabla_a r_ij) + f_a,ij f(r_ij)
-                         !
-                         if(interaction%smoothened)then
-                            ! get f(r_ij)
-                            call smoothening_factor(distances(1),&
-                                 interaction%cutoff,interaction%soft_cutoff,&
-                                 cut_factors(1)) ! in Potentials.f90
-                            ! get f'(r_ij) (\nabla_a r_ij)
-                            call smoothening_gradient(directions(1:3,1),distances(1),&
-                                 interaction%cutoff,interaction%soft_cutoff,&
-                                 cut_gradients(1:3,1)) ! in Potentials.f90
-                         else
-                            cut_factors(1) = 1.d0
-                            cut_gradients(1:3,1) = 0.d0
-                         end if
-
-                         ! If there is a bond order factor associated with the potential,
-                         ! we add the contribution is brings:
-                         !
-                         ! V = \sum_ij b_ij v_ij
-                         ! b_ij = (b_i + b_j) / 2
-                         ! F_a = - \nabla_a V 
-                         !     = - \sum_ij (\nabla_a b_ij) v_ij + b_ij (\nabla_a v_ij)
-                         !     = - \sum_ij (\nabla_a b_ij) v_ij + b_ij f_a,ij
-                         !
-                         if(interaction%pot_index > -1)then
-                            ! get b_i (for all i, they have been precalculated)
-                            call core_get_bond_order_factors(n_atoms,&
-                                 interaction%pot_index,&
-                                 bo_factors)
-                            ! get (\nabla_a b_i) (for all a)
-                            call core_get_bond_order_gradients(n_atoms,&
-                                 interaction%pot_index,&
-                                 index1,& ! atom index
-                                 1, & ! slot_index
-                                 bo_gradients(1:3,1:n_atoms,1))
-                            ! get (\nabla_a b_j) (for all a)
-                            call core_get_bond_order_gradients(n_atoms,&
-                                 interaction%pot_index,&
-                                 index2,& ! atom index
-                                 2, & ! slot_index
-                                 bo_gradients(1:3,1:n_atoms,2))
-
-                            ! Add the bond order gradient terms involving the 
-                            ! atom1-atom2 energy for all atoms.
-                            ! That is, add the (\nabla_a b_ij) v_ij term with 
-                            ! the given ij (atom1,atom2) for all a.
-                            forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
-                                 - tmp_energy*cut_factors(1)*&
-                                 (bo_gradients(1:3,1:n_atoms,1)+bo_gradients(1:3,1:n_atoms,2))*0.5d0
-
-                         else
-                            bo_factors = 1.d0
-                            bo_sums = 0.d0
-                            bo_gradients = 0.d0
-                         end if
-
-                         ! evaluate the 2-body force involving atom1-atom2 interaction
-                         call evaluate_forces(2,separations(1:3,1),distances(1),&
-                              interaction,tmp_forces(1:3,1:2),atom_list(1:2)) ! in Potentials.f90
-
-                         ! force on atom 1:
-                         forces(1:3,index1) = forces(1:3,index1) + &
-                              ( tmp_forces(1:3,1) * cut_factors(1) + &
-                              tmp_energy * cut_gradients(1:3,1) ) * &
-                              ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
-
-                         ! force on atom 2:
-                         forces(1:3,index2) = forces(1:3,index2) + &
-                              ( tmp_forces(1:3,2) * cut_factors(1) - &
-                              tmp_energy * cut_gradients(1:3,1) ) * &
-                              ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
-                         
-                      else if( n_targets > 2)then
-
-                         ! If the number of targets is greater than 2,
-                         ! we have found a many-body potential.
-                         ! Make a note that we must also evaluate the many-body terms.
-                         many_bodies_found = .true.
-
-                      end if ! n_targets == 2
-                   end if ! is_active
-
-                end do ! k = 1, size(interaction indices)
-                
-                ! Only do the 3-body loop if we found many-body potentials 
-                ! during 2-body evaluation.
-                ! 
-                ! In the 3-body loop, we search the neighbors of both atom1
-                ! and atom2 to find the triplets 
-                ! atom1-atom2-atom3 and
-                ! atom2-atom1-atom3
-                ! These are considered to be different, since the middle atom of
-                ! the triplet is different (atom2 vs. atom1).
-                !
-                ! We loop over all atoms to get atom1, 
-                ! then over the neighbors of the atom1 to get atom2,
-                ! then again over the neighbors of both atom1 and atom2 to get atom3.
-                ! We want to find every triplet A-B-C, B-A-C, A-C-B exactly once filtering by the
-                ! ordering of the indices of the atoms.
-                ! Triplets A-B-C are considered equal to C-B-A and should be only found once.
-                !
-                ! Consider the indices A: 1, B: 2, C: 3. For other orderings, we can just
-                ! permutate the names A, B and C so this is not affecting the generality
-                ! of the argument.
-                !
-                ! We already filter by index1 < index2 when searching for atom2.
-                ! Therefore the possible ways to get atom1 and atom2 for these orderings are:
-                !
-                !  A B C   atom1 atom2  or  atom1 atom2  or  atom1 atom2 
-                !  1 2 3   A : 1 B : 2      A : 1 C : 3      B : 2 C : 3
-                !
-                ! If we filter atom3 by index3 > index2 when searching atom1 neighbors
-                ! and index3 > index1 when searching atom2 neighbors (i.e., index3
-                ! greater than the index of the atom whose neighbors are not searched),
-                ! we get:
-                !
-                !  A B C   atom1 atom2  atom3 as atom1 nbor / atom2 nbor
-                !  1 2 3   A : 1 B : 2  C : 3 -> found B-A-C
-                !                       C : 3 -> found A-B-C
-                !          A : 1 C : 3  B : 2 -> B < C (2 < 3) so ignored
-                !                       B : 2 -> found A-C-B
-                !          B : 2 C : 3  A : 1 -> A < B (1 < 2) so ignored
-                !                       A : 1 -> A < C (1 < 3) so ignored
-
-                if(many_bodies_found)then
-
-                   !*********************!
-                   ! 3-body interactions !
-                   !*********************!
-
-                   ! neighbors of atom2
-                   nbors2 = atom2%neighbor_list
-                   
-                   ! First we try to find ordered triplets atom2 -- atom1 -- atom3
-                   ! Therefore we need separations a1--a2 and a1--a3.
-
-                   ! loop over neighbors of atom 1
-                   do l = 1, nbors1%n_neighbors
-                      index3 = nbors1%neighbors(l)
-                      
-                      ! the condition for finding each triplet once is such that
-                      ! index 3 must be higher than the index of the atom whose
-                      ! neighbors are NOT currently searched
-                      ! For the offset check we need atom2->atom3 which equals
-                      ! (atom1->atom3) - (atom1->atom2), the latter being stored in offset
-                      if(pick(index2,index3,nbors1%pbc_offsets(1:3,l)-offset))then
-
-                         ! third atom of the triplet
-                         atom3 = atoms(index3)
-                         ! atom3 is new so we don't know the separation from atom1                         
-                         separation3_unknown = .true.
-                         ! The list of atoms is passed to force evaluation routine
-                         ! for further filtering.
-                         ! This is triplet atom2 - atom1 - atom3, since we loop over
-                         ! neighbors of atom1.
-                         atom_list = (/ atom2, atom1, atom3 /)
-
-                         !call core_empty_bond_order_gradient_storage(3)
-                         
-                         ! loop over the potentials affecting atom1
-                         do k = 1, size(interaction_indices)
-                            
-                            interaction = interactions(interaction_indices(k))
-                            
-                            ! filter the potentials by:
-                            ! is atom2 affected by the potential,
-                            ! is atom3 affected by the potential,
-                            ! is it a 3-body potential
-                            call get_number_of_targets_of_potential_index(interaction%type_index,&
-                                 n_targets) ! in Potentials.f90
-                            call potential_affects_atom(interaction,atom2,is_active,2) ! in Potentials.f90
-                            
-                            if( is_active .and. n_targets == 3 .and. interaction%cutoff > distances(1) )then
-                               call potential_affects_atom(interaction,atom3,is_active,3) ! in Potentials.f90
-                               if( is_active )then
-                               
-                                  ! The ordered triplet found is atom2 -- atom1 -- atom3
-                                  ! Calculate the separations and distances between the particles
-                                  ! starting from atom1: a1--a2, a1--a3
-                                  ! (atom2 -- atom1 is already known though from 2-body calculation)
-                                  
-                                  ! When we loop over the bond factors
-                                  ! we may need the atom1-atom3 distance
-                                  ! repeatedly. We only calculate it the first
-                                  ! time.
-                                  if( separation3_unknown )then
-                                     call separation_vector(atom1%position, &
-                                          atom3%position, &
-                                          nbors1%pbc_offsets(1:3,j), &
-                                          cell, &
-                                          separations(1:3,2)) ! in Geometry.f90
-                                     separation3_unknown = .false.
-                                     distances(2) = .norm.(separations(1:3,2))
-                                     if(distances(2) == 0.d0)then
-                                        directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-                                     else
-                                        directions(1:3,2) = separations(1:3,2) / distances(2)
-                                     end if
-                                  end if
-                                  
-                                  if( interaction%cutoff > distances(2) )then
-                                     
-                                     ! We will need the energy contribution from atom2-atom1-atom3
-                                     ! interaction if smooth cutoffs or bond factors are used,
-                                     ! since we are mulplying the potential.
-                                     if((interaction%pot_index > -1) .or. &
-                                          interaction%smoothened)then
-                                        call evaluate_energy(3,separations(1:3,1:2),distances(1:2),&
-                                             interaction,tmp_energy,atom_list) ! in Potentials.f90
-                                     else
-                                        tmp_energy = 0.d0
-                                     end if
-
-                                     ! If a smooth cutoff is present, we add the
-                                     ! contribution it brings:
-                                     ! 
-                                     ! V = \sum_ijk v_ijk f(r_ij) f(r_ik)
-                                     ! F_a = - \nabla_a V 
-                                     !     = - \sum_ij ( v_ij f'(r_ij) f(r_ik) (\nabla_a r_ij) + 
-                                     !                   v_ij f(r_ij) f'(r_ik) (\nabla_a r_ik) +
-                                     !                   (\nabla_a v_ij) f(r_ij) f(r_ik) )
-                                     !
-                                     if(interaction%smoothened)then
-                                        ! get f(r_ij)
-                                        call smoothening_factor(distances(1),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_factors(1)) ! in Potentials.f90
-                                        ! get f'(r_ij) (\nabla_a r_ij)
-                                        call smoothening_gradient(directions(1:3,1),distances(1),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_gradients(1:3,1)) ! in Potentials.f90 
-                                        ! get f(r_ik)
-                                        call smoothening_factor(distances(2),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_factors(2)) ! in Potentials.f90
-                                        ! get f'(r_ik) (\nabla_a r_ik)
-                                        call smoothening_gradient(directions(1:3,2),distances(2),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_gradients(1:3,2)) ! in Potentials.f90
-                                     else
-                                        cut_factors(1:2) = 1.d0
-                                        cut_gradients(1:3,1:2) = 0.d0
-                                     end if
-                                     
-                                     ! If there is a bond order factor associated with the potential,
-                                     ! we add the contribution is brings:
-                                     !
-                                     ! V = \sum_ijk b_ijk v_ijk
-                                     ! b_ijk = (b_i + b_j + b_k) / 3
-                                     ! F_a = - \nabla_a V 
-                                     !     = - \sum_ijk (\nabla_a b_ijk) v_ijk + b_ijk (\nabla_a v_ijk)
-                                     !     = - \sum_ijk (\nabla_a b_ijk) v_ijk + b_ij f_a,ijk
-                                     !
-                                     if(interaction%pot_index > -1)then
-                                        ! get b_i (for all i, they have been precalculated)
-                                        call core_get_bond_order_factors(n_atoms,&
-                                             interaction%pot_index,&
-                                             bo_factors) ! in Potentials.f90
-                                        ! get (\nabla_a b_i) (for all a)
-                                        call core_get_bond_order_gradients(n_atoms,&
-                                             interaction%pot_index,&
-                                             index1,& ! atom index
-                                             1, & ! slot_index
-                                             bo_gradients(1:3,1:n_atoms,1)) ! in Potentials.f90
-                                        ! get (\nabla_a b_j) (for all a)
-                                        call core_get_bond_order_gradients(n_atoms,&
-                                             interaction%pot_index,&
-                                             index2,& ! atom index
-                                             2, & ! slot_index
-                                             bo_gradients(1:3,1:n_atoms,2)) ! in Potentials.f90
-                                        ! get (\nabla_a b_k) (for all a)
-                                        call core_get_bond_order_gradients(n_atoms,&
-                                             interaction%pot_index,&
-                                             index3,& ! atom index
-                                             3, & ! slot_index
-                                             bo_gradients(1:3,1:n_atoms,3)) ! in Potentials.f90
-                                        
-                                        ! Add the bond order gradient terms involving the 
-                                        ! atom2-atom1-atom3 energy for all atoms.
-                                        ! That is, add the (\nabla_a b_ijk) v_ijk term with 
-                                        ! the given ijk (atom2,atom1,atom3) for all a.
-                                        forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
-                                             - tmp_energy*cut_factors(1)*cut_factors(2)*&
-                                             ( bo_gradients(1:3,1:n_atoms,1) &
-                                             + bo_gradients(1:3,1:n_atoms,2) &
-                                             + bo_gradients(1:3,1:n_atoms,3) )/3.d0
-                                        
-                                     else
-                                        bo_factors = 1.d0
-                                        bo_sums = 0.d0
-                                        bo_gradients = 0.d0
-                                     end if
-
-                                     ! evaluate the 3-body force involving atom2-atom1-atom3 interaction
-                                     call evaluate_forces(3,separations(1:3,1:2),distances(1:2),interaction,&
-                                          tmp_forces(1:3,1:3),atom_list) ! in Potentials.f90
-                                                                          
-                                     ! force on atom 2:
-                                     forces(1:3,index2) = forces(1:3,index2) + &
-                                          ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2) - &
-                                          cut_gradients(1:3,1)*cut_factors(2)*tmp_energy ) * &
-                                          ( bo_factors(index1) &
-                                          + bo_factors(index2) &
-                                          + bo_factors(index3) )/3.d0
-                                     
-                                     ! force on atom 1:
-                                     forces(1:3,index1) = forces(1:3,index1) + &
-                                          ( tmp_forces(1:3,2)*cut_factors(1)*cut_factors(2) + &
-                                          (cut_gradients(1:3,1)*cut_factors(2) + &
-                                          cut_gradients(1:3,2)*cut_factors(1)) * tmp_energy ) * &
-                                          ( bo_factors(index1) &
-                                          + bo_factors(index2) &
-                                          + bo_factors(index3) )/3.d0
-                                     
-                                     ! force on atom 3:
-                                     forces(1:3,index3) = forces(1:3,index3) + &
-                                          ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2) - &
-                                          cut_gradients(1:3,2)*cut_factors(1)*tmp_energy ) * &
-                                          ( bo_factors(index1) &
-                                          + bo_factors(index2) &
-                                          + bo_factors(index3) )/3.d0
-                                     
-                                  end if ! interaction%cutoff > distances(2)
-                                  
-                               end if ! is_active
-                            end if ! is_active .and. n_targets == 3
-                            
-                         end do ! k = 1, size(interaction_indices)
-                      end if ! index3 > index2
-                      
-                   end do ! l = 1, nbors1%n_neighbors
-                   
-                   ! Next we try to find ordered triplets atom1 -- atom2 -- atom3
-                   ! Therefore we need separations a2--a1 and a2--a3.
-                   separations(1:3,1) = -separations(1:3,1)
-
-                   ! loop over neighbors of atom 2
-                   do l = 1, nbors2%n_neighbors
-                      index3 = nbors2%neighbors(l)
-                      
-                      ! the condition for finding each triplet once is such that
-                      ! index 3 must be higher than the index of the atom whose
-                      ! neighbors are NOT currently searched
-                      ! For the offset check we need atom1->atom3 which equals
-                      ! (atom1->atom2) + (atom2->atom3), the former being stored in offset
-                      if(pick(index1,index3,nbors2%pbc_offsets(1:3,l)+offset))then
-
-                         ! third atom of the triplet
-                         atom3 = atoms(index3)
-                         ! atom3 is new so we don't know the separation from atom2 
-                         separation3_unknown = .true.
-                         ! The list of atoms is passed to force evaluation routine
-                         ! for further filtering.
-                         ! This is triplet atom1 - atom2 - atom3, since we loop over
-                         ! neighbors of atom2.
-                         atom_list = (/ atom1, atom2, atom3 /)
-
-                         !call core_empty_bond_order_gradient_storage(3)
-
-                         ! loop over the potentials affecting atom1
-                         do k = 1, size(interaction_indices)
-                            
-                            interaction = interactions(interaction_indices(k))
-
-                            ! filter the potentials by:
-                            ! is atom2 affected by the potential,
-                            ! is atom3 affected by the potential,
-                            ! is it a 3-body potential
-                            call get_number_of_targets_of_potential_index(interaction%type_index,&
-                                 n_targets) ! in Potentials.f90
-                            call potential_affects_atom(interaction,atom2,is_active,2) ! in Potentials.f90
-                            
-                            if( is_active .and. n_targets == 3 .and. interaction%cutoff > distances(1) )then
-                               call potential_affects_atom(interaction,atom3,is_active,3) ! in Potentials.f90
-                               if( is_active )then
-                                  
-                                  ! The ordered triplet found is atom1 -- atom2 -- atom3
-                                  ! Calculate the separations and distances between the particles
-                                  ! starting from atom2: a2--a1, a2--a3
-                                  ! (atom2 -- atom1 is already known though from 2-body calculation)
-                                  
-                                  ! When we loop over the bond factors
-                                  ! we may need the atom1-atom3 distance
-                                  ! repeatedly. We only calculate it the first
-                                  ! time.
-                                  if( separation3_unknown )then
-                                     call separation_vector(atom2%position, &
-                                          atom3%position, &
-                                          nbors2%pbc_offsets(1:3,l), &
-                                          cell, &
-                                          separations(1:3,2)) ! in Geometry.f90
-                                     separation3_unknown = .false.
-                                     distances(2) = .norm.(separations(1:3,2))
-                                     if(distances(2) == 0.d0)then
-                                        directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-                                     else
-                                        directions(1:3,2) = separations(1:3,2)/distances(2)
-                                     end if
-                                  end if
-                                  
-                                  if( interaction%cutoff > distances(2) )then
-                                     
-                                     ! We will need the energy contribution from atom2-atom1-atom3
-                                     ! interaction if smooth cutoffs or bond factors are used,
-                                     ! since we are mulplying the potential.
-                                     if((interaction%pot_index > -1) .or. &
-                                          interaction%smoothened)then
-                                        call evaluate_energy(3,separations(1:3,1:2),distances(1:2),&
-                                             interaction,tmp_energy,atom_list) ! in Potentials.f90
-                                     else
-                                        tmp_energy = 0.d0
-                                     end if
-
-                                     ! If a smooth cutoff is present, we add the
-                                     ! contribution it brings:
-                                     ! 
-                                     ! V = \sum_ijk v_ijk f(r_ij) f(r_ik)
-                                     ! F_a = - \nabla_a V 
-                                     !     = - \sum_ij ( v_ij f'(r_ij) f(r_ik) (\nabla_a r_ij) + 
-                                     !                   v_ij f(r_ij) f'(r_ik) (\nabla_a r_ik) +
-                                     !                   (\nabla_a v_ij) f(r_ij) f(r_ik) )
-                                     !
-                                     if(interaction%smoothened)then
-                                        ! get f(r_ij)
-                                        call smoothening_factor(distances(1),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_factors(1))  ! in Potentials.f90
-                                        ! get f'(r_ij) (\nabla_a r_ij)
-                                        call smoothening_gradient(directions(1:3,1),distances(1),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_gradients(1:3,1)) ! in Potentials.f90
-                                        ! get f(r_ik)
-                                        call smoothening_factor(distances(2),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_factors(2)) ! in Potentials.f90
-                                        ! get f'(r_ik) (\nabla_a r_ik)
-                                        call smoothening_gradient(directions(1:3,2),distances(2),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_gradients(1:3,2)) ! in Potentials.f90
-                                     else
-                                        cut_factors(1:2) = 1.d0
-                                        cut_gradients(1:3,1:2) = 0.d0
-                                     end if
-                                     
-                                     ! If there is a bond order factor associated with the potential,
-                                     ! we add the contribution is brings:
-                                     !
-                                     ! V = \sum_ijk b_ijk v_ijk
-                                     ! b_ijk = (b_i + b_j + b_k) / 3
-                                     ! F_a = - \nabla_a V 
-                                     !     = - \sum_ijk (\nabla_a b_ijk) v_ijk + b_ijk (\nabla_a v_ijk)
-                                     !     = - \sum_ijk (\nabla_a b_ijk) v_ijk + b_ij f_a,ijk
-                                     !
-                                     if(interaction%pot_index > -1)then
-                                        ! get b_i (for all i, they have been precalculated)
-                                        call core_get_bond_order_factors(n_atoms,&
-                                             interaction%pot_index,&
-                                             bo_factors)
-                                        ! get (\nabla_a b_i) (for all a)
-                                        call core_get_bond_order_gradients(n_atoms,&
-                                             interaction%pot_index,&
-                                             index1,& ! atom index
-                                             1, & ! slot_index
-                                             bo_gradients(1:3,1:n_atoms,1))
-                                        ! get (\nabla_a b_j) (for all a)
-                                        call core_get_bond_order_gradients(n_atoms,&
-                                             interaction%pot_index,&
-                                             index2,& ! atom index
-                                             2, & ! slot_index
-                                             bo_gradients(1:3,1:n_atoms,2))
-                                        ! get (\nabla_a b_k) (for all a)
-                                        call core_get_bond_order_gradients(n_atoms,&
-                                             interaction%pot_index,&
-                                             index3,& ! atom index
-                                             3, & ! slot_index
-                                             bo_gradients(1:3,1:n_atoms,3))
-                                        
-                                        ! Add the bond order gradient terms involving the 
-                                        ! atom1-atom2-atom3 energy for all atoms.
-                                        ! That is, add the (\nabla_a b_ijk) v_ijk term with 
-                                        ! the given ijk (atom1,atom2,atom3) for all a.
-                                        forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
-                                             - tmp_energy*cut_factors(1)*cut_factors(2)*&
-                                             ( bo_gradients(1:3,1:n_atoms,1) &
-                                             + bo_gradients(1:3,1:n_atoms,2) &
-                                             + bo_gradients(1:3,1:n_atoms,3) )/3.d0
-                                        
-                                     else
-                                        bo_factors = 1.d0
-                                        bo_sums = 0.d0
-                                        bo_gradients = 0.d0
-                                     end if
-
-                                     ! evaluate the 3-body force involving atom1-atom2-atom3 interaction
-                                     call evaluate_forces(3,separations(1:3,1:2),distances(1:2),interaction,&
-                                          tmp_forces(1:3,1:3),atom_list)  ! in Potentials.f90
-                                                                          
-                                     ! force on atom 1:
-                                     forces(1:3,index1) = forces(1:3,index1) + &
-                                          ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2) + &
-                                          cut_gradients(1:3,1)*cut_factors(2)*tmp_energy ) * &
-                                          ( bo_factors(index1) &
-                                          + bo_factors(index2) &
-                                          + bo_factors(index3) )/3.d0
-                                     
-                                     ! force on atom 2:
-                                     forces(1:3,index2) = forces(1:3,index2) + &
-                                          ( tmp_forces(1:3,2)*cut_factors(1)*cut_factors(2) - &
-                                          cut_gradients(1:3,1)*cut_factors(2)*tmp_energy + &
-                                          cut_gradients(1:3,2)*cut_factors(1)*tmp_energy ) * &
-                                          ( bo_factors(index1) &
-                                          + bo_factors(index2) &
-                                          + bo_factors(index3) )/3.d0
-                                     
-                                     ! force on atom 3:
-                                     forces(1:3,index3) = forces(1:3,index3) + &
-                                          ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2) - &
-                                          cut_gradients(1:3,2)*cut_factors(1)*tmp_energy ) * &
-                                          ( bo_factors(index1) &
-                                          + bo_factors(index2) &
-                                          + bo_factors(index3) )/3.d0
-                                     
-                                  end if ! cutoff
-                                  
-                               end if ! is_active
-                            end if ! is_active .and. n_targets == 3
-                            
-                         end do ! k
-                      end if ! index3 > index1
-                      
-                   end do ! l
-                   
-                end if ! many-bodies_found
-                
-             end if ! index2 < i
-             
-          end do ! j = 1, size(nbors%neighbors)
-
-       end if ! is_my_atom
-    end do ! i = 1, size(atoms)
-
-    ! Stop the load timer
-    call timer(stopwatch_0)
-
-#ifdef MPI
-    ! In MPI, calculate the loads for all cpus and try to balance the loads
-    call record_load(stopwatch_0)
-    call balance_loads()
-#endif
-
-#ifdef MPI
-    ! collect data from all cpus in MPI
-    call mpi_allreduce(forces,total_forces,size(forces),mpi_double_precision,&
-         mpi_sum,mpi_comm_world,mpistat)
-#else
-    total_forces = forces
-#endif
-
-    if(evaluate_ewald)then
-       filter = .true.
-       call calculate_ewald_forces(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
-            ewald_epsilon,filter,ewald_scaler,.false.,forces)
-       total_forces = total_forces + forces
-    end if
-
-
-    ! Empty the bond order factor storage and stop searching them from memory.
-    ! This is done so that if the geometry changes due to atoms moving, for instance,
-    ! then the obsolete factors are not used in error.
-    use_saved_bond_order_factors = .false.
-    call core_empty_bond_order_storage()
-
-  end subroutine core_calculate_forces
-
-
-
-
-
-! !!!: core_calculate_electronegativities
-
-  ! Calculates electronegativity forces acting on all atomic charges of the system.
-  !
-  ! The routine calculates the electronegativities
-  !
-  ! .. math::
-  !
-  !    \chi_{\alpha} = -\frac{\partial V}{\partial q_\alpha}
-  !
-  ! for all atoms :math:`\alpha`. This is done according to the
-  ! the structure and potentials allocated in the core, so the
-  ! routine does not accept arguments. Instead, the core modifying
-  ! routines such as :func:`core_generate_atoms` must be called
-  ! first to set up the calculation.
-  !
-  ! called from PyInterface: :func:`calculate_electronegativities`
-  !
-  ! *n_atoms number of atoms
-  ! *total_enegs an array containing the calculated charge forces for all atoms
-  subroutine core_calculate_electronegativities(n_atoms,total_enegs)
-    implicit none
-    integer, intent(in) :: n_atoms
-    double precision, intent(out) :: total_enegs(n_atoms)
-    integer :: j, k, l, n_targets, index1, index2, index3, &
-         indexB1, indexB2, indexB3, iB, jB, kB
-    double precision :: enegs(n_atoms), tmp_enegs(3), &
-         separations(3,2), distances(2), directions(3,2), &
-         dummy_sep(3,0), dummy_dist(0), &
-         cut_factors(2), stopwatch_0, stopwatch_1
-    double precision :: bo_factors(n_atoms)
-    type(atom) :: atom1, atom2, atom3, atomB1, atomB2, atomB3
-    type(atom) :: atom_list(3), atom_listB(3)
-    type(neighbor_list) :: nbors1, nbors2
-    type(potential) :: interaction
-    integer, pointer :: interaction_indices(:)
-    logical :: is_active, many_bodies_found, separation3_unknown
-    integer :: offset(3)
-    logical :: filter(n_atoms)
-
-    enegs = 0.d0
-    total_enegs = 0.d0
-
-    ! For MPI load balancing, the execution time of each cpu
-    ! is recorded. After the enegs have been calculated, the
-    ! workload of all cpus are examined and load is transferred
-    ! between the cpus in order to make the workloads as equal
-    ! as possible.
-    call start_timer()
-
-    ! Before starting the force calculation proper,
-    ! all bond order factors are calculated and
-    ! stored in arrays.
-    ! Thus, they need not be recalculated during the
-    ! force evaluation loops.
-    bo_factors = 1.d0
-    use_saved_bond_order_factors = .true.
-    call core_fill_bond_order_storage(n_atoms)
-
-    ! loop over atoms
-    do index1 = 1, size(atoms)
-
-       ! in MPI, only consider the atoms allocated to this particular cpu
-       if(is_my_atom(index1))then
-                    
-          atom1 = atoms(index1)
-          nbors1 = atom1%neighbor_list
-          interaction_indices => atom1%potential_indices
-          
-          !*********************!
-          ! 1-body interactions !
-          !*********************!
-
-          ! loop over potentials affecting atom1
-          do k = 1, size(interaction_indices)
-             
-             interaction = interactions(interaction_indices(k))
-
-             ! filter the potentials according to number of targets
-             call get_number_of_targets_of_potential_index(interaction%type_index,n_targets)             
-             if( n_targets == 1 )then
-
-                ! evaluate the 1-body energy involving atom1
-                call evaluate_electronegativity(1,dummy_sep,dummy_dist,&
-                     interaction,tmp_enegs(1),atoms(index1:index1)) ! in Potentials.f90
-
-                ! If there is a bond order factor associated with the potential,
-                ! we add the contribution is brings:
-                if(interaction%pot_index > -1)then
-                   call core_get_bond_order_factors(n_atoms,&
-                        interaction%pot_index,&
-                        bo_factors)
-
-                else
-                   bo_factors = 1.d0
-                end if
-
-                ! Add the force due to potential gradient
-                enegs(index1) = enegs(index1) + tmp_enegs(1)*bo_factors(index1)
-                
-             end if
-          end do
-          
-          ! loop over neighbors
-          do j = 1, nbors1%n_neighbors
-             
-             ! Note that we loop over the neighbors in the outer loop and
-             ! over the interactions in the inner loop. This is to avoid calculating
-             ! the interatomic distances repeatedly for multiple potentials affecting
-             ! the same pair of atoms.
-                          
-             ! neighboring atom
-             index2 = nbors1%neighbors(j)
-             offset(1:3) = nbors1%pbc_offsets(1:3,j)
-
-             ! Since we loop over the neighbors of all atoms, we will find the pair
-             ! atom1-atom2 = atom2-atom1 twice.
-             ! To prevent the double counting, we filter by index2 > index1.
-             if(pick(index1,index2,offset))then
-                
-                atom2 = atoms(index2)
-                atom_list(1) = atom1
-                atom_list(2) = atom2
-
-                ! calculate atom1-atom2 separation vector
-                ! and distance
-                call separation_vector(atom1%position, &
-                     atom2%position, &
-                     nbors1%pbc_offsets(1:3,j), &
-                     cell, &
-                     separations(1:3,1)) ! in Geometry.f90
-                distances(1) = .norm.(separations(1:3,1))
-                if(distances(1) == 0.d0)then
-                   directions(1:3,1) = (/ 0.d0, 0.d0, 0.d0 /)
-                else
-                   directions(1:3,1) = separations(1:3,1) / distances(1)
-                end if
-                
-                many_bodies_found = .false.
-
-                !*********************!
-                ! 2-body interactions !
-                !*********************!
-
-                ! loop over potentials affecting atom1
-                do k = 1, size(interaction_indices)
-                   
-                   interaction = interactions(interaction_indices(k))
-
-                   ! filter the potentials by:
-                   ! is atom2 affected by the potential,
-                   ! is it a 2-body potential
-                   call potential_affects_atom(interaction,atom2,is_active,2) ! in Potentials.f90
-                   if( is_active .and. interaction%cutoff > distances(1) )then
-                      call get_number_of_targets_of_potential_index(interaction%type_index,&
-                           n_targets) ! in Potentials.f90
-                      if( n_targets == 2 )then
-
-                         ! If a smooth cutoff is present, we add the
-                         ! contribution it brings:
-                         if(interaction%smoothened)then
-                            ! get f(r_ij)
-                            call smoothening_factor(distances(1),&
-                                 interaction%cutoff,interaction%soft_cutoff,&
-                                 cut_factors(1)) ! in Potentials.f90
-                         else
-                            cut_factors(1) = 1.d0
-                         end if
-
-                         ! If there is a bond order factor associated with the potential,
-                         ! we add the contribution is brings:
-                         if(interaction%pot_index > -1)then
-                            ! get b_i (for all i, they have been precalculated)
-                            call core_get_bond_order_factors(n_atoms,&
-                                 interaction%pot_index,&
-                                 bo_factors)
-                         else
-                            bo_factors = 1.d0
-                         end if
-
-                         ! evaluate the 2-body force involving atom1-atom2 interaction
-                         call evaluate_electronegativity(2,separations(1:3,1),distances(1),&
-                              interaction,tmp_enegs(1:2),atom_list(1:2)) ! in Potentials.f90
-
-                         ! force on atom 1:
-                         enegs(index1) = enegs(index1) + &
-                              ( tmp_enegs(1) * cut_factors(1) ) * &
-                              ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
-
-                         ! force on atom 2:
-                         enegs(index2) = enegs(index2) + &
-                              ( tmp_enegs(2) * cut_factors(1) ) * &
-                              ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
-                         
-                      else if( n_targets > 2)then
-
-                         ! If the number of targets is greater than 2,
-                         ! we have found a many-body potential.
-                         ! Make a note that we must also evaluate the many-body terms.
-                         many_bodies_found = .true.
-
-                      end if ! n_targets == 2
-                   end if ! is_active
-
-                end do ! k = 1, size(interaction indices)
-                
-                ! Only do the 3-body loop if we found many-body potentials 
-                ! during 2-body evaluation.
-                ! 
-                ! In the 3-body loop, we search the neighbors of both atom1
-                ! and atom2 to find the triplets 
-                ! atom1-atom2-atom3 and
-                ! atom2-atom1-atom3
-                ! These are considered to be different, since the middle atom of
-                ! the triplet is different (atom2 vs. atom1).
-                !
-                ! We loop over all atoms to get atom1, 
-                ! then over the neighbors of the atom1 to get atom2,
-                ! then again over the neighbors of both atom1 and atom2 to get atom3.
-                ! We want to find every triplet A-B-C, B-A-C, A-C-B exactly once filtering by the
-                ! ordering of the indices of the atoms.
-                ! Triplets A-B-C are considered equal to C-B-A and should be only found once.
-                !
-                ! Consider the indices A: 1, B: 2, C: 3. For other orderings, we can just
-                ! permutate the names A, B and C so this is not affecting the generality
-                ! of the argument.
-                !
-                ! We already filter by index1 < index2 when searching for atom2.
-                ! Therefore the possible ways to get atom1 and atom2 for these orderings are:
-                !
-                !  A B C   atom1 atom2  or  atom1 atom2  or  atom1 atom2 
-                !  1 2 3   A : 1 B : 2      A : 1 C : 3      B : 2 C : 3
-                !
-                ! If we filter atom3 by index3 > index2 when searching atom1 neighbors
-                ! and index3 > index1 when searching atom2 neighbors (i.e., index3
-                ! greater than the index of the atom whose neighbors are not searched),
-                ! we get:
-                !
-                !  A B C   atom1 atom2  atom3 as atom1 nbor / atom2 nbor
-                !  1 2 3   A : 1 B : 2  C : 3 -> found B-A-C
-                !                       C : 3 -> found A-B-C
-                !          A : 1 C : 3  B : 2 -> B < C (2 < 3) so ignored
-                !                       B : 2 -> found A-C-B
-                !          B : 2 C : 3  A : 1 -> A < B (1 < 2) so ignored
-                !                       A : 1 -> A < C (1 < 3) so ignored
-
-                if(many_bodies_found)then
-
-                   !*********************!
-                   ! 3-body interactions !
-                   !*********************!
-
-                   ! neighbors of atom2
-                   nbors2 = atom2%neighbor_list
-                   
-                   ! First we try to find ordered triplets atom2 -- atom1 -- atom3
-                   ! Therefore we need separations a1--a2 and a1--a3.
-
-                   ! loop over neighbors of atom 1
-                   do l = 1, nbors1%n_neighbors
-                      index3 = nbors1%neighbors(l)
-                      
-                      ! the condition for finding each triplet once is such that
-                      ! index 3 must be higher than the index of the atom whose
-                      ! neighbors are NOT currently searched
-                      ! For the offset check we need atom2->atom3 which equals
-                      ! (atom1->atom3) - (atom1->atom2), the latter being stored in offset
-                      if(pick(index2,index3,nbors1%pbc_offsets(1:3,l)-offset))then
-
-                         ! third atom of the triplet
-                         atom3 = atoms(index3)
-                         ! atom3 is new so we don't know the separation from atom1                         
-                         separation3_unknown = .true.
-                         ! The list of atoms is passed to force evaluation routine
-                         ! for further filtering.
-                         ! This is triplet atom2 - atom1 - atom3, since we loop over
-                         ! neighbors of atom1.
-                         atom_list = (/ atom2, atom1, atom3 /)
-
-                         !call core_empty_bond_order_gradient_storage(3)
-                         
-                         ! loop over the potentials affecting atom1
-                         do k = 1, size(interaction_indices)
-                            
-                            interaction = interactions(interaction_indices(k))
-                            
-                            ! filter the potentials by:
-                            ! is atom2 affected by the potential,
-                            ! is atom3 affected by the potential,
-                            ! is it a 3-body potential
-                            call get_number_of_targets_of_potential_index(interaction%type_index,&
-                                 n_targets) ! in Potentials.f90
-                            call potential_affects_atom(interaction,atom2,is_active,2) ! in Potentials.f90
-                            
-                            if( is_active .and. n_targets == 3 .and. interaction%cutoff > distances(1) )then
-                               call potential_affects_atom(interaction,atom3,is_active,3) ! in Potentials.f90
-                               if( is_active )then
-                               
-                                  ! The ordered triplet found is atom2 -- atom1 -- atom3
-                                  ! Calculate the separations and distances between the particles
-                                  ! starting from atom1: a1--a2, a1--a3
-                                  ! (atom2 -- atom1 is already known though from 2-body calculation)
-                                  
-                                  ! When we loop over the bond factors
-                                  ! we may need the atom1-atom3 distance
-                                  ! repeatedly. We only calculate it the first
-                                  ! time.
-                                  if( separation3_unknown )then
-                                     call separation_vector(atom1%position, &
-                                          atom3%position, &
-                                          nbors1%pbc_offsets(1:3,j), &
-                                          cell, &
-                                          separations(1:3,2)) ! in Geometry.f90
-                                     separation3_unknown = .false.
-                                     distances(2) = .norm.(separations(1:3,2))
-                                     if(distances(2) == 0.d0)then
-                                        directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-                                     else
-                                        directions(1:3,2) = separations(1:3,2) / distances(2)
-                                     end if
-                                  end if
-                                  
-                                  if( interaction%cutoff > distances(2) )then
-                                     
-                                     ! If a smooth cutoff is present, we add the
-                                     ! contribution it brings:
-                                     if(interaction%smoothened)then
-                                        ! get f(r_ij)
-                                        call smoothening_factor(distances(1),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_factors(1)) ! in Potentials.f90
-                                        ! get f(r_ik)
-                                        call smoothening_factor(distances(2),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_factors(2)) ! in Potentials.f90
-                                     else
-                                        cut_factors(1:2) = 1.d0
-                                     end if
-                                     
-                                     ! If there is a bond order factor associated with the potential,
-                                     ! we add the contribution is brings:
-                                     if(interaction%pot_index > -1)then
-                                        ! get b_i (for all i, they have been precalculated)
-                                        call core_get_bond_order_factors(n_atoms,&
-                                             interaction%pot_index,&
-                                             bo_factors) ! in Potentials.f90
-                                     else
-                                        bo_factors = 1.d0
-                                     end if
-
-                                     ! evaluate the 3-body force involving atom2-atom1-atom3 interaction
-                                     call evaluate_electronegativity(3,separations(1:3,1:2),distances(1:2),interaction,&
-                                          tmp_enegs(1:3),atom_list) ! in Potentials.f90
-                                                                          
-                                     ! force on atom 2:
-                                     enegs(index2) = enegs(index2) + &
-                                          ( tmp_enegs(1)*cut_factors(1)*cut_factors(2) ) * &
-                                          ( bo_factors(index1) &
-                                          + bo_factors(index2) &
-                                          + bo_factors(index3) )/3.d0
-                                     
-                                     ! force on atom 1:
-                                     enegs(index1) = enegs(index1) + &
-                                          ( tmp_enegs(2)*cut_factors(1)*cut_factors(2) ) * &
-                                          ( bo_factors(index1) &
-                                          + bo_factors(index2) &
-                                          + bo_factors(index3) )/3.d0
-                                     
-                                     ! force on atom 3:
-                                     enegs(index3) = enegs(index3) + &
-                                          ( tmp_enegs(3)*cut_factors(1)*cut_factors(2) ) * &
-                                          ( bo_factors(index1) &
-                                          + bo_factors(index2) &
-                                          + bo_factors(index3) )/3.d0
-                                     
-                                  end if ! interaction%cutoff > distances(2)
-                                  
-                               end if ! is_active
-                            end if ! is_active .and. n_targets == 3
-                            
-                         end do ! k = 1, size(interaction_indices)
-                      end if ! index3 > index2
-                      
-                   end do ! l = 1, nbors1%n_neighbors
-                   
-                   ! Next we try to find ordered triplets atom1 -- atom2 -- atom3
-                   ! Therefore we need separations a2--a1 and a2--a3.
-                   separations(1:3,1) = -separations(1:3,1)
-
-                   ! loop over neighbors of atom 2
-                   do l = 1, nbors2%n_neighbors
-                      index3 = nbors2%neighbors(l)
-                      
-                      ! the condition for finding each triplet once is such that
-                      ! index 3 must be higher than the index of the atom whose
-                      ! neighbors are NOT currently searched
-                      ! For the offset check we need atom1->atom3 which equals
-                      ! (atom1->atom2) + (atom2->atom3), the former being stored in offset
-                      if(pick(index1,index3,nbors2%pbc_offsets(1:3,l)+offset))then
-
-                         ! third atom of the triplet
-                         atom3 = atoms(index3)
-                         ! atom3 is new so we don't know the separation from atom2 
-                         separation3_unknown = .true.
-                         ! The list of atoms is passed to force evaluation routine
-                         ! for further filtering.
-                         ! This is triplet atom1 - atom2 - atom3, since we loop over
-                         ! neighbors of atom2.
-                         atom_list = (/ atom1, atom2, atom3 /)
-
-                         !call core_empty_bond_order_gradient_storage(3)
-
-                         ! loop over the potentials affecting atom1
-                         do k = 1, size(interaction_indices)
-                            
-                            interaction = interactions(interaction_indices(k))
-
-                            ! filter the potentials by:
-                            ! is atom2 affected by the potential,
-                            ! is atom3 affected by the potential,
-                            ! is it a 3-body potential
-                            call get_number_of_targets_of_potential_index(interaction%type_index,&
-                                 n_targets) ! in Potentials.f90
-                            call potential_affects_atom(interaction,atom2,is_active,2) ! in Potentials.f90
-                            
-                            if( is_active .and. n_targets == 3 .and. interaction%cutoff > distances(1) )then
-                               call potential_affects_atom(interaction,atom3,is_active,3) ! in Potentials.f90
-                               if( is_active )then
-                                  
-                                  ! The ordered triplet found is atom1 -- atom2 -- atom3
-                                  ! Calculate the separations and distances between the particles
-                                  ! starting from atom2: a2--a1, a2--a3
-                                  ! (atom2 -- atom1 is already known though from 2-body calculation)
-                                  
-                                  ! When we loop over the bond factors
-                                  ! we may need the atom1-atom3 distance
-                                  ! repeatedly. We only calculate it the first
-                                  ! time.
-                                  if( separation3_unknown )then
-                                     call separation_vector(atom2%position, &
-                                          atom3%position, &
-                                          nbors2%pbc_offsets(1:3,l), &
-                                          cell, &
-                                          separations(1:3,2)) ! in Geometry.f90
-                                     separation3_unknown = .false.
-                                     distances(2) = .norm.(separations(1:3,2))
-                                     if(distances(2) == 0.d0)then
-                                        directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-                                     else
-                                        directions(1:3,2) = separations(1:3,2)/distances(2)
-                                     end if
-                                  end if
-                                  
-                                  if( interaction%cutoff > distances(2) )then
-                                     
-                                     ! If a smooth cutoff is present, we add the
-                                     ! contribution it brings:
-                                     if(interaction%smoothened)then
-                                        ! get f(r_ij)
-                                        call smoothening_factor(distances(1),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_factors(1))  ! in Potentials.f90
-                                        ! get f(r_ik)
-                                        call smoothening_factor(distances(2),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_factors(2)) ! in Potentials.f90
-                                     else
-                                        cut_factors(1:2) = 1.d0
-                                     end if
-                                     
-                                     ! If there is a bond order factor associated with the potential,
-                                     ! we add the contribution is brings:
-                                     if(interaction%pot_index > -1)then
-                                        ! get b_i (for all i, they have been precalculated)
-                                        call core_get_bond_order_factors(n_atoms,&
-                                             interaction%pot_index,&
-                                             bo_factors)
-                                        
-                                     else
-                                        bo_factors = 1.d0
-                                     end if
-
-                                     ! evaluate the 3-body force involving atom1-atom2-atom3 interaction
-                                     call evaluate_electronegativity(3,separations(1:3,1:2),distances(1:2),interaction,&
-                                          tmp_enegs(1:3),atom_list)  ! in Potentials.f90
-                                                                          
-                                     ! force on atom 1:
-                                     enegs(index1) = enegs(index1) + &
-                                          ( tmp_enegs(1)*cut_factors(1)*cut_factors(2) ) * &
-                                          ( bo_factors(index1) &
-                                          + bo_factors(index2) &
-                                          + bo_factors(index3) )/3.d0
-                                     
-                                     ! force on atom 2:
-                                     enegs(index2) = enegs(index2) + &
-                                          ( tmp_enegs(2)*cut_factors(1)*cut_factors(2) ) * &
-                                          ( bo_factors(index1) &
-                                          + bo_factors(index2) &
-                                          + bo_factors(index3) )/3.d0
-                                     
-                                     ! force on atom 3:
-                                     enegs(index3) = enegs(index3) + &
-                                          ( tmp_enegs(3)*cut_factors(1)*cut_factors(2) ) * &
-                                          ( bo_factors(index1) &
-                                          + bo_factors(index2) &
-                                          + bo_factors(index3) )/3.d0
-                                     
-                                  end if ! cutoff
-                                  
-                               end if ! is_active
-                            end if ! is_active .and. n_targets == 3
-                            
-                         end do ! k
-                      end if ! index3 > index1
-                      
-                   end do ! l
-                   
-                end if ! many-bodies_found
-                
-             end if ! index2 < i
-             
-          end do ! j = 1, size(nbors%neighbors)
-
-       end if ! is_my_atom
-    end do ! i = 1, size(atoms)
-
-    ! Stop the load timer
-    call timer(stopwatch_0)
-
-#ifdef MPI
-    ! In MPI, calculate the loads for all cpus and try to balance the loads
-    call record_load(stopwatch_0)
-    !call balance_loads()
-#endif
-
-#ifdef MPI
-    ! collect data from all cpus in MPI
-    call mpi_allreduce(enegs,total_enegs,size(enegs),mpi_double_precision,&
-         mpi_sum,mpi_comm_world,mpistat)
-#else
-    total_enegs = enegs
-#endif
-
-    ! ewald summation
-    if(evaluate_ewald)then
-        filter = .true.
-        enegs = 0.d0
-        call calculate_ewald_electronegativities(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
-             ewald_epsilon,filter,ewald_scaler,.false.,enegs)
-        total_enegs = total_enegs + enegs
-    end if
-
-
-    ! Empty the bond order factor storage and stop searching them from memory.
-    ! This is done so that if the geometry changes due to atoms moving, for instance,
-    ! then the obsolete factors are not used in error.
-    use_saved_bond_order_factors = .false.
-    call core_empty_bond_order_storage()
-
-  end subroutine core_calculate_electronegativities
-
-
-
-
-! !!!: core_calculate_energy
-
-  ! Calculates the total potential energy of the system.
-  !
-  ! This is done according to the
-  ! the structure and potentials allocated in the core, so the
-  ! routine does not accept arguments. Instead, the core modifying
-  ! routines such as :func:`core_generate_atoms` must be called
-  ! first to set up the calculation.
-  !
-  ! called from PyInterface: :func:`calculate_energy`
-  !
-  ! *n_atoms number of atoms
-  ! *total_energy calculated total potential energy
-  subroutine core_calculate_energy(n_atoms,total_energy)
-    implicit none
-    integer, intent(in) :: n_atoms
-    double precision, intent(out) :: total_energy
-    integer :: j, k, l, n_targets, index1, index2, index3
-    double precision :: energy, tmp_energy, &
-         separations(3,2), distances(2), &
-         dummy_sep(3,0), dummy_dist(0), &
-         cut_factors(2)
-    double precision :: bo_factors(n_atoms)
-    type(atom) :: atom1, atom2, atom3
-    type(atom) :: atom_list(3)
     type(neighbor_list) :: nbors1, nbors2
     type(potential) :: interaction
     integer, pointer :: interaction_indices(:)
@@ -3540,12 +2208,27 @@ contains
     energy = 0.d0
     total_energy = 0.d0
 
-    ! Before starting the energy calculation proper,
+    forces = 0.d0
+    total_forces = 0.d0
+
+    enegs = 0.d0
+    total_enegs = 0.d0
+
+    ! For MPI load balancing, the execution time of each cpu
+    ! is recorded. After the forces have been calculated, the
+    ! workload of all cpus are examined and load is transferred
+    ! between the cpus in order to make the workloads as equal
+    ! as possible.
+    call start_timer()
+
+    ! Before starting the calculation proper,
     ! all bond order factors are calculated and
     ! stored in arrays.
     ! Thus, they need not be recalculated during the
-    ! energy evaluation loops.
+    ! evaluation loops.
     bo_factors = 1.d0
+    bo_sums = 0.d0
+    bo_gradients = 0.d0
     use_saved_bond_order_factors = .true.
     call core_fill_bond_order_storage(n_atoms)
 
@@ -3554,7 +2237,12 @@ contains
 
        ! in MPI, only consider the atoms allocated to this particular cpu
        if(is_my_atom(index1))then
-          
+
+          ! Bond order gradients are not stored since there are potentially
+          ! so many. Some most recent ones are saved, though.
+          ! At the start of the first atom loop, we clear the storage.
+          call core_empty_bond_order_gradient_storage()
+
           atom1 = atoms(index1)
           nbors1 = atom1%neighbor_list
           interaction_indices => atom1%potential_indices
@@ -3572,22 +2260,101 @@ contains
              call get_number_of_targets_of_potential_index(interaction%type_index,n_targets)
              if( n_targets == 1 )then
 
-                ! If there is a bond order factor associated with the potential,
-                ! we add the contribution is brings:
-                !
-                ! V = \sum_i b_i v_i
-                if(interaction%pot_index > -1)then
-                   call core_get_bond_order_factors(n_atoms,&
-                        interaction%pot_index,&
-                        bo_factors)
-                else
-                   bo_factors = 1.d0
-                end if
+                ! differentiate between energy, force, and electronegativity evaluation
+                select case(calculation_type)
+                case(energy_evaluation_index)
 
-                ! evaluate the 1-body energy involving atom1
-                call evaluate_energy(1,dummy_sep,dummy_dist,&
-                     interaction,tmp_energy,atoms(index1:index1)) ! in Potentials.f90
-                energy = energy + tmp_energy*bo_factors(index1)
+                   !***********************!
+                   ! 1-body energy (atom1) !
+                   !***********************!
+
+                   ! If there is a bond order factor associated with the potential,
+                   ! we add the contribution is brings:
+                   !
+                   ! V = \sum_i b_i v_i
+                   if(interaction%pot_index > -1)then
+                      call core_get_bond_order_factors(n_atoms,&
+                           interaction%pot_index,&
+                           bo_factors)
+                   else
+                      bo_factors = 1.d0
+                   end if
+
+                   ! evaluate the 1-body energy involving atom1
+                   call evaluate_energy(1,dummy_sep,dummy_dist,&
+                        interaction,tmp_energy,atoms(index1:index1)) ! in Potentials.f90
+                   energy = energy + tmp_energy*bo_factors(index1)
+
+                case(force_evaluation_index)
+
+                   !**********************!
+                   ! 1-body force (atom1) !
+                   !**********************!
+
+                   ! evaluate the 1-body energy involving atom1
+                   call evaluate_forces(1,dummy_sep,dummy_dist,&
+                        interaction,tmp_forces(1:3,1),atoms(index1:index1)) ! in Potentials.f90
+
+                   ! If there is a bond order factor associated with the potential,
+                   ! we add the contribution is brings:
+                   !
+                   ! V = \sum_i b_i v_i
+                   ! F_a = - \nabla_a V 
+                   !     = - \sum_i (\nabla_a b_i) v_i + b_i (\nabla_a v_i)
+                   !     = - \sum_i (\nabla_a b_i) v_i + b_i f_a,i
+                   !
+                   if(interaction%pot_index > -1)then
+                      call core_get_bond_order_factors(n_atoms,&
+                           interaction%pot_index,&
+                           bo_factors)
+                      call core_get_bond_order_gradients(n_atoms,&
+                           interaction%pot_index,&
+                           index1,& ! atom index
+                           1, & ! slot_index
+                           bo_gradients(1:3,1:n_atoms,1))
+
+                      ! Add the bond order gradient terms involving the atom1 self energy for all atoms.
+                      ! That is, add the (\nabla_a b_i) v_i term with the given i (atom1) for all a.
+                      call evaluate_energy(1,dummy_sep,dummy_dist,interaction,&
+                           tmp_energy,atoms(index1:index1))  ! in Potentials.f90
+                      forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) - &
+                           tmp_energy*bo_gradients(1:3,1:n_atoms,1)
+
+                   else
+                      bo_factors = 1.d0
+                      bo_sums = 0.d0
+                      bo_gradients = 0.d0
+                   end if
+
+                   ! Add the force due to potential gradient
+                   forces(1:3,index1) = forces(1:3,index1) + &
+                        tmp_forces(1:3,1)*bo_factors(index1)
+
+                case(electronegativity_evaluation_index)
+
+                   !**********************************!
+                   ! 1-body electronegativity (atom1) !
+                   !**********************************!
+
+                   ! evaluate the 1-body energy involving atom1
+                   call evaluate_electronegativity(1,dummy_sep,dummy_dist,&
+                        interaction,tmp_enegs(1),atoms(index1:index1)) ! in Potentials.f90
+
+                   ! If there is a bond order factor associated with the potential,
+                   ! we add the contribution is brings:
+                   if(interaction%pot_index > -1)then
+                      call core_get_bond_order_factors(n_atoms,&
+                           interaction%pot_index,&
+                           bo_factors)
+
+                   else
+                      bo_factors = 1.d0
+                   end if
+
+                   ! Add the force due to potential gradient
+                   enegs(index1) = enegs(index1) + tmp_enegs(1)*bo_factors(index1)
+
+                end select
 
              end if
           end do
@@ -3599,7 +2366,7 @@ contains
              ! over the interactions in the inner loop. This is to avoid calculating
              ! the interatomic distances repeatedly for multiple potentials affecting
              ! the same pair of atoms.
-                          
+
              ! neighboring atom
              index2 = nbors1%neighbors(j)
              offset(1:3) = nbors1%pbc_offsets(1:3,j)
@@ -3608,6 +2375,9 @@ contains
              ! atom1-atom2 = atom2-atom1 twice.
              ! To prevent the double counting, we filter by index2 > index1.
              if(pick(index1,index2,offset))then
+
+                ! Empty bond gradient storage for atom2 slot (since we have a new atom2)
+                call core_empty_bond_order_gradient_storage(2)
 
                 atom2 = atoms(index2)
                 atom_list(1) = atom1
@@ -3621,6 +2391,11 @@ contains
                      cell, &
                      separations(1:3,1)) ! in Geometry.f90
                 distances(1) = .norm.(separations(1:3,1))
+                if(distances(1) == 0.d0)then
+                   directions(1:3,1) = (/ 0.d0, 0.d0, 0.d0 /)
+                else
+                   directions(1:3,1) = separations(1:3,1) / distances(1)
+                end if
 
                 many_bodies_found = .false.
 
@@ -3642,40 +2417,189 @@ contains
                            n_targets) ! in Potentials.f90
                       if( n_targets == 2 )then
 
-                         ! If there is a bond order factor associated with the potential,
-                         ! we add the contribution is brings:
-                         !
-                         ! V = \sum_ij b_ij v_ij
-                         ! b_ij = (b_i + b_j) / 2
-                         if(interaction%pot_index > -1)then
-                            ! get b_i (for all i, they have been precalculated)
-                            call core_get_bond_order_factors(size(atoms),&
-                                 interaction%pot_index,&
-                                 bo_factors)
-                         else
-                            bo_factors = 1.d0
-                         end if
+                         ! differentiate between energy, force, and electronegativity evaluation
+                         select case(calculation_type)
+                         case(energy_evaluation_index)
 
-                         ! If a smooth cutoff is present, we add the
-                         ! contribution it brings:
-                         ! 
-                         ! V = \sum_ij v_ij f(r_ij)
-                         if(interaction%smoothened)then
-                            ! get f(r_ij)
-                            call smoothening_factor(distances(1),&
-                                 interaction%cutoff,interaction%soft_cutoff,&
-                                 cut_factors(1)) ! in Potentials.f90
-                         else
-                            cut_factors(1) = 1.d0
-                         end if
+                            !*****************************!
+                            ! 2-body energy (atom1-atom2) !
+                            !*****************************!
 
-                         ! evaluate the 2-body energy involving atom1-atom2 interaction
-                         call evaluate_energy(2,separations(1:3,1),distances(1),&
-                              interaction,tmp_energy,atom_list(1:2))  ! in Potentials.f90
+                            ! If there is a bond order factor associated with the potential,
+                            ! we add the contribution is brings:
+                            !
+                            ! V = \sum_ij b_ij v_ij
+                            ! b_ij = (b_i + b_j) / 2
+                            if(interaction%pot_index > -1)then
+                               ! get b_i (for all i, they have been precalculated)
+                               call core_get_bond_order_factors(size(atoms),&
+                                    interaction%pot_index,&
+                                    bo_factors)
+                            else
+                               bo_factors = 1.d0
+                            end if
 
-                         ! add the term: b_ij v_ij f(rij)
-                         energy = energy + tmp_energy*cut_factors(1)*&
-                              (bo_factors(index1)+bo_factors(index2))*0.5d0
+                            ! If a smooth cutoff is present, we add the
+                            ! contribution it brings:
+                            ! 
+                            ! V = \sum_ij v_ij f(r_ij)
+                            if(interaction%smoothened)then
+                               ! get f(r_ij)
+                               call smoothening_factor(distances(1),&
+                                    interaction%cutoff,interaction%soft_cutoff,&
+                                    cut_factors(1)) ! in Potentials.f90
+                            else
+                               cut_factors(1) = 1.d0
+                            end if
+
+                            ! evaluate the 2-body energy involving atom1-atom2 interaction
+                            call evaluate_energy(2,separations(1:3,1),distances(1),&
+                                 interaction,tmp_energy,atom_list(1:2))  ! in Potentials.f90
+
+                            ! add the term: b_ij v_ij f(rij)
+                            energy = energy + tmp_energy*cut_factors(1)*&
+                                 (bo_factors(index1)+bo_factors(index2))*0.5d0
+
+                         case(force_evaluation_index)
+
+                            !****************************!
+                            ! 2-body force (atom1-atom2) !
+                            !****************************!
+
+                            ! We will need the energy contribution from atom1-atom2
+                            ! interaction if smooth cutoffs or bond factors are used,
+                            ! since we are mulplying the potential.
+                            if((interaction%pot_index > -1) .or. &
+                                 interaction%smoothened)then
+                               call evaluate_energy(2,separations(1:3,1),distances(1),&
+                                    interaction,tmp_energy,atom_list(1:2)) ! in Potentials.f90
+                            else
+                               tmp_energy = 0.d0
+                            end if
+
+                            ! If a smooth cutoff is present, we add the
+                            ! contribution it brings:
+                            ! 
+                            ! V = \sum_ij v_ij f(r_ij)
+                            ! F_a = - \nabla_a V 
+                            !     = - \sum_ij v_ij f'(r_ij) (\nabla_a r_ij) + (\nabla_a v_ij) f(r_ij) 
+                            !     = - \sum_ij v_ij f'(r_ij) (\nabla_a r_ij) + f_a,ij f(r_ij)
+                            !
+                            if(interaction%smoothened)then
+                               ! get f(r_ij)
+                               call smoothening_factor(distances(1),&
+                                    interaction%cutoff,interaction%soft_cutoff,&
+                                    cut_factors(1)) ! in Potentials.f90
+                               ! get f'(r_ij) (\nabla_a r_ij)
+                               call smoothening_gradient(directions(1:3,1),distances(1),&
+                                    interaction%cutoff,interaction%soft_cutoff,&
+                                    cut_gradients(1:3,1)) ! in Potentials.f90
+                            else
+                               cut_factors(1) = 1.d0
+                               cut_gradients(1:3,1) = 0.d0
+                            end if
+
+                            ! If there is a bond order factor associated with the potential,
+                            ! we add the contribution is brings:
+                            !
+                            ! V = \sum_ij b_ij v_ij
+                            ! b_ij = (b_i + b_j) / 2
+                            ! F_a = - \nabla_a V 
+                            !     = - \sum_ij (\nabla_a b_ij) v_ij + b_ij (\nabla_a v_ij)
+                            !     = - \sum_ij (\nabla_a b_ij) v_ij + b_ij f_a,ij
+                            !
+                            if(interaction%pot_index > -1)then
+                               ! get b_i (for all i, they have been precalculated)
+                               call core_get_bond_order_factors(n_atoms,&
+                                    interaction%pot_index,&
+                                    bo_factors)
+                               ! get (\nabla_a b_i) (for all a)
+                               call core_get_bond_order_gradients(n_atoms,&
+                                    interaction%pot_index,&
+                                    index1,& ! atom index
+                                    1, & ! slot_index
+                                    bo_gradients(1:3,1:n_atoms,1))
+                               ! get (\nabla_a b_j) (for all a)
+                               call core_get_bond_order_gradients(n_atoms,&
+                                    interaction%pot_index,&
+                                    index2,& ! atom index
+                                    2, & ! slot_index
+                                    bo_gradients(1:3,1:n_atoms,2))
+
+                               ! Add the bond order gradient terms involving the 
+                               ! atom1-atom2 energy for all atoms.
+                               ! That is, add the (\nabla_a b_ij) v_ij term with 
+                               ! the given ij (atom1,atom2) for all a.
+                               forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
+                                    - tmp_energy*cut_factors(1)*&
+                                    (bo_gradients(1:3,1:n_atoms,1)+bo_gradients(1:3,1:n_atoms,2))*0.5d0
+
+                            else
+                               bo_factors = 1.d0
+                               bo_sums = 0.d0
+                               bo_gradients = 0.d0
+                            end if
+
+                            ! evaluate the 2-body force involving atom1-atom2 interaction
+                            call evaluate_forces(2,separations(1:3,1),distances(1),&
+                                 interaction,tmp_forces(1:3,1:2),atom_list(1:2)) ! in Potentials.f90
+
+                            ! force on atom 1:
+                            forces(1:3,index1) = forces(1:3,index1) + &
+                                 ( tmp_forces(1:3,1) * cut_factors(1) + &
+                                 tmp_energy * cut_gradients(1:3,1) ) * &
+                                 ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
+
+                            ! force on atom 2:
+                            forces(1:3,index2) = forces(1:3,index2) + &
+                                 ( tmp_forces(1:3,2) * cut_factors(1) - &
+                                 tmp_energy * cut_gradients(1:3,1) ) * &
+                                 ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
+
+
+                         case(electronegativity_evaluation_index)
+
+                            !****************************************!
+                            ! 2-body electronegativity (atom1-atom2) !
+                            !****************************************!
+
+                            ! If a smooth cutoff is present, we add the
+                            ! contribution it brings:
+                            if(interaction%smoothened)then
+                               ! get f(r_ij)
+                               call smoothening_factor(distances(1),&
+                                    interaction%cutoff,interaction%soft_cutoff,&
+                                    cut_factors(1)) ! in Potentials.f90
+                            else
+                               cut_factors(1) = 1.d0
+                            end if
+
+                            ! If there is a bond order factor associated with the potential,
+                            ! we add the contribution is brings:
+                            if(interaction%pot_index > -1)then
+                               ! get b_i (for all i, they have been precalculated)
+                               call core_get_bond_order_factors(n_atoms,&
+                                    interaction%pot_index,&
+                                    bo_factors)
+                            else
+                               bo_factors = 1.d0
+                            end if
+
+                            ! evaluate the 2-body e-neg involving atom1-atom2 interaction
+                            call evaluate_electronegativity(2,separations(1:3,1),distances(1),&
+                                 interaction,tmp_enegs(1:2),atom_list(1:2)) ! in Potentials.f90
+
+                            ! e-neg on atom 1:
+                            enegs(index1) = enegs(index1) + &
+                                 ( tmp_enegs(1) * cut_factors(1) ) * &
+                                 ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
+
+                            ! e-neg on atom 2:
+                            enegs(index2) = enegs(index2) + &
+                                 ( tmp_enegs(2) * cut_factors(1) ) * &
+                                 ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
+
+                         end select
 
                       else if(n_targets > 2)then
 
@@ -3731,13 +2655,15 @@ contains
 
                 if(many_bodies_found)then
 
+                   many_bodies_found = .false.
+
                    !*********************!
                    ! 3-body interactions !
                    !*********************!
 
                    ! neighbors of atom2
                    nbors2 = atom2%neighbor_list
-                   
+
                    ! First we try to find ordered triplets atom2 -- atom1 -- atom3
                    ! Therefore we need separations a1--a2 and a1--a3.
 
@@ -3795,58 +2721,267 @@ contains
                                           separations(1:3,2)) ! in Geometry.f90
                                      separation3_unknown = .false.
                                      distances(2) = .norm.(separations(1:3,2))
+                                     if(distances(2) == 0.d0)then
+                                        directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+                                     else
+                                        directions(1:3,2) = separations(1:3,2) / distances(2)
+                                     end if
                                   end if
 
                                   if( interaction%cutoff > distances(2) )then
 
-                                     ! If there is a bond order factor associated with the potential,
-                                     ! we add the contribution is brings:
-                                     !
-                                     ! V = \sum_ijk b_ijk v_ijk
-                                     ! b_ijk = (b_i + b_j + b_k) / 3
-                                     if(interaction%pot_index > -1)then
-                                        ! get b_i (for all i, they have been precalculated)
-                                        call core_get_bond_order_factors(n_atoms,&
-                                             interaction%pot_index,&
-                                             bo_factors)
-                                     else
-                                        bo_factors = 1.d0
-                                     end if
 
-                                     ! If a smooth cutoff is present, we add the
-                                     ! contribution it brings:
-                                     ! 
-                                     ! V = \sum_ijk v_ijk f(r_ij) f(r_ik)
-                                     if(interaction%smoothened)then
-                                        ! get f(r_ij)
-                                        call smoothening_factor(distances(1),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_factors(1))
-                                        ! get f(r_ik)
-                                        call smoothening_factor(distances(2),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_factors(2))
-                                     else
-                                        cut_factors(1:2) = 1.d0
-                                     end if
+                                     ! differentiate between energy, force, and electronegativity evaluation
+                                     select case(calculation_type)
+                                     case(energy_evaluation_index)
 
-                                     ! evaluate the 3-body energy involving atom2-atom1-atom3 interaction
-                                     call evaluate_energy(3,separations(1:3,1:2),distances(1:2),&
-                                          interaction,tmp_energy,atom_list)
+                                        !***********************************!
+                                        ! 3-body energy (atom2-atom1-atom3) !
+                                        !***********************************!
 
-                                     ! add the term: b_ijk v_ijk f(r_ij) f(r_ik)
-                                     energy = energy + tmp_energy*cut_factors(1)*cut_factors(2)*&
-                                          (bo_factors(index1)+bo_factors(index2)+bo_factors(index3))/3.d0
+
+                                        ! If there is a bond order factor associated with the potential,
+                                        ! we add the contribution is brings:
+                                        !
+                                        ! V = \sum_ijk b_ijk v_ijk
+                                        ! b_ijk = (b_i + b_j + b_k) / 3
+                                        if(interaction%pot_index > -1)then
+                                           ! get b_i (for all i, they have been precalculated)
+                                           call core_get_bond_order_factors(n_atoms,&
+                                                interaction%pot_index,&
+                                                bo_factors)
+                                        else
+                                           bo_factors = 1.d0
+                                        end if
+
+                                        ! If a smooth cutoff is present, we add the
+                                        ! contribution it brings:
+                                        ! 
+                                        ! V = \sum_ijk v_ijk f(r_ij) f(r_ik)
+                                        if(interaction%smoothened)then
+                                           ! get f(r_ij)
+                                           call smoothening_factor(distances(1),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_factors(1))
+                                           ! get f(r_ik)
+                                           call smoothening_factor(distances(2),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_factors(2))
+                                        else
+                                           cut_factors(1:2) = 1.d0
+                                        end if
+
+                                        ! evaluate the 3-body energy involving atom2-atom1-atom3 interaction
+                                        call evaluate_energy(3,separations(1:3,1:2),distances(1:2),&
+                                             interaction,tmp_energy,atom_list)
+
+                                        ! add the term: b_ijk v_ijk f(r_ij) f(r_ik)
+                                        energy = energy + tmp_energy*cut_factors(1)*cut_factors(2)*&
+                                             (bo_factors(index1)+bo_factors(index2)+bo_factors(index3))/3.d0
+
+                                     case(force_evaluation_index)
+
+                                        !**********************************!
+                                        ! 3-body force (atom2-atom1-atom3) !
+                                        !**********************************!
+
+
+                                        ! We will need the energy contribution from atom2-atom1-atom3
+                                        ! interaction if smooth cutoffs or bond factors are used,
+                                        ! since we are mulplying the potential.
+                                        if((interaction%pot_index > -1) .or. &
+                                             interaction%smoothened)then
+                                           call evaluate_energy(3,separations(1:3,1:2),distances(1:2),&
+                                                interaction,tmp_energy,atom_list) ! in Potentials.f90
+                                        else
+                                           tmp_energy = 0.d0
+                                        end if
+
+                                        ! If a smooth cutoff is present, we add the
+                                        ! contribution it brings:
+                                        ! 
+                                        ! V = \sum_ijk v_ijk f(r_ij) f(r_ik)
+                                        ! F_a = - \nabla_a V 
+                                        !     = - \sum_ij ( v_ij f'(r_ij) f(r_ik) (\nabla_a r_ij) + 
+                                        !                   v_ij f(r_ij) f'(r_ik) (\nabla_a r_ik) +
+                                        !                   (\nabla_a v_ij) f(r_ij) f(r_ik) )
+                                        !
+                                        if(interaction%smoothened)then
+                                           ! get f(r_ij)
+                                           call smoothening_factor(distances(1),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_factors(1)) ! in Potentials.f90
+                                           ! get f'(r_ij) (\nabla_a r_ij)
+                                           call smoothening_gradient(directions(1:3,1),distances(1),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_gradients(1:3,1)) ! in Potentials.f90 
+                                           ! get f(r_ik)
+                                           call smoothening_factor(distances(2),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_factors(2)) ! in Potentials.f90
+                                           ! get f'(r_ik) (\nabla_a r_ik)
+                                           call smoothening_gradient(directions(1:3,2),distances(2),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_gradients(1:3,2)) ! in Potentials.f90
+                                        else
+                                           cut_factors(1:2) = 1.d0
+                                           cut_gradients(1:3,1:2) = 0.d0
+                                        end if
+
+                                        ! If there is a bond order factor associated with the potential,
+                                        ! we add the contribution is brings:
+                                        !
+                                        ! V = \sum_ijk b_ijk v_ijk
+                                        ! b_ijk = (b_i + b_j + b_k) / 3
+                                        ! F_a = - \nabla_a V 
+                                        !     = - \sum_ijk (\nabla_a b_ijk) v_ijk + b_ijk (\nabla_a v_ijk)
+                                        !     = - \sum_ijk (\nabla_a b_ijk) v_ijk + b_ij f_a,ijk
+                                        !
+                                        if(interaction%pot_index > -1)then
+                                           ! get b_i (for all i, they have been precalculated)
+                                           call core_get_bond_order_factors(n_atoms,&
+                                                interaction%pot_index,&
+                                                bo_factors) ! in Potentials.f90
+                                           ! get (\nabla_a b_i) (for all a)
+                                           call core_get_bond_order_gradients(n_atoms,&
+                                                interaction%pot_index,&
+                                                index1,& ! atom index
+                                                1, & ! slot_index
+                                                bo_gradients(1:3,1:n_atoms,1)) ! in Potentials.f90
+                                           ! get (\nabla_a b_j) (for all a)
+                                           call core_get_bond_order_gradients(n_atoms,&
+                                                interaction%pot_index,&
+                                                index2,& ! atom index
+                                                2, & ! slot_index
+                                                bo_gradients(1:3,1:n_atoms,2)) ! in Potentials.f90
+                                           ! get (\nabla_a b_k) (for all a)
+                                           call core_get_bond_order_gradients(n_atoms,&
+                                                interaction%pot_index,&
+                                                index3,& ! atom index
+                                                3, & ! slot_index
+                                                bo_gradients(1:3,1:n_atoms,3)) ! in Potentials.f90
+
+                                           ! Add the bond order gradient terms involving the 
+                                           ! atom2-atom1-atom3 energy for all atoms.
+                                           ! That is, add the (\nabla_a b_ijk) v_ijk term with 
+                                           ! the given ijk (atom2,atom1,atom3) for all a.
+                                           forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
+                                                - tmp_energy*cut_factors(1)*cut_factors(2)*&
+                                                ( bo_gradients(1:3,1:n_atoms,1) &
+                                                + bo_gradients(1:3,1:n_atoms,2) &
+                                                + bo_gradients(1:3,1:n_atoms,3) )/3.d0
+
+                                        else
+                                           bo_factors = 1.d0
+                                           bo_sums = 0.d0
+                                           bo_gradients = 0.d0
+                                        end if
+
+                                        ! evaluate the 3-body force involving atom2-atom1-atom3 interaction
+                                        call evaluate_forces(3,separations(1:3,1:2),distances(1:2),interaction,&
+                                             tmp_forces(1:3,1:3),atom_list) ! in Potentials.f90
+
+                                        ! force on atom 2:
+                                        forces(1:3,index2) = forces(1:3,index2) + &
+                                             ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2) - &
+                                             cut_gradients(1:3,1)*cut_factors(2)*tmp_energy ) * &
+                                             ( bo_factors(index1) &
+                                             + bo_factors(index2) &
+                                             + bo_factors(index3) )/3.d0
+
+                                        ! force on atom 1:
+                                        forces(1:3,index1) = forces(1:3,index1) + &
+                                             ( tmp_forces(1:3,2)*cut_factors(1)*cut_factors(2) + &
+                                             (cut_gradients(1:3,1)*cut_factors(2) + &
+                                             cut_gradients(1:3,2)*cut_factors(1)) * tmp_energy ) * &
+                                             ( bo_factors(index1) &
+                                             + bo_factors(index2) &
+                                             + bo_factors(index3) )/3.d0
+
+                                        ! force on atom 3:
+                                        forces(1:3,index3) = forces(1:3,index3) + &
+                                             ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2) - &
+                                             cut_gradients(1:3,2)*cut_factors(1)*tmp_energy ) * &
+                                             ( bo_factors(index1) &
+                                             + bo_factors(index2) &
+                                             + bo_factors(index3) )/3.d0
+
+
+                                     case(electronegativity_evaluation_index)
+
+                                        !**********************************************!
+                                        ! 3-body electronegativity (atom2-atom1-atom3) !
+                                        !**********************************************!
+
+                                        ! If a smooth cutoff is present, we add the
+                                        ! contribution it brings:
+                                        if(interaction%smoothened)then
+                                           ! get f(r_ij)
+                                           call smoothening_factor(distances(1),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_factors(1)) ! in Potentials.f90
+                                           ! get f(r_ik)
+                                           call smoothening_factor(distances(2),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_factors(2)) ! in Potentials.f90
+                                        else
+                                           cut_factors(1:2) = 1.d0
+                                        end if
+
+                                        ! If there is a bond order factor associated with the potential,
+                                        ! we add the contribution is brings:
+                                        if(interaction%pot_index > -1)then
+                                           ! get b_i (for all i, they have been precalculated)
+                                           call core_get_bond_order_factors(n_atoms,&
+                                                interaction%pot_index,&
+                                                bo_factors) ! in Potentials.f90
+                                        else
+                                           bo_factors = 1.d0
+                                        end if
+
+                                        ! evaluate the 3-body e-neg involving atom2-atom1-atom3 interaction
+                                        call evaluate_electronegativity(3,separations(1:3,1:2),distances(1:2),interaction,&
+                                             tmp_enegs(1:3),atom_list) ! in Potentials.f90
+
+                                        ! e-neg on atom 2:
+                                        enegs(index2) = enegs(index2) + &
+                                             ( tmp_enegs(1)*cut_factors(1)*cut_factors(2) ) * &
+                                             ( bo_factors(index1) &
+                                             + bo_factors(index2) &
+                                             + bo_factors(index3) )/3.d0
+
+                                        ! e-neg on atom 1:
+                                        enegs(index1) = enegs(index1) + &
+                                             ( tmp_enegs(2)*cut_factors(1)*cut_factors(2) ) * &
+                                             ( bo_factors(index1) &
+                                             + bo_factors(index2) &
+                                             + bo_factors(index3) )/3.d0
+
+                                        ! e-neg on atom 3:
+                                        enegs(index3) = enegs(index3) + &
+                                             ( tmp_enegs(3)*cut_factors(1)*cut_factors(2) ) * &
+                                             ( bo_factors(index1) &
+                                             + bo_factors(index2) &
+                                             + bo_factors(index3) )/3.d0
+
+                                     end select
+
 
                                   end if ! interaction%cutoff > distances(2)
 
                                end if ! is_active
+                            else if(n_targets > 3)then
+
+                               many_bodies_found = .true.
+
                             end if ! is_active .and. n_targets == 3
 
                          end do ! k = 1, size(interaction_indices)
                       end if ! index3 > index2
 
                    end do ! l = 1, nbors1%n_neighbors
+
+                   many_bodies_found = .false.
 
                    ! Next we try to find ordered triplets atom1 -- atom2 -- atom3
                    ! Therefore we need separations a2--a1 and a2--a3.
@@ -3889,12 +3024,12 @@ contains
                             if( is_active .and. n_targets == 3 .and. interaction%cutoff > distances(1) )then
                                call potential_affects_atom(interaction,atom3,is_active,3) ! in Potentials.f90
                                if( is_active )then
-                                  
+
                                   ! The ordered triplet found is atom1 -- atom2 -- atom3
                                   ! Calculate the separations and distances between the particles
                                   ! starting from atom2: a2--a1, a2--a3
                                   ! (atom2 -- atom1 is already known though from 2-body calculation)
-                                  
+
                                   ! When we loop over the bond factors
                                   ! we may need the atom1-atom3 distance
                                   ! repeatedly. We only calculate it the first
@@ -3907,51 +3042,260 @@ contains
                                           separations(1:3,2)) ! in Geometry.f90
                                      separation3_unknown = .false.
                                      distances(2) = .norm.(separations(1:3,2))
+                                     if(distances(2) == 0.d0)then
+                                        directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+                                     else
+                                        directions(1:3,2) = separations(1:3,2)/distances(2)
+                                     end if
                                   end if
 
                                   if( interaction%cutoff > distances(2) )then
 
-                                     ! If there is a bond order factor associated with the potential,
-                                     ! we add the contribution is brings:
-                                     !
-                                     ! V = \sum_ijk b_ijk v_ijk
-                                     ! b_ijk = (b_i + b_j + b_k) / 3
-                                     if(interaction%pot_index > -1)then
-                                        call core_get_bond_order_factors(n_atoms,&
-                                             interaction%pot_index,&
-                                             bo_factors)
-                                     else
-                                        bo_factors = 1.d0
-                                     end if
 
-                                     ! If a smooth cutoff is present, we add the
-                                     ! contribution it brings:
-                                     ! 
-                                     ! V = \sum_ijk v_ijk f(r_ij) f(r_ik)
-                                     if(interaction%smoothened)then
-                                        ! get f(r_ij)
-                                        call smoothening_factor(distances(1),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_factors(1)) ! in Potentials.f90
-                                        ! get f(r_ik)
-                                        call smoothening_factor(distances(2),&
-                                             interaction%cutoff,interaction%soft_cutoff,&
-                                             cut_factors(2)) ! in Potentials.f90
-                                     else
-                                        cut_factors(1:2) = 1.d0
-                                     end if
+                                     ! differentiate between energy, force, and electronegativity evaluation
+                                     select case(calculation_type)
+                                     case(energy_evaluation_index)
 
-                                     ! evaluate the 3-body energy involving atom1-atom2-atom3 interaction
-                                     call evaluate_energy(3,separations(1:3,1:2),distances(1:2),&
-                                          interaction,tmp_energy,atom_list)  ! in Potentials.f90
+                                        !***********************************!
+                                        ! 3-body energy (atom1-atom2-atom3) !
+                                        !***********************************!
 
-                                     ! add the term: b_ijk v_ijk f(r_ij) f(r_ik)
-                                     energy = energy + tmp_energy*cut_factors(1)*cut_factors(2)*&
-                                          (bo_factors(index1)+bo_factors(index2)+bo_factors(index3))/3.d0
+                                        ! If there is a bond order factor associated with the potential,
+                                        ! we add the contribution is brings:
+                                        !
+                                        ! V = \sum_ijk b_ijk v_ijk
+                                        ! b_ijk = (b_i + b_j + b_k) / 3
+                                        if(interaction%pot_index > -1)then
+                                           call core_get_bond_order_factors(n_atoms,&
+                                                interaction%pot_index,&
+                                                bo_factors)
+                                        else
+                                           bo_factors = 1.d0
+                                        end if
+
+                                        ! If a smooth cutoff is present, we add the
+                                        ! contribution it brings:
+                                        ! 
+                                        ! V = \sum_ijk v_ijk f(r_ij) f(r_ik)
+                                        if(interaction%smoothened)then
+                                           ! get f(r_ij)
+                                           call smoothening_factor(distances(1),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_factors(1)) ! in Potentials.f90
+                                           ! get f(r_ik)
+                                           call smoothening_factor(distances(2),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_factors(2)) ! in Potentials.f90
+                                        else
+                                           cut_factors(1:2) = 1.d0
+                                        end if
+
+                                        ! evaluate the 3-body energy involving atom1-atom2-atom3 interaction
+                                        call evaluate_energy(3,separations(1:3,1:2),distances(1:2),&
+                                             interaction,tmp_energy,atom_list)  ! in Potentials.f90
+
+                                        ! add the term: b_ijk v_ijk f(r_ij) f(r_ik)
+                                        energy = energy + tmp_energy*cut_factors(1)*cut_factors(2)*&
+                                             (bo_factors(index1)+bo_factors(index2)+bo_factors(index3))/3.d0
+
+
+                                     case(force_evaluation_index)
+
+                                        !**********************************!
+                                        ! 3-body force (atom1-atom2-atom3) !
+                                        !**********************************!
+
+                                        ! We will need the energy contribution from atom2-atom1-atom3
+                                        ! interaction if smooth cutoffs or bond factors are used,
+                                        ! since we are mulplying the potential.
+                                        if((interaction%pot_index > -1) .or. &
+                                             interaction%smoothened)then
+                                           call evaluate_energy(3,separations(1:3,1:2),distances(1:2),&
+                                                interaction,tmp_energy,atom_list) ! in Potentials.f90
+                                        else
+                                           tmp_energy = 0.d0
+                                        end if
+
+                                        ! If a smooth cutoff is present, we add the
+                                        ! contribution it brings:
+                                        ! 
+                                        ! V = \sum_ijk v_ijk f(r_ij) f(r_ik)
+                                        ! F_a = - \nabla_a V 
+                                        !     = - \sum_ij ( v_ij f'(r_ij) f(r_ik) (\nabla_a r_ij) + 
+                                        !                   v_ij f(r_ij) f'(r_ik) (\nabla_a r_ik) +
+                                        !                   (\nabla_a v_ij) f(r_ij) f(r_ik) )
+                                        !
+                                        if(interaction%smoothened)then
+                                           ! get f(r_ij)
+                                           call smoothening_factor(distances(1),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_factors(1))  ! in Potentials.f90
+                                           ! get f'(r_ij) (\nabla_a r_ij)
+                                           call smoothening_gradient(directions(1:3,1),distances(1),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_gradients(1:3,1)) ! in Potentials.f90
+                                           ! get f(r_ik)
+                                           call smoothening_factor(distances(2),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_factors(2)) ! in Potentials.f90
+                                           ! get f'(r_ik) (\nabla_a r_ik)
+                                           call smoothening_gradient(directions(1:3,2),distances(2),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_gradients(1:3,2)) ! in Potentials.f90
+                                        else
+                                           cut_factors(1:2) = 1.d0
+                                           cut_gradients(1:3,1:2) = 0.d0
+                                        end if
+
+                                        ! If there is a bond order factor associated with the potential,
+                                        ! we add the contribution is brings:
+                                        !
+                                        ! V = \sum_ijk b_ijk v_ijk
+                                        ! b_ijk = (b_i + b_j + b_k) / 3
+                                        ! F_a = - \nabla_a V 
+                                        !     = - \sum_ijk (\nabla_a b_ijk) v_ijk + b_ijk (\nabla_a v_ijk)
+                                        !     = - \sum_ijk (\nabla_a b_ijk) v_ijk + b_ij f_a,ijk
+                                        !
+                                        if(interaction%pot_index > -1)then
+                                           ! get b_i (for all i, they have been precalculated)
+                                           call core_get_bond_order_factors(n_atoms,&
+                                                interaction%pot_index,&
+                                                bo_factors)
+                                           ! get (\nabla_a b_i) (for all a)
+                                           call core_get_bond_order_gradients(n_atoms,&
+                                                interaction%pot_index,&
+                                                index1,& ! atom index
+                                                1, & ! slot_index
+                                                bo_gradients(1:3,1:n_atoms,1))
+                                           ! get (\nabla_a b_j) (for all a)
+                                           call core_get_bond_order_gradients(n_atoms,&
+                                                interaction%pot_index,&
+                                                index2,& ! atom index
+                                                2, & ! slot_index
+                                                bo_gradients(1:3,1:n_atoms,2))
+                                           ! get (\nabla_a b_k) (for all a)
+                                           call core_get_bond_order_gradients(n_atoms,&
+                                                interaction%pot_index,&
+                                                index3,& ! atom index
+                                                3, & ! slot_index
+                                                bo_gradients(1:3,1:n_atoms,3))
+
+                                           ! Add the bond order gradient terms involving the 
+                                           ! atom1-atom2-atom3 energy for all atoms.
+                                           ! That is, add the (\nabla_a b_ijk) v_ijk term with 
+                                           ! the given ijk (atom1,atom2,atom3) for all a.
+                                           forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
+                                                - tmp_energy*cut_factors(1)*cut_factors(2)*&
+                                                ( bo_gradients(1:3,1:n_atoms,1) &
+                                                + bo_gradients(1:3,1:n_atoms,2) &
+                                                + bo_gradients(1:3,1:n_atoms,3) )/3.d0
+
+                                        else
+                                           bo_factors = 1.d0
+                                           bo_sums = 0.d0
+                                           bo_gradients = 0.d0
+                                        end if
+
+                                        ! evaluate the 3-body force involving atom1-atom2-atom3 interaction
+                                        call evaluate_forces(3,separations(1:3,1:2),distances(1:2),interaction,&
+                                             tmp_forces(1:3,1:3),atom_list)  ! in Potentials.f90
+
+                                        ! force on atom 1:
+                                        forces(1:3,index1) = forces(1:3,index1) + &
+                                             ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2) + &
+                                             cut_gradients(1:3,1)*cut_factors(2)*tmp_energy ) * &
+                                             ( bo_factors(index1) &
+                                             + bo_factors(index2) &
+                                             + bo_factors(index3) )/3.d0
+
+                                        ! force on atom 2:
+                                        forces(1:3,index2) = forces(1:3,index2) + &
+                                             ( tmp_forces(1:3,2)*cut_factors(1)*cut_factors(2) - &
+                                             cut_gradients(1:3,1)*cut_factors(2)*tmp_energy + &
+                                             cut_gradients(1:3,2)*cut_factors(1)*tmp_energy ) * &
+                                             ( bo_factors(index1) &
+                                             + bo_factors(index2) &
+                                             + bo_factors(index3) )/3.d0
+
+                                        ! force on atom 3:
+                                        forces(1:3,index3) = forces(1:3,index3) + &
+                                             ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2) - &
+                                             cut_gradients(1:3,2)*cut_factors(1)*tmp_energy ) * &
+                                             ( bo_factors(index1) &
+                                             + bo_factors(index2) &
+                                             + bo_factors(index3) )/3.d0
+
+
+                                     case(electronegativity_evaluation_index)
+
+                                        !**********************************************!
+                                        ! 3-body electronegativity (atom1-atom2-atom3) !
+                                        !**********************************************!
+
+                                        ! If a smooth cutoff is present, we add the
+                                        ! contribution it brings:
+                                        if(interaction%smoothened)then
+                                           ! get f(r_ij)
+                                           call smoothening_factor(distances(1),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_factors(1))  ! in Potentials.f90
+                                           ! get f(r_ik)
+                                           call smoothening_factor(distances(2),&
+                                                interaction%cutoff,interaction%soft_cutoff,&
+                                                cut_factors(2)) ! in Potentials.f90
+                                        else
+                                           cut_factors(1:2) = 1.d0
+                                        end if
+
+                                        ! If there is a bond order factor associated with the potential,
+                                        ! we add the contribution is brings:
+                                        if(interaction%pot_index > -1)then
+                                           ! get b_i (for all i, they have been precalculated)
+                                           call core_get_bond_order_factors(n_atoms,&
+                                                interaction%pot_index,&
+                                                bo_factors)
+
+                                        else
+                                           bo_factors = 1.d0
+                                        end if
+
+                                        ! evaluate the 3-body e-neg involving atom1-atom2-atom3 interaction
+                                        call evaluate_electronegativity(3,separations(1:3,1:2),distances(1:2),interaction,&
+                                             tmp_enegs(1:3),atom_list)  ! in Potentials.f90
+
+                                        ! e-neg on atom 1:
+                                        enegs(index1) = enegs(index1) + &
+                                             ( tmp_enegs(1)*cut_factors(1)*cut_factors(2) ) * &
+                                             ( bo_factors(index1) &
+                                             + bo_factors(index2) &
+                                             + bo_factors(index3) )/3.d0
+
+                                        ! e-neg on atom 2:
+                                        enegs(index2) = enegs(index2) + &
+                                             ( tmp_enegs(2)*cut_factors(1)*cut_factors(2) ) * &
+                                             ( bo_factors(index1) &
+                                             + bo_factors(index2) &
+                                             + bo_factors(index3) )/3.d0
+
+                                        ! e-neg on atom 3:
+                                        enegs(index3) = enegs(index3) + &
+                                             ( tmp_enegs(3)*cut_factors(1)*cut_factors(2) ) * &
+                                             ( bo_factors(index1) &
+                                             + bo_factors(index2) &
+                                             + bo_factors(index3) )/3.d0
+
+
+                                     end select
+
 
                                   end if ! cutoff
 
                                end if ! is_active
+
+                            else if(n_targets > 3)then
+
+                               many_bodies_found = .true.
+
                             end if ! is_active .and. n_targets == 3
 
                          end do ! k
@@ -3968,26 +3312,188 @@ contains
        end if ! is_my_atom
     end do ! index1
 
+    ! Stop the load timer
+    call timer(stopwatch_0)
+
+    ! differentiate between energy, force, and electronegativity evaluation
+    select case(calculation_type)
+    case(energy_evaluation_index)
+
+       !*****************************!
+       ! energy collecting and ewald !
+       !*****************************!
+
 #ifdef MPI
-    ! collect data from all cpus in MPI
-    call mpi_allreduce(energy,total_energy,1,mpi_double_precision,mpi_sum,&
-        mpi_comm_world,mpistat)
+       ! collect data from all cpus in MPI
+       call mpi_allreduce(energy,total_energy,1,mpi_double_precision,mpi_sum,&
+            mpi_comm_world,mpistat)
 #else
-    total_energy = energy
+       total_energy = energy
 #endif
-    
-    if(evaluate_ewald)then
-       filter = .true.
-       call calculate_ewald_energy(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
-            ewald_epsilon,filter,ewald_scaler,.false.,energy)
-       total_energy = total_energy + energy
-    end if
+
+       if(evaluate_ewald)then
+          filter = .true.
+          call calculate_ewald_energy(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
+               ewald_epsilon,filter,ewald_scaler,.false.,energy)
+          total_energy = total_energy + energy
+       end if
+
+    case(force_evaluation_index)
+
+       !****************************!
+       ! force collecting and ewald !
+       !****************************!
+
+#ifdef MPI
+       ! In MPI, calculate the loads for all cpus and try to balance the loads
+       call record_load(stopwatch_0)
+       call balance_loads()
+
+       ! collect data from all cpus in MPI
+       call mpi_allreduce(forces,total_forces,size(forces),mpi_double_precision,&
+            mpi_sum,mpi_comm_world,mpistat)
+#else
+       total_forces = forces
+#endif
+
+       if(evaluate_ewald)then
+          filter = .true.
+          call calculate_ewald_forces(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
+               ewald_epsilon,filter,ewald_scaler,.false.,forces)
+          total_forces = total_forces + forces
+       end if
+
+    case(electronegativity_evaluation_index)
+
+       !****************************************!
+       ! electronegativity collecting and ewald !
+       !****************************************!
+
+#ifdef MPI
+       ! In MPI, calculate the loads for all cpus and try to balance the loads
+       call record_load(stopwatch_0)
+       !call balance_loads()
+
+       ! collect data from all cpus in MPI
+       call mpi_allreduce(enegs,total_enegs,size(enegs),mpi_double_precision,&
+            mpi_sum,mpi_comm_world,mpistat)
+#else
+       total_enegs = enegs
+#endif
+
+       ! ewald summation
+       if(evaluate_ewald)then
+          filter = .true.
+          enegs = 0.d0
+          call calculate_ewald_electronegativities(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
+               ewald_epsilon,filter,ewald_scaler,.false.,enegs)
+          total_enegs = total_enegs + enegs
+       end if
+
+    end select
 
     ! Empty the bond order factor storage and stop searching them from memory.
     ! This is done so that if the geometry changes due to atoms moving, for instance,
     ! then the obsolete factors are not used in error.
     use_saved_bond_order_factors = .false.
     call core_empty_bond_order_storage()
+
+
+  end subroutine core_loop_over_local_interactions
+
+
+
+! !!!: core_calculate_forces
+
+  ! Calculates forces acting on all atoms of the system.
+  !
+  ! The routine calculates the potential gradient
+  !
+  ! .. math::
+  !
+  !    \mathbf{F}_\alpha = - \nabla_\alpha V
+  !
+  ! for all atoms :math:`\alpha`. This is done according to the
+  ! the structure and potentials allocated in the core, so the
+  ! routine does not accept arguments. Instead, the core modifying
+  ! routines such as :func:`core_generate_atoms` must be called
+  ! first to set up the calculation.
+  !
+  ! called from PyInterface: :func:`calculate_forces`
+  !
+  ! *n_atoms number of atoms
+  ! *total_forces an array containing the calculated forces for all atoms
+  subroutine core_calculate_forces(n_atoms,total_forces)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(out) :: total_forces(3,n_atoms)
+    double precision :: dummy_energy, dummy_enegs(n_atoms)
+
+    call core_loop_over_local_interactions(n_atoms,force_evaluation_index,dummy_energy,total_forces,dummy_enegs)
+    return
+
+  end subroutine core_calculate_forces
+
+
+
+
+
+! !!!: core_calculate_electronegativities
+
+  ! Calculates electronegativity forces acting on all atomic charges of the system.
+  !
+  ! The routine calculates the electronegativities
+  !
+  ! .. math::
+  !
+  !    \chi_{\alpha} = -\frac{\partial V}{\partial q_\alpha}
+  !
+  ! for all atoms :math:`\alpha`. This is done according to the
+  ! the structure and potentials allocated in the core, so the
+  ! routine does not accept arguments. Instead, the core modifying
+  ! routines such as :func:`core_generate_atoms` must be called
+  ! first to set up the calculation.
+  !
+  ! called from PyInterface: :func:`calculate_electronegativities`
+  !
+  ! *n_atoms number of atoms
+  ! *total_enegs an array containing the calculated charge forces for all atoms
+  subroutine core_calculate_electronegativities(n_atoms,total_enegs)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(out) :: total_enegs(n_atoms)
+    double precision :: dummy_energy, dummy_forces(3,n_atoms)
+
+    call core_loop_over_local_interactions(n_atoms,electronegativity_evaluation_index,dummy_energy,dummy_forces,total_enegs)
+    return
+
+  end subroutine core_calculate_electronegativities
+
+
+
+
+! !!!: core_calculate_energy
+
+  ! Calculates the total potential energy of the system.
+  !
+  ! This is done according to the
+  ! the structure and potentials allocated in the core, so the
+  ! routine does not accept arguments. Instead, the core modifying
+  ! routines such as :func:`core_generate_atoms` must be called
+  ! first to set up the calculation.
+  !
+  ! called from PyInterface: :func:`calculate_energy`
+  !
+  ! *n_atoms number of atoms
+  ! *total_energy calculated total potential energy
+  subroutine core_calculate_energy(n_atoms,total_energy)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(out) :: total_energy
+    double precision :: dummy_forces(3,n_atoms), dummy_enegs(n_atoms)
+
+    call core_loop_over_local_interactions(n_atoms,energy_evaluation_index,total_energy,dummy_forces,dummy_enegs)
+    return
 
   end subroutine core_calculate_energy
 

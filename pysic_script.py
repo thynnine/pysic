@@ -5,7 +5,8 @@ import ase
 import numpy as np
 import debug as d
 import math
-"""
+import time
+
 system = ase.Atoms('H2',[[0,0,0],[2,0,0]])
 system.set_cell([[0.5,0.5,0.0],
                  [0.0,1.0,0.0],
@@ -32,13 +33,21 @@ calc.add_potential(pot)
 
 print ""
 print "initial charges: \n", system.get_charges()
+calc.set_core()
+t0 = time.time()
 print "energy: \n", system.get_potential_energy()
+t1 = time.time()
 print "forces: \n", system.get_forces()
+t2 = time.time()
 print "numeric forces: \n", np.array( [ calc.get_numerical_energy_gradient(0),  calc.get_numerical_energy_gradient(1) ] )
+t3 = time.time()
 print "e-negativities: \n", calc.get_electronegativities(system)
+t4 = time.time()
 print "numeric e-negativities: \n", np.array( [ calc.get_numerical_electronegativity(0), calc.get_numerical_electronegativity(1) ] )
 print "e-negativity differences: \n", calc.get_electronegativity_differences(system)
 print ""
+
+print "timing (E, F, chi) : ", t1-t0, t2-t1, t4-t3
 
 d.bp()
 
@@ -67,7 +76,7 @@ print ""
 print system.get_cell()
 print system.get_reciprocal_cell()
 print np.linalg.inv(system.get_cell()).transpose()
-"""
+
 
 
 """
@@ -234,7 +243,7 @@ for i in range(n_atoms):
 
 
 
-
+"""
 import ase.calculators.neighborlist as nbl
 import pysic_fortran as pf
 import interface as s
@@ -266,3 +275,4 @@ print system.get_potential_energy()
 t2 = time.time()
 print "time: ", t1-t0, t2-t1, t2-t0
 
+"""

@@ -1,4 +1,11 @@
 #! /usr/bin/env python
+"""The main module of Pysic.
+    
+This module defines the user interface in Pysic for setting up potentials
+and calculators.
+"""
+
+
 import pysic_fortran as pf
 import pysic_utility as pu
 import numpy as np
