@@ -27,6 +27,7 @@ pot.set_parameter_value('Qmax1',4.0)
 pot.set_parameter_value('Qmax2',4.0)
 pot.set_parameter_value('Qmin1',-4.0)
 pot.set_parameter_value('Qmin2',-4.0)
+pot = pysic.Potential('Buckingham',cutoff=10.0,symbols=['H','H'],parameters=[1.0,1.0,1.0])
 
 system.set_calculator(calc)
 calc.add_potential(pot)

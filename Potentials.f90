@@ -120,7 +120,7 @@ module potentials
   ! *param_note_length maximum length allowed for the descriptions of parameters
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
-       n_potential_types = 6, &
+       n_potential_types = 7, &
        n_bond_order_types = 3, &
        n_max_params = 12, &
        pot_note_length = 500, &
@@ -151,7 +151,8 @@ module potentials
        mono_const_index = 3, &
        tri_bend_index = 4, &
        pair_exp_index = 5, &
-       mono_none_index = 6
+       mono_none_index = 6, &
+       pair_buck_index = 7
 
 
   !***********************************!
@@ -289,135 +290,6 @@ module potentials
   end type bond_order_parameters
   
 contains
-
-
-  ! !!!: create_potential
-
-  ! Returns a :data:`potential`.
-  !
-  ! The routine takes as arguments all the necessary parameters
-  ! and returns a potential type wrapping them in one package.
-  !
-  ! *n_targets number of targets, i.e., interacting bodies
-  ! *n_params number of parameters
-  ! *pot_name name of the potential - a keyword that must match a name of one of the :data:`potential_descriptors`
-  ! *parameters array of numerical values for the parameters
-  ! *cutoff the hard cutoff for the potential
-  ! *soft_cutoff the soft cutoff for the potential
-  ! *elements the elements (atomic symbols) the potential acts on
-  ! *tags the atom tags the potential acts on
-  ! *indices the atom indices the potential acts on
-  ! *orig_elements The elements (atomic symbols) in the :class:`~pysic.Potential` used for generating the potential. This is needed to specify the roles of the atoms in the interaction.
-  ! *orig_tags The atom tags in the :class:`~pysic.Potential` used for generating the potential. This is needed to specify the roles of the atoms in the interaction.
-  ! *orig_indices The atom indices in the :class:`~pysic.Potential` used for generating the potential. This is needed to specify the roles of the atoms in the interaction.
-  ! *pot_index the internal index of the potential
-  ! *new_potential the created :data:`potential`
-  subroutine create_potential(n_targets,n_params,pot_name,parameters,cutoff,soft_cutoff,&
-       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,new_potential)
-    implicit none
-    integer, intent(in) :: n_targets, n_params, pot_index
-    character(len=*), intent(in) :: pot_name
-    double precision, intent(in) :: parameters(n_params)
-    double precision, intent(in) :: cutoff, soft_cutoff
-    character(len=2), intent(in) :: elements(n_targets) ! label_length
-    integer, intent(in) :: tags(n_targets), indices(n_targets)
-    character(len=2), intent(in) :: orig_elements(n_targets) ! label_length
-    integer, intent(in) :: orig_tags(n_targets), orig_indices(n_targets)
-    type(potential), intent(out) :: new_potential
-    type(potential_descriptor) :: descriptor
-    logical :: smoothen
-    
-    call get_descriptor(pot_name, descriptor)
-
-    new_potential%type_index = descriptor%type_index
-    nullify(new_potential%parameters)
-    allocate(new_potential%parameters(n_params))
-    new_potential%parameters = parameters
-    new_potential%cutoff = cutoff
-    if(soft_cutoff > 0.d0 .and. soft_cutoff < cutoff)then
-       new_potential%soft_cutoff = soft_cutoff
-       new_potential%smoothened = .true.
-    else
-       new_potential%soft_cutoff = cutoff
-       new_potential%smoothened = .false.
-    end if
-    nullify(new_potential%apply_elements)
-    allocate(new_potential%apply_elements(n_targets))
-    new_potential%apply_elements = elements
-    nullify(new_potential%apply_tags)
-    nullify(new_potential%apply_indices)
-    allocate(new_potential%apply_tags(n_targets))
-    allocate(new_potential%apply_indices(n_targets))
-    new_potential%apply_tags = tags
-    new_potential%apply_indices = indices
-
-    nullify(new_potential%original_elements)
-    allocate(new_potential%original_elements(n_targets))
-    new_potential%original_elements = orig_elements
-
-    nullify(new_potential%original_tags)
-    nullify(new_potential%original_indices)
-    allocate(new_potential%original_tags(n_targets))
-    allocate(new_potential%original_indices(n_targets))
-    new_potential%original_tags = orig_tags
-    new_potential%original_indices = orig_indices
-
-    !*********************************!
-    ! EDIT WHEN ADDING NEW POTENTIALS !
-    !*********************************!
-
-    ! calculate derived parameters if necessary
-    select case (new_potential%type_index)
-    case(tri_bend_index) ! bond bending
-       nullify(new_potential%derived_parameters)
-       allocate(new_potential%derived_parameters(1))
-       new_potential%derived_parameters(1) = cos(parameters(2))
-    case(pair_exp_index) ! charge-dep. exp.
-       nullify(new_potential%derived_parameters)
-       allocate(new_potential%derived_parameters(4))
-       ! eta_i = [ln R_i,max/(R_i,max - R_i,min) ] / [ln Q_i,max - ln(Q_i,max - Q_i,min) ] 
-       new_potential%derived_parameters(1) = ( log(parameters(3)/(parameters(3)-parameters(4))) ) / &
-            ( log(parameters(5)/(parameters(5)-parameters(6))) ) 
-       new_potential%derived_parameters(2) = ( log(parameters(7)/(parameters(7)-parameters(8))) ) / &
-            ( log(parameters(9)/(parameters(9)-parameters(10))) )
-       ! beta_i = (R_i,min - R_i,max)^(1/eta_i) / (Q_i,max - Q_i,min)
-       new_potential%derived_parameters(3) = (parameters(4) - parameters(3))**(1.d0/new_potential%derived_parameters(1)) / &
-            (parameters(5) - parameters(6))
-       new_potential%derived_parameters(4) = (parameters(8) - parameters(7))**(1.d0/new_potential%derived_parameters(2)) / &
-            (parameters(9) - parameters(10))
-
-    case default
-       nullify(new_potential%derived_parameters)
-       allocate(new_potential%derived_parameters(1))
-       new_potential%derived_parameters(1) = 0.0
-    end select
-
-    new_potential%pot_index = pot_index
-
-
-    if(n_targets < 1)then
-       return
-    end if
-
-    if(elements(1) == no_name)then
-       new_potential%filter_elements = .false.
-    else
-       new_potential%filter_elements = .true.       
-    end if
-
-    if(tags(1) < 0)then
-       new_potential%filter_tags = .false.
-    else
-       new_potential%filter_tags = .true.       
-    end if
-
-    if(indices(1) < 1)then
-       new_potential%filter_indices = .false.
-    else
-       new_potential%filter_indices = .true.       
-    end if
-
-  end subroutine create_potential
 
 
   ! !!!: create_bond_order_factor
@@ -616,788 +488,6 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine post_process_bond_order_gradient
 
 
-  ! !!!: evaluate_bond_order_factor
-
-  ! Returns a bond order factor term.
-  ! 
-  ! By a bond order factor term, we mean the contribution from
-  ! specific atoms, :math:`c_{ijk}`, appearing in the factor
-  !
-  ! .. math::
-  !
-  !       b_i = f(\sum_{jk} c_{ijk})
-  ! 
-  ! This routine evaluates the term :math:`c_{ij}` or :math:`c_{ijk}` for the given
-  ! atoms :math:`ij` or :math:`ijk` according to the given parameters.
-  !
-  ! *n_targets number of targets
-  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
-  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
-  ! *bond_params a :data:`bond_order_parameters` containing the parameters
-  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
-  ! *factor the calculated bond order term :math:`c`
-  subroutine evaluate_bond_order_factor(n_targets,separations,distances,bond_params,factor,atoms)
-    implicit none
-    integer, intent(in) :: n_targets
-    double precision, intent(in) :: separations(3,n_targets-1), &
-         distances(n_targets-1)
-    type(bond_order_parameters), intent(in) :: bond_params(n_targets-1)
-    double precision, intent(out) :: factor(n_targets)
-    type(atom), optional, intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, cosine, decay1, decay2, &
-         xi1, xi2, gee1, gee2, &
-         mu, a1, a2, cc1, dd1, h1, cc2, dd2, h2
-    double precision :: tmp1(3), tmp2(3)
-
-    factor = 0.d0
-
-    !***********************************!
-    ! EDIT WHEN ADDING NEW BOND FACTORS !
-    !***********************************!
-
-    select case (bond_params(1)%type_index)
-    case(coordination_index) ! number of neighbors
-
-       r1 = distances(1)
-       if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
-          ! coordination is simply the number of neighbors
-          ! calculated as a sum of cutoff functions
-          call smoothening_factor(r1,bond_params(1)%cutoff,&
-               bond_params(1)%soft_cutoff,decay1)
-          factor = decay1 ! symmetric, so factor(1) = factor(2)
-       end if
-
-    case(tersoff_index) ! tersoff bond-order factor
-
-       ! note that the given distances and separation vectors 
-       ! must be for index pairs ij and ik (in the notation 
-       ! described in the documentation) since these are needed.
-       !
-       ! bond_params(1) should contain the ij parameters and 
-       ! bond_params(2) the ik ones
-
-       if(bond_params(1)%type_index /= bond_params(2)%type_index)then
-          return
-       end if
-
-       if(.not.present(atoms))then
-          return
-       end if
-       ! check that bond_params(1) is for indices (ij)
-       if(bond_params(1)%original_elements(1) /= atoms(2)%element)then
-          return
-       end if
-       if(bond_params(1)%original_elements(2) /= atoms(1)%element)then
-          return
-       end if
-       ! check that bond_params(2) is for indices (ik)
-       if(bond_params(2)%original_elements(1) /= atoms(2)%element)then
-          return
-       end if
-       if(bond_params(2)%original_elements(2) /= atoms(3)%element)then
-          return
-       end if
-
-       r1 = distances(1)
-       r2 = distances(2)
-
-       if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .and. &
-           ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
-
-          ! tmp1 and tmp2 are the vectors r_ij, r_ik
-          tmp1 = separations(1:3,1)
-          tmp2 = separations(1:3,2)
-          ! cosine of the angle between ij and ik
-          cosine = (tmp1 .o. tmp2) / ( r1 * r2 )
-          
-          ! bond_params: mu_i, a_ij, a_ik, &
-          !              c_ij^2, d_ij^2, h_ij, 
-          !              c_ik^2, d_ik^2, h_ik
-          mu = bond_params(1)%parameters(3,1)
-          a1 = bond_params(1)%parameters(1,2)
-          a2 = bond_params(2)%parameters(1,2)
-          cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
-          dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
-          h1 = bond_params(1)%parameters(4,2)
-          cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
-          dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
-          h2 = bond_params(2)%parameters(4,2)
-          
-          call smoothening_factor(r2,bond_params(2)%cutoff,&
-               bond_params(2)%soft_cutoff,decay2)
-          call smoothening_factor(r1,bond_params(1)%cutoff,&
-               bond_params(1)%soft_cutoff,decay1)
-          
-          xi1 = decay1 * decay2 * exp( (a1 * (r1-r2))**mu ) 
-          xi2 = decay1 * decay2 * exp( (a2 * (r2-r1))**mu ) 
-          gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
-          gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
-          
-          ! only the middle atom gets a contribution, 
-          ! so factor(1) = factor(3) = 0.0
-          factor(2) = xi1*gee1 + xi2*gee2
-          
-       end if
-    case (c_scale_index) ! coordination correction scaling function
-       ! there is no contribution to raw sums
-    case default
-       ! if we have an invalid case, do nothing
-    end select
-
-  end subroutine evaluate_bond_order_factor
-
-
-  ! !!!: evaluate_bond_order_gradient
-
-  ! Returns the gradients of bond order terms with respect to moving an atom.
-  ! 
-  ! By a bond order factor term, we mean the contribution from
-  ! specific atoms, c_ijk, appearing in the factor
-  !
-  ! .. math::
-  !
-  !       b_i = f(\sum_{jk} c_{ijk})
-  ! 
-  ! This routine evaluates the gradient term :math:`\nabla_\alpha c_{ij}` or 
-  ! :math:`\nabla_\alpha c_{ijk}` for the given atoms :math:`ij` or :math:`ijk` according to the given parameters.
-  !
-  ! The returned array has three dimensions:
-  ! gradient( coordinates, atom with respect to which we differentiate, atom whose factor is differentiated )
-  ! So for example, for a three body term atom1-atom2-atom3, gradient(1,2,3) contains
-  ! the x-coordinate (1), of the factor for atom2 (2), with respect to moving atom3 (3).
-  !
-  ! *n_targets number of targets
-  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
-  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
-  ! *bond_params a :data:`bond_order_parameters` containing the parameters
-  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
-  ! *gradient the calculated bond order term :math:`\nabla_\alpha c`
-  subroutine evaluate_bond_order_gradient(n_targets,separations,distances,bond_params,gradient,atoms)
-    implicit none
-    integer, intent(in) :: n_targets
-    double precision, intent(in) :: separations(3,n_targets-1), &
-         distances(n_targets-1)
-    type(bond_order_parameters), intent(in) :: bond_params(n_targets-1)
-    double precision, intent(out) :: gradient(3,n_targets,n_targets)
-    type(atom), optional, intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, nablar1(3,3), nablar2(3,3), &
-         cosine, nablacosine(3,3), decay1, decay2,&
-         nabladecay(3,3), unitvector(3,2), xi1, gee1, &
-         nablaxi1(3,3), nablagee1(3,3), &
-         xi2, gee2, nablaxi2(3,3), nablagee2(3,3), &
-         mu, a1, a2, cc1, dd1, h1, cc2, dd2, h2, dot, &
-         ratio, exponent1a, exponent1b, exponent2a, exponent2b
-    double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3), &
-         tmp5(3), tmp6(3), tmpmat1(3,3), tmpmat2(3,3)
-
-    gradient = 0.d0
-
-    !***********************************!
-    ! EDIT WHEN ADDING NEW BOND FACTORS !
-    !***********************************!
-
-    select case (bond_params(1)%type_index)
-    case(coordination_index) ! number of neighbors
-
-       r1 = distances(1)
-       if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
-          call smoothening_gradient(separations(1:3,1) / r1,r1,&
-               bond_params(1)%cutoff,&
-               bond_params(1)%soft_cutoff,&
-               tmp1)
-          gradient(1:3,1,1) = -tmp1(1:3)
-          gradient(1:3,2,1) = -tmp1(1:3)
-          gradient(1:3,1,2) = tmp1(1:3)
-          gradient(1:3,2,2) = tmp1(1:3)
-       end if
-
-    case(tersoff_index) ! tersoff bond-order factor
-
-       if(bond_params(1)%type_index /= bond_params(2)%type_index)then
-          return
-       end if
-
-       if(.not.present(atoms))then
-          return
-       end if
-       ! check that bond_params(1) is for indices (ij)
-       if(bond_params(1)%original_elements(1) /= atoms(2)%element)then
-          return
-       end if
-       if(bond_params(1)%original_elements(2) /= atoms(1)%element)then
-          return
-       end if
-       ! check that bond_params(2) is for indices (ik)
-       if(bond_params(2)%original_elements(1) /= atoms(2)%element)then
-          return
-       end if
-       if(bond_params(2)%original_elements(2) /= atoms(3)%element)then
-          return
-       end if
-
-       r1 = distances(1)
-       r2 = distances(2)
-
-       if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .and. &
-           ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
-
-             tmp1 = separations(1:3,1)
-             tmp2 = separations(1:3,2)
-             unitvector(1:3,1) = tmp1 / r1
-             unitvector(1:3,2) = tmp2 / r2
-             dot = (tmp1 .o. tmp2)
-             ratio = 1.d0 / ( r1 * r2 )
-             ! cosine of the angle between ij and ik, theta_ijk
-             cosine = dot * ratio 
-
-             ! gradients of the r_ij and r_ik vectors with 
-             ! respect to the positions 
-             ! of the three particles i, j, and k
-
-             ! gradient 1 affects atoms ij, so atoms 2 and 1
-             nablar1 = 0.d0
-             nablar1(1:3,2) = -unitvector(1:3,1)
-             nablar1(1:3,1) = unitvector(1:3,1)
-             ! gradient 2 affects atoms ik, so atoms 2 and 3
-             nablar2 = 0.d0
-             nablar2(1:3,2) = -unitvector(1:3,2)
-             nablar2(1:3,3) = unitvector(1:3,2)
-
-             ! gradient of the cos theta_ijk factor
-             nablacosine = 0.d0
-             tmp3 = tmp2 - dot / (r1*r1) * tmp1
-             tmp4 = tmp1 - dot / (r2*r2) * tmp2
-             nablacosine(1:3,1) = tmp3*ratio
-             nablacosine(1:3,2) = -(tmp3+tmp4)*ratio
-             nablacosine(1:3,3) = tmp4*ratio
-
-          
-             ! bond_params: mu_i, a_ij, a_ik, &
-             !              c_ij^2, d_ij^2, h_ij, 
-             !              c_ik^2, d_ik^2, h_ik
-             mu = bond_params(1)%parameters(3,1)
-             a1 = bond_params(1)%parameters(1,2)
-             a2 = bond_params(2)%parameters(1,2)
-             cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
-             dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
-             h1 = bond_params(1)%parameters(4,2)
-             cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
-             dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
-             h2 = bond_params(2)%parameters(4,2)
-
-             call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay2)
-             call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(2)%soft_cutoff,decay1)
-             ! store the gradients of decay1 and decay2 in tmp5 and tmp6
-             call smoothening_gradient(unitvector(1:3,2),r2,&
-                  bond_params(2)%cutoff,bond_params(2)%soft_cutoff,tmp6)
-             call smoothening_gradient(unitvector(1:3,1),r1,&
-                  bond_params(1)%cutoff,bond_params(1)%soft_cutoff,tmp5)
-
-             ! tmpmat1 ad tmpmat2 store the gradients of decay1
-             ! and decay2 with respect to moving any atom i, j, or k
-
-             ! gradient 1 (tmp5) affects atoms ij, so it affects atoms 2 and 1
-             tmpmat1 = 0.d0
-             tmpmat1(1:3,1) = tmp5
-             tmpmat1(1:3,2) = -tmp5
-             ! gradient 2 (tmp6) affects atoms ik, so it affects atoms 2 and 3
-             tmpmat2 = 0.d0
-             tmpmat2(1:3,2) = -tmp6
-             tmpmat2(1:3,3) = tmp6
-
-             exponent1a = (a1 * (r1-r2))**(mu-1)
-             exponent2a = (a2 * (r2-r1))**(mu-1)
-             exponent1b = (a1 * (r1-r2))*exponent1a
-             exponent2b = (a2 * (r2-r1))*exponent2a
-             xi1 = exp( exponent1b ) 
-             xi2 = exp( exponent2b )
-             gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
-             gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
-             nablaxi1 = (tmpmat1 * decay2 + tmpmat2 * decay1) * xi1 + &
-                  decay1*decay2*( exp( exponent1b ) * a1 * mu * exponent1a ) * (nablar1 - nablar2)
-             nablaxi2 = (tmpmat2 * decay1 + tmpmat1 * decay2) * xi2 + &
-                  decay1*decay2*( exp( exponent2b ) * a2 * mu * exponent2a ) * (nablar2 - nablar1)
-             xi1 = xi1 * decay1 * decay2
-             xi2 = xi2 * decay1 * decay2
-             nablagee1 = - cc1 / ( (dd1+(h1-cosine)*(h1-cosine))*(dd1+(h1-cosine)*(h1-cosine)) ) * &
-                  2.d0 * (h1-cosine) * nablacosine
-             nablagee2 = - cc2 / ( (dd2+(h2-cosine)*(h2-cosine))*(dd2+(h2-cosine)*(h2-cosine)) ) * &
-                  2.d0 * (h2-cosine) * nablacosine
-
-             ! there is only contribution to the factor of the middle atom, so
-             ! also the gradients of atoms 1 and 3 are 0.
-             gradient(1:3,2,1) = nablaxi1(1:3,1) * gee1 + xi1 * nablagee1(1:3,1) + &
-                  nablaxi2(1:3,1) * gee2 + xi2 * nablagee2(1:3,1)
-             gradient(1:3,2,2) = nablaxi1(1:3,2) * gee1 + xi1 * nablagee1(1:3,2) + &
-                  nablaxi2(1:3,2) * gee2 + xi2 * nablagee2(1:3,2)
-             gradient(1:3,2,3) = nablaxi1(1:3,3) * gee1 + xi1 * nablagee1(1:3,3) + &
-                  nablaxi2(1:3,3) * gee2 + xi2 * nablagee2(1:3,3)
-
-       end if
-       
-    case (c_scale_index) ! coordination correction scaling function
-       ! there is no contribution to raw sums
-    end select
-
-  end subroutine evaluate_bond_order_gradient
-
-
-  ! !!!: evaluate_electronegativity
-
-  ! If a potential, say, :math:`U_{ijk}` depends on the charges of atoms :math:`q_i` 
-  ! it will not only create a force,
-  ! but also a difference in chemical potential :math:`\mu_i` for the atomic partial charges.
-  ! Similarly to :func:`evaluate_forces`, this function evaluates the chemical
-  ! 'force' on the atomic charges
-  !
-  ! .. math::
-  !
-  !    \chi_{\alpha,ijk} = -\mu_{\alpha,ijk} = -\frac{\partial U_{ijk}}{\partial q_\alpha}
-  !
-  ! To be consist the forces returned by :func:`evaluate_electronegativity` must be
-  ! derivatives of the energies returned by :func:`evaluate_energy`.
-  !
-  ! *n_targets number of targets
-  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
-  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
-  ! *interaction a :data:`potential` containing the parameters
-  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
-  ! *eneg the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
-  subroutine evaluate_electronegativity(n_targets,separations,distances,interaction,eneg,atoms)
-    implicit none
-    integer, intent(in) :: n_targets
-    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
-    type(potential), intent(in) :: interaction
-    double precision, intent(out) :: eneg(n_targets)
-    type(atom), intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, ratio, d1, d2, d3, d4, d5, d6
-    logical :: inverse_params
-    
-    eneg = 0.d0
-
-
-    !*********************************!
-    ! EDIT WHEN ADDING NEW POTENTIALS !
-    !*********************************!
-
-    ! The interaction type is decided based on the type index.
-    ! This decides what kind of a function is applied and what 
-    ! the parameters provided actually mean.
-    select case (interaction%type_index)
-    case (pair_exp_index) ! charge-dependent exponential potential
-       
-       ! If we have parameters for a pair A-B and we get a pair B-A, we
-       ! must flip the per atom parameters
-       inverse_params = .true.
-       if(interaction%filter_elements)then
-          if(interaction%original_elements(1) == atoms(1)%element)then
-             inverse_params = .false.
-          end if
-       end if
-       if(interaction%filter_tags)then
-          if(interaction%original_tags(1) == atoms(1)%tags)then
-             inverse_params = .false.
-          end if
-       end if
-       if(interaction%filter_indices)then
-          if(interaction%original_indices(1) == atoms(1)%index)then
-             inverse_params = .false.
-          end if
-       end if
-
-       r1 = distances(1)
-       if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-          if(inverse_params)then
-             r2 = interaction%parameters(7) ! R_i,max
-             r3 = interaction%parameters(3) ! R_j,max
-             r4 = interaction%parameters(9) ! Q_i,max
-             r5 = interaction%parameters(5) ! Q_j,max
-             r6 = interaction%derived_parameters(2) ! eta_i
-             r7 = interaction%derived_parameters(1) ! eta_j
-             r8 = interaction%derived_parameters(4) ! beta_i
-             r9 = interaction%derived_parameters(3) ! beta_j
-             d3 = interaction%parameters(12) ! xi_i
-             d4 = interaction%parameters(11) ! xi_j
-          else
-             r2 = interaction%parameters(3) ! R_i,max
-             r3 = interaction%parameters(7) ! R_j,max
-             r4 = interaction%parameters(5) ! Q_i,max
-             r5 = interaction%parameters(9) ! Q_j,max
-             r6 = interaction%derived_parameters(1) ! eta_i
-             r7 = interaction%derived_parameters(2) ! eta_j
-             r8 = interaction%derived_parameters(3) ! beta_i
-             r9 = interaction%derived_parameters(4) ! beta_j
-             d3 = interaction%parameters(11) ! xi_i
-             d4 = interaction%parameters(12) ! xi_j
-          end if
-
-          d5 = r8 * (r4 - atoms(1)%charge)
-          d6 = r9 * (r5 - atoms(2)%charge)
-          d1 = r2 + abs(d5)**r6
-          d2 = r3 + abs(d6)**r7
-          eneg(1) = interaction%parameters(1)* &
-               exp(-interaction%parameters(2)*r1 + &
-               0.5d0*(d3*d1 + d4*d2) ) ! this is just the energy
-          eneg(2) = eneg(1) * d4 * 0.5d0 * r7 * abs(d6)**(r7-1.d0) * sign(1.d0,d6) * r9
-          eneg(1) = eneg(1) * d3 * 0.5d0 * r6 * abs(d5)**(r6-1.d0) * sign(1.d0,d5) * r8
-       end if
-
-    end select
-
-  end subroutine evaluate_electronegativity
-
-
-
-  ! !!!: evaluate_forces
-
-  ! Evaluates the forces due to an interaction between the given
-  ! atoms. In other words, if the total force on atom :math:`\alpha` is
-  !
-  ! .. math::
-  !
-  !    \mathbf{F}_\alpha = \sum_{ijk} -\nabla_\alpha v_{ijk} = \sum \mathbf{f}_{\alpha,ijk},
-  !
-  ! this routine evaluates :math:`\mathbf{f}_{\alpha,ijk}` for :math:`\alpha = (i,j,k)` for the given
-  ! atoms i, j, and k.
-  !
-  ! To be consist the forces returned by :func:`evaluate_forces` must be
-  ! gradients of the energies returned by :func:`evaluate_energy`.
-  !
-  ! *n_targets number of targets
-  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
-  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
-  ! *interaction a :data:`potential` containing the parameters
-  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
-  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
-  subroutine evaluate_forces(n_targets,separations,distances,interaction,force,atoms)
-    implicit none
-    integer, intent(in) :: n_targets
-    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
-    type(potential), intent(in) :: interaction
-    double precision, intent(out) :: force(3,n_targets)
-    type(atom), optional, intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, ratio, d1, d2, d3, d4
-    double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3)
-    logical :: inverse_params
-
-    force = 0.d0
-
-    !*********************************!
-    ! EDIT WHEN ADDING NEW POTENTIALS !
-    !*********************************!
-
-    ! The interaction type is decided based on the type index.
-    ! This decides what kind of a function is applied and what 
-    ! the parameters provided actually mean.
-    select case (interaction%type_index)
-    case (pair_lj_index) ! lennard-jones
-
-       r1 = distances(1)
-       if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-          ratio = interaction%parameters(2) / r1
-          r6 = ratio*ratio*ratio*ratio*ratio*ratio
-          force(1:3,1) = interaction%parameters(1) * ( 6.d0*r6 - 12.d0*r6*r6 ) * separations(1:3,1) / (r1*r1)
-          force(1:3,2) = -force(1:3,1)
-       end if
-
-    case (pair_spring_index) ! spring-potential
-
-       r1 = distances(1)
-       if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-          r2 = (r1 - interaction%parameters(2))
-          force(1:3,1) = interaction%parameters(1) * r2 * separations(1:3,1) / r1
-          force(1:3,2) = -force(1:3,1)
-       end if
-
-    case (mono_const_index) ! constant force
-
-       force(1:3,1) = interaction%parameters(1:3)
-
-    case (tri_bend_index) ! bond bending
-
-       ! the bond bending is applied to all ordered triplets a1--a2--a3
-       ! for which the central atom (a2) is of the correct type
-       ! note that the core passes all triplets here for filtering
-
-       if(.not.present(atoms))then
-          return
-       end if
-       if(interaction%filter_elements)then
-          if(interaction%original_elements(2) /= atoms(2)%element)then
-             return
-          end if
-       end if
-       if(interaction%filter_tags)then
-          if(interaction%original_tags(2) /= atoms(2)%tags)then
-             return
-          end if
-       end if
-       if(interaction%filter_indices)then
-          if(interaction%original_indices(2) /= atoms(2)%index)then
-             return
-          end if
-       end if
-
-       r1 = distances(1)
-       r2 = distances(2)
-
-       if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-          if(r2 < interaction%cutoff .and. r2 > 0.d0)then
-
-             tmp1 = separations(1:3,1)
-             tmp2 = separations(1:3,2)
-             r3 = tmp1 .o. tmp2
-             tmp3 = tmp2 - r3 / ( r1 * r1 ) * tmp1 ! = r_23 - (r_21 . r_23)/|r_21|^2 * r_21
-             tmp4 = tmp1 - r3 / ( r2 * r2 ) * tmp2 ! = r_21 - (r_21 . r_23)/|r_23|^2 * r_23
-             ratio = 1.d0 / ( r1 * r2 )
-
-             ! cos theta = (r_21 . r_23) / ( |r_21| |r_23| ) = r3*ratio
-             ! k ( cos theta - cos theta_0) =
-             r6 = interaction%parameters(1) * (r3 * ratio - interaction%derived_parameters(1))
-             
-             force(1:3,1) = -tmp3*ratio * r6 
-             force(1:3,2) = (tmp3+tmp4)*ratio * r6
-             force(1:3,3) = -tmp4*ratio * r6
-
-          end if
-       end if
-
-    case (pair_exp_index) ! charge-dependent exponential potential
-       
-       ! If we have parameters for a pair A-B and we get a pair B-A, we
-       ! must flip the per atom parameters
-       inverse_params = .true.
-       if(.not.present(atoms))then
-          return
-       end if
-       if(interaction%filter_elements)then
-          if(interaction%original_elements(1) == atoms(1)%element)then
-             inverse_params = .false.
-          end if
-       end if
-       if(interaction%filter_tags)then
-          if(interaction%original_tags(1) == atoms(1)%tags)then
-             inverse_params = .false.
-          end if
-       end if
-       if(interaction%filter_indices)then
-          if(interaction%original_indices(1) == atoms(1)%index)then
-             inverse_params = .false.
-          end if
-       end if
-
-       r1 = distances(1)
-       if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-          if(inverse_params)then
-             r2 = interaction%parameters(7) ! R_i,max
-             r3 = interaction%parameters(3) ! R_j,max
-             r4 = interaction%parameters(9) ! Q_i,max
-             r5 = interaction%parameters(5) ! Q_j,max
-             r6 = interaction%derived_parameters(2) ! eta_i
-             r7 = interaction%derived_parameters(1) ! eta_j
-             r8 = interaction%derived_parameters(4) ! beta_i
-             r9 = interaction%derived_parameters(3) ! beta_j
-             d3 = interaction%parameters(12) ! xi_i
-             d4 = interaction%parameters(11) ! xi_j
-          else
-             r2 = interaction%parameters(3) ! R_i,max
-             r3 = interaction%parameters(7) ! R_j,max
-             r4 = interaction%parameters(5) ! Q_i,max
-             r5 = interaction%parameters(9) ! Q_j,max
-             r6 = interaction%derived_parameters(1) ! eta_i
-             r7 = interaction%derived_parameters(2) ! eta_j
-             r8 = interaction%derived_parameters(3) ! beta_i
-             r9 = interaction%derived_parameters(4) ! beta_j
-             d3 = interaction%parameters(11) ! xi_i
-             d4 = interaction%parameters(12) ! xi_j
-          end if
-
-          d1 = r2 + abs(r8 * (r4 - atoms(1)%charge))**r6
-          d2 = r3 + abs(r9 * (r5 - atoms(2)%charge))**r7
-          force(1:3,1) = -interaction%parameters(2)*interaction%parameters(1)* &
-               exp(-interaction%parameters(2)*r1 + &
-               0.5d0*(d3*d1 + d4*d2) ) * &
-               separations(1:3,1) / r1
-          force(1:3,2) = -force(1:3,1)
-
-       end if
-
-    case (mono_none_index) ! constant potential
-
-       force(1:3,1) = 0.d0
-
-    end select
-
-  end subroutine evaluate_forces
-
-  ! !!!: evaluate_energy
-
-  ! Evaluates the potential energy due to an interaction between the given
-  ! atoms. In other words, if the total potential energy is
-  !
-  ! .. math::
-  !
-  !    E = \sum_{ijk} v_{ijk}
-  !
-  ! this routine evaluates :math:`v_{ijk}` for the given
-  ! atoms i, j, and k.
-  ! 
-  ! To be consist the forces returned by :func:`evaluate_forces` must be
-  ! gradients of the energies returned by :func:`evaluate_energy`.
-  !
-  ! *n_targets number of targets
-  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
-  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
-  ! *interaction a :data:`bond_order_parameters` containing the parameters
-  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
-  ! *energy the calculated energy :math:`v_{ijk}`
-  subroutine evaluate_energy(n_targets,separations,distances,interaction,energy,atoms)
-    implicit none
-    integer, intent(in) :: n_targets
-    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
-    type(potential), intent(in) :: interaction
-    double precision, intent(out) :: energy
-    type(atom), optional, intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, ratio, d1, d2, d3, d4
-    logical :: inverse_params
-    integer :: i
-
-    energy = 0.d0
-
-    !*********************************!
-    ! EDIT WHEN ADDING NEW POTENTIALS !
-    !*********************************!
-
-    ! The interaction type is decided based on the type index.
-    ! This decides what kind of a function is applied and what 
-    ! the parameters provided actually mean.
-    select case (interaction%type_index)
-    case (pair_lj_index) ! lennard-jones
-
-       r1 = distances(1)
-       if(r1 < interaction%cutoff .and. r1 > 0.d0)then          
-          ratio = interaction%parameters(2) / r1
-          r6 = ratio*ratio*ratio*ratio*ratio*ratio
-          energy = interaction%parameters(1) * (r6*r6 - r6)
-       end if
-
-    case (pair_spring_index) ! spring-potential
-
-       r1 = distances(1)
-       if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-          r2 = (r1 - interaction%parameters(2))
-          r6 = (interaction%cutoff - interaction%parameters(2))
-          energy = interaction%parameters(1) * 0.5d0 * (r2*r2 - r6*r6)
-       end if
-
-    case (mono_const_index) ! constant force
-
-       energy = - interaction%parameters(1:3) .o. atoms(1)%position(1:3)
-
-    case (tri_bend_index) ! bond-bending
-       
-       ! the bond bending is applied to all ordered triplets a1--a2--a3
-       ! for which the central atom (a2) is of the correct type
-       ! note that the core passes all triplets here for filtering
-       if(.not.present(atoms))then
-          return
-       end if
-       if(interaction%filter_elements)then
-          if(interaction%original_elements(2) /= atoms(2)%element)then
-             return
-          end if
-       end if
-       if(interaction%filter_tags)then
-          if(interaction%original_tags(2) /= atoms(2)%tags)then
-             return
-          end if
-       end if
-       if(interaction%filter_indices)then
-          if(interaction%original_indices(2) /= atoms(2)%index)then
-             return
-          end if
-       end if
-
-       r1 = distances(1)
-       r2 = distances(2)
-       
-       if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-          if(r2 < interaction%cutoff .and. r2 > 0.d0)then
-
-             r3 = separations(1:3,1) .o. separations(1:3,2)
-             ! cos theta = (r_21 . r_23) / ( |r_21| |r_23| )
-             r6 = (r3  / ( r1 * r2 )  - interaction%derived_parameters(1))
-             ! k/2 ( cos theta - cos theta_0 )^2
-             energy = 0.5d0 * interaction%parameters(1) * r6*r6
-
-          end if
-       end if
-
-    case (pair_exp_index) ! charge-dependent exponential potential
-       
-       ! If we have parameters for a pair A-B and we get a pair B-A, we
-       ! must flip the per atom parameters
-       inverse_params = .true.
-       if(.not.present(atoms))then
-          return
-       end if
-       if(interaction%filter_elements)then
-          if(interaction%original_elements(1) == atoms(1)%element)then
-             inverse_params = .false.
-          end if
-       end if
-       if(interaction%filter_tags)then
-          if(interaction%original_tags(1) == atoms(1)%tags)then
-             inverse_params = .false.
-          end if
-       end if
-       if(interaction%filter_indices)then
-          if(interaction%original_indices(1) == atoms(1)%index)then
-             inverse_params = .false.
-          end if
-       end if
-
-       r1 = distances(1)
-       if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-          if(inverse_params)then
-             r2 = interaction%parameters(7) ! R_i,max
-             r3 = interaction%parameters(3) ! R_j,max
-             r4 = interaction%parameters(9) ! Q_i,max
-             r5 = interaction%parameters(5) ! Q_j,max
-             r6 = interaction%derived_parameters(2) ! eta_i
-             r7 = interaction%derived_parameters(1) ! eta_j
-             r8 = interaction%derived_parameters(4) ! beta_i
-             r9 = interaction%derived_parameters(3) ! beta_j
-             d3 = interaction%parameters(12) ! xi_i
-             d4 = interaction%parameters(11) ! xi_j
-          else
-             r2 = interaction%parameters(3) ! R_i,max
-             r3 = interaction%parameters(7) ! R_j,max
-             r4 = interaction%parameters(5) ! Q_i,max
-             r5 = interaction%parameters(9) ! Q_j,max
-             r6 = interaction%derived_parameters(1) ! eta_i
-             r7 = interaction%derived_parameters(2) ! eta_j
-             r8 = interaction%derived_parameters(3) ! beta_i
-             r9 = interaction%derived_parameters(4) ! beta_j
-             d3 = interaction%parameters(11) ! xi_i
-             d4 = interaction%parameters(12) ! xi_j
-          end if
-
-          d1 = r2 + abs(r8 * (r4 - atoms(1)%charge))**r6
-          d2 = r3 + abs(r9 * (r5 - atoms(2)%charge))**r7
-          energy = interaction%parameters(1)* &
-               exp(-interaction%parameters(2)*r1 + &
-               0.5d0*(d3*d1 + d4*d2) )
-       end if
-
-    case (mono_none_index) ! constant potential
-
-       energy = interaction%parameters(1)
-
-    end select
-
-  end subroutine evaluate_energy
-
 
   ! !!!: smoothening_factor
 
@@ -1559,241 +649,6 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   end subroutine clear_bond_order_factor_characterizers
 
 
-  ! !!!: initialize_potential_characterizers
-
-  ! Creates potential characterizers.
-  !
-  ! This routine is meant to be run once, as pysic is
-  ! imported, to create the characterizers for
-  ! potentials. Once created, they are accessible
-  ! by both the python and fortran sides of pysic
-  ! as a tool for describing the general structure
-  ! of potential objects.
-  subroutine initialize_potential_characterizers()
-    implicit none
-    integer :: index
-
-    call clear_potential_characterizers()
-    allocate(potential_descriptors(0:n_potential_types))
-    index = 0
-
-
-
-    !*********************************!
-    ! EDIT WHEN ADDING NEW POTENTIALS !
-    !*********************************!
-
-
-
-    ! **** Lennard-Jones potential ****
-
-    ! Index is a helper variable that is increased by one
-    ! after each descriptor is created. It is stored as
-    ! the type index of the potential and thus must be
-    ! unique for each descriptor. The reason for
-    ! using it here is that it allows one to just copy the 
-    ! structure of the code creating one descriptor
-    ! to make another one without having to change all the
-    ! indices by hand.
-    index = index+1
-
-    ! This is a check-up that the indexing is consistent.
-    ! Should this test fail, it means that the named indices
-    ! pair_lj_index etc. are wrong, which will likely lead
-    ! to errors in interpreting potentials elsewhere.
-    ! This error cannot result from a user error, it is
-    ! a bug in programming.
-    if(pair_lj_index /= index)then
-       write(*,*) "Potential indices in the core do not match!"
-    end if
-
-    ! Record type index
-    potential_descriptors(index)%type_index = index
-
-    ! Record the name of the potential.
-    ! This is a keyword used for accessing the type of potential
-    ! in pysic, also in the python interface.
-    call pad_string('LJ', pot_name_length,potential_descriptors(index)%name)
-
-    ! Record the number of parameters
-    potential_descriptors(index)%n_parameters = 2
-
-    ! Record the number of targets (i.e., is the potential 1-body, 2-body etc.)
-    potential_descriptors(index)%n_targets = 2
-
-    ! Allocate space for storing the parameter names and descriptions.
-    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
-    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
-
-    ! Record parameter names and descriptions.
-    ! Names are keywords with which one can intuitively 
-    ! and easily access the parameters in the python
-    ! interface.
-    ! Descriptions are short descriptions of the
-    ! physical or mathematical meaning of the parameters.
-    ! They can be viewed from the python interface to
-    ! remind the user how to parameterize the potential.
-    call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
-    call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
-    call pad_string('sigma', param_name_length,potential_descriptors(index)%parameter_names(2))
-    call pad_string('length scale constant', param_note_length,potential_descriptors(index)%parameter_notes(2))
-
-    ! Record a description of the entire potential.
-    ! This description can also be viewed in the python
-    ! interface as a reminder of the properties of the
-    ! potential.
-    ! The description should contain the mathematical
-    ! formulation of the potential as well as a short
-    ! verbal description.
-    call pad_string('A standard Lennard-Jones potential: V(r) = epsilon * ( (sigma/r)^12 - (sigma/r)^6 )', &
-         pot_note_length,potential_descriptors(index)%description)
-
-    ! **** spring potential ****
-
-    index = index+1
-    if(pair_spring_index /= index)then
-       write(*,*) "Potential indices in the core do not match!"
-    end if
-    potential_descriptors(index)%type_index = index
-    call pad_string('spring', pot_name_length,potential_descriptors(index)%name)
-    potential_descriptors(index)%n_parameters = 2
-    potential_descriptors(index)%n_targets = 2
-    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
-    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
-    call pad_string('k', param_name_length,potential_descriptors(index)%parameter_names(1))
-    call pad_string('spring constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
-    call pad_string('R_0', param_name_length,potential_descriptors(index)%parameter_names(2))
-    call pad_string('equilibrium separation', param_note_length,potential_descriptors(index)%parameter_notes(2))
-    call pad_string('A standard spring potential: V(r) = k/2 (r-R_0)^2', &
-         pot_note_length,potential_descriptors(index)%description)
-
-    ! **** constant force potential ****
-
-    index = index+1
-    if(mono_const_index /= index)then
-       write(*,*) "Potential indices in the core do not match!"
-    end if
-    potential_descriptors(index)%type_index = index
-    call pad_string('force', pot_name_length,potential_descriptors(index)%name)
-    potential_descriptors(index)%n_parameters = 3
-    potential_descriptors(index)%n_targets = 1
-    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
-    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
-    call pad_string('Fx', param_name_length,potential_descriptors(index)%parameter_names(1))
-    call pad_string('x-component', param_note_length,potential_descriptors(index)%parameter_notes(1))
-    call pad_string('Fy', param_name_length,potential_descriptors(index)%parameter_names(2))
-    call pad_string('y-component', param_note_length,potential_descriptors(index)%parameter_notes(2))
-    call pad_string('Fz', param_name_length,potential_descriptors(index)%parameter_names(3))
-    call pad_string('z-component', param_note_length,potential_descriptors(index)%parameter_notes(3))
-    call pad_string('A constant force: F = [Fx, Fy, Fz]', &
-         pot_note_length,potential_descriptors(index)%description)
-    
-    ! **** bond-bending potential ****
-
-    index = index+1
-    if(tri_bend_index /= index)then
-       write(*,*) "Potential indices in the core do not match!"
-    end if
-    potential_descriptors(index)%type_index = index
-    call pad_string('bond_bend', pot_name_length,potential_descriptors(index)%name)
-    potential_descriptors(index)%n_parameters = 2
-    potential_descriptors(index)%n_targets = 3
-    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
-    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
-    call pad_string('k', param_name_length,potential_descriptors(index)%parameter_names(1))
-    call pad_string('bond angle spring constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
-    call pad_string('theta_0', param_name_length,potential_descriptors(index)%parameter_names(2))
-    call pad_string('equilibrium bond angle', param_note_length,potential_descriptors(index)%parameter_notes(2))
-    call pad_string('Bond bending potential: V(theta) = k/2 (cos theta - cos theta_0)^2', &
-         pot_note_length,potential_descriptors(index)%description)
-
-
-    ! **** charge dependent exp potential ****
-
-    index = index+1
-    if(pair_exp_index /= index)then
-       write(*,*) "Potential indices in the core do not match!"
-    end if
-    potential_descriptors(index)%type_index = index
-    call pad_string('exponential', pot_name_length,potential_descriptors(index)%name)
-    potential_descriptors(index)%n_parameters = 12
-    potential_descriptors(index)%n_targets = 2
-    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
-    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
-    call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
-    call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
-    call pad_string('zeta', param_name_length,potential_descriptors(index)%parameter_names(2))
-    call pad_string('inverse decay length', param_note_length,potential_descriptors(index)%parameter_notes(2))
-    call pad_string('Rmax1', param_name_length,potential_descriptors(index)%parameter_names(3))
-    call pad_string('maximum covalent radius for atom i', &
-         param_note_length,potential_descriptors(index)%parameter_notes(3))
-    call pad_string('Rmin1', param_name_length,potential_descriptors(index)%parameter_names(4))
-    call pad_string('minimum covalent radius for atom i', &
-         param_note_length,potential_descriptors(index)%parameter_notes(4))
-    call pad_string('Qmax1', param_name_length,potential_descriptors(index)%parameter_names(5))
-    call pad_string('maximum covalent charge for atom i', &
-         param_note_length,potential_descriptors(index)%parameter_notes(5))
-    call pad_string('Qmin1', param_name_length,potential_descriptors(index)%parameter_names(6))
-    call pad_string('minimum covalent charge for atom i', &
-         param_note_length,potential_descriptors(index)%parameter_notes(6))
-    call pad_string('Rmax2', param_name_length,potential_descriptors(index)%parameter_names(7))
-    call pad_string('maximum covalent radius for atom j', &
-         param_note_length,potential_descriptors(index)%parameter_notes(7))
-    call pad_string('Rmin2', param_name_length,potential_descriptors(index)%parameter_names(8))
-    call pad_string('minimum covalent radius for atom j', &
-         param_note_length,potential_descriptors(index)%parameter_notes(8))
-    call pad_string('Qmax2', param_name_length,potential_descriptors(index)%parameter_names(9))
-    call pad_string('maximum covalent charge for atom j', &
-         param_note_length,potential_descriptors(index)%parameter_notes(9))
-    call pad_string('Qmin2', param_name_length,potential_descriptors(index)%parameter_names(10))
-    call pad_string('minimum covalent charge for atom j', &
-         param_note_length,potential_descriptors(index)%parameter_notes(10))
-    call pad_string('xi1', param_name_length,potential_descriptors(index)%parameter_names(11))
-    call pad_string('inverse charge decay for atom i', &
-         param_note_length,potential_descriptors(index)%parameter_notes(11))
-    call pad_string('xi2', param_name_length,potential_descriptors(index)%parameter_names(12))
-    call pad_string('inverse charge decay for atom j', &
-         param_note_length,potential_descriptors(index)%parameter_notes(12))
-    call pad_string('Charge-dependent exponential potential: '//&
-         'V(r,q) = epsilon exp(-zeta r + (xi_i D_i(q_i) + xi_j D_j(q_j))/2 ) '//&
-         'D_i(q) = R_i,max + |beta_i (Q_i,max - q)|^eta_i '//&
-         'beta_i = (R_i,min - R_i,max)^(1/eta_i) / (Q_i,max - Q_i,min) '//&
-         'eta_i = [ ln R_i,max - ln (R_i,max - R_i,min) ] / [ ln Q_i,max - ln (Q_i,max - Q_i,min) ]',&
-         pot_note_length,potential_descriptors(index)%description)
-
-    ! **** constant potential ****
-
-    index = index+1
-    if(mono_none_index /= index)then
-       write(*,*) "Potential indices in the core do not match!"
-    end if
-    potential_descriptors(index)%type_index = index
-    call pad_string('constant', pot_name_length,potential_descriptors(index)%name)
-    potential_descriptors(index)%n_parameters = 1
-    potential_descriptors(index)%n_targets = 1
-    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
-    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
-    call pad_string('V', param_name_length,potential_descriptors(index)%parameter_names(1))
-    call pad_string('potential value', param_note_length,potential_descriptors(index)%parameter_notes(1))
-    call pad_string('Constant potential: V(r) = V', &
-         pot_note_length,potential_descriptors(index)%description)
-
-    ! null potential, for errorneous inquiries
-    index = 0
-    potential_descriptors(index)%type_index = index
-    call pad_string('null',pot_name_length,potential_descriptors(index)%name)
-    potential_descriptors(index)%n_parameters = 1
-    potential_descriptors(index)%n_targets = 0
-    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
-    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
-    call pad_string('null',param_name_length,potential_descriptors(index)%parameter_names(1))
-    call pad_string('a dummy parameter',param_note_length,potential_descriptors(index)%parameter_notes(1))
-    call pad_string('No such potential is available.'&
-         ,pot_note_length,potential_descriptors(index)%description)
-
-    descriptors_created = .true.
-
-  end subroutine initialize_potential_characterizers
   
 
   ! !!!: initialize_bond_order_factor_characterizers
@@ -2033,7 +888,7 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
     do i = 1, n_pots
        if (i > n_potential_types)then
-          pots(i) = potential_descriptors(0)%name
+          pots(i) = ""
        else
           pots(i) = potential_descriptors(i)%name
        end if
@@ -3426,6 +2281,1626 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
 
   end subroutine calculate_ewald_electronegativities
  
+
+
+
+  ! !!!: initialize_potential_characterizers
+
+  ! Creates potential characterizers.
+  !
+  ! This routine is meant to be run once, as pysic is
+  ! imported, to create the characterizers for
+  ! potentials. Once created, they are accessible
+  ! by both the python and fortran sides of pysic
+  ! as a tool for describing the general structure
+  ! of potential objects.
+  subroutine initialize_potential_characterizers()
+    implicit none
+    integer :: index
+
+    call clear_potential_characterizers()
+    allocate(potential_descriptors(n_potential_types))
+
+    !*********************************!
+    ! EDIT WHEN ADDING NEW POTENTIALS !
+    !*********************************!
+
+    ! **** Lennard-Jones potential ****
+    call create_potential_characterizer_LJ(pair_lj_index)
+
+    ! **** spring potential ****
+    call create_potential_characterizer_spring(pair_spring_index)
+
+    ! **** constant force potential ****
+    call create_potential_characterizer_constant_force(mono_const_index)
+    
+    ! **** bond-bending potential ****
+    call create_potential_characterizer_bond_bending(tri_bend_index)
+
+    ! **** charge dependent exp potential ****
+    call create_potential_characterizer_charge_exp(pair_exp_index)
+
+    ! **** constant potential ****
+    call create_potential_characterizer_constant(mono_none_index)
+
+    ! **** Buckingham potential ****
+    call create_potential_characterizer_buckingham(pair_buck_index)
+
+    descriptors_created = .true.
+
+  end subroutine initialize_potential_characterizers
+
+
+
+  ! !!!: create_potential
+
+  ! Returns a :data:`potential`.
+  !
+  ! The routine takes as arguments all the necessary parameters
+  ! and returns a potential type wrapping them in one package.
+  !
+  ! *n_targets number of targets, i.e., interacting bodies
+  ! *n_params number of parameters
+  ! *pot_name name of the potential - a keyword that must match a name of one of the :data:`potential_descriptors`
+  ! *parameters array of numerical values for the parameters
+  ! *cutoff the hard cutoff for the potential
+  ! *soft_cutoff the soft cutoff for the potential
+  ! *elements the elements (atomic symbols) the potential acts on
+  ! *tags the atom tags the potential acts on
+  ! *indices the atom indices the potential acts on
+  ! *orig_elements The elements (atomic symbols) in the :class:`~pysic.Potential` used for generating the potential. This is needed to specify the roles of the atoms in the interaction.
+  ! *orig_tags The atom tags in the :class:`~pysic.Potential` used for generating the potential. This is needed to specify the roles of the atoms in the interaction.
+  ! *orig_indices The atom indices in the :class:`~pysic.Potential` used for generating the potential. This is needed to specify the roles of the atoms in the interaction.
+  ! *pot_index the internal index of the potential
+  ! *new_potential the created :data:`potential`
+  subroutine create_potential(n_targets,n_params,pot_name,parameters,cutoff,soft_cutoff,&
+       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,new_potential)
+    implicit none
+    integer, intent(in) :: n_targets, n_params, pot_index
+    character(len=*), intent(in) :: pot_name
+    double precision, intent(in) :: parameters(n_params)
+    double precision, intent(in) :: cutoff, soft_cutoff
+    character(len=2), intent(in) :: elements(n_targets) ! label_length
+    integer, intent(in) :: tags(n_targets), indices(n_targets)
+    character(len=2), intent(in) :: orig_elements(n_targets) ! label_length
+    integer, intent(in) :: orig_tags(n_targets), orig_indices(n_targets)
+    type(potential), intent(out) :: new_potential
+    type(potential_descriptor) :: descriptor
+    logical :: smoothen
+    
+    call get_descriptor(pot_name, descriptor)
+
+    new_potential%type_index = descriptor%type_index
+    nullify(new_potential%parameters)
+    allocate(new_potential%parameters(n_params))
+    new_potential%parameters = parameters
+    new_potential%cutoff = cutoff
+    if(soft_cutoff > 0.d0 .and. soft_cutoff < cutoff)then
+       new_potential%soft_cutoff = soft_cutoff
+       new_potential%smoothened = .true.
+    else
+       new_potential%soft_cutoff = cutoff
+       new_potential%smoothened = .false.
+    end if
+    nullify(new_potential%apply_elements)
+    allocate(new_potential%apply_elements(n_targets))
+    new_potential%apply_elements = elements
+    nullify(new_potential%apply_tags)
+    nullify(new_potential%apply_indices)
+    allocate(new_potential%apply_tags(n_targets))
+    allocate(new_potential%apply_indices(n_targets))
+    new_potential%apply_tags = tags
+    new_potential%apply_indices = indices
+
+    nullify(new_potential%original_elements)
+    allocate(new_potential%original_elements(n_targets))
+    new_potential%original_elements = orig_elements
+
+    nullify(new_potential%original_tags)
+    nullify(new_potential%original_indices)
+    allocate(new_potential%original_tags(n_targets))
+    allocate(new_potential%original_indices(n_targets))
+    new_potential%original_tags = orig_tags
+    new_potential%original_indices = orig_indices
+    new_potential%pot_index = pot_index
+
+    if(n_targets >= 1)then
+
+       if(elements(1) == no_name)then
+          new_potential%filter_elements = .false.
+       else
+          new_potential%filter_elements = .true.       
+       end if
+       
+       if(tags(1) < 0)then
+          new_potential%filter_tags = .false.
+       else
+          new_potential%filter_tags = .true.       
+       end if
+       
+       if(indices(1) < 1)then
+          new_potential%filter_indices = .false.
+       else
+          new_potential%filter_indices = .true.       
+       end if
+
+    end if
+
+
+    !*********************************!
+    ! EDIT WHEN ADDING NEW POTENTIALS !
+    !*********************************!
+
+    ! calculate derived parameters if necessary 
+    ! derived parameters are constant expressions that depend on other, 
+    ! user given parameters but should not be calculated many times during
+    ! simulations (not all potentials have such expressions)
+    select case (new_potential%type_index)
+    case(tri_bend_index) ! bond bending
+       call calculate_derived_parameters_bond_bending(n_params,parameters,new_potential)
+    case(pair_exp_index) ! charge-dep. exp.
+       call calculate_derived_parameters_charge_exp(n_params,parameters,new_potential)
+    case default
+       nullify(new_potential%derived_parameters)
+       allocate(new_potential%derived_parameters(0))
+    end select
+
+  end subroutine create_potential
+
+
+  !***********************************!
+  !                                   !
+  ! Routines for choosing the correct !
+  ! potential when evaluating energy, !
+  ! force, or electronegativity       !
+  !                                   !
+  !***********************************!
+
+
+
+
+  ! !!!: evaluate_bond_order_factor
+
+  ! Returns a bond order factor term.
+  ! 
+  ! By a bond order factor term, we mean the contribution from
+  ! specific atoms, :math:`c_{ijk}`, appearing in the factor
+  !
+  ! .. math::
+  !
+  !       b_i = f(\sum_{jk} c_{ijk})
+  ! 
+  ! This routine evaluates the term :math:`c_{ij}` or :math:`c_{ijk}` for the given
+  ! atoms :math:`ij` or :math:`ijk` according to the given parameters.
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *bond_params a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *factor the calculated bond order term :math:`c`
+  subroutine evaluate_bond_order_factor(n_targets,separations,distances,bond_params,factor,atoms)
+    implicit none
+    integer, intent(in) :: n_targets
+    double precision, intent(in) :: separations(3,n_targets-1), &
+         distances(n_targets-1)
+    type(bond_order_parameters), intent(in) :: bond_params(n_targets-1)
+    double precision, intent(out) :: factor(n_targets)
+    type(atom), optional, intent(in) :: atoms(n_targets)
+    double precision :: r1, r2, cosine, decay1, decay2, &
+         xi1, xi2, gee1, gee2, &
+         mu, a1, a2, cc1, dd1, h1, cc2, dd2, h2
+    double precision :: tmp1(3), tmp2(3)
+
+    factor = 0.d0
+
+    !***********************************!
+    ! EDIT WHEN ADDING NEW BOND FACTORS !
+    !***********************************!
+
+    select case (bond_params(1)%type_index)
+    case(coordination_index) ! number of neighbors
+
+       r1 = distances(1)
+       if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
+          ! coordination is simply the number of neighbors
+          ! calculated as a sum of cutoff functions
+          call smoothening_factor(r1,bond_params(1)%cutoff,&
+               bond_params(1)%soft_cutoff,decay1)
+          factor = decay1 ! symmetric, so factor(1) = factor(2)
+       end if
+
+    case(tersoff_index) ! tersoff bond-order factor
+
+       ! note that the given distances and separation vectors 
+       ! must be for index pairs ij and ik (in the notation 
+       ! described in the documentation) since these are needed.
+       !
+       ! bond_params(1) should contain the ij parameters and 
+       ! bond_params(2) the ik ones
+
+       if(bond_params(1)%type_index /= bond_params(2)%type_index)then
+          return
+       end if
+
+       if(.not.present(atoms))then
+          return
+       end if
+       ! check that bond_params(1) is for indices (ij)
+       if(bond_params(1)%original_elements(1) /= atoms(2)%element)then
+          return
+       end if
+       if(bond_params(1)%original_elements(2) /= atoms(1)%element)then
+          return
+       end if
+       ! check that bond_params(2) is for indices (ik)
+       if(bond_params(2)%original_elements(1) /= atoms(2)%element)then
+          return
+       end if
+       if(bond_params(2)%original_elements(2) /= atoms(3)%element)then
+          return
+       end if
+
+       r1 = distances(1)
+       r2 = distances(2)
+
+       if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .and. &
+           ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
+
+          ! tmp1 and tmp2 are the vectors r_ij, r_ik
+          tmp1 = separations(1:3,1)
+          tmp2 = separations(1:3,2)
+          ! cosine of the angle between ij and ik
+          cosine = (tmp1 .o. tmp2) / ( r1 * r2 )
+          
+          ! bond_params: mu_i, a_ij, a_ik, &
+          !              c_ij^2, d_ij^2, h_ij, 
+          !              c_ik^2, d_ik^2, h_ik
+          mu = bond_params(1)%parameters(3,1)
+          a1 = bond_params(1)%parameters(1,2)
+          a2 = bond_params(2)%parameters(1,2)
+          cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
+          dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
+          h1 = bond_params(1)%parameters(4,2)
+          cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
+          dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
+          h2 = bond_params(2)%parameters(4,2)
+          
+          call smoothening_factor(r2,bond_params(2)%cutoff,&
+               bond_params(2)%soft_cutoff,decay2)
+          call smoothening_factor(r1,bond_params(1)%cutoff,&
+               bond_params(1)%soft_cutoff,decay1)
+          
+          xi1 = decay1 * decay2 * exp( (a1 * (r1-r2))**mu ) 
+          xi2 = decay1 * decay2 * exp( (a2 * (r2-r1))**mu ) 
+          gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
+          gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
+          
+          ! only the middle atom gets a contribution, 
+          ! so factor(1) = factor(3) = 0.0
+          factor(2) = xi1*gee1 + xi2*gee2
+          
+       end if
+    case (c_scale_index) ! coordination correction scaling function
+       ! there is no contribution to raw sums
+    case default
+       ! if we have an invalid case, do nothing
+    end select
+
+  end subroutine evaluate_bond_order_factor
+
+
+  ! !!!: evaluate_bond_order_gradient
+
+  ! Returns the gradients of bond order terms with respect to moving an atom.
+  ! 
+  ! By a bond order factor term, we mean the contribution from
+  ! specific atoms, c_ijk, appearing in the factor
+  !
+  ! .. math::
+  !
+  !       b_i = f(\sum_{jk} c_{ijk})
+  ! 
+  ! This routine evaluates the gradient term :math:`\nabla_\alpha c_{ij}` or 
+  ! :math:`\nabla_\alpha c_{ijk}` for the given atoms :math:`ij` or :math:`ijk` according to the given parameters.
+  !
+  ! The returned array has three dimensions:
+  ! gradient( coordinates, atom with respect to which we differentiate, atom whose factor is differentiated )
+  ! So for example, for a three body term atom1-atom2-atom3, gradient(1,2,3) contains
+  ! the x-coordinate (1), of the factor for atom2 (2), with respect to moving atom3 (3).
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *bond_params a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *gradient the calculated bond order term :math:`\nabla_\alpha c`
+  subroutine evaluate_bond_order_gradient(n_targets,separations,distances,bond_params,gradient,atoms)
+    implicit none
+    integer, intent(in) :: n_targets
+    double precision, intent(in) :: separations(3,n_targets-1), &
+         distances(n_targets-1)
+    type(bond_order_parameters), intent(in) :: bond_params(n_targets-1)
+    double precision, intent(out) :: gradient(3,n_targets,n_targets)
+    type(atom), optional, intent(in) :: atoms(n_targets)
+    double precision :: r1, r2, nablar1(3,3), nablar2(3,3), &
+         cosine, nablacosine(3,3), decay1, decay2,&
+         nabladecay(3,3), unitvector(3,2), xi1, gee1, &
+         nablaxi1(3,3), nablagee1(3,3), &
+         xi2, gee2, nablaxi2(3,3), nablagee2(3,3), &
+         mu, a1, a2, cc1, dd1, h1, cc2, dd2, h2, dot, &
+         ratio, exponent1a, exponent1b, exponent2a, exponent2b
+    double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3), &
+         tmp5(3), tmp6(3), tmpmat1(3,3), tmpmat2(3,3)
+
+    gradient = 0.d0
+
+    !***********************************!
+    ! EDIT WHEN ADDING NEW BOND FACTORS !
+    !***********************************!
+
+    select case (bond_params(1)%type_index)
+    case(coordination_index) ! number of neighbors
+
+       r1 = distances(1)
+       if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
+          call smoothening_gradient(separations(1:3,1) / r1,r1,&
+               bond_params(1)%cutoff,&
+               bond_params(1)%soft_cutoff,&
+               tmp1)
+          gradient(1:3,1,1) = -tmp1(1:3)
+          gradient(1:3,2,1) = -tmp1(1:3)
+          gradient(1:3,1,2) = tmp1(1:3)
+          gradient(1:3,2,2) = tmp1(1:3)
+       end if
+
+    case(tersoff_index) ! tersoff bond-order factor
+
+       if(bond_params(1)%type_index /= bond_params(2)%type_index)then
+          return
+       end if
+
+       if(.not.present(atoms))then
+          return
+       end if
+       ! check that bond_params(1) is for indices (ij)
+       if(bond_params(1)%original_elements(1) /= atoms(2)%element)then
+          return
+       end if
+       if(bond_params(1)%original_elements(2) /= atoms(1)%element)then
+          return
+       end if
+       ! check that bond_params(2) is for indices (ik)
+       if(bond_params(2)%original_elements(1) /= atoms(2)%element)then
+          return
+       end if
+       if(bond_params(2)%original_elements(2) /= atoms(3)%element)then
+          return
+       end if
+
+       r1 = distances(1)
+       r2 = distances(2)
+
+       if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .and. &
+           ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
+
+             tmp1 = separations(1:3,1)
+             tmp2 = separations(1:3,2)
+             unitvector(1:3,1) = tmp1 / r1
+             unitvector(1:3,2) = tmp2 / r2
+             dot = (tmp1 .o. tmp2)
+             ratio = 1.d0 / ( r1 * r2 )
+             ! cosine of the angle between ij and ik, theta_ijk
+             cosine = dot * ratio 
+
+             ! gradients of the r_ij and r_ik vectors with 
+             ! respect to the positions 
+             ! of the three particles i, j, and k
+
+             ! gradient 1 affects atoms ij, so atoms 2 and 1
+             nablar1 = 0.d0
+             nablar1(1:3,2) = -unitvector(1:3,1)
+             nablar1(1:3,1) = unitvector(1:3,1)
+             ! gradient 2 affects atoms ik, so atoms 2 and 3
+             nablar2 = 0.d0
+             nablar2(1:3,2) = -unitvector(1:3,2)
+             nablar2(1:3,3) = unitvector(1:3,2)
+
+             ! gradient of the cos theta_ijk factor
+             nablacosine = 0.d0
+             tmp3 = tmp2 - dot / (r1*r1) * tmp1
+             tmp4 = tmp1 - dot / (r2*r2) * tmp2
+             nablacosine(1:3,1) = tmp3*ratio
+             nablacosine(1:3,2) = -(tmp3+tmp4)*ratio
+             nablacosine(1:3,3) = tmp4*ratio
+
+          
+             ! bond_params: mu_i, a_ij, a_ik, &
+             !              c_ij^2, d_ij^2, h_ij, 
+             !              c_ik^2, d_ik^2, h_ik
+             mu = bond_params(1)%parameters(3,1)
+             a1 = bond_params(1)%parameters(1,2)
+             a2 = bond_params(2)%parameters(1,2)
+             cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
+             dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
+             h1 = bond_params(1)%parameters(4,2)
+             cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
+             dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
+             h2 = bond_params(2)%parameters(4,2)
+
+             call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay2)
+             call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(2)%soft_cutoff,decay1)
+             ! store the gradients of decay1 and decay2 in tmp5 and tmp6
+             call smoothening_gradient(unitvector(1:3,2),r2,&
+                  bond_params(2)%cutoff,bond_params(2)%soft_cutoff,tmp6)
+             call smoothening_gradient(unitvector(1:3,1),r1,&
+                  bond_params(1)%cutoff,bond_params(1)%soft_cutoff,tmp5)
+
+             ! tmpmat1 ad tmpmat2 store the gradients of decay1
+             ! and decay2 with respect to moving any atom i, j, or k
+
+             ! gradient 1 (tmp5) affects atoms ij, so it affects atoms 2 and 1
+             tmpmat1 = 0.d0
+             tmpmat1(1:3,1) = tmp5
+             tmpmat1(1:3,2) = -tmp5
+             ! gradient 2 (tmp6) affects atoms ik, so it affects atoms 2 and 3
+             tmpmat2 = 0.d0
+             tmpmat2(1:3,2) = -tmp6
+             tmpmat2(1:3,3) = tmp6
+
+             exponent1a = (a1 * (r1-r2))**(mu-1)
+             exponent2a = (a2 * (r2-r1))**(mu-1)
+             exponent1b = (a1 * (r1-r2))*exponent1a
+             exponent2b = (a2 * (r2-r1))*exponent2a
+             xi1 = exp( exponent1b ) 
+             xi2 = exp( exponent2b )
+             gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
+             gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
+             nablaxi1 = (tmpmat1 * decay2 + tmpmat2 * decay1) * xi1 + &
+                  decay1*decay2*( exp( exponent1b ) * a1 * mu * exponent1a ) * (nablar1 - nablar2)
+             nablaxi2 = (tmpmat2 * decay1 + tmpmat1 * decay2) * xi2 + &
+                  decay1*decay2*( exp( exponent2b ) * a2 * mu * exponent2a ) * (nablar2 - nablar1)
+             xi1 = xi1 * decay1 * decay2
+             xi2 = xi2 * decay1 * decay2
+             nablagee1 = - cc1 / ( (dd1+(h1-cosine)*(h1-cosine))*(dd1+(h1-cosine)*(h1-cosine)) ) * &
+                  2.d0 * (h1-cosine) * nablacosine
+             nablagee2 = - cc2 / ( (dd2+(h2-cosine)*(h2-cosine))*(dd2+(h2-cosine)*(h2-cosine)) ) * &
+                  2.d0 * (h2-cosine) * nablacosine
+
+             ! there is only contribution to the factor of the middle atom, so
+             ! also the gradients of atoms 1 and 3 are 0.
+             gradient(1:3,2,1) = nablaxi1(1:3,1) * gee1 + xi1 * nablagee1(1:3,1) + &
+                  nablaxi2(1:3,1) * gee2 + xi2 * nablagee2(1:3,1)
+             gradient(1:3,2,2) = nablaxi1(1:3,2) * gee1 + xi1 * nablagee1(1:3,2) + &
+                  nablaxi2(1:3,2) * gee2 + xi2 * nablagee2(1:3,2)
+             gradient(1:3,2,3) = nablaxi1(1:3,3) * gee1 + xi1 * nablagee1(1:3,3) + &
+                  nablaxi2(1:3,3) * gee2 + xi2 * nablagee2(1:3,3)
+
+       end if
+       
+    case (c_scale_index) ! coordination correction scaling function
+       ! there is no contribution to raw sums
+    end select
+
+  end subroutine evaluate_bond_order_gradient
+
+
+  ! !!!: evaluate_electronegativity
+
+  ! If a potential, say, :math:`U_{ijk}` depends on the charges of atoms :math:`q_i` 
+  ! it will not only create a force,
+  ! but also a difference in chemical potential :math:`\mu_i` for the atomic partial charges.
+  ! Similarly to :func:`evaluate_forces`, this function evaluates the chemical
+  ! 'force' on the atomic charges
+  !
+  ! .. math::
+  !
+  !    \chi_{\alpha,ijk} = -\mu_{\alpha,ijk} = -\frac{\partial U_{ijk}}{\partial q_\alpha}
+  !
+  ! To be consist the forces returned by :func:`evaluate_electronegativity` must be
+  ! derivatives of the energies returned by :func:`evaluate_energy`.
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *eneg the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+  subroutine evaluate_electronegativity(n_targets,separations,distances,interaction,eneg,atoms)
+    implicit none
+    integer, intent(in) :: n_targets
+    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: eneg(n_targets)
+    type(atom), intent(in) :: atoms(n_targets)
+    
+    eneg = 0.d0
+
+    !*********************************!
+    ! EDIT WHEN ADDING NEW POTENTIALS !
+    !*********************************!
+
+    ! The interaction type is decided based on the type index.
+    ! This decides what kind of a function is applied and what 
+    ! the parameters provided actually mean.
+    select case (interaction%type_index)
+    case (pair_exp_index) ! charge-dependent exponential potential
+       call evaluate_electronegativity_charge_exp(separations(1:3,1),distances(1),interaction,eneg(1:2),atoms(1:2))
+    end select
+
+  end subroutine evaluate_electronegativity
+
+
+
+  ! !!!: evaluate_forces
+
+  ! Evaluates the forces due to an interaction between the given
+  ! atoms. In other words, if the total force on atom :math:`\alpha` is
+  !
+  ! .. math::
+  !
+  !    \mathbf{F}_\alpha = \sum_{ijk} -\nabla_\alpha v_{ijk} = \sum \mathbf{f}_{\alpha,ijk},
+  !
+  ! this routine evaluates :math:`\mathbf{f}_{\alpha,ijk}` for :math:`\alpha = (i,j,k)` for the given
+  ! atoms i, j, and k.
+  !
+  ! To be consist the forces returned by :func:`evaluate_forces` must be
+  ! gradients of the energies returned by :func:`evaluate_energy`.
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  subroutine evaluate_forces(n_targets,separations,distances,interaction,force,atoms)
+    implicit none
+    integer, intent(in) :: n_targets
+    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,n_targets)
+    type(atom), intent(in) :: atoms(n_targets)
+
+    force = 0.d0
+
+    !*********************************!
+    ! EDIT WHEN ADDING NEW POTENTIALS !
+    !*********************************!
+
+    ! The interaction type is decided based on the type index.
+    ! This decides what kind of a function is applied and what 
+    ! the parameters provided actually mean.
+    select case (interaction%type_index)
+    case (pair_lj_index) ! lennard-jones
+       call evaluate_force_LJ(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
+    case (pair_spring_index) ! spring-potential
+       call evaluate_force_spring(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
+    case (mono_const_index) ! constant force
+       call evaluate_force_constant_force(interaction,force(1:3,1))
+    case (tri_bend_index) ! bond bending
+       call evaluate_force_bond_bending(separations(1:3,1:2),distances(1:2),interaction,force(1:3,1:3),atoms(1:3))
+    case (pair_exp_index) ! charge-dependent exponential potential
+       call evaluate_force_charge_exp(separations(1:3,1),distances(1),interaction,force(1:3,1:2),atoms(1:2))
+    case (mono_none_index) ! constant potential
+       call evaluate_force_constant_potential(interaction,force(1:3,1))
+    case(pair_buck_index)
+       call evaluate_force_buckingham(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
+    end select
+
+  end subroutine evaluate_forces
+
+  ! !!!: evaluate_energy
+
+  ! Evaluates the potential energy due to an interaction between the given
+  ! atoms. In other words, if the total potential energy is
+  !
+  ! .. math::
+  !
+  !    E = \sum_{ijk} v_{ijk}
+  !
+  ! this routine evaluates :math:`v_{ijk}` for the given
+  ! atoms i, j, and k.
+  ! 
+  ! To be consist the forces returned by :func:`evaluate_forces` must be
+  ! gradients of the energies returned by :func:`evaluate_energy`.
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *energy the calculated energy :math:`v_{ijk}`
+  subroutine evaluate_energy(n_targets,separations,distances,interaction,energy,atoms)
+    implicit none
+    integer, intent(in) :: n_targets
+    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    type(atom), optional, intent(in) :: atoms(n_targets)
+    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, ratio, d1, d2, d3, d4
+    logical :: inverse_params
+    integer :: i
+
+    energy = 0.d0
+
+    !*********************************!
+    ! EDIT WHEN ADDING NEW POTENTIALS !
+    !*********************************!
+
+    ! The interaction type is decided based on the type index.
+    ! This decides what kind of a function is applied and what 
+    ! the parameters provided actually mean.
+    select case (interaction%type_index)
+    case (pair_lj_index) ! lennard-jones
+       call evaluate_energy_LJ(separations(1:3,1),distances(1),interaction,energy)
+    case (pair_spring_index) ! spring-potential
+       call evaluate_energy_spring(separations(1:3,1),distances(1),interaction,energy)
+    case (mono_const_index) ! constant force
+       call evaluate_energy_constant_force(interaction,energy,atoms(1))
+    case (tri_bend_index) ! bond-bending
+       call evaluate_energy_bond_bending(separations(1:3,1:2),distances(1:2),interaction,energy,atoms(1:3))
+    case (pair_exp_index) ! charge-dependent exponential potential
+       call evaluate_energy_charge_exp(separations(1:3,1),distances(1),interaction,energy,atoms(1:2))
+    case (mono_none_index) ! constant potential
+       call evaluate_energy_constant_potential(interaction,energy)
+    case(pair_buck_index) ! buckingham
+       call evaluate_energy_buckingham(separations(1:3,1),distances(1),interaction,energy)
+    end select
+
+  end subroutine evaluate_energy
+
+
+
+
+
+  !*************************************!
+  !                                     !
+  ! Definitions of the local potentials !
+  !                                     !
+  ! - characterizers                    !
+  ! - derived parameters                !
+  ! - force evaluation                  !
+  ! - energy evaluation                 !
+  ! - electronegativity evaluation      !
+  !                                     !
+  !*************************************!
+
+
+  !*************************!
+  ! Lennard-Jones potential !
+  !*************************!
+
+  ! LJ characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_LJ(index)
+    implicit none
+    integer, intent(in) :: index
+    
+    ! Record type index
+    potential_descriptors(index)%type_index = index
+
+    ! Record the name of the potential.
+    ! This is a keyword used for accessing the type of potential
+    ! in pysic, also in the python interface.
+    call pad_string('LJ', pot_name_length,potential_descriptors(index)%name)
+
+    ! Record the number of parameters
+    potential_descriptors(index)%n_parameters = 2
+
+    ! Record the number of targets (i.e., is the potential 1-body, 2-body etc.)
+    potential_descriptors(index)%n_targets = 2
+
+    ! Allocate space for storing the parameter names and descriptions.
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+
+    ! Record parameter names and descriptions.
+    ! Names are keywords with which one can intuitively 
+    ! and easily access the parameters in the python
+    ! interface.
+    ! Descriptions are short descriptions of the
+    ! physical or mathematical meaning of the parameters.
+    ! They can be viewed from the python interface to
+    ! remind the user how to parameterize the potential.
+    call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('sigma', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('length scale constant', param_note_length,potential_descriptors(index)%parameter_notes(2))
+
+    ! Record a description of the entire potential.
+    ! This description can also be viewed in the python
+    ! interface as a reminder of the properties of the
+    ! potential.
+    ! The description should contain the mathematical
+    ! formulation of the potential as well as a short
+    ! verbal description.
+    call pad_string('A standard Lennard-Jones potential: V(r) = epsilon * ( (sigma/r)^12 - (sigma/r)^6 )', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_LJ
+
+
+  ! LJ force
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  subroutine evaluate_force_LJ(separations,distances,interaction,force)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,2)
+    double precision :: r1, r6, ratio
+
+    r1 = distances(1)
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+       ratio = interaction%parameters(2) / r1
+       r6 = ratio*ratio*ratio*ratio*ratio*ratio
+       force(1:3,1) = interaction%parameters(1) * ( 6.d0*r6 - 12.d0*r6*r6 ) * separations(1:3,1) / (r1*r1)
+       force(1:3,2) = -force(1:3,1)
+    else
+       force = 0.d0
+    end if
+    
+  end subroutine evaluate_force_LJ
+
+
+  ! LJ energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  subroutine evaluate_energy_LJ(separations,distances,interaction,energy)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    double precision :: r1, r6, ratio
+
+    r1 = distances(1)
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then          
+       ratio = interaction%parameters(2) / r1
+       r6 = ratio*ratio*ratio*ratio*ratio*ratio
+       energy = interaction%parameters(1) * (r6*r6 - r6)
+    end if
+
+  end subroutine evaluate_energy_LJ
+
+
+
+  !*************************!
+  ! spring potential        !
+  !*************************!
+
+  ! spring characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_spring(index)
+    implicit none
+    integer, intent(in) :: index
+
+    potential_descriptors(index)%type_index = index
+    call pad_string('spring', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 2
+    potential_descriptors(index)%n_targets = 2
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+    call pad_string('k', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('spring constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('R_0', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('equilibrium separation', param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('A standard spring potential: V(r) = k/2 (r-R_0)^2', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_spring
+
+  ! spring force
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  subroutine evaluate_force_spring(separations,distances,interaction,force)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,2)
+    double precision :: r1, r2
+
+    r1 = distances(1)
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+       r2 = (r1 - interaction%parameters(2))
+       force(1:3,1) = interaction%parameters(1) * r2 * separations(1:3,1) / r1
+       force(1:3,2) = -force(1:3,1)
+    end if
+    
+  end subroutine evaluate_force_spring
+
+
+  ! spring energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  subroutine evaluate_energy_spring(separations,distances,interaction,energy)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    double precision :: r1, r2, r6
+
+    r1 = distances(1)
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+       r2 = (r1 - interaction%parameters(2))
+       r6 = (interaction%cutoff - interaction%parameters(2))
+       energy = interaction%parameters(1) * 0.5d0 * (r2*r2 - r6*r6)
+    end if
+
+  end subroutine evaluate_energy_spring
+
+
+
+  !**************************!
+  ! constant force potential !
+  !**************************!
+
+  ! constant F characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_constant_force(index)
+    implicit none
+    integer, intent(in) :: index
+
+    potential_descriptors(index)%type_index = index
+    call pad_string('force', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 3
+    potential_descriptors(index)%n_targets = 1
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+    call pad_string('Fx', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('x-component', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('Fy', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('y-component', param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('Fz', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('z-component', param_note_length,potential_descriptors(index)%parameter_notes(3))
+    call pad_string('A constant force: F = [Fx, Fy, Fz]', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_constant_force
+
+
+  ! constant force
+  !
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  subroutine evaluate_force_constant_force(interaction,force)
+    implicit none
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,1)
+    
+    force(1:3,1) = interaction%parameters(1:3)
+
+  end subroutine evaluate_force_constant_force
+
+
+  ! constant force energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_energy_constant_force(interaction,energy,atoms)
+    implicit none
+    type(potential), intent(in) :: interaction
+    type(atom), intent(in) :: atoms(1)
+    double precision, intent(out) :: energy
+
+    energy = - interaction%parameters(1:3) .o. atoms(1)%position(1:3)
+
+  end subroutine evaluate_energy_constant_force
+
+
+
+
+  !************************!
+  ! bond-bending potential !
+  !************************!
+
+  ! bond-bending characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_bond_bending(index)
+    implicit none
+    integer, intent(in) :: index
+
+    potential_descriptors(index)%type_index = index
+    call pad_string('bond_bend', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 2
+    potential_descriptors(index)%n_targets = 3
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+    call pad_string('k', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('bond angle spring constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('theta_0', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('equilibrium bond angle', param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('Bond bending potential: V(theta) = k/2 (cos theta - cos theta_0)^2', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_bond_bending
+
+
+  ! Bond bending derived parameters
+  !
+  ! *new_potential the potential object for which the parameters are calculated
+  subroutine calculate_derived_parameters_bond_bending(n_params,parameters,new_potential)
+    implicit none
+    integer, intent(in) :: n_params
+    double precision, intent(in) :: parameters(n_params)
+    type(potential), intent(inout) :: new_potential
+    
+    nullify(new_potential%derived_parameters)
+    allocate(new_potential%derived_parameters(1))
+    new_potential%derived_parameters(1) = cos(parameters(2))
+
+  end subroutine calculate_derived_parameters_bond_bending
+
+
+  ! Bond bending force
+  !
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_force_bond_bending(separations,distances,interaction,force,atoms)
+    implicit none
+    double precision, intent(in) :: separations(3,2), distances(2)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,3)
+    type(atom), intent(in) :: atoms(3)
+    double precision :: r1, r2, r3, r4, r5, r6, ratio
+    double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3)
+    
+    ! the bond bending is applied to all ordered triplets a1--a2--a3
+    ! for which the central atom (a2) is of the correct type
+    ! note that the core passes all triplets here for filtering
+
+    if(interaction%filter_elements)then
+       if(interaction%original_elements(2) /= atoms(2)%element)then
+          return
+       end if
+    end if
+    if(interaction%filter_tags)then
+       if(interaction%original_tags(2) /= atoms(2)%tags)then
+          return
+       end if
+    end if
+    if(interaction%filter_indices)then
+       if(interaction%original_indices(2) /= atoms(2)%index)then
+          return
+       end if
+    end if
+    
+    r1 = distances(1)
+    r2 = distances(2)
+    
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+       if(r2 < interaction%cutoff .and. r2 > 0.d0)then
+          
+          tmp1 = separations(1:3,1)
+          tmp2 = separations(1:3,2)
+          r3 = tmp1 .o. tmp2
+          tmp3 = tmp2 - r3 / ( r1 * r1 ) * tmp1 ! = r_23 - (r_21 . r_23)/|r_21|^2 * r_21
+          tmp4 = tmp1 - r3 / ( r2 * r2 ) * tmp2 ! = r_21 - (r_21 . r_23)/|r_23|^2 * r_23
+          ratio = 1.d0 / ( r1 * r2 )
+          
+          ! cos theta = (r_21 . r_23) / ( |r_21| |r_23| ) = r3*ratio
+          ! k ( cos theta - cos theta_0) =
+          r6 = interaction%parameters(1) * (r3 * ratio - interaction%derived_parameters(1))
+          
+          force(1:3,1) = -tmp3*ratio * r6 
+          force(1:3,2) = (tmp3+tmp4)*ratio * r6
+          force(1:3,3) = -tmp4*ratio * r6
+          
+       end if
+    end if
+    
+  end subroutine evaluate_force_bond_bending
+
+
+
+  ! Bond bending energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_energy_bond_bending(separations,distances,interaction,energy,atoms)
+    implicit none
+    double precision, intent(in) :: separations(3,2), distances(2)
+    type(potential), intent(in) :: interaction
+    type(atom), intent(in) :: atoms(3)
+    double precision, intent(out) :: energy
+    double precision :: r1, r2, r3, r6
+     
+    ! the bond bending is applied to all ordered triplets a1--a2--a3
+    ! for which the central atom (a2) is of the correct type
+    ! note that the core passes all triplets here for filtering
+    if(interaction%filter_elements)then
+       if(interaction%original_elements(2) /= atoms(2)%element)then
+          return
+       end if
+    end if
+    if(interaction%filter_tags)then
+       if(interaction%original_tags(2) /= atoms(2)%tags)then
+          return
+       end if
+    end if
+    if(interaction%filter_indices)then
+       if(interaction%original_indices(2) /= atoms(2)%index)then
+          return
+       end if
+    end if
+    
+    r1 = distances(1)
+    r2 = distances(2)
+    
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+       if(r2 < interaction%cutoff .and. r2 > 0.d0)then
+          
+          r3 = separations(1:3,1) .o. separations(1:3,2)
+          ! cos theta = (r_21 . r_23) / ( |r_21| |r_23| )
+          r6 = (r3  / ( r1 * r2 )  - interaction%derived_parameters(1))
+          ! k/2 ( cos theta - cos theta_0 )^2
+          energy = 0.5d0 * interaction%parameters(1) * r6*r6
+          
+       end if
+    end if
+    
+  end subroutine evaluate_energy_bond_bending
+
+
+
+  !******************************!
+  ! charge exponential potential !
+  !******************************!
+
+  ! charge exponential characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_charge_exp(index)
+    implicit none
+    integer, intent(in) :: index
+
+    potential_descriptors(index)%type_index = index
+    call pad_string('exponential', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 12
+    potential_descriptors(index)%n_targets = 2
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+    call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('zeta', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('inverse decay length', param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('Rmax1', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('maximum covalent radius for atom i', &
+         param_note_length,potential_descriptors(index)%parameter_notes(3))
+    call pad_string('Rmin1', param_name_length,potential_descriptors(index)%parameter_names(4))
+    call pad_string('minimum covalent radius for atom i', &
+         param_note_length,potential_descriptors(index)%parameter_notes(4))
+    call pad_string('Qmax1', param_name_length,potential_descriptors(index)%parameter_names(5))
+    call pad_string('maximum covalent charge for atom i', &
+         param_note_length,potential_descriptors(index)%parameter_notes(5))
+    call pad_string('Qmin1', param_name_length,potential_descriptors(index)%parameter_names(6))
+    call pad_string('minimum covalent charge for atom i', &
+         param_note_length,potential_descriptors(index)%parameter_notes(6))
+    call pad_string('Rmax2', param_name_length,potential_descriptors(index)%parameter_names(7))
+    call pad_string('maximum covalent radius for atom j', &
+         param_note_length,potential_descriptors(index)%parameter_notes(7))
+    call pad_string('Rmin2', param_name_length,potential_descriptors(index)%parameter_names(8))
+    call pad_string('minimum covalent radius for atom j', &
+         param_note_length,potential_descriptors(index)%parameter_notes(8))
+    call pad_string('Qmax2', param_name_length,potential_descriptors(index)%parameter_names(9))
+    call pad_string('maximum covalent charge for atom j', &
+         param_note_length,potential_descriptors(index)%parameter_notes(9))
+    call pad_string('Qmin2', param_name_length,potential_descriptors(index)%parameter_names(10))
+    call pad_string('minimum covalent charge for atom j', &
+         param_note_length,potential_descriptors(index)%parameter_notes(10))
+    call pad_string('xi1', param_name_length,potential_descriptors(index)%parameter_names(11))
+    call pad_string('inverse charge decay for atom i', &
+         param_note_length,potential_descriptors(index)%parameter_notes(11))
+    call pad_string('xi2', param_name_length,potential_descriptors(index)%parameter_names(12))
+    call pad_string('inverse charge decay for atom j', &
+         param_note_length,potential_descriptors(index)%parameter_notes(12))
+    call pad_string('Charge-dependent exponential potential: '//&
+         'V(r,q) = epsilon exp(-zeta r + (xi_i D_i(q_i) + xi_j D_j(q_j))/2 ) '//&
+         'D_i(q) = R_i,max + |beta_i (Q_i,max - q)|^eta_i '//&
+         'beta_i = (R_i,min - R_i,max)^(1/eta_i) / (Q_i,max - Q_i,min) '//&
+         'eta_i = [ ln R_i,max - ln (R_i,max - R_i,min) ] / [ ln Q_i,max - ln (Q_i,max - Q_i,min) ]',&
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_charge_exp
+
+
+
+  ! Charge exponential derived parameters
+  !
+  ! *new_potential the potential object for which the parameters are calculated
+  subroutine calculate_derived_parameters_charge_exp(n_params,parameters,new_potential)
+    implicit none
+    integer, intent(in) :: n_params
+    double precision, intent(in) :: parameters(n_params)
+    type(potential), intent(inout) :: new_potential
+    
+    nullify(new_potential%derived_parameters)
+    allocate(new_potential%derived_parameters(4))
+    ! eta_i = [ln R_i,max/(R_i,max - R_i,min) ] / [ln Q_i,max - ln(Q_i,max - Q_i,min) ] 
+    new_potential%derived_parameters(1) = ( log(parameters(3)/(parameters(3)-parameters(4))) ) / &
+         ( log(parameters(5)/(parameters(5)-parameters(6))) ) 
+    new_potential%derived_parameters(2) = ( log(parameters(7)/(parameters(7)-parameters(8))) ) / &
+         ( log(parameters(9)/(parameters(9)-parameters(10))) )
+    ! beta_i = (R_i,min - R_i,max)^(1/eta_i) / (Q_i,max - Q_i,min)
+    new_potential%derived_parameters(3) = (parameters(4) - parameters(3))**(1.d0/new_potential%derived_parameters(1)) / &
+         (parameters(5) - parameters(6))
+    new_potential%derived_parameters(4) = (parameters(8) - parameters(7))**(1.d0/new_potential%derived_parameters(2)) / &
+         (parameters(9) - parameters(10))
+
+  end subroutine calculate_derived_parameters_charge_exp
+
+  ! Charge exp electronegativity
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *eneg the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+  subroutine evaluate_electronegativity_charge_exp(separations,distances,interaction,eneg,atoms)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    type(atom), intent(in) :: atoms(2)
+    double precision, intent(out) :: eneg(2)
+    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, d1, d2, d3, d4, d5, d6
+    logical :: inverse_params
+    
+    ! If we have parameters for a pair A-B and we get a pair B-A, we
+    ! must flip the per atom parameters
+    inverse_params = .true.
+    if(interaction%filter_elements)then
+       if(interaction%original_elements(1) == atoms(1)%element)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_tags)then
+       if(interaction%original_tags(1) == atoms(1)%tags)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_indices)then
+       if(interaction%original_indices(1) == atoms(1)%index)then
+          inverse_params = .false.
+       end if
+    end if
+    
+    r1 = distances(1)
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+       if(inverse_params)then
+          r2 = interaction%parameters(7) ! R_i,max
+          r3 = interaction%parameters(3) ! R_j,max
+          r4 = interaction%parameters(9) ! Q_i,max
+          r5 = interaction%parameters(5) ! Q_j,max
+          r6 = interaction%derived_parameters(2) ! eta_i
+          r7 = interaction%derived_parameters(1) ! eta_j
+          r8 = interaction%derived_parameters(4) ! beta_i
+          r9 = interaction%derived_parameters(3) ! beta_j
+          d3 = interaction%parameters(12) ! xi_i
+          d4 = interaction%parameters(11) ! xi_j
+       else
+          r2 = interaction%parameters(3) ! R_i,max
+          r3 = interaction%parameters(7) ! R_j,max
+          r4 = interaction%parameters(5) ! Q_i,max
+          r5 = interaction%parameters(9) ! Q_j,max
+          r6 = interaction%derived_parameters(1) ! eta_i
+          r7 = interaction%derived_parameters(2) ! eta_j
+          r8 = interaction%derived_parameters(3) ! beta_i
+          r9 = interaction%derived_parameters(4) ! beta_j
+          d3 = interaction%parameters(11) ! xi_i
+          d4 = interaction%parameters(12) ! xi_j
+       end if
+       
+       d5 = r8 * (r4 - atoms(1)%charge)
+       d6 = r9 * (r5 - atoms(2)%charge)
+       d1 = r2 + abs(d5)**r6
+       d2 = r3 + abs(d6)**r7
+       eneg(1) = interaction%parameters(1)* &
+            exp(-interaction%parameters(2)*r1 + &
+            0.5d0*(d3*d1 + d4*d2) ) ! this is just the energy
+       eneg(2) = eneg(1) * d4 * 0.5d0 * r7 * abs(d6)**(r7-1.d0) * sign(1.d0,d6) * r9
+       eneg(1) = eneg(1) * d3 * 0.5d0 * r6 * abs(d5)**(r6-1.d0) * sign(1.d0,d5) * r8
+    end if
+    
+  end subroutine evaluate_electronegativity_charge_exp
+
+
+  ! charge exp force
+  !
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_force_charge_exp(separations,distances,interaction,force,atoms)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,2)
+    type(atom), intent(in) :: atoms(2)
+    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, d1, d2, d3, d4
+    logical :: inverse_params
+    
+    ! If we have parameters for a pair A-B and we get a pair B-A, we
+    ! must flip the per atom parameters
+    inverse_params = .true.
+    if(interaction%filter_elements)then
+       if(interaction%original_elements(1) == atoms(1)%element)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_tags)then
+       if(interaction%original_tags(1) == atoms(1)%tags)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_indices)then
+       if(interaction%original_indices(1) == atoms(1)%index)then
+          inverse_params = .false.
+       end if
+    end if
+
+    r1 = distances(1)
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+       if(inverse_params)then
+          r2 = interaction%parameters(7) ! R_i,max
+          r3 = interaction%parameters(3) ! R_j,max
+          r4 = interaction%parameters(9) ! Q_i,max
+          r5 = interaction%parameters(5) ! Q_j,max
+          r6 = interaction%derived_parameters(2) ! eta_i
+          r7 = interaction%derived_parameters(1) ! eta_j
+          r8 = interaction%derived_parameters(4) ! beta_i
+          r9 = interaction%derived_parameters(3) ! beta_j
+          d3 = interaction%parameters(12) ! xi_i
+          d4 = interaction%parameters(11) ! xi_j
+       else
+          r2 = interaction%parameters(3) ! R_i,max
+          r3 = interaction%parameters(7) ! R_j,max
+          r4 = interaction%parameters(5) ! Q_i,max
+          r5 = interaction%parameters(9) ! Q_j,max
+          r6 = interaction%derived_parameters(1) ! eta_i
+          r7 = interaction%derived_parameters(2) ! eta_j
+          r8 = interaction%derived_parameters(3) ! beta_i
+          r9 = interaction%derived_parameters(4) ! beta_j
+          d3 = interaction%parameters(11) ! xi_i
+          d4 = interaction%parameters(12) ! xi_j
+       end if
+       
+       d1 = r2 + abs(r8 * (r4 - atoms(1)%charge))**r6
+       d2 = r3 + abs(r9 * (r5 - atoms(2)%charge))**r7
+       force(1:3,1) = -interaction%parameters(2)*interaction%parameters(1)* &
+            exp(-interaction%parameters(2)*r1 + &
+            0.5d0*(d3*d1 + d4*d2) ) * &
+            separations(1:3,1) / r1
+       force(1:3,2) = -force(1:3,1)
+       
+    end if
+    
+  end subroutine evaluate_force_charge_exp
+
+
+  ! Charge exp energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_energy_charge_exp(separations,distances,interaction,energy,atoms)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    type(atom), intent(in) :: atoms(2)
+    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, d1, d2, d3, d4
+    logical :: inverse_params
+
+    ! If we have parameters for a pair A-B and we get a pair B-A, we
+    ! must flip the per atom parameters
+    inverse_params = .true.
+    if(interaction%filter_elements)then
+       if(interaction%original_elements(1) == atoms(1)%element)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_tags)then
+       if(interaction%original_tags(1) == atoms(1)%tags)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_indices)then
+       if(interaction%original_indices(1) == atoms(1)%index)then
+          inverse_params = .false.
+       end if
+    end if
+    
+    r1 = distances(1)
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+       if(inverse_params)then
+          r2 = interaction%parameters(7) ! R_i,max
+          r3 = interaction%parameters(3) ! R_j,max
+          r4 = interaction%parameters(9) ! Q_i,max
+          r5 = interaction%parameters(5) ! Q_j,max
+          r6 = interaction%derived_parameters(2) ! eta_i
+          r7 = interaction%derived_parameters(1) ! eta_j
+          r8 = interaction%derived_parameters(4) ! beta_i
+          r9 = interaction%derived_parameters(3) ! beta_j
+          d3 = interaction%parameters(12) ! xi_i
+          d4 = interaction%parameters(11) ! xi_j
+       else
+          r2 = interaction%parameters(3) ! R_i,max
+          r3 = interaction%parameters(7) ! R_j,max
+          r4 = interaction%parameters(5) ! Q_i,max
+          r5 = interaction%parameters(9) ! Q_j,max
+          r6 = interaction%derived_parameters(1) ! eta_i
+          r7 = interaction%derived_parameters(2) ! eta_j
+          r8 = interaction%derived_parameters(3) ! beta_i
+          r9 = interaction%derived_parameters(4) ! beta_j
+          d3 = interaction%parameters(11) ! xi_i
+          d4 = interaction%parameters(12) ! xi_j
+       end if
+       
+       d1 = r2 + abs(r8 * (r4 - atoms(1)%charge))**r6
+       d2 = r3 + abs(r9 * (r5 - atoms(2)%charge))**r7
+       energy = interaction%parameters(1)* &
+            exp(-interaction%parameters(2)*r1 + &
+            0.5d0*(d3*d1 + d4*d2) )
+    end if
+    
+  end subroutine evaluate_energy_charge_exp
+
+
+  !********************!
+  ! constant potential !
+  !********************!
+
+  ! constant potential characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_constant(index)
+    implicit none
+    integer, intent(in) :: index
+
+    potential_descriptors(index)%type_index = index
+    call pad_string('constant', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 1
+    potential_descriptors(index)%n_targets = 1
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+    call pad_string('V', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('potential value', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('Constant potential: V(r) = V', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_constant
+
+
+  ! constant force
+  !
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_force_constant_potential(interaction,force)
+    implicit none
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,1)
+
+    force = 0.d0
+    
+  end subroutine evaluate_force_constant_potential
+
+
+  ! Constant potential energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_energy_constant_potential(interaction,energy)
+    implicit none
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+
+    energy = interaction%parameters(1)
+
+  end subroutine evaluate_energy_constant_potential
+
+
+
+
+
+
+  !**********************!
+  ! Buckingham potential !
+  !**********************!
+
+  ! Buckingham characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_buckingham(index)
+    implicit none
+    integer, intent(in) :: index
+    
+    potential_descriptors(index)%type_index = index
+    call pad_string('Buckingham', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 3
+    potential_descriptors(index)%n_targets = 2
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+    call pad_string('A', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('exponential scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('C', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('power scale constant', param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('sigma', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('length scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('A Buckingham potential: V(r) = A exp(-r/sigma) - C (sigma/r)^6', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_buckingham
+
+
+  ! Buckingham force
+  !
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_force_buckingham(separations,distances,interaction,force)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,2)
+    double precision :: r1, r2, ratio, r6
+    
+    r1 = distances(1)
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then          
+       ratio = r1 / interaction%parameters(3)
+       r6 = 1.d0 / (ratio*ratio*ratio*ratio*ratio*ratio)
+       force(1:3,1) = ( -interaction%parameters(1)*ratio * exp(-ratio) &
+            + interaction%parameters(2) * 6.d0*r6 ) * separations(1:3,1) / (r1*r1)
+       force(1:3,2) = -force(1:3,1)
+    else
+       force = 0.d0
+    end if
+    
+  end subroutine evaluate_force_buckingham
+
+
+  ! Buckingham energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_energy_buckingham(separations,distances,interaction,energy)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    double precision :: r1, r2, ratio, r6
+
+    r1 = distances(1)
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then          
+       ratio = r1 / interaction%parameters(3)
+       r6 = 1.d0 / (ratio*ratio*ratio*ratio*ratio*ratio)
+       energy = interaction%parameters(1) * exp(-ratio) - interaction%parameters(2) * r6
+    end if
+
+  end subroutine evaluate_energy_buckingham
+
+
+
+
+
+!!$  !*****************!
+!!$  ! dummy potential !
+!!$  !*****************!
+!!$
+!!$  ! xxx characterizer initialization
+!!$  !
+!!$  ! *index index of the potential
+!!$  subroutine create_potential_characterizer_xxx(index)
+!!$    implicit none
+!!$    integer, intent(in) :: index
+!!$    
+!!$  end subroutine create_potential_characterizer_xxx
+!!$
+!!$
+!!$  ! xxx derived parameters
+!!$  !
+!!$  ! *new_potential the potential object for which the parameters are calculated
+!!$  subroutine calculate_derived_parameters_xxx(n_params,parameters,new_potential)
+!!$    implicit none
+!!$    integer, intent(in) :: n_params
+!!$    double precision, intent(in) :: parameters(n_params)
+!!$    type(potential), intent(inout) :: new_potential
+!!$    
+!!$    nullify(new_potential%derived_parameters)
+!!$    allocate(new_potential%derived_parameters(0))
+!!$
+!!$  end subroutine calculate_derived_parameters_xxx
+!!$
+!!$
+!!$  ! xxx electronegativity
+!!$  !
+!!$  ! *n_targets number of targets
+!!$  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+!!$  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+!!$  ! *interaction a :data:`potential` containing the parameters
+!!$  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+!!$  ! *eneg the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+!!$  subroutine evaluate_electronegativity_xxx(separations,distances,interaction,eneg,atoms)
+!!$    implicit none
+!!$    double precision, intent(in) :: separations(3,xxx-1), distances(xxx-1)
+!!$    type(potential), intent(in) :: interaction
+!!$    type(atom), intent(in) :: atoms(xxx)
+!!$    double precision, intent(out) :: eneg(xxx)
+!!$    
+!!$  end subroutine evaluate_electronegativity_xxx
+!!$
+!!$  ! xxx force
+!!$  !
+!!$  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+!!$  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+!!$  ! *interaction a :data:`potential` containing the parameters
+!!$  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+!!$  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+!!$  subroutine evaluate_force_xxx(separations,distances,interaction,force,atoms)
+!!$    implicit none
+!!$    double precision, intent(in) :: separations(3,xxx-1), distances(xxx-1)
+!!$    type(potential), intent(in) :: interaction
+!!$    double precision, intent(out) :: force(3,xxx)
+!!$    type(atom), intent(in) :: atoms(xxx)
+!!$    
+!!$  end subroutine evaluate_force_xxx
+!!$
+!!$
+!!$  ! xxx energy
+!!$  !  
+!!$  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+!!$  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+!!$  ! *interaction a :data:`bond_order_parameters` containing the parameters
+!!$  ! *energy the calculated energy :math:`v_{ijk}`
+!!$  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+!!$  subroutine evaluate_energy_xxx(separations,distances,interaction,energy,atoms)
+!!$    implicit none
+!!$    double precision, intent(in) :: separations(3,xxx), distances(xxx)
+!!$    type(potential), intent(in) :: interaction
+!!$    double precision, intent(out) :: energy
+!!$    type(atom), intent(in) :: atoms(xxx)
+!!$
+!!$  end subroutine evaluate_energy_xxx
 
 
 end module potentials
