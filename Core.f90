@@ -959,6 +959,8 @@ contains
        ! neighboring atom
        index2 = nbors1%neighbors(j)          
        atom2 = atoms(index2)
+       atom_list(1) = atom1
+       atom_list(2) = atom2
 
        ! calculate atom1-atom2 separation vector
        ! and distance
@@ -1002,7 +1004,8 @@ contains
                         separations(1:3,1),&
                         distances(1),&
                         bond_params(1),&
-                        tmp_grad(1:3,1:2,1:2)) ! in Potentials.f90
+                        tmp_grad(1:3,1:2,1:2),&
+                        atom_list(1:2)) ! in Potentials.f90
 
                    ! If for_factor is given and true, we return
                    ! gradients for the given factor.
