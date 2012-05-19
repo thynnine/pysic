@@ -2,7 +2,7 @@
 
 .. _syntax:
 
-Syntax and structure of Pysic
+Structure and syntax of Pysic
 =============================
 
 Pysic can be used with basic functionality with just a few commands. To give access to all the functionality in Pysic, the full API of Pysic is documented in the following section. All the classes and methods including their arguments are explained in detail. Also the types of potentials and bond order factors available are documented, including their mathematical descriptions and the keywords needed for access.

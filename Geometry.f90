@@ -432,9 +432,10 @@ contains
     double precision :: wrap1(3), wrap2(3)
     integer :: i
 
-    call wrapped_coordinates(r1,cell,wrap1)
-    call wrapped_coordinates(r2,cell,wrap2)
-    separation = wrap2 - wrap1
+    !call wrapped_coordinates(r1,cell,wrap1)
+    !call wrapped_coordinates(r2,cell,wrap2)
+    !separation = wrap2 - wrap1
+    separation = r2 - r1
     do i = 1, 3
        separation = separation + offset(i)*cell%vectors(1:3,i)
     end do
@@ -569,21 +570,28 @@ contains
   ! *position the absolute coordinates
   ! *cell the supercell
   ! *wrapped the wrapped absolute coordinates
-  subroutine wrapped_coordinates(position,cell,wrapped)
+  ! *offset wrapping offset, i.e., the number of times the cell vectors are added to the absolute coordinates in order to obtain the wrapped coordinates
+  subroutine wrapped_coordinates(position,cell,wrapped,offset)
     implicit none
     double precision, intent(in) :: position(3)
     type(supercell), intent(in) :: cell
     double precision, intent(out) :: wrapped(3)
+    integer, optional, intent(out) :: offset(3)
     double precision :: relative(3)
-    integer :: i
+    integer :: i, off(3)
     
+    off = 0
     call relative_coordinates(position,cell,relative)
     do i = 1, 3
        if( cell%periodic(i) )then
-          relative(i) = relative(i) - floor(relative(i))
+          off(i) = -floor(relative(i))
+          relative(i) = relative(i) + off(i)
        end if
     end do
     call absolute_coordinates(relative,cell,wrapped)
+    if(present(offset))then
+       offset = off
+    end if
 
   end subroutine wrapped_coordinates
 
@@ -811,6 +819,7 @@ contains
                             ! (out of bounds)
                             if(nbor_index(axis) < 0 .or. nbor_index(axis) > splits(axis)+1)then
                                cell%subcells(i,j,k)%include(i_n,j_n,k_n) = .false.
+                               nbor_index(axis) = 0
                             end if
 
                          end if
@@ -852,7 +861,7 @@ contains
     implicit none
     type(supercell), intent(inout) :: cell
     type(atom), intent(inout) :: at
-    double precision :: wrapped(3), fractional(3)
+    double precision :: wrapped(3), fractional(3), fractional2(3)
     integer :: i, indices(3)
     type(subcell), pointer :: thesubcell
 

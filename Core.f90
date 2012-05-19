@@ -486,7 +486,7 @@ contains
 ! !!!: core_get_bond_order_gradients
 
   ! Returns the gradients of the bond order factor of the given atom
-  ! with respect to moving all atoms for the given group.
+  ! with respect to moving all atoms, for the given group.
   ! The routine tries to find the values in the stored precalculated
   ! values first if use_saved_bond_order_factors is true, and saves
   ! the calculated values if it does not find them.
@@ -947,6 +947,17 @@ contains
     gradient = 0.d0
     total_gradient = 0.d0
     
+    ! If for_factor is given and true, we return
+    ! gradients for the given factor.
+    ! Otherwise, we return gradients for all factors
+    ! with respect to moving the given atom.
+    gradients_for_factor = .false.
+    if(present(for_factor))then
+       if(for_factor)then
+          gradients_for_factor = .true.
+       end if
+    end if
+
     ! target atom, given as argument (the atom moved in differentiation)
     index1 = atom_index
     atom1 = atoms(atom_index)
@@ -1006,17 +1017,6 @@ contains
                         bond_params(1),&
                         tmp_grad(1:3,1:2,1:2),&
                         atom_list(1:2)) ! in Potentials.f90
-
-                   ! If for_factor is given and true, we return
-                   ! gradients for the given factor.
-                   ! Otherwise, we return gradients for all factors
-                   ! with respect to moving the given atom.
-                   gradients_for_factor = .false.
-                   if(present(for_factor))then
-                      if(for_factor)then
-                         gradients_for_factor = .true.
-                      end if
-                   end if
 
                    if(gradients_for_factor)then
                       ! store the gradients of the atom1 term (the target atom)
@@ -1162,18 +1162,6 @@ contains
                                     tmp_grad(1:3,1:3,1:3),&
                                     atom_list) ! in Potentials.f90
 
-
-                               ! If for_factor is given and true, we return
-                               ! gradients for the given factor.
-                               ! Otherwise, we return gradients for all factors
-                               ! with respect to moving the given atom.
-                               gradients_for_factor = .false.
-                               if(present(for_factor))then
-                                  if(for_factor)then
-                                     gradients_for_factor = .true.
-                                  end if
-                               end if
-
                                if(gradients_for_factor)then
                                   ! store the gradients of the atom1 term (the target atom)
                                   ! with respect to moving atom1, atom2, atom3
@@ -1299,17 +1287,6 @@ contains
                                      tmp_grad(1:3,1:3,1:3),&
                                      atom_list) ! in Potentials.f90
 
-                               ! If for_factor is given and true, we return
-                               ! gradients for the given factor.
-                               ! Otherwise, we return gradients for all factors
-                               ! with respect to moving the given atom.
-                               gradients_for_factor = .false.
-                               if(present(for_factor))then
-                                  if(for_factor)then
-                                     gradients_for_factor = .true.
-                                  end if
-                               end if
-
                                if(gradients_for_factor)then
                                   ! store the gradients of the atom1 term (the target atom)
                                   ! with respect to moving atom1, atom2, atom3
@@ -1356,17 +1333,6 @@ contains
     ! \nabla_a \sum_c_ij.
     ! To get \nabla_a b_i, we need to evaluate
     ! \nabla_a b_i = f'( \sum c_ij ) * \nabla_a \sum_c_ij.
-
-    ! If for_factor is given and true, we return
-    ! gradients for the given factor.
-    ! Otherwise, we return gradients for all factors
-    ! with respect to moving the given atom.
-    gradients_for_factor = .false.
-    if(present(for_factor))then
-       if(for_factor)then
-          gradients_for_factor = .true.
-       end if
-    end if
 
     if(gradients_for_factor)then
        call core_post_process_bond_order_gradients_of_factor(n_atoms,group_index,index1,raw_sums(index1),&
@@ -3657,11 +3623,12 @@ contains
     integer, intent(in) :: n_atoms
     double precision, intent(in) :: cutoffs(n_atoms)
     integer :: cell_indices(3), i,j, i_n, j_n, k_n, neighbor_offset(3), atom1_index, atom2_index, &
-         n_nbs(n_atoms), max_n_nbors=100, global_max, total_n_nbs(n_atoms), tmp_max
+         n_nbs(n_atoms), max_n_nbors=100, global_max, total_n_nbs(n_atoms), tmp_max, &
+         atom1_wrap_offset(3), atom2_wrap_offset(3)
     integer, pointer, save ::  nbors_and_offsets(:,:,:)
     type(subcell) :: atom_cell, neighbor_cell
     logical :: neighbor_include, first_run = .true.
-    double precision :: separation(3), distance
+    double precision :: separation(3), distance, dummy1(3)
     
     if(first_run)then
        nullify(nbors_and_offsets)
@@ -3680,13 +3647,15 @@ contains
        if(is_my_atom(atom1_index))then
           
           cell_indices = atoms(atom1_index)%subcell_indices
-          atom_cell = cell%subcells(cell_indices(1),cell_indices(2),cell_indices(3))       
+          atom_cell = cell%subcells(cell_indices(1),cell_indices(2),cell_indices(3))
+          call wrapped_coordinates(atoms(atom1_index)%position,cell,dummy1,atom1_wrap_offset)
 
           do k_n = -1,1
              do j_n = -1,1
                 do i_n = -1,1
                    
                    cell_indices(1:3) = atom_cell%neighbors(1:3,i_n,j_n,k_n)
+
                    neighbor_cell = cell%subcells(cell_indices(1),cell_indices(2),cell_indices(3))
                    neighbor_offset = atom_cell%offsets(1:3,i_n,j_n,k_n)
                    neighbor_include = atom_cell%include(i_n,j_n,k_n)               
@@ -3695,12 +3664,13 @@ contains
                       
                       do j = 1, neighbor_cell%n_atoms
                          atom2_index = neighbor_cell%atoms(j)
+                         call wrapped_coordinates(atoms(atom2_index)%position,cell,dummy1,atom2_wrap_offset)
 
                          ! prevent double counting
                          if(pick(atom1_index,atom2_index,neighbor_offset))then
                             call separation_vector(atoms(atom1_index)%position, &
                                  atoms(atom2_index)%position, &
-                                 neighbor_offset, &
+                                 neighbor_offset - atom1_wrap_offset + atom2_wrap_offset, &
                                  cell, &
                                  separation)
                             ! distance squared
@@ -3710,7 +3680,8 @@ contains
                             if(distance < cutoffs(atom1_index)*cutoffs(atom1_index))then
                                n_nbs(atom1_index) = n_nbs(atom1_index)+1
                                nbors_and_offsets(1,n_nbs(atom1_index),atom1_index) = atom2_index
-                               nbors_and_offsets(2:4,n_nbs(atom1_index),atom1_index) = neighbor_offset(1:3)
+                               nbors_and_offsets(2:4,n_nbs(atom1_index),atom1_index) = neighbor_offset(1:3) &
+                                     - atom1_wrap_offset(1:3) + atom2_wrap_offset(1:3)
                                if(n_nbs(atom1_index) == max_n_nbors)then
                                   call expand_neighbor_storage(nbors_and_offsets,max_n_nbors,max_n_nbors+50,n_atoms)
                                   max_n_nbors = max_n_nbors + 50
@@ -3721,7 +3692,8 @@ contains
                             if(distance < cutoffs(atom2_index)*cutoffs(atom2_index))then
                                n_nbs(atom2_index) = n_nbs(atom2_index)+1
                                nbors_and_offsets(1,n_nbs(atom2_index),atom2_index) = atom1_index
-                               nbors_and_offsets(2:4,n_nbs(atom2_index),atom2_index) = neighbor_offset
+                               nbors_and_offsets(2:4,n_nbs(atom2_index),atom2_index) = neighbor_offset &
+                                     - atom1_wrap_offset(1:3) + atom2_wrap_offset(1:3)
                                if(n_nbs(atom2_index) == max_n_nbors)then
                                   call expand_neighbor_storage(nbors_and_offsets,max_n_nbors,max_n_nbors+50,n_atoms)
                                   max_n_nbors = max_n_nbors + 50

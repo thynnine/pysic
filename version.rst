@@ -6,6 +6,15 @@ Version history
 This is a list of the main updates in the different versions of Pysic.
 
 
+Version 0.4.2
+-------------
+
+- Some code restructuring in the Fortran core (:ref:`potentials`)
+- Added the Buckingham potential
+- Bug fix: fixed an issue with periodic boundaries in :class:`~pysic.FastNeighborList`
+- Bug fix: fixed an issue with special parameter values in Tersoff bond order factor evaluation
+
+
 Version 0.4.1
 -------------
 

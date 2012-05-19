@@ -13,6 +13,12 @@ Version 0.5
 - Implementation of the COMB potential
 
 
+Version 0.6
+-----------
+
+- Implementation of the ReaxFF potential
+
+
 Other planned features
 ----------------------
 

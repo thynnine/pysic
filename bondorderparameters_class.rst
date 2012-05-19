@@ -112,7 +112,7 @@ As an example, the Tersoff bond order factor
 
 .. math::
 
-    \xi_{ijk} = f(r_{ij}) f(r_{ik}) \exp\left[a_{ij}^{m_i} (r_{ij} - r_{ik})^{m_i} \right]
+    \xi_{ijk} = f(r_{ij}) f(r_{ik}) \exp\left[a_{ij}^{\mu_i} (r_{ij} - r_{ik})^{\mu_i} \right]
 
 .. math::
 
@@ -300,6 +300,7 @@ Keywords::
 
 .. file:tersoff bond order factor
 
+.. _tersoff:
 
 Tersoff bond order
 __________________
@@ -312,7 +313,7 @@ The Tersoff-like bond order factor for atom i is given by
 
 .. math::
 
-    \xi_{ijk} = f(r_{ij}) f(r_{ik}) \exp\left[a_{ij}^{m_i} (r_{ij} - r_{ik})^{m_i} \right]
+    \xi_{ijk} = f(r_{ij}) f(r_{ik}) \exp\left[a_{ij}^{\mu_i} (r_{ij} - r_{ik})^{\mu_i} \right]
 
 .. math::
 

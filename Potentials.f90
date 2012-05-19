@@ -3399,7 +3399,7 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
   ! :math:`\nabla_\alpha c_{ijk}` for the given atoms :math:`ij` or :math:`ijk` according to the given parameters.
   !
   ! The returned array has three dimensions:
-  ! gradient( coordinates, atom with respect to which we differentiate, atom whose factor is differentiated )
+  ! gradient( coordinates, atom whose factor is differentiated, atom with respect to which we differentiate )
   ! So for example, for a three body term atom1-atom2-atom3, gradient(1,2,3) contains
   ! the x-coordinate (1), of the factor for atom2 (2), with respect to moving atom3 (3).
   !
@@ -3806,9 +3806,6 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
        ! only the middle atom gets a contribution, 
        ! so factor(1) = factor(3) = 0.0
        factor(2) = xi1*gee1 + xi2*gee2
-
-       ! debug
-       factor(2) = r1+r2
        
     end if
     
@@ -3958,9 +3955,6 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
        gradient(1:3,2,3) = nablaxi1(1:3,3) * gee1 + xi1 * nablagee1(1:3,3) + &
             nablaxi2(1:3,3) * gee2 + xi2 * nablagee2(1:3,3)
 
-       ! debug
-       gradient(1:3,2,1:3) = nablar1(1:3,1:3)+nablar2(1:3,1:3)
-
     end if
 
 
@@ -3982,8 +3976,6 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     beta = bond_params%parameters(1,1)
     eta = bond_params%parameters(2,1)
     factor_out = ( 1.d0 + ( beta*raw_sum )**eta )**(-1.d0/(2.d0*eta))
-    ! debug
-    factor_out = raw_sum
 
   end subroutine post_process_bond_order_factor_tersoff
 
@@ -4002,11 +3994,29 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     
     beta = bond_params%parameters(1,1)
     eta = bond_params%parameters(2,1)
-    inv_eta = -1.d0/(2.d0*eta)
-    factor_out = inv_eta * ( 1.d0 + ( beta*raw_sum )**eta )**(inv_eta-1.d0) * &
-         eta * (beta*raw_sum)**(eta-1.d0) * beta * raw_gradient
-    ! debug
-    factor_out = raw_gradient
+
+    if(eta == 0.d0)then
+       factor_out = 0.d0
+    else
+       if(raw_sum < 0.d0)then
+          inv_eta = -1.d0/(2.d0*eta)
+          factor_out = inv_eta * ( 1.d0 + ( beta*raw_sum )**eta )**(inv_eta-1.d0) * &
+               eta * (beta*raw_sum)**(eta-1.d0) * beta * raw_gradient 
+       else if(raw_sum == 0.d0)then
+          if(eta <= 1.d0)then
+             factor_out = 0.d0
+          else if(eta > 1.d0)then
+             inv_eta = -1.d0/(2.d0*eta)
+             factor_out = inv_eta * ( 1.d0 + ( beta*raw_sum )**eta )**(inv_eta-1.d0) * &
+                  eta * (beta*raw_sum)**(eta-1.d0) * beta * raw_gradient           
+          end if
+       else if(raw_sum > 0.d0)then
+          inv_eta = -1.d0/(2.d0*eta)
+          factor_out = inv_eta * ( 1.d0 + ( beta*raw_sum )**eta )**(inv_eta-1.d0) * &
+               eta * (beta*raw_sum)**(eta-1.d0) * beta * raw_gradient       
+       end if
+    end if
+
 
   end subroutine post_process_bond_order_gradient_tersoff
 

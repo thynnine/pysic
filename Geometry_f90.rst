@@ -611,7 +611,7 @@ Full documentation of subroutines in geometry
     atoms: type(atom)  *intent()*  *pointer*  *size(:)*  
         the atoms to be edited
             
-  .. function:: wrapped_coordinates(position, cell, wrapped)
+  .. function:: wrapped_coordinates(position, cell, wrapped, offset)
 
     Wraps a general coordinate inside the supercell if the system is periodic.
     
@@ -642,6 +642,8 @@ Full documentation of subroutines in geometry
         the supercell
     **wrapped**: double precision  **intent(out)**    *size(3)*  
         the wrapped absolute coordinates
+    **offset**: integer  **intent(out)**    *size(3)*  *optional*
+        wrapping offset, i.e., the number of times the cell vectors are added to the absolute coordinates in order to obtain the wrapped coordinates
 
 Full documentation of functions in geometry
 ---------------------------------------------

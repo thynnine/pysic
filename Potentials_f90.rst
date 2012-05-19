@@ -127,6 +127,7 @@ must be updated accordingly.
     - :data:`n_max_params`
     - :data:`n_potential_types`
     - :data:`no_name`
+    - :data:`pair_buck_index`
     - :data:`pair_exp_index`
     - :data:`pair_lj_index`
     - :data:`pair_spring_index`
@@ -150,17 +151,48 @@ must be updated accordingly.
         
     - :func:`bond_order_factor_affects_atom`
     - :func:`bond_order_factor_is_in_group`
+    - :func:`calculate_derived_parameters_bond_bending`
+    - :func:`calculate_derived_parameters_charge_exp`
     - :func:`calculate_ewald_electronegativities`
     - :func:`calculate_ewald_energy`
     - :func:`calculate_ewald_forces`
     - :func:`clear_bond_order_factor_characterizers`
     - :func:`clear_potential_characterizers`
     - :func:`create_bond_order_factor`
+    - :func:`create_bond_order_factor_characterizer_coordination`
+    - :func:`create_bond_order_factor_characterizer_scaler_1`
+    - :func:`create_bond_order_factor_characterizer_tersoff`
     - :func:`create_potential`
+    - :func:`create_potential_characterizer_LJ`
+    - :func:`create_potential_characterizer_bond_bending`
+    - :func:`create_potential_characterizer_buckingham`
+    - :func:`create_potential_characterizer_charge_exp`
+    - :func:`create_potential_characterizer_constant`
+    - :func:`create_potential_characterizer_constant_force`
+    - :func:`create_potential_characterizer_spring`
     - :func:`evaluate_bond_order_factor`
+    - :func:`evaluate_bond_order_factor_coordination`
+    - :func:`evaluate_bond_order_factor_tersoff`
     - :func:`evaluate_bond_order_gradient`
+    - :func:`evaluate_bond_order_gradient_coordination`
+    - :func:`evaluate_bond_order_gradient_tersoff`
     - :func:`evaluate_electronegativity`
+    - :func:`evaluate_electronegativity_charge_exp`
     - :func:`evaluate_energy`
+    - :func:`evaluate_energy_LJ`
+    - :func:`evaluate_energy_bond_bending`
+    - :func:`evaluate_energy_buckingham`
+    - :func:`evaluate_energy_charge_exp`
+    - :func:`evaluate_energy_constant_force`
+    - :func:`evaluate_energy_constant_potential`
+    - :func:`evaluate_energy_spring`
+    - :func:`evaluate_force_LJ`
+    - :func:`evaluate_force_bond_bending`
+    - :func:`evaluate_force_buckingham`
+    - :func:`evaluate_force_charge_exp`
+    - :func:`evaluate_force_constant_force`
+    - :func:`evaluate_force_constant_potential`
+    - :func:`evaluate_force_spring`
     - :func:`evaluate_forces`
     - :func:`get_bond_descriptor`
     - :func:`get_description_of_bond_order_factor`
@@ -189,7 +221,11 @@ must be updated accordingly.
     - :func:`list_bond_order_factors`
     - :func:`list_potentials`
     - :func:`post_process_bond_order_factor`
+    - :func:`post_process_bond_order_factor_scaler_1`
+    - :func:`post_process_bond_order_factor_tersoff`
     - :func:`post_process_bond_order_gradient`
+    - :func:`post_process_bond_order_gradient_scaler_1`
+    - :func:`post_process_bond_order_gradient_tersoff`
     - :func:`potential_affects_atom`
     - :func:`smoothening_derivative`
     - :func:`smoothening_factor`
@@ -274,7 +310,7 @@ Full documentation of global variables in potentials
 
     integer    *scalar*  *parameter*  
 
-    *initial value* = 6
+    *initial value* = 7
     
     number of different types of potentials known
     
@@ -285,6 +321,14 @@ Full documentation of global variables in potentials
     *initial value* = "xx"
     
     The label for unlabeled atoms. In other words, there are routines that expect atomic symbols as arguments, but if there are no symbols to pass, this should be given to mark an empty entry.
+    
+  .. data:: pair_buck_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 7
+    
+    
     
   .. data:: pair_exp_index
 
@@ -547,6 +591,34 @@ Full documentation of subroutines in potentials
     **in_group**: logical  **intent(out)**    *scalar*  
         true if the factor is a member of the group
             
+  .. function:: calculate_derived_parameters_bond_bending(n_params, parameters, new_potential)
+
+    Bond bending derived parameters
+    
+
+    Parameters:
+
+    n_params: integer  *intent(in)*    *scalar*  
+        
+    parameters: double precision  *intent(in)*    *size(n_params)*  
+        
+    **new_potential**: type(potential)  **intent(inout)**    *scalar*  
+        the potential object for which the parameters are calculated
+            
+  .. function:: calculate_derived_parameters_charge_exp(n_params, parameters, new_potential)
+
+    Charge exponential derived parameters
+    
+
+    Parameters:
+
+    n_params: integer  *intent(in)*    *scalar*  
+        
+    parameters: double precision  *intent(in)*    *size(n_params)*  
+        
+    **new_potential**: type(potential)  **intent(inout)**    *scalar*  
+        the potential object for which the parameters are calculated
+            
   .. function:: calculate_ewald_electronegativities(n_atoms, atoms, cell, real_cutoff, reciprocal_cutoff, gaussian_width, electric_constant, filter, scaler, include_dipole_correction, total_enegs)
 
     Calculates the electronegativities due to long ranged :math:`\frac{1}{r}` potentials.
@@ -775,6 +847,36 @@ Full documentation of subroutines in potentials
     **new_bond**: type(bond_order_parameters)  **intent(out)**    *scalar*  
         the created :data:`bond_order_parameters`
             
+  .. function:: create_bond_order_factor_characterizer_coordination(index)
+
+    Coordination characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the bond order factor
+            
+  .. function:: create_bond_order_factor_characterizer_scaler_1(index)
+
+    Scaler characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the bond order factor
+            
+  .. function:: create_bond_order_factor_characterizer_tersoff(index)
+
+    Tersoff characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the bond order factor
+            
   .. function:: create_potential(n_targets, n_params, pot_name, parameters, cutoff, soft_cutoff, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index, new_potential)
 
     Returns a :data:`potential`.
@@ -814,6 +916,76 @@ Full documentation of subroutines in potentials
     **new_potential**: type(potential)  **intent(out)**    *scalar*  
         the created :data:`potential`
             
+  .. function:: create_potential_characterizer_LJ(index)
+
+    LJ characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
+  .. function:: create_potential_characterizer_bond_bending(index)
+
+    bond-bending characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
+  .. function:: create_potential_characterizer_buckingham(index)
+
+    Buckingham characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
+  .. function:: create_potential_characterizer_charge_exp(index)
+
+    charge exponential characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
+  .. function:: create_potential_characterizer_constant(index)
+
+    constant potential characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
+  .. function:: create_potential_characterizer_constant_force(index)
+
+    constant F characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
+  .. function:: create_potential_characterizer_spring(index)
+
+    spring characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
   .. function:: evaluate_bond_order_factor(n_targets, separations, distances, bond_params, factor, atoms)
 
     Returns a bond order factor term.
@@ -834,14 +1006,46 @@ Full documentation of subroutines in potentials
     n_targets: integer  *intent(in)*    *scalar*  
         number of targets
     separations: double precision  *intent(in)*    *size(3, n_targets-1)*  
-        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+        atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
     distances: double precision  *intent(in)*    *size(n_targets-1)*  
         atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
     bond_params: type(bond_order_parameters)  *intent(in)*    *size(n_targets-1)*  
         a :data:`bond_order_parameters` containing the parameters
     **factor**: double precision  **intent(out)**    *size(n_targets)*  
         the calculated bond order term :math:`c`
-    atoms: type(atom)  *intent(in)*    *size(n_targets)*  *optional*
+    atoms: type(atom)  *intent(in)*    *size(n_targets)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_bond_order_factor_coordination(separations, distances, bond_params, factor)
+
+    Coordination bond order factor
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    bond_params: type(bond_order_parameters)  *intent(in)*    *size(1)*  
+        a :data:`bond_order_parameters` containing the parameters
+    **factor**: double precision  **intent(out)**    *size(2)*  
+        the calculated bond order term :math:`c`
+            
+  .. function:: evaluate_bond_order_factor_tersoff(separations, distances, bond_params, factor, atoms)
+
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 2)*  
+        atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(2)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    bond_params: type(bond_order_parameters)  *intent(in)*    *size(2)*  
+        a :data:`bond_order_parameters` containing the parameters
+    **factor**: double precision  **intent(out)**    *size(3)*  
+        the calculated bond order term :math:`c`
+    atoms: type(atom)  *intent(in)*    *size(3)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
   .. function:: evaluate_bond_order_gradient(n_targets, separations, distances, bond_params, gradient, atoms)
@@ -859,7 +1063,7 @@ Full documentation of subroutines in potentials
     :math:`\nabla_\alpha c_{ijk}` for the given atoms :math:`ij` or :math:`ijk` according to the given parameters.
     
     The returned array has three dimensions:
-    gradient( coordinates, atom with respect to which we differentiate, atom whose factor is differentiated )
+    gradient( coordinates, atom whose factor is differentiated, atom with respect to which we differentiate )
     So for example, for a three body term atom1-atom2-atom3, gradient(1,2,3) contains
     the x-coordinate (1), of the factor for atom2 (2), with respect to moving atom3 (3).
     
@@ -876,7 +1080,41 @@ Full documentation of subroutines in potentials
         a :data:`bond_order_parameters` containing the parameters
     **gradient**: double precision  **intent(out)**    *size(3, n_targets, n_targets)*  
         the calculated bond order term :math:`\nabla_\alpha c`
-    atoms: type(atom)  *intent(in)*    *size(n_targets)*  *optional*
+    atoms: type(atom)  *intent(in)*    *size(n_targets)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_bond_order_gradient_coordination(separations, distances, bond_params, gradient)
+
+    Coordination bond order factor gradient
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    bond_params: type(bond_order_parameters)  *intent(in)*    *size(1)*  
+        a :data:`bond_order_parameters` containing the parameters
+    **gradient**: double precision  **intent(out)**    *size(3, 2, 2)*  
+        the calculated bond order term :math:`c`
+            
+  .. function:: evaluate_bond_order_gradient_tersoff(separations, distances, bond_params, gradient, atoms)
+
+    Coordination bond order factor gradient
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 2)*  
+        atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(2)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    bond_params: type(bond_order_parameters)  *intent(in)*    *size(2)*  
+        a :data:`bond_order_parameters` containing the parameters
+    **gradient**: double precision  **intent(out)**    *size(3, 3, 3)*  
+        the calculated bond order term :math:`c`
+    atoms: type(atom)  *intent(in)*    *size(3)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
   .. function:: evaluate_electronegativity(n_targets, separations, distances, interaction, eneg, atoms)
@@ -910,6 +1148,24 @@ Full documentation of subroutines in potentials
     atoms: type(atom)  *intent(in)*    *size(n_targets)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
+  .. function:: evaluate_electronegativity_charge_exp(separations, distances, interaction, eneg, atoms)
+
+    Charge exp electronegativity
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **eneg**: double precision  **intent(out)**    *size(2)*  
+        the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+    atoms: type(atom)  *intent(in)*    *size(2)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
   .. function:: evaluate_energy(n_targets, separations, distances, interaction, energy, atoms)
 
     Evaluates the potential energy due to an interaction between the given
@@ -941,6 +1197,224 @@ Full documentation of subroutines in potentials
     atoms: type(atom)  *intent(in)*    *size(n_targets)*  *optional*
         a list of the actual :data:`atom` objects for which the term is calculated
             
+  .. function:: evaluate_energy_LJ(separations, distances, interaction, energy)
+
+    LJ energy
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+            
+  .. function:: evaluate_energy_bond_bending(separations, distances, interaction, energy, atoms)
+
+    Bond bending energy
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 2)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(2)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+    atoms: type(atom)  *intent(in)*    *size(3)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_energy_buckingham(separations, distances, interaction, energy)
+
+    Buckingham energy
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+            
+  .. function:: evaluate_energy_charge_exp(separations, distances, interaction, energy, atoms)
+
+    Charge exp energy
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+    atoms: type(atom)  *intent(in)*    *size(2)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_energy_constant_force(interaction, energy, atoms)
+
+    constant force energy
+    
+
+    Parameters:
+
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+    atoms: type(atom)  *intent(in)*    *size(1)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_energy_constant_potential(interaction, energy)
+
+    Constant potential energy
+    
+
+    Parameters:
+
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+            
+  .. function:: evaluate_energy_spring(separations, distances, interaction, energy)
+
+    spring energy
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+            
+  .. function:: evaluate_force_LJ(separations, distances, interaction, force)
+
+    LJ force
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **force**: double precision  **intent(out)**    *size(3, 2)*  
+        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+            
+  .. function:: evaluate_force_bond_bending(separations, distances, interaction, force, atoms)
+
+    Bond bending force
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 2)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(2)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **force**: double precision  **intent(out)**    *size(3, 3)*  
+        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+    atoms: type(atom)  *intent(in)*    *size(3)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_force_buckingham(separations, distances, interaction, force)
+
+    Buckingham force
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **force**: double precision  **intent(out)**    *size(3, 2)*  
+        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+            
+  .. function:: evaluate_force_charge_exp(separations, distances, interaction, force, atoms)
+
+    charge exp force
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **force**: double precision  **intent(out)**    *size(3, 2)*  
+        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+    atoms: type(atom)  *intent(in)*    *size(2)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_force_constant_force(interaction, force)
+
+    constant force
+    
+
+    Parameters:
+
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **force**: double precision  **intent(out)**    *size(3, 1)*  
+        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+            
+  .. function:: evaluate_force_constant_potential(interaction, force)
+
+    constant force
+    
+
+    Parameters:
+
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **force**: double precision  **intent(out)**    *size(3, 1)*  
+        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+            
+  .. function:: evaluate_force_spring(separations, distances, interaction, force)
+
+    spring force
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **force**: double precision  **intent(out)**    *size(3, 2)*  
+        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+            
   .. function:: evaluate_forces(n_targets, separations, distances, interaction, force, atoms)
 
     Evaluates the forces due to an interaction between the given
@@ -969,7 +1443,7 @@ Full documentation of subroutines in potentials
         a :data:`potential` containing the parameters
     **force**: double precision  **intent(out)**    *size(3, n_targets)*  
         the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
-    atoms: type(atom)  *intent(in)*    *size(n_targets)*  *optional*
+    atoms: type(atom)  *intent(in)*    *size(n_targets)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
   .. function:: get_bond_descriptor(bond_name, descriptor)
@@ -1333,6 +1807,34 @@ Full documentation of subroutines in potentials
     **factor_out**: double precision  **intent(out)**    *scalar*  
         the calculated bond order factor :math:`b_i`
             
+  .. function:: post_process_bond_order_factor_scaler_1(raw_sum, bond_params, factor_out)
+
+    Scaler post process factor
+    
+
+    Parameters:
+
+    raw_sum: double precision  *intent(in)*    *scalar*  
+        the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+    bond_params: type(bond_order_parameters)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` specifying the parameters
+    **factor_out**: double precision  **intent(out)**    *scalar*  
+        the calculated bond order factor :math:`b_i`
+            
+  .. function:: post_process_bond_order_factor_tersoff(raw_sum, bond_params, factor_out)
+
+    Tersoff post process factor
+    
+
+    Parameters:
+
+    raw_sum: double precision  *intent(in)*    *scalar*  
+        the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+    bond_params: type(bond_order_parameters)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` specifying the parameters
+    **factor_out**: double precision  **intent(out)**    *scalar*  
+        the calculated bond order factor :math:`b_i`
+            
   .. function:: post_process_bond_order_gradient(raw_sum, raw_gradient, bond_params, factor_out)
 
     Bond-order post processing, i.e.,
@@ -1370,6 +1872,38 @@ Full documentation of subroutines in potentials
         a :data:`bond_order_parameters` specifying the parameters
     **factor_out**: double precision  **intent(out)**    *size(3)*  
         the calculated bond order factor :math:`\nabla_\alpha b_i`
+            
+  .. function:: post_process_bond_order_gradient_scaler_1(raw_sum, raw_gradient, bond_params, factor_out)
+
+    Scaler post process gradient
+    
+
+    Parameters:
+
+    raw_sum: double precision  *intent(in)*    *scalar*  
+        the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+    raw_gradient: double precision  *intent(in)*    *size(3)*  
+        the precalculated bond order gradient sum, :math:`\nabla_\alpha \sum_j c_ij` in the above example
+    bond_params: type(bond_order_parameters)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` specifying the parameters
+    **factor_out**: double precision  **intent(out)**    *size(3)*  
+        the calculated bond order factor :math:`b_i`
+            
+  .. function:: post_process_bond_order_gradient_tersoff(raw_sum, raw_gradient, bond_params, factor_out)
+
+    Tersoff post process gradient
+    
+
+    Parameters:
+
+    raw_sum: double precision  *intent(in)*    *scalar*  
+        the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+    raw_gradient: double precision  *intent(in)*    *size(3)*  
+        the precalculated bond order gradient sum, :math:`\nabla_\alpha \sum_j c_ij` in the above example
+    bond_params: type(bond_order_parameters)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` specifying the parameters
+    **factor_out**: double precision  **intent(out)**    *size(3)*  
+        the calculated bond order factor :math:`b_i`
             
   .. function:: potential_affects_atom(interaction, atom_in, affects, position)
 

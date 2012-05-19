@@ -4,6 +4,13 @@
 Pysic (Pythonic simulation code) 
 ==============================================
 
+`Teemu Hynninen <http://butler.cc.tut.fi/~hynnine5/personal/>`_ (2011-2012)
+
+`Tampere University of Technology <http://www.tut.fi>`_ 
+`Aalto University, Helsinki <http://www.aalto.fi>`_
+
+Contact: teemu.hynninen tut.fi, `@thynnine <https://twitter.com/#!/thynnine>`_
+
 Pysic is a calculator incorporating various empirical pair and many-body
 potentials in an object-based Python environment and user interface while
 implementing an efficient numeric core written in Fortran. The immediate aim
@@ -82,5 +89,6 @@ Development of Pysic
 
    version
    roadmap
+   issues
 
 

@@ -2908,7 +2908,7 @@ class Pysic:
                 self.neighbor_list = FastNeighborList(cutoffs,skin=marginal)
             except:
                 fastlist = False
-    
+
         if not fastlist:
             self.neighbor_list = nbl.NeighborList(cutoffs,skin=marginal,sorted=False,self_interaction=False,bothways=True)
 
@@ -3324,6 +3324,7 @@ class Pysic:
         Upon the update, it is automatically checked if the neighbor lists
         should be updated as well.
         """
+        
         if self.structure.get_number_of_atoms() != pf.pysic_interface.get_number_of_atoms():
             raise LockedCoreError("The number of atoms does not match.")
         

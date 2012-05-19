@@ -36,6 +36,8 @@ to Python are simply calling routines here.
     - :data:`bond_factors_allocated`
     - :data:`bond_storage_allocated`
     - :data:`cell`
+    - :data:`electronegativity_evaluation_index`
+    - :data:`energy_evaluation_index`
     - :data:`evaluate_ewald`
     - :data:`ewald_allocated`
     - :data:`ewald_cutoff`
@@ -43,6 +45,7 @@ to Python are simply calling routines here.
     - :data:`ewald_k_cutoffs`
     - :data:`ewald_scaler`
     - :data:`ewald_sigma`
+    - :data:`force_evaluation_index`
     - :data:`group_index_save_slot`
     - :data:`interactions`
     - :data:`n_bond_factors`
@@ -92,6 +95,7 @@ to Python are simply calling routines here.
     - :func:`core_get_neighbor_list_of_atom`
     - :func:`core_get_number_of_atoms`
     - :func:`core_get_number_of_neighbors`
+    - :func:`core_loop_over_local_interactions`
     - :func:`core_post_process_bond_order_factors`
     - :func:`core_post_process_bond_order_gradients`
     - :func:`core_post_process_bond_order_gradients_of_factor`
@@ -152,6 +156,22 @@ Full documentation of global variables in pysic_core
     
     a :data:`supercell` object representing the simulation cell
     
+  .. data:: electronegativity_evaluation_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 3
+    
+    
+    
+  .. data:: energy_evaluation_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 1
+    
+    
+    
   .. data:: evaluate_ewald
 
     logical    *scalar*    
@@ -195,6 +215,14 @@ Full documentation of global variables in pysic_core
   .. data:: ewald_sigma
 
     double precision    *scalar*    
+    
+    
+    
+  .. data:: force_evaluation_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 2
     
     
     
@@ -821,7 +849,7 @@ Full documentation of subroutines in pysic_core
   .. function:: core_get_bond_order_gradients(n_atoms, group_index, atom_index, slot_index, bond_order_gradients)
 
     Returns the gradients of the bond order factor of the given atom
-    with respect to moving all atoms for the given group.
+    with respect to moving all atoms, for the given group.
     The routine tries to find the values in the stored precalculated
     values first if use_saved_bond_order_factors is true, and saves
     the calculated values if it does not find them.
@@ -927,6 +955,30 @@ Full documentation of subroutines in pysic_core
         
     **n_neighbors**: integer  **intent(out)**    *scalar*  
         
+            
+  .. function:: core_loop_over_local_interactions(n_atoms, calculation_type, total_energy, total_forces, total_enegs)
+
+    Loops over atoms, atomic pairs, atomic triplets, and atomic quadruplets
+    and calculates the contributions from local potentials to energy, forces,
+    or electronegativities. This routine is called from the routines
+    
+     - :meth:`core_calculate_energy`
+     - :meth:`core_calculate_forces`
+     - :meth:`core_calculate_electronegaivities`
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        number of atoms
+    calculation_type: integer  *intent(in)*    *scalar*  
+        index to specify if the loop calculates energies, forces, or e-negativities
+    **total_energy**: double precision  **intent(out)**    *scalar*  
+        calculated energy
+    **total_forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
+        calculated forces
+    **total_enegs**: double precision  **intent(out)**    *size(n_atoms)*  
+        calculated electronegativities
             
   .. function:: core_post_process_bond_order_factors(n_atoms, group_index, raw_sums, total_bond_orders)
 
