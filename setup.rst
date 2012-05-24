@@ -1,6 +1,14 @@
 .. file:setup
 
+.. _setup:
+
+
+
 .. file:obtaining
+
+.. _obtaining:
+
+
 
 Getting Pysic
 =============
@@ -12,6 +20,10 @@ play with it. However, the code is provided with no warranty or support.
 .. _Gitorious: https://gitorious.org/pysic/pysic
 
 .. file:compiling
+
+.. _compiling:
+
+
 
 Compiling Pysic
 ===============
@@ -58,6 +70,10 @@ For further information on compiling with `f2py`_, consult the `f2py manual`_.
 
 
 .. file:resources
+
+.. _resources:
+
+
 
 External resources
 ==================

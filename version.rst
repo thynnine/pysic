@@ -1,5 +1,9 @@
 .. file:version
 
+.. _version:
+
+
+
 Version history
 ===============
 
@@ -33,8 +37,8 @@ Version 0.3
 -----------
 
 - Implemented framework for charge relaxation (see :class:`pysic.ChargeRelaxation`)
-- Implemented the :ref:`damped dynamic charge relaxation` charge relaxation algorithm.
-- Implemented the :ref:`charge dependent exponential potential` potential.
+- Implemented the :ref:`damped dynamics` charge relaxation algorithm.
+- Implemented the :ref:`charge exponential potential` potential.
 
 
 Version 0.2

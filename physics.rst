@@ -1,13 +1,25 @@
 .. file:physics
 
-.. file:physics_forewords
+.. _physics:
+
+
+
+.. file:physics forewords
+
+.. _physics forewords:
+
+
 
 Physics of Pysic
 ----------------
 
-In this section we briefly describe the physical motivation and main ideas behind Pysic. The details of actual algorithms, functions, and implementations included in Pysic are discussed later in sections :ref:`running` and :ref:`syntax`.
+In this section we briefly describe the physical motivation and main ideas behind Pysic. The details of actual algorithms, functions, and implementations included in Pysic are discussed later in sections :ref:`run forewords` and :ref:`syntax forewords`.
 
 .. file:target problems
+
+.. _target problems:
+
+
 
 Applications and goals
 -----------------------
@@ -16,7 +28,11 @@ Phenomena such as Si covalent bonding and charge redistribution at defects and i
 
 
 
-.. file:potentials
+.. file:interactions
+
+.. _interactions:
+
+
 
 Atomistic interactions
 -----------------------
@@ -51,6 +67,10 @@ where :math:`(i_1,i_2,\ldots,i_n)` are all the sets of :math:`n` atoms in the sy
 
 .. file:charge equilibration
 
+.. _charge equilibration:
+
+
+
 Dynamic charges
 ----------------
 
@@ -70,6 +90,10 @@ In addition, having the local charge as a parameter of the energy function allow
 
 .. file:pysic approach
 
+.. _pysic approach:
+
+
+
 Pysic approach
 ----------------
 
@@ -80,6 +104,10 @@ Pysic implements a very general framework for calculating energies and forces du
 In addition, it is planned that various advanced analysis tools are included with the Pysic package. These would include tools for tasks such as potential parametrization or structural analysis using techniques like evolutionary algorithms, machine learning, or Bayesian mehods.
 
 .. file:references
+
+.. _references:
+
+
 
 .. [1] \ A. van Duin, S. Dasgupta, F. Lorant, and W. Goddard, J Phys Chem A 105, 9396 (2001). 
 .. [2] \ T.-R. Shan, B. D. Devine, T. W. Kemper, S. B. Sinnott, and S. R. Phillpot, Phys Rev B 81, 125328 (2010).   

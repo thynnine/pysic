@@ -1,5 +1,9 @@
 .. file:index
 
+.. _index:
+
+
+
 
 Pysic (Pythonic simulation code) 
 ==============================================
@@ -66,7 +70,7 @@ Performing simulations with Pysic
    :maxdepth: 3
    
    running
-   run_examples
+   run examples
    
 
 Structure and syntax in Pysic
@@ -75,7 +79,7 @@ Structure and syntax in Pysic
 .. toctree::
    :maxdepth: 3
    
-   syntax_forewords
+   syntax
    pysic
    pysic_utility
    pysic_fortran

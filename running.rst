@@ -1,8 +1,14 @@
 .. file:running
 
-.. file:run_forewords
-
 .. _running:
+
+
+
+.. file:run forewords
+
+.. _run forewords:
+
+
 
 Running Pysic
 -------------
@@ -10,7 +16,11 @@ Running Pysic
 Once you have Python and Pysic working, it's time to learn how to use them. Next we will go through the basic concepts and ideas behind running simulations with Pysic. A collection of examples will demonstrate how to set up simulations in practice.
 
 
-.. file:python_general
+.. file:python general
+
+.. _python general:
+
+
 
 Why Python?
 -----------
@@ -20,7 +30,7 @@ an extensive library. Python is an interpreted language meaning it does not need
 One can simply feed the source code to an interpreter which reads and interprets it during run.
 The Python interpreter can also perform calculations, read and write files, render graphics,
 etc. making Python a powerful tool for scripting. Python is also an object based language
-enabling sophisticated :ref:`object oriented programming <objects>`.
+enabling sophisticated :ref:`object oriented` programming.
 
 In computational physics codes, the most common method of performing the calculations is to have
 the program read input files to extract the necessary parameters, perform the simulation based on
@@ -46,7 +56,7 @@ produced data is not only possible but easy.
 
 The downside of Pysic being a Python module instead of an independent program is that one has to know the
 basics of how to run Python. `Python documentation`_ is the best resource for getting started, but some
-simple first step instructions and :ref:`examples` are also given in this document.
+simple first step instructions and :ref:`run examples` are also given in this document.
 
 .. only:: html 
         
@@ -60,7 +70,11 @@ simple first step instructions and :ref:`examples` are also given in this docume
        :alt: < ! >
        :height: 32
 
-.. file:ase_general
+.. file:ase general
+
+.. _ase general:
+
+
 
 The Atomic Simulation Environment
 ---------------------------------
@@ -90,9 +104,12 @@ The central object in ASE, also used by Pysic, is the `Atoms`_ class. This class
 .. _ASE tutorials: https://wiki.fysik.dtu.dk/ase/tutorials/tutorials.html
 
 
-.. file:object_oriented
+.. file:object oriented
 
-.. _objects:
+.. _object oriented:
+
+
+
 
 Thinking in objects
 -------------------
@@ -112,6 +129,6 @@ In the object oriented approach, one defines a data structure (called a *class* 
 
 The above example also demonstrates *methods* - object specific functions allowing one to essentially give orders to objects. Objects and methods make it easy to write code that is simple to read and understand, since we humans intuitively see the world as objects, not as arrays of data. Another great benefit of the object based model is that when an object is modified, the changes automatically propagate everywhere where that object is referred.
 
-The classes and their methods defined in Pysic are documented in detail in :ref:`syntax`, and their basic use is shown in the collection of provided :ref:`examples`. The central class in Pysic is :class:`~pysic.Pysic`, which is an energy and force calculator for `ASE`_. The interactions according to which the energies are calculated are constructed through the class :class:`~pysic.Potential`. Utilizing these classes is necessary to run meaningful calculations, though also other classes are defined for special purposes.
+The classes and their methods defined in Pysic are documented in detail in :ref:`syntax forewords`, and their basic use is shown in the collection of provided :ref:`run examples`. The central class in Pysic is :class:`~pysic.Pysic`, which is an energy and force calculator for `ASE`_. The interactions according to which the energies are calculated are constructed through the class :class:`~pysic.Potential`. Utilizing these classes is necessary to run meaningful calculations, though also other classes are defined for special purposes.
 
 

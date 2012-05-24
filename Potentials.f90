@@ -60,7 +60,7 @@
 !
 ! .. math::
 !
-!    V = \sum_p \left( \sum_i b^p_i v^p_i + \sum_{(i,j)} \frac{1}{2}(b^p_i+b^p_j) v^p_{ij} + \sum_{(i,j,k)} \frac{1}{2}(b^p_i+b^p_j+b^p_k) v^p_{ijk} \right).
+!    V = \sum_p \left( \sum_i b^p_i v^p_i + \sum_{(i,j)} \frac{1}{2}(b^p_i+b^p_j) v^p_{ij} + \sum_{(i,j,k)} \frac{1}{3}(b^p_i+b^p_j+b^p_k) v^p_{ijk} \right).
 !
 ! The corresponding total force on atom :math:`\alpha` is then
 !
@@ -88,10 +88,10 @@
 ! or number of bond order factors (:data:`n_bond_order_types`) must be increased
 ! when more types are defined.
 ! 
-! Also note that in :ref:`pysic_core`, some of these parameters are used for
+! Also note that in :ref:`pysic_interface`, some of these parameters are used for
 ! determining array sizes. However, the actual parameters are not used
 ! because f2py does not read the values from here. Therefore if you change
-! a parameter here, search for its name in :ref:`pysic_core` to see if the
+! a parameter here, search for its name in :ref:`pysic_interface` to see if the
 ! name appears in a comment. That is an indicator that a numeric value
 ! must be updated accordingly.
 !
@@ -1947,7 +1947,7 @@ contains
     call create_potential_characterizer_charge_exp(pair_exp_index)
 
     ! **** constant potential ****
-    call create_potential_characterizer_constant(mono_none_index)
+    call create_potential_characterizer_constant_potential(mono_none_index)
 
     ! **** Buckingham potential ****
     call create_potential_characterizer_buckingham(pair_buck_index)
@@ -2596,7 +2596,7 @@ contains
     if(r1 < interaction%cutoff .and. r1 > 0.d0)then
        if(r2 < interaction%cutoff .and. r2 > 0.d0)then
           
-          tmp1 = separations(1:3,1)
+          tmp1 = -separations(1:3,1)
           tmp2 = separations(1:3,2)
           r3 = tmp1 .o. tmp2
           tmp3 = tmp2 - r3 / ( r1 * r1 ) * tmp1 ! = r_23 - (r_21 . r_23)/|r_21|^2 * r_21
@@ -2658,7 +2658,7 @@ contains
     if(r1 < interaction%cutoff .and. r1 > 0.d0)then
        if(r2 < interaction%cutoff .and. r2 > 0.d0)then
           
-          r3 = separations(1:3,1) .o. separations(1:3,2)
+          r3 = (-separations(1:3,1)) .o. separations(1:3,2)
           ! cos theta = (r_21 . r_23) / ( |r_21| |r_23| )
           r6 = (r3  / ( r1 * r2 )  - interaction%derived_parameters(1))
           ! k/2 ( cos theta - cos theta_0 )^2
@@ -2726,7 +2726,7 @@ contains
          'V(r,q) = epsilon exp(-zeta r + (xi_i D_i(q_i) + xi_j D_j(q_j))/2 ) '//&
          'D_i(q) = R_i,max + |beta_i (Q_i,max - q)|^eta_i '//&
          'beta_i = (R_i,min - R_i,max)^(1/eta_i) / (Q_i,max - Q_i,min) '//&
-         'eta_i = [ ln R_i,max - ln (R_i,max - R_i,min) ] / [ ln Q_i,max - ln (Q_i,max - Q_i,min) ]',&
+         'eta_i = ln [ R_i,max/(R_i,max - R_i,min) ] / ln [ Q_i,max/(Q_i,max - Q_i,min) ]',&
          pot_note_length,potential_descriptors(index)%description)
 
   end subroutine create_potential_characterizer_charge_exp
@@ -2744,7 +2744,7 @@ contains
     
     nullify(new_potential%derived_parameters)
     allocate(new_potential%derived_parameters(4))
-    ! eta_i = [ln R_i,max/(R_i,max - R_i,min) ] / [ln Q_i,max - ln(Q_i,max - Q_i,min) ] 
+    ! eta_i = [ln R_i,max/(R_i,max - R_i,min) ] / [ln Q_i,max/(Q_i,max - Q_i,min) ] 
     new_potential%derived_parameters(1) = ( log(parameters(3)/(parameters(3)-parameters(4))) ) / &
          ( log(parameters(5)/(parameters(5)-parameters(6))) ) 
     new_potential%derived_parameters(2) = ( log(parameters(7)/(parameters(7)-parameters(8))) ) / &
@@ -2985,7 +2985,7 @@ contains
   ! constant potential characterizer initialization
   !
   ! *index index of the potential
-  subroutine create_potential_characterizer_constant(index)
+  subroutine create_potential_characterizer_constant_potential(index)
     implicit none
     integer, intent(in) :: index
 
@@ -3000,7 +3000,7 @@ contains
     call pad_string('Constant potential: V(r) = V', &
          pot_note_length,potential_descriptors(index)%description)
 
-  end subroutine create_potential_characterizer_constant
+  end subroutine create_potential_characterizer_constant_potential
 
 
   ! constant force
@@ -3062,8 +3062,8 @@ contains
     call pad_string('exponential scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
     call pad_string('C', param_name_length,potential_descriptors(index)%parameter_names(2))
     call pad_string('power scale constant', param_note_length,potential_descriptors(index)%parameter_notes(2))
-    call pad_string('sigma', param_name_length,potential_descriptors(index)%parameter_names(1))
-    call pad_string('length scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('sigma', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('length scale constant', param_note_length,potential_descriptors(index)%parameter_notes(3))
     call pad_string('A Buckingham potential: V(r) = A exp(-r/sigma) - C (sigma/r)^6', &
          pot_note_length,potential_descriptors(index)%description)
 
@@ -3775,7 +3775,7 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
          ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
        
        ! tmp1 and tmp2 are the vectors r_ij, r_ik
-       tmp1 = separations(1:3,1)
+       tmp1 = -separations(1:3,1)
        tmp2 = separations(1:3,2)
        ! cosine of the angle between ij and ik
        cosine = (tmp1 .o. tmp2) / ( r1 * r2 )
@@ -3863,7 +3863,7 @@ subroutine create_bond_order_factor(n_targets,n_params,n_split,bond_name,paramet
     if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .and. &
          ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
 
-       tmp1 = separations(1:3,1)
+       tmp1 = -separations(1:3,1)
        tmp2 = separations(1:3,2)
        unitvector(1:3,1) = tmp1 / r1
        unitvector(1:3,2) = tmp2 / r2

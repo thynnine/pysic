@@ -30,6 +30,10 @@ pot.set_parameter_value('Qmin2',-4.0)
 #pot = pysic.Potential('LJ',cutoff=6.0,symbols=['H','H'],parameters=[1.0,1.0])
 #pot = pysic.Potential('Buckingham',cutoff=10.0,symbols=['H','H'],parameters=[1.0,1.0,1.0])
 #pot = pysic.Potential('constant',symbols=['H'],parameters=[1.0])
+pot = pysic.Potential('bond_bend', cutoff=2.2,symbols=['H','H','H'])
+pot.set_parameter_value('k',1.0)
+pot.set_parameter_value('theta_0',1.0)
+
 
 bonds = pysic.BondOrderParameters('tersoff')
 bonds.set_cutoff(2.2)
@@ -78,7 +82,7 @@ print "numeric e-negativities: \n", np.array( [ calc.get_numerical_electronegati
 print "e-negativity differences: \n", calc.get_electronegativity_differences(system)
 print ""
 
-if True:
+if False:
     crd.calculate_bond_order_factors()
     print "bond orders: \n", crd.get_bond_order_factors()
     print "bond order gradients 0: \n", crd.get_bond_order_gradients_of_factor(0)
@@ -109,7 +113,7 @@ print calc.get_neighbor_lists().get_neighbors(0)
 print calc.get_neighbor_lists().get_neighbors(1)
 print calc.get_neighbor_lists().get_neighbors(2)
 
-
+quit()
 d.bp()
 
 

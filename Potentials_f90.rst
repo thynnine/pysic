@@ -68,7 +68,7 @@ leading to the total energy
 
 .. math::
 
-   V = \sum_p \left( \sum_i b^p_i v^p_i + \sum_{(i,j)} \frac{1}{2}(b^p_i+b^p_j) v^p_{ij} + \sum_{(i,j,k)} \frac{1}{2}(b^p_i+b^p_j+b^p_k) v^p_{ijk} \right).
+   V = \sum_p \left( \sum_i b^p_i v^p_i + \sum_{(i,j)} \frac{1}{2}(b^p_i+b^p_j) v^p_{ij} + \sum_{(i,j,k)} \frac{1}{3}(b^p_i+b^p_j+b^p_k) v^p_{ijk} \right).
 
 The corresponding total force on atom :math:`\alpha` is then
 
@@ -96,10 +96,10 @@ the relevant numbers. Especially the number of potentials (:data:`n_potential_ty
 or number of bond order factors (:data:`n_bond_order_types`) must be increased
 when more types are defined.
 
-Also note that in :ref:`pysic_core`, some of these parameters are used for
+Also note that in :ref:`pysic_interface`, some of these parameters are used for
 determining array sizes. However, the actual parameters are not used
 because f2py does not read the values from here. Therefore if you change
-a parameter here, search for its name in :ref:`pysic_core` to see if the
+a parameter here, search for its name in :ref:`pysic_interface` to see if the
 name appears in a comment. That is an indicator that a numeric value
 must be updated accordingly.
 
@@ -167,8 +167,8 @@ must be updated accordingly.
     - :func:`create_potential_characterizer_bond_bending`
     - :func:`create_potential_characterizer_buckingham`
     - :func:`create_potential_characterizer_charge_exp`
-    - :func:`create_potential_characterizer_constant`
     - :func:`create_potential_characterizer_constant_force`
+    - :func:`create_potential_characterizer_constant_potential`
     - :func:`create_potential_characterizer_spring`
     - :func:`evaluate_bond_order_factor`
     - :func:`evaluate_bond_order_factor_coordination`
@@ -956,9 +956,9 @@ Full documentation of subroutines in potentials
     index: integer  *intent(in)*    *scalar*  
         index of the potential
             
-  .. function:: create_potential_characterizer_constant(index)
+  .. function:: create_potential_characterizer_constant_force(index)
 
-    constant potential characterizer initialization
+    constant F characterizer initialization
     
 
     Parameters:
@@ -966,9 +966,9 @@ Full documentation of subroutines in potentials
     index: integer  *intent(in)*    *scalar*  
         index of the potential
             
-  .. function:: create_potential_characterizer_constant_force(index)
+  .. function:: create_potential_characterizer_constant_potential(index)
 
-    constant F characterizer initialization
+    constant potential characterizer initialization
     
 
     Parameters:

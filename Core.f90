@@ -1063,6 +1063,7 @@ contains
 
           ! First we try to find ordered triplets atom2 -- atom1 -- atom3
           ! Therefore we need separations a2--a1 and a1--a3.
+          separations(1:3,1) = -separations(1:3,1)
 
           ! loop over neighbors of atom 1
           do l = 1, nbors1%n_neighbors
@@ -1201,7 +1202,7 @@ contains
 
 
           ! Next we try to find ordered triplets atom1 -- atom2 -- atom3
-          ! Therefore we need separations a2--a1 and a2--a3.
+          ! Therefore we need separations a1--a2 and a2--a3.
           separations(1:3,1) = -separations(1:3,1)
 
           ! loop over neighbors of atom 2
@@ -1565,6 +1566,7 @@ contains
 
                    ! First we try to find ordered triplets atom2 -- atom1 -- atom3
                    ! Therefore we need separations a2--a1 and a1--a3.
+                   separations(1:3,1) = -separations(1:3,1)
 
                    ! loop over neighbors of atom 1
                    do l = 1, nbors1%n_neighbors
@@ -2154,7 +2156,6 @@ contains
     implicit none
     integer, intent(in) :: n_atoms, calculation_type
     double precision, intent(out) :: total_energy, total_forces(3,n_atoms), total_enegs(n_atoms)
-
     integer :: j, k, l, n_targets, index1, index2, index3, &
          indexB1, indexB2, indexB3, iB, jB, kB
     double precision :: energy, tmp_energy, &
@@ -2172,7 +2173,7 @@ contains
     logical :: is_active, many_bodies_found, separation3_unknown
     double precision :: max_cutoff, sigma
     logical :: filter(n_atoms)
-    integer :: reci_length(3), offset(3)
+    integer :: reci_length(3), offset(3), tripleoffset(3)
 
     energy = 0.d0
     total_energy = 0.d0
@@ -2634,7 +2635,8 @@ contains
                    nbors2 = atom2%neighbor_list
 
                    ! First we try to find ordered triplets atom2 -- atom1 -- atom3
-                   ! Therefore we need separations a1--a2 and a1--a3.
+                   ! Therefore we need separations a2--a1 and a1--a3.
+                   separations(1:3,1) = -separations(1:3,1)
 
                    ! loop over neighbors atom 1
                    do l = 1, nbors1%n_neighbors
@@ -2645,7 +2647,8 @@ contains
                       ! neighbors are NOT currently searched
                       ! For the offset check we need atom2->atom3 which equals
                       ! (atom1->atom3) + (atom1->atom2), the latter being stored in offset
-                      if(pick(index1,index3,nbors2%pbc_offsets(1:3,l)+offset))then
+                      tripleoffset = nbors2%pbc_offsets(1:3,l)+offset
+                      if(pick(index1,index3,tripleoffset))then
 
                          ! third atom of the triplet
                          atom3 = atoms(index3)
@@ -2948,12 +2951,30 @@ contains
                          end do ! k = 1, size(interaction_indices)
                       end if ! index3 > index2
 
+
+                      if(many_bodies_found)then
+
+                         many_bodies_found = .false.
+
+                         !*********************!
+                         ! 4-body interactions !
+                         !*********************!
+
+                         ! We search for atomic chain quadruplets A-B-C-D where the
+                         ! triplet A-B-C or B-C-D is the triplet considered above.
+                         ! Similarly to the triplets, the different quadruplets are found
+                         ! by searching the neighbors of the end atoms of the triplets.
+
+
+
+                      end if
+
                    end do ! l = 1, nbors1%n_neighbors
 
                    many_bodies_found = .false.
 
                    ! Next we try to find ordered triplets atom1 -- atom2 -- atom3
-                   ! Therefore we need separations a2--a1 and a2--a3.
+                   ! Therefore we need separations a1--a2 and a2--a3.
                    separations(1:3,1) = -separations(1:3,1)
 
                    ! loop over neighbors of atom 2

@@ -2135,6 +2135,28 @@ class FastNeighborList(nbl.NeighborList):
                               bothways=True)    
     
     def build(self,atoms):
+        """Builds the neighbor list.
+            
+            The routine requires that the given atomic structure matches
+            the one in the core. This is because the method invokes the
+            Fortran core to do the neighbor search.
+            The method overrides the similar
+            method in the original ASE neighborlist class, which directly operates
+            on the given structure, so this method also takes the atomic structure 
+            as an argument. However, in order to keep the core modification routines in
+            the :class:`~pysic.Pysic` class, this method does not change the core
+            structure. It does raise an error if the structures do not match, though.
+            
+            The neighbor search is done via the :meth:`generate_neighbor_lists` routine.
+            The routine builds the neighbor list in the core, after which the list is
+            fed back to the :class:`~pysic.FastNeighborList` object by looping over all
+            atoms and saving the lists of neighbors and offsets.
+
+            Parameters:
+            
+            atoms: ASE Atoms object
+                the structure for which the neighbors are searched
+            """
         
         if not Pysic.core.atoms_ready(atoms):
             raise MissingAtomsError("Atoms have not been initialized in the core.")
@@ -2536,7 +2558,8 @@ class Pysic:
         self.force_core_initialization = new_mode
 
     
-    def calculation_required(self, atoms=None, quantities=['forces','energy','stress']):
+    def calculation_required(self, atoms=None, 
+                             quantities=['forces','energy','stress','electronegativities']):
         """Check if a calculation is required.
         
         When forces or energy are calculated, the calculator saves the
@@ -2551,7 +2574,7 @@ class Pysic:
         atoms: `ASE Atoms`_ object
             ignored at the moment
         quantities: list of strings
-            list of keywords 'energy', 'forces', 'stress'
+            list of keywords 'energy', 'forces', 'stress', 'electronegativities'
         """
         
         do_it = []
@@ -2602,12 +2625,13 @@ class Pysic:
 
 
     def get_neighbor_lists(self):
-        """Returns the `ASE NeighborList`_ object assigned to the calculator.
+        """Returns the :class:`~pysic.FastNeighborList` or `ASE NeighborList`_ 
+        object assigned to the calculator.
 
         The neighbor lists are generated according to the given `ASE Atoms`_ object
         and the :class:`~pysic.Potential` objects of the calculator. Note that the lists
-        are created when the core is set or if the method :meth:`~pysic.Pysic.create_neighbor_lists`
-        is called.
+        are created when the core is set or if the method 
+        :meth:`~pysic.Pysic.create_neighbor_lists` is called.
         """
         return self.neighbor_list
 
@@ -2938,6 +2962,8 @@ class Pysic:
                 return self.structure.get_number_of_atoms()*[self.coulomb.get_realspace_cutoff()]
         else:
             cuts = []
+            # loop over all atoms, with symbol, tags, index containing the corresponding
+            # info for a single atom at a time
             for symbol, tags, index in zip(self.structure.get_chemical_symbols(),
                                            self.structure.get_tags(),
                                            range(self.structure.get_number_of_atoms())):
@@ -2963,7 +2989,8 @@ class Pysic:
                                 active_bond = True
                                 
                             if active_bond:
-                                max_cut = bond.get_cutoff()
+                                if bond.get_cutoff() > max_cut:
+                                    max_cut = bond.get_cutoff()
                     except:
                         pass
 
