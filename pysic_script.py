@@ -7,7 +7,8 @@ import debug as d
 import math
 import time
 
-system = ase.Atoms('H3',[[0.1,0.2,0.3],[2.1,-0.2,0.01], [0,2,0]])
+system = ase.Atoms('HHeLi',[[0.1,0.2,0.3],[2.1,-0.2,0.01], [0,2,0]])
+#system = ase.Atoms('HHeLi',[[0.0,0.0,0.0],[2.0,-0.0,0.0], [0,2,0]])
 system.set_cell([[30.5,0.5,0.0],
                  [0.0,31.0,0.0],
                  [0.0,0.0,31.0]])
@@ -28,17 +29,17 @@ pot.set_parameter_value('Qmax2',4.0)
 pot.set_parameter_value('Qmin1',-4.0)
 pot.set_parameter_value('Qmin2',-4.0)
 #pot = pysic.Potential('LJ',cutoff=6.0,symbols=['H','H'],parameters=[1.0,1.0])
-#pot = pysic.Potential('Buckingham',cutoff=10.0,symbols=['H','H'],parameters=[1.0,1.0,1.0])
-#pot = pysic.Potential('constant',symbols=['H'],parameters=[1.0])
-pot = pysic.Potential('bond_bend', cutoff=2.2,symbols=['H','H','H'])
-pot.set_parameter_value('k',1.0)
-pot.set_parameter_value('theta_0',1.0)
+#pot = pysic.Potential('Buckingham',cutoff=10.0,symbols=['H','He'],parameters=[1.0,1.0,1.0])
+pot = pysic.Potential('constant',symbols=[['H'],['He'],['Li']],parameters=[1.0])
+#pot = pysic.Potential('bond_bend', cutoff=2.2,symbols=['H','H','H'])
+#pot.set_parameter_value('k',1.0)
+#pot.set_parameter_value('theta_0',1.0)
 
 
 bonds = pysic.BondOrderParameters('tersoff')
-bonds.set_cutoff(2.2)
-bonds.set_cutoff_margin(0.4)
-bonds.set_symbols([['H', 'H', 'H']])
+bonds.set_cutoff(12.2)
+bonds.set_cutoff_margin(0.1)
+bonds.set_symbols([['H', 'He', 'Li']])
 bonds.set_parameter_value('beta', 1.0)
 bonds.set_parameter_value('eta', 3.0)
 bonds.set_parameter_value('mu', 1.0)
@@ -47,20 +48,41 @@ bonds.set_parameter_value('c', 1.0)
 bonds.set_parameter_value('d', 1.0)
 bonds.set_parameter_value('h', 1.0)
 
+bonds3 = pysic.BondOrderParameters('tersoff')
+bonds3.set_cutoff(12.2)
+bonds3.set_cutoff_margin(0.1)
+bonds3.set_symbols([['H','Li','He']])
+bonds3.set_parameter_value('beta', 1.0)
+bonds3.set_parameter_value('eta', 3.0)
+bonds3.set_parameter_value('mu', 1.0)
+bonds3.set_parameter_value('a', 1.0)
+bonds3.set_parameter_value('c', 1.0)
+bonds3.set_parameter_value('d', 1.0)
+bonds3.set_parameter_value('h', 1.0)
 
 bonds2 = pysic.BondOrderParameters('neighbors')
 bonds2.set_cutoff(3.2)
 bonds2.set_cutoff_margin(0.4)
 bonds2.set_symbols([['H', 'H']])
 
-crd = pysic.Coordinator( bonds )
+if False:
+    bonds = pysic.BondOrderParameters('triplet')
+    bonds.set_cutoff(12.2)
+    bonds.set_cutoff_margin(0.1)
+    bonds.set_symbols([['H','He','Li']])
+    bonds3 = pysic.BondOrderParameters('triplet')
+    bonds3.set_cutoff(12.2)
+    bonds3.set_cutoff_margin(0.1)
+    bonds3.set_symbols([['H','Li','He']])
+
+crd = pysic.Coordinator( [bonds,bonds3] )
 pot.set_coordinator(crd)
 
 system.set_calculator(calc)
 calc.add_potential(pot)
 
-print pot
-print system.get_pbc()
+#print pot
+#print system.get_pbc()
 
 print ""
 print "initial charges: \n", system.get_charges()
@@ -82,7 +104,7 @@ print "numeric e-negativities: \n", np.array( [ calc.get_numerical_electronegati
 print "e-negativity differences: \n", calc.get_electronegativity_differences(system)
 print ""
 
-if False:
+if True:
     crd.calculate_bond_order_factors()
     print "bond orders: \n", crd.get_bond_order_factors()
     print "bond order gradients 0: \n", crd.get_bond_order_gradients_of_factor(0)
