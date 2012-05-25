@@ -7,12 +7,15 @@ import debug as d
 import math
 import time
 
-system = ase.Atoms('HHeLi',[[0.1,0.2,0.3],[2.1,-0.2,0.01], [0,2,0]])
-#system = ase.Atoms('HHeLi',[[0.0,0.0,0.0],[2.0,-0.0,0.0], [0,2,0]])
+system = ase.Atoms('HOCN',[[0.0,0.0,0.0], [2.0,0.0,0.0], [2,2,2], [2,2,0]])
+#system = ase.Atoms('HHeLi',[[0.1,0.2,0.3], [2.1,-0.2,0.01], [0,2,0]])
+#system = ase.Atoms('HLiHe',[[0.0,0.0,0.0], [2.0,-0.0,0.0], [0,2,0]])
+#system = ase.Atoms('H3',[[0.0,0.0,0.0], [2.0,-0.0,0.0], [0,2,0]])
 system.set_cell([[30.5,0.5,0.0],
                  [0.0,31.0,0.0],
                  [0.0,0.0,31.0]])
-system.set_charges([2,0,0])
+#system.set_charges([2,0,0])
+system.set_charges([2,0,0,0])
 system.set_pbc([True,True,True])
 calc = pysic.Pysic()
 pot = pysic.Potential('exponential',cutoff=10.0,symbols=['H','H'])
@@ -30,11 +33,14 @@ pot.set_parameter_value('Qmin1',-4.0)
 pot.set_parameter_value('Qmin2',-4.0)
 #pot = pysic.Potential('LJ',cutoff=6.0,symbols=['H','H'],parameters=[1.0,1.0])
 #pot = pysic.Potential('Buckingham',cutoff=10.0,symbols=['H','He'],parameters=[1.0,1.0,1.0])
-pot = pysic.Potential('constant',symbols=[['H'],['He'],['Li']],parameters=[1.0])
-#pot = pysic.Potential('bond_bend', cutoff=2.2,symbols=['H','H','H'])
-#pot.set_parameter_value('k',1.0)
-#pot.set_parameter_value('theta_0',1.0)
-
+#pot = pysic.Potential('constant',symbols=[['H'],['He'],['Li']],parameters=[1.0])
+#pot = pysic.Potential('bond_bend', cutoff=12.5, symbols=['He','H','He'])
+pot = pysic.Potential('bond_bend', cutoff=2.2, symbols=[['He','H','Li']])
+#pot = pysic.Potential('bond_bend', cutoff=12.5, symbols=['H','H','H'])
+pot = pysic.Potential('dihedral', cutoff=13.2, symbols=['H','O','N','C'])
+pot.set_parameter_value('k',1.0)
+pot.set_parameter_value('theta_0',0.0)
+pot.set_cutoff_margin(0.4)
 
 bonds = pysic.BondOrderParameters('tersoff')
 bonds.set_cutoff(12.2)
@@ -56,7 +62,7 @@ bonds3.set_parameter_value('beta', 1.0)
 bonds3.set_parameter_value('eta', 3.0)
 bonds3.set_parameter_value('mu', 1.0)
 bonds3.set_parameter_value('a', 1.0)
-bonds3.set_parameter_value('c', 1.0)
+bonds3.set_parameter_value('c', 2.0)
 bonds3.set_parameter_value('d', 1.0)
 bonds3.set_parameter_value('h', 1.0)
 
@@ -76,7 +82,7 @@ if False:
     bonds3.set_symbols([['H','Li','He']])
 
 crd = pysic.Coordinator( [bonds,bonds3] )
-pot.set_coordinator(crd)
+#pot.set_coordinator(crd)
 
 system.set_calculator(calc)
 calc.add_potential(pot)
@@ -92,9 +98,15 @@ print "energy: \n", system.get_potential_energy()
 t1 = time.time()
 print "forces: \n", system.get_forces()
 t2 = time.time()
-print "numeric forces: \n", np.array( [ calc.get_numerical_energy_gradient(0),  
+if False:
+    print "numeric forces: \n", np.array( [ calc.get_numerical_energy_gradient(0),  
                                        calc.get_numerical_energy_gradient(1),  
                                        calc.get_numerical_energy_gradient(2) ] )
+else:
+    print "numeric forces: \n", np.array( [ calc.get_numerical_energy_gradient(0),  
+                                       calc.get_numerical_energy_gradient(1),  
+                                       calc.get_numerical_energy_gradient(2),  
+                                       calc.get_numerical_energy_gradient(3) ] )
 t3 = time.time()
 print "e-negativities: \n", calc.get_electronegativities(system)
 t4 = time.time()
@@ -104,7 +116,7 @@ print "numeric e-negativities: \n", np.array( [ calc.get_numerical_electronegati
 print "e-negativity differences: \n", calc.get_electronegativity_differences(system)
 print ""
 
-if True:
+if False:
     crd.calculate_bond_order_factors()
     print "bond orders: \n", crd.get_bond_order_factors()
     print "bond order gradients 0: \n", crd.get_bond_order_gradients_of_factor(0)

@@ -120,7 +120,7 @@ module potentials
   ! *param_note_length maximum length allowed for the descriptions of parameters
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
-       n_potential_types = 7, &
+       n_potential_types = 8, &
        n_bond_order_types = 4, &
        n_max_params = 12, &
        pot_note_length = 500, &
@@ -152,7 +152,8 @@ module potentials
        tri_bend_index = 4, &
        pair_exp_index = 5, &
        mono_none_index = 6, &
-       pair_buck_index = 7
+       pair_buck_index = 7, &
+       quad_dihedral_index = 8
 
 
   !***********************************!
@@ -1953,6 +1954,10 @@ contains
     ! **** Buckingham potential ****
     call create_potential_characterizer_buckingham(pair_buck_index)
 
+    ! **** Dihedral angle potential ****
+    call create_potential_characterizer_dihedral(quad_dihedral_index)
+
+
     descriptors_created = .true.
 
   end subroutine initialize_potential_characterizers
@@ -2067,6 +2072,8 @@ contains
        call calculate_derived_parameters_bond_bending(n_params,parameters,new_potential)
     case(pair_exp_index) ! charge-dep. exp.
        call calculate_derived_parameters_charge_exp(n_params,parameters,new_potential)
+    case(quad_dihedral_index) ! dihedral angle
+       call calculate_derived_parameters_dihedral(n_params,parameters,new_potential)
     case default
        nullify(new_potential%derived_parameters)
        allocate(new_potential%derived_parameters(0))
@@ -2188,6 +2195,8 @@ contains
        call evaluate_force_constant_potential(interaction,force(1:3,1))
     case(pair_buck_index)
        call evaluate_force_buckingham(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
+    case (quad_dihedral_index) ! bond bending
+       call evaluate_force_dihedral(separations(1:3,1:3),distances(1:3),interaction,force(1:3,1:4),atoms(1:4))
     end select
 
   end subroutine evaluate_forces
@@ -2220,9 +2229,6 @@ contains
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: energy
     type(atom), optional, intent(in) :: atoms(n_targets)
-    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, ratio, d1, d2, d3, d4
-    logical :: inverse_params
-    integer :: i
 
     energy = 0.d0
 
@@ -2248,6 +2254,8 @@ contains
        call evaluate_energy_constant_potential(interaction,energy)
     case(pair_buck_index) ! buckingham
        call evaluate_energy_buckingham(separations(1:3,1),distances(1),interaction,energy)
+    case(quad_dihedral_index) ! bond-bending
+       call evaluate_energy_dihedral(separations(1:3,1:3),distances(1:3),interaction,energy,atoms(1:4))
     end select
 
   end subroutine evaluate_energy
@@ -2571,6 +2579,8 @@ contains
     double precision :: r1, r2, r3, r4, r5, r6, ratio
     double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3)
 
+    force = 0.d0
+
     ! the bond bending is applied to all ordered triplets a1--a2--a3
     ! for which the central atom (a2) is of the correct type
     ! note that the core passes all triplets here for filtering
@@ -2634,6 +2644,8 @@ contains
     double precision, intent(out) :: energy
     double precision :: r1, r2, r3, r6
 
+    energy = 0.d0
+
     ! the bond bending is applied to all ordered triplets a1--a2--a3
     ! for which the central atom (a2) is of the correct type
     ! note that the core passes all triplets here for filtering
@@ -2669,6 +2681,281 @@ contains
     end if
 
   end subroutine evaluate_energy_bond_bending
+
+
+
+
+
+
+
+  !***************************!
+  ! dihedrral angle potential !
+  !***************************!
+
+  ! dihedral angle characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_dihedral(index)
+    implicit none
+    integer, intent(in) :: index
+
+    potential_descriptors(index)%type_index = index
+    call pad_string('dihedral', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 2
+    potential_descriptors(index)%n_targets = 4
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+    call pad_string('k', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('bond angle spring constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('theta_0', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('equilibrium bond angle', param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('Dihedral angle potential: V(theta) = k/2 (cos theta - cos theta_0)^2', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_dihedral
+
+
+  ! Dihedral angle derived parameters
+  !
+  ! *new_potential the potential object for which the parameters are calculated
+  subroutine calculate_derived_parameters_dihedral(n_params,parameters,new_potential)
+    implicit none
+    integer, intent(in) :: n_params
+    double precision, intent(in) :: parameters(n_params)
+    type(potential), intent(inout) :: new_potential
+
+    nullify(new_potential%derived_parameters)
+    allocate(new_potential%derived_parameters(1))
+    new_potential%derived_parameters(1) = cos(parameters(2))
+
+  end subroutine calculate_derived_parameters_dihedral
+
+
+  ! Dihedral angle force
+  !
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_force_dihedral(separations,distances,interaction,force,atoms)
+    implicit none
+    double precision, intent(in) :: separations(3,3), distances(3)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,4)
+    type(atom), intent(in) :: atoms(4)
+    double precision :: r1, r2, r3, r6, ratio, dot, inv_r2
+    double precision :: tmp1(3), tmp2(3), projection1(3), projection2(3), v12(3), v23(3), v34(3)
+    logical :: ok
+
+    force = 0.d0
+
+    ! the dihedral angle is applied to all ordered quadruplets a1--a2--a3--a4
+    ! for which the atom sequence matches (backwards or forwards)
+    ! note that the core passes all quadruplets here for filtering
+
+    ok = .false.
+    if(interaction%filter_elements)then
+       if(interaction%original_elements(1) == atoms(1)%element .and. &
+          interaction%original_elements(2) == atoms(2)%element .and. &
+          interaction%original_elements(3) == atoms(3)%element .and. &
+          interaction%original_elements(4) == atoms(4)%element)then
+          ok = .true.
+       else if(interaction%original_elements(1) == atoms(4)%element .and. &
+          interaction%original_elements(2) == atoms(3)%element .and. &
+          interaction%original_elements(3) == atoms(2)%element .and. &
+          interaction%original_elements(4) == atoms(1)%element)then
+          ok = .true.
+       end if
+    end if
+    if(interaction%filter_tags)then
+       if(interaction%original_tags(1) == atoms(1)%tags .and. &
+          interaction%original_tags(2) == atoms(2)%tags .and. &
+          interaction%original_tags(3) == atoms(3)%tags .and. &
+          interaction%original_tags(4) == atoms(4)%tags)then
+          ok = .true.
+       else if(interaction%original_tags(1) == atoms(4)%tags .and. &
+          interaction%original_tags(2) == atoms(3)%tags .and. &
+          interaction%original_tags(3) == atoms(2)%tags .and. &
+          interaction%original_tags(4) == atoms(1)%tags)then
+          ok = .true.
+       end if
+    end if
+    if(interaction%filter_indices)then
+       if(interaction%original_indices(1) == atoms(1)%index .and. &
+          interaction%original_indices(2) == atoms(2)%index .and. &
+          interaction%original_indices(3) == atoms(3)%index .and. &
+          interaction%original_indices(4) == atoms(4)%index)then
+          ok = .true.
+       else if(interaction%original_indices(1) == atoms(4)%index .and. &
+          interaction%original_indices(2) == atoms(3)%index .and. &
+          interaction%original_indices(3) == atoms(2)%index .and. &
+          interaction%original_indices(4) == atoms(1)%index)then
+          ok = .true.
+       end if
+    end if
+
+    if(.not.ok)then
+       return
+    end if
+
+    r1 = distances(1)
+    r2 = distances(2)
+    r3 = distances(3)
+
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+       if(r2 < interaction%cutoff .and. r2 > 0.d0)then
+          if(r3 < interaction%cutoff .and. r3 > 0.d0)then
+
+             v12 = separations(1:3,1)
+             v23 = separations(1:3,2)
+             v34 = separations(1:3,3)
+
+             ! get projections of r_34 and r_12 on the plane perpendicular to r_23 (p_ij)
+             inv_r2 = 1.d0 / (r2*r2)
+             projection1 = -(v12 - (v12 .o. v23) * inv_r2 *v23)
+             projection2 = (v34 - (v34 .o. v23) * inv_r2 *v23)
+
+             dot = projection1 .o. projection2 
+             ratio = 1.d0 / ( (.norm.projection1) * (.norm.projection2) )
+
+             ! cos theta = (p_21 . p_34) / ( |p_21| |p_34| ) = dot*ratio
+             ! k ( cos theta - cos theta_0) =
+             r6 = interaction%parameters(1) * (dot * ratio - interaction%derived_parameters(1))
+             
+             write(*,*) "p1", projection1
+             write(*,*) "p2", projection2
+             write(*,*) "axis", v23
+             write(*,*) "values ", .norm.projection1, .norm.projection2, ratio, inv_r2, (v34 .o. v23), (v12 .o. v23)
+             write(*,*) "dihedral angle ", acos(dot*ratio)/pi*180.0
+             write(*,*) "dot ", dot
+
+             ! gradients for dot:
+             force(1:3,1) =  -( v34 - (v34 .o. v23) *inv_r2 * v23 )
+             force(1:3,2) =  ( v34 - &
+                  (v34 .o. v23) * inv_r2 * (v23 - v12) + &
+                  (v12 .o. v23) * inv_r2 * v34 - &
+                  2.d0 * (v12 .o. v23) * (v34 .o. v23) * inv_r2 * inv_r2 * v23 )
+             force(1:3,3) =  -( v12 + &
+                  (v34 .o. v23) * inv_r2 * v12 + &
+                  (v12 .o. v23) * inv_r2 * (v34 - v23) - &
+                  2.d0 * (v12 .o. v23) * (v34 .o. v23) * inv_r2 * inv_r2 * v23 )
+             force(1:3,4) =  ( v12 - (v12 .o. v23) *inv_r2 * v23 )
+
+             ! ToDo: add the rest of the terms
+
+          end if
+       end if
+    end if
+
+  end subroutine evaluate_force_dihedral
+
+
+
+  ! Dihedral angle energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_energy_dihedral(separations,distances,interaction,energy,atoms)
+    implicit none
+    double precision, intent(in) :: separations(3,3), distances(3)
+    type(potential), intent(in) :: interaction
+    type(atom), intent(in) :: atoms(4)
+    double precision, intent(out) :: energy
+    double precision :: r1, r2, r3, r6, ratio, dot, inv_r2
+    double precision :: tmp1(3), tmp2(3), projection1(3), projection2(3), v12(3), v23(3), v34(3)
+    logical :: ok
+
+    energy = 0.d0
+
+    ! the dihedral angle is applied to all ordered quadruplets a1--a2--a3--a4
+    ! for which the atom sequence matches (backwards or forwards)
+    ! note that the core passes all quadruplets here for filtering
+
+    ok = .false.
+    if(interaction%filter_elements)then
+       if(interaction%original_elements(1) == atoms(1)%element .and. & 
+          interaction%original_elements(2) == atoms(2)%element .and. &
+          interaction%original_elements(3) == atoms(3)%element .and. &
+          interaction%original_elements(4) == atoms(4)%element)then
+          ok = .true.
+       else if(interaction%original_elements(1) == atoms(4)%element .and. &
+          interaction%original_elements(2) == atoms(3)%element .and. &
+          interaction%original_elements(3) == atoms(2)%element .and. &
+          interaction%original_elements(4) == atoms(1)%element)then
+          ok = .true.
+       end if
+    end if
+    if(interaction%filter_tags)then
+       if(interaction%original_tags(1) == atoms(1)%tags .and. &
+          interaction%original_tags(2) == atoms(2)%tags .and. &
+          interaction%original_tags(3) == atoms(3)%tags .and. &
+          interaction%original_tags(4) == atoms(4)%tags)then
+          ok = .true.
+       else if(interaction%original_tags(1) == atoms(4)%tags .and. &
+          interaction%original_tags(2) == atoms(3)%tags .and. &
+          interaction%original_tags(3) == atoms(2)%tags .and. &
+          interaction%original_tags(4) == atoms(1)%tags)then
+          ok = .true.
+       end if
+    end if
+    if(interaction%filter_indices)then
+       if(interaction%original_indices(1) == atoms(1)%index .and. &
+          interaction%original_indices(2) == atoms(2)%index .and. &
+          interaction%original_indices(3) == atoms(3)%index .and. &
+          interaction%original_indices(4) == atoms(4)%index)then
+          ok = .true.
+       else if(interaction%original_indices(1) == atoms(4)%index .and. &
+          interaction%original_indices(2) == atoms(3)%index .and. &
+          interaction%original_indices(3) == atoms(2)%index .and. &
+          interaction%original_indices(4) == atoms(1)%index)then
+          ok = .true.
+       end if
+    end if
+
+    if(.not.ok)then
+       return
+    end if
+
+    r1 = distances(1)
+    r2 = distances(2)
+    r3 = distances(3)
+
+    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
+       if(r2 < interaction%cutoff .and. r2 > 0.d0)then
+          if(r3 < interaction%cutoff .and. r3 > 0.d0)then
+
+             v12 = separations(1:3,1)
+             v23 = separations(1:3,2)
+             v34 = separations(1:3,3)
+
+             ! get projections of r_34 and r_12 on the plane perpendicular to r_23
+             inv_r2 = 1.d0 / (r2*r2)
+             projection1 = -(v12 - (v12 .o. v23) * inv_r2 *v23)
+             projection2 = (v34 - (v34 .o. v23) * inv_r2 *v23)
+
+             dot = projection1 .o. projection2 
+             ratio = 1.d0 / ( (.norm.projection1) * (.norm.projection2) )
+             
+             ! cos theta = (p_21 . p_34) / ( |p_21| |p_34| ) = dot*ratio
+             ! k ( cos theta - cos theta_0) =
+             r6 = interaction%parameters(1) * (dot * ratio - interaction%derived_parameters(1))
+             
+             energy = dot
+
+          end if
+       end if
+    end if
+
+
+  end subroutine evaluate_energy_dihedral
+
+
+
+
 
 
 
