@@ -7,7 +7,7 @@ import debug as d
 import math
 import time
 
-system = ase.Atoms('HOCN',[[0.0,0.0,0.0], [2.0,0.0,0.0], [2,2,2], [2,2,0]])
+system = ase.Atoms('CNOH',[[0.01,0.02,0.03], [2.03,-0.02,0.1], [2.3,2.5,2.6], [1.8,2.1,0.02]])
 #system = ase.Atoms('HHeLi',[[0.1,0.2,0.3], [2.1,-0.2,0.01], [0,2,0]])
 #system = ase.Atoms('HLiHe',[[0.0,0.0,0.0], [2.0,-0.0,0.0], [0,2,0]])
 #system = ase.Atoms('H3',[[0.0,0.0,0.0], [2.0,-0.0,0.0], [0,2,0]])

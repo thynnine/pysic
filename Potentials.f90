@@ -2744,8 +2744,9 @@ contains
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: force(3,4)
     type(atom), intent(in) :: atoms(4)
-    double precision :: r1, r2, r3, r6, ratio, dot, inv_r2
-    double precision :: tmp1(3), tmp2(3), projection1(3), projection2(3), v12(3), v23(3), v34(3)
+    double precision :: r1, r2, r3, r6, ratio, dot, inv_r2, inv_p1, inv_p2
+    double precision :: tmp1(3), tmp2(3), projection1(3), projection2(3), &
+         v12(3), v23(3), v34(3), ddot(3,4), dp1(3,4), dp2(3,4)
     logical :: ok
 
     force = 0.d0
@@ -2817,32 +2818,56 @@ contains
              projection2 = (v34 - (v34 .o. v23) * inv_r2 *v23)
 
              dot = projection1 .o. projection2 
-             ratio = 1.d0 / ( (.norm.projection1) * (.norm.projection2) )
+             inv_p1 = 1.d0 / (.norm.projection1)
+             inv_p2 = 1.d0 / (.norm.projection2)
+             ratio = inv_p1 * inv_p2
 
              ! cos theta = (p_21 . p_34) / ( |p_21| |p_34| ) = dot*ratio
              ! k ( cos theta - cos theta_0) =
              r6 = interaction%parameters(1) * (dot * ratio - interaction%derived_parameters(1))
              
-             write(*,*) "p1", projection1
-             write(*,*) "p2", projection2
-             write(*,*) "axis", v23
-             write(*,*) "values ", .norm.projection1, .norm.projection2, ratio, inv_r2, (v34 .o. v23), (v12 .o. v23)
-             write(*,*) "dihedral angle ", acos(dot*ratio)/pi*180.0
-             write(*,*) "dot ", dot
-
-             ! gradients for dot:
-             force(1:3,1) =  -( v34 - (v34 .o. v23) *inv_r2 * v23 )
-             force(1:3,2) =  ( v34 - &
+             ! D p.p' / (|p||p'|) =
+             ! D (p.p') / (|p||p'|) +
+             ! p.p' / (|p||p'|^2) D |p'| +
+             ! p.p' / (|p|^2|p'|) D |p|
+             
+             ! D (p.p') / (|p||p'|) :             
+             ddot = 0.d0
+             ddot(1:3,1) =  -( v34 - (v34 .o. v23) * inv_r2 * v23 )
+             ddot(1:3,2) =  ( v34 - &
                   (v34 .o. v23) * inv_r2 * (v23 - v12) + &
                   (v12 .o. v23) * inv_r2 * v34 - &
                   2.d0 * (v12 .o. v23) * (v34 .o. v23) * inv_r2 * inv_r2 * v23 )
-             force(1:3,3) =  -( v12 + &
+             ddot(1:3,3) =  -( v12 + &
                   (v34 .o. v23) * inv_r2 * v12 + &
                   (v12 .o. v23) * inv_r2 * (v34 - v23) - &
                   2.d0 * (v12 .o. v23) * (v34 .o. v23) * inv_r2 * inv_r2 * v23 )
-             force(1:3,4) =  ( v12 - (v12 .o. v23) *inv_r2 * v23 )
+             ddot(1:3,4) =  ( v12 - (v12 .o. v23) *inv_r2 * v23 )
+             ddot = ddot
 
-             ! ToDo: add the rest of the terms
+             ! p.p' / (|p||p'|^2) D |p'| = p.p' / (2|p||p'|^3) D (p'.p')
+             dp2 = 0.d0
+             dp2(1:3,2) = (v34 .o. v23) * inv_r2 * v34 - &
+                  (v34 .o. v23)**2 * inv_r2 * inv_r2 * v23 
+             dp2(1:3,3) = -v34 + &
+                  (v34 .o. v23) * inv_r2 * (v23 - v34) + &
+                  (v34 .o. v23)**2 * inv_r2 * inv_r2 * v23
+             dp2(1:3,4) = v34 - (v34 .o. v23) * inv_r2 * v23
+             dp2 = dp2 * dot * inv_p2 * inv_p2
+             
+             ! p.p' / (|p|^2|p'|) D |p| = p.p' / (2|p|^3|p'|) D (p.p)
+             dp1 = 0.d0
+             dp1(1:3,1) = -v12 + (v12 .o. v23) * inv_r2 * v23
+             dp1(1:3,2) = v12 - &
+                  (v12 .o. v23) * inv_r2 * (v23 - v12) - &
+                  (v12 .o. v23)**2 * inv_r2 * inv_r2 * v23
+             dp1(1:3,3) = &
+                  -(v12 .o. v23) * inv_r2 * v12 + &
+                  (v12 .o. v23)**2 * inv_r2 * inv_r2 * v23
+             dp1 = dp1 * dot * inv_p1 * inv_p1
+             
+             force = interaction%parameters(1) * (dot*ratio - interaction%derived_parameters(1)) * &
+                  ratio * (ddot + dp1 + dp2)
 
           end if
        end if
@@ -2865,7 +2890,7 @@ contains
     type(potential), intent(in) :: interaction
     type(atom), intent(in) :: atoms(4)
     double precision, intent(out) :: energy
-    double precision :: r1, r2, r3, r6, ratio, dot, inv_r2
+    double precision :: r1, r2, r3, off, ratio, dot, inv_r2
     double precision :: tmp1(3), tmp2(3), projection1(3), projection2(3), v12(3), v23(3), v34(3)
     logical :: ok
 
@@ -2941,10 +2966,11 @@ contains
              ratio = 1.d0 / ( (.norm.projection1) * (.norm.projection2) )
              
              ! cos theta = (p_21 . p_34) / ( |p_21| |p_34| ) = dot*ratio
-             ! k ( cos theta - cos theta_0) =
-             r6 = interaction%parameters(1) * (dot * ratio - interaction%derived_parameters(1))
+             ! (cos theta - cos theta_0) =
+             off = (dot * ratio - interaction%derived_parameters(1))
              
-             energy = dot
+             ! k/2 (cos theta - cos theta_0)^2
+             energy = 0.5d0 * interaction%parameters(1) * off*off 
 
           end if
        end if
