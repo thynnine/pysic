@@ -7,7 +7,7 @@ import debug as d
 import math
 import time
 
-system = ase.Atoms('CNOH',[[0.01,0.02,0.03], [2.03,-0.02,0.1], [2.3,2.5,2.6], [1.8,2.1,0.02]])
+system = ase.Atoms('CNOH',[[0.01,0.02,0.03], [2.03,-0.02,62.1], [2.3,33.5,2.6], [1.8,2.1,30.02]])
 #system = ase.Atoms('HHeLi',[[0.1,0.2,0.3], [2.1,-0.2,0.01], [0,2,0]])
 #system = ase.Atoms('HLiHe',[[0.0,0.0,0.0], [2.0,-0.0,0.0], [0,2,0]])
 #system = ase.Atoms('H3',[[0.0,0.0,0.0], [2.0,-0.0,0.0], [0,2,0]])
@@ -33,7 +33,6 @@ pot.set_parameter_value('Qmin1',-4.0)
 pot.set_parameter_value('Qmin2',-4.0)
 #pot = pysic.Potential('LJ',cutoff=6.0,symbols=['H','H'],parameters=[1.0,1.0])
 #pot = pysic.Potential('Buckingham',cutoff=10.0,symbols=['H','He'],parameters=[1.0,1.0,1.0])
-#pot = pysic.Potential('constant',symbols=[['H'],['He'],['Li']],parameters=[1.0])
 #pot = pysic.Potential('bond_bend', cutoff=12.5, symbols=['He','H','He'])
 pot = pysic.Potential('bond_bend', cutoff=2.2, symbols=[['He','H','Li']])
 #pot = pysic.Potential('bond_bend', cutoff=12.5, symbols=['H','H','H'])
@@ -41,6 +40,10 @@ pot = pysic.Potential('dihedral', cutoff=13.2, symbols=['H','O','N','C'])
 pot.set_parameter_value('k',1.0)
 pot.set_parameter_value('theta_0',0.0)
 pot.set_cutoff_margin(0.4)
+
+#pot = pysic.Potential('constant',symbols=[['H'],['He'],['Li']],parameters=[1.0])
+pot = pysic.Potential('constant',symbols=[['H'],['O'],['N'],['C']],parameters=[1.0])
+
 
 bonds = pysic.BondOrderParameters('tersoff')
 bonds.set_cutoff(12.2)
@@ -82,7 +85,39 @@ if False:
     bonds3.set_symbols([['H','Li','He']])
 
 crd = pysic.Coordinator( [bonds,bonds3] )
-#pot.set_coordinator(crd)
+
+if True:
+    bonds = pysic.BondOrderParameters('power')
+    bonds.set_cutoff(4.3)
+    bonds.set_cutoff_margin(0.4)
+    bonds.set_symbols([['H','C'],
+                       ['H','O'],
+                       ['H','N'],
+                       ['H','H'],
+                       ['C','C'],
+                       ['C','O'],
+                       ['C','N'],
+                       ['C','H'],
+                       ['O','C'],
+                       ['O','O'],
+                       ['O','N'],
+                       ['O','H'],
+                       ['N','C'],
+                       ['N','O'],
+                       ['N','N'],
+                       ['N','H']])
+    bonds.set_parameter_value('a', 2.0)
+    bonds.set_parameter_value('n', 2.0)
+        
+    sqrter = pysic.BondOrderParameters('sqrt_scale')
+    sqrter.set_parameter_value('epsilon',1.0)
+    sqrter.set_symbols([['O'],['H'],['N']])
+    #sqrter.set_symbols([['H'],['O']])
+    
+    crd = pysic.Coordinator( [bonds] )
+    crd = pysic.Coordinator( [sqrter,bonds] )
+
+pot.set_coordinator(crd)
 
 system.set_calculator(calc)
 calc.add_potential(pot)
@@ -140,12 +175,16 @@ if False:
 
     print "numeric bond order gradient sum: \n", -numeric_grad_0-numeric_grad_1-numeric_grad_2
 
-print "timing (E, F, chi) : ", t1-t0, t2-t1, t4-t3
+print "timing (E, F, chi) : ", t1-t0, t2-t1, t4-t3, "\n"
 
 
-print calc.get_neighbor_lists().get_neighbors(0)
-print calc.get_neighbor_lists().get_neighbors(1)
-print calc.get_neighbor_lists().get_neighbors(2)
+print "neighbors:"
+for index in range(len(system)):
+    indices, offsets = calc.get_neighbor_lists().get_neighbors(index)
+    #offsets = np.transpose(offsets)
+    for i, offset in zip(indices, offsets):        
+        sep = system.positions[index] - (system.positions[i] + np.dot(offset, system.get_cell()))
+        print "("+str(index)+","+str(i)+")", sep, math.sqrt(np.dot(sep,sep))
 
 quit()
 d.bp()

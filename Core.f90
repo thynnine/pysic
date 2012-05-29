@@ -4127,8 +4127,8 @@ contains
                             if(distance < cutoffs(atom2_index)*cutoffs(atom2_index))then
                                n_nbs(atom2_index) = n_nbs(atom2_index)+1
                                nbors_and_offsets(1,n_nbs(atom2_index),atom2_index) = atom1_index
-                               nbors_and_offsets(2:4,n_nbs(atom2_index),atom2_index) = neighbor_offset &
-                                     - atom1_wrap_offset(1:3) + atom2_wrap_offset(1:3)
+                               nbors_and_offsets(2:4,n_nbs(atom2_index),atom2_index) = -neighbor_offset &
+                                     + atom1_wrap_offset(1:3) - atom2_wrap_offset(1:3)
                                if(n_nbs(atom2_index) == max_n_nbors)then
                                   call expand_neighbor_storage(nbors_and_offsets,max_n_nbors,max_n_nbors+50,n_atoms)
                                   max_n_nbors = max_n_nbors + 50

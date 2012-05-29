@@ -84,6 +84,10 @@ to Python are simply calling routines here.
     - :func:`core_create_space_partitioning`
     - :func:`core_empty_bond_order_gradient_storage`
     - :func:`core_empty_bond_order_storage`
+    - :func:`core_evaluate_local_doublet`
+    - :func:`core_evaluate_local_quadruplet`
+    - :func:`core_evaluate_local_singlet`
+    - :func:`core_evaluate_local_triplet`
     - :func:`core_fill_bond_order_storage`
     - :func:`core_generate_atoms`
     - :func:`core_get_bond_order_factor_of_atom`
@@ -772,6 +776,142 @@ Full documentation of subroutines in pysic_core
     Clears bond order factors (the precalculated factor values)
     but does not deallocate the arrays.
 
+            
+  .. function:: core_evaluate_local_doublet(n_atoms, atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, many_bodies_found)
+
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    atom_doublet: type(atom)  *intent(in)*    *size(2)*  
+        
+    index1: integer  *intent(in)*    *scalar*  
+        
+    index2: integer  *intent(in)*    *scalar*  
+        
+    test_index1: integer  *intent(in)*    *scalar*  
+        
+    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        
+    directions: double precision  *intent(in)*    *size(3, 1)*  
+        
+    distances: double precision  *intent(in)*    *size(1)*  
+        
+    calculation_type: integer  *intent(in)*    *scalar*  
+        
+    **energy**: double precision  **intent(out)**    *scalar*  
+        
+    **forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
+        
+    **enegs**: double precision  **intent(out)**    *size(n_atoms)*  
+        
+    **many_bodies_found**: logical  **intent(out)**    *scalar*  
+        
+            
+  .. function:: core_evaluate_local_quadruplet(n_atoms, atom_quadruplet, index1, index2, index3, index4, test_index1, test_index2, test_index3, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, many_bodies_found)
+
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    atom_quadruplet: type(atom)  *intent(in)*    *size(4)*  
+        
+    index1: integer  *intent(in)*    *scalar*  
+        
+    index2: integer  *intent(in)*    *scalar*  
+        
+    index3: integer  *intent(in)*    *scalar*  
+        
+    index4: integer  *intent(in)*    *scalar*  
+        
+    test_index1: integer  *intent(in)*    *scalar*  
+        
+    test_index2: integer  *intent(in)*    *scalar*  
+        
+    test_index3: integer  *intent(in)*    *scalar*  
+        
+    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    separations: double precision  *intent(in)*    *size(3, 3)*  
+        
+    directions: double precision  *intent(in)*    *size(3, 3)*  
+        
+    distances: double precision  *intent(in)*    *size(3)*  
+        
+    calculation_type: integer  *intent(in)*    *scalar*  
+        
+    **energy**: double precision  **intent(out)**    *scalar*  
+        
+    **forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
+        
+    **enegs**: double precision  **intent(out)**    *size(n_atoms)*  
+        
+    **many_bodies_found**: logical  **intent(out)**    *scalar*  
+        
+            
+  .. function:: core_evaluate_local_singlet(n_atoms, index1, atom_singlet, interaction_indices, calculation_type, energy, forces, enegs)
+
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    index1: integer  *intent(in)*    *scalar*  
+        
+    atom_singlet: type(atom)  *intent(in)*    *scalar*  
+        
+    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    calculation_type: integer  *intent(in)*    *scalar*  
+        
+    **energy**: double precision  **intent(inout)**    *scalar*  
+        
+    **forces**: double precision  **intent(inout)**    *size(3, n_atoms)*  
+        
+    **enegs**: double precision  **intent(inout)**    *size(n_atoms)*  
+        
+            
+  .. function:: core_evaluate_local_triplet(n_atoms, atom_triplet, index1, index2, index3, test_index1, test_index2, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, many_bodies_found)
+
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    atom_triplet: type(atom)  *intent(in)*    *size(3)*  
+        
+    index1: integer  *intent(in)*    *scalar*  
+        
+    index2: integer  *intent(in)*    *scalar*  
+        
+    index3: integer  *intent(in)*    *scalar*  
+        
+    test_index1: integer  *intent(in)*    *scalar*  
+        
+    test_index2: integer  *intent(in)*    *scalar*  
+        
+    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    separations: double precision  *intent(in)*    *size(3, 2)*  
+        
+    directions: double precision  *intent(in)*    *size(3, 2)*  
+        
+    distances: double precision  *intent(in)*    *size(2)*  
+        
+    calculation_type: integer  *intent(in)*    *scalar*  
+        
+    **energy**: double precision  **intent(out)**    *scalar*  
+        
+    **forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
+        
+    **enegs**: double precision  **intent(out)**    *size(n_atoms)*  
+        
+    **many_bodies_found**: logical  **intent(out)**    *scalar*  
+        
             
   .. function:: core_fill_bond_order_storage(n_atoms)
 

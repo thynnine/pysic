@@ -2176,6 +2176,9 @@ class FastNeighborList(nbl.NeighborList):
             n_nbs = pf.pysic_interface.get_number_of_neighbors_of_atom(i)
             if n_nbs > 0:
                 (self.neighbors[i], self.displacements[i]) = pf.pysic_interface.get_neighbor_list_of_atom(i,n_nbs)
+                # the offsets are in Fortran array format, so they need to be transposed
+                self.displacements[i] = np.transpose(self.displacements[i])
+    
         self.nupdates += 1
         
 

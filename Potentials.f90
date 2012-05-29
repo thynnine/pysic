@@ -121,7 +121,7 @@ module potentials
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
        n_potential_types = 8, &
-       n_bond_order_types = 4, &
+       n_bond_order_types = 6, &
        n_max_params = 12, &
        pot_note_length = 500, &
        param_note_length = 100
@@ -169,7 +169,9 @@ module potentials
   integer, parameter :: coordination_index = 1, &
        tersoff_index = 2, &
        c_scale_index = 3, &
-       triplet_index = 4
+       triplet_index = 4, &
+       power_index = 5, &
+       sqrt_scale_index = 6
 
   ! *no_name The label for unlabeled atoms. In other words, there are routines that expect atomic symbols as arguments, but if there are no symbols to pass, this should be given to mark an empty entry.
   character(len=label_length), parameter :: no_name = "xx"
@@ -3559,6 +3561,12 @@ contains
     ! **** Triplet search ****
     call create_bond_order_factor_characterizer_triplet(triplet_index)
 
+    ! **** Power-law decay factor ****
+    call create_bond_order_factor_characterizer_power(power_index)
+
+    ! **** Sqrt scaling ****
+    call create_bond_order_factor_characterizer_scaler_sqrt(sqrt_scale_index)
+
     bond_descriptors_created = .true.
 
   end subroutine initialize_bond_order_factor_characterizers
@@ -3698,6 +3706,8 @@ contains
        call evaluate_bond_order_factor_tersoff(separations(1:3,1:2),distances(1:2),bond_params(1:2),factor,atoms(1:3))
     case(triplet_index) ! triplet search
        call evaluate_bond_order_factor_triplet(separations(1:3,1:2),distances(1:2),bond_params(1:2),factor,atoms(1:3))
+    case(power_index) ! triplet search
+       call evaluate_bond_order_factor_power(separations(1:3,1),distances(1),bond_params(1),factor)
     end select
 
   end subroutine evaluate_bond_order_factor
@@ -3761,6 +3771,11 @@ contains
             bond_params(1:2),&
             gradient(1:3,1:3,1:3),&
             atoms(1:3))
+    case(power_index) ! power law decay
+       call evaluate_bond_order_gradient_power(separations(1:3,1),&
+            distances(1),&
+            bond_params(1),&
+            gradient(1:3,1:2,1:2))
     end select
 
   end subroutine evaluate_bond_order_gradient
@@ -3806,6 +3821,8 @@ contains
        call post_process_bond_order_factor_tersoff(raw_sum, bond_params, factor_out)
     case (c_scale_index) ! coordination correction scaling function
        call post_process_bond_order_factor_scaler_1(raw_sum, bond_params, factor_out)
+    case (sqrt_scale_index) ! square root scaling function
+       call post_process_bond_order_factor_scaler_sqrt(raw_sum, bond_params, factor_out)
     case default
        factor_out = raw_sum
     end select
@@ -3860,6 +3877,8 @@ contains
        call post_process_bond_order_gradient_tersoff(raw_sum, raw_gradient, bond_params, factor_out)
     case (c_scale_index) ! coordination correction scaling function
        call post_process_bond_order_gradient_scaler_1(raw_sum, raw_gradient, bond_params, factor_out)
+    case (sqrt_scale_index) ! square root scaling function
+       call post_process_bond_order_gradient_scaler_sqrt(raw_sum, raw_gradient, bond_params, factor_out)
     case default
        factor_out = raw_gradient
     end select
@@ -4580,6 +4599,219 @@ contains
 
 
   end subroutine evaluate_bond_order_gradient_triplet
+
+
+
+
+  !*****************!
+  ! Power law decay !
+  !*****************!
+
+  ! Power decay characterizer initialization
+  !
+  ! *index index of the bond order factor
+  subroutine create_bond_order_factor_characterizer_power(index)
+    implicit none
+    integer, intent(in) :: index
+    integer :: max_params
+
+    ! Record type index
+    bond_order_descriptors(index)%type_index = index
+
+    ! Record the name of the bond order factor.
+    ! This is a keyword used for accessing the type of factor
+    ! in pysic, also in the python interface.
+    call pad_string('power',pot_name_length,bond_order_descriptors(index)%name)
+
+    ! Record the number of targets
+    bond_order_descriptors(index)%n_targets = 2 
+
+    ! Allocate space for storing the numbers of parameters (for 1-body, 2-body etc.).
+    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+
+    ! Record the number of parameters
+    bond_order_descriptors(index)%n_parameters(1) = 0 ! no 1-body params
+    bond_order_descriptors(index)%n_parameters(2) = 2 ! no 2-body params
+    max_params = 2 ! maxval(bond_order_descriptors(index)%n_parameters)
+
+    ! Allocate space for storing the parameter names and descriptions.
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+
+    ! Record if the bond factor includes post processing (per-atom scaling)
+    bond_order_descriptors(index)%includes_post_processing = .false.
+
+    ! Record parameter names and descriptions.
+    ! Names are keywords with which one can intuitively 
+    ! and easily access the parameters in the python
+    ! interface.
+    ! Descriptions are short descriptions of the
+    ! physical or mathematical meaning of the parameters.
+    ! They can be viewed from the python interface to
+    ! remind the user how to parameterize the potential.
+    call pad_string('a',param_name_length,bond_order_descriptors(index)%parameter_names(1,2))
+    call pad_string('interatomic distance or lattice constant',param_note_length,bond_order_descriptors(index)%parameter_notes(1,2))
+    call pad_string('n',param_name_length,bond_order_descriptors(index)%parameter_names(2,2))
+    call pad_string('exponent',param_note_length,bond_order_descriptors(index)%parameter_notes(2,2))
+
+    ! Record a description of the entire bond order factor.
+    ! This description can also be viewed in the python
+    ! interface as a reminder of the properties of the
+    ! bond order factor.
+    ! The description should contain the mathematical
+    ! formulation of the factor as well as a short
+    ! verbal description.
+    call pad_string('Power law decay: b_i = sum ( a / r_ij )^n', &
+         pot_note_length,bond_order_descriptors(index)%description)
+
+
+  end subroutine create_bond_order_factor_characterizer_power
+
+
+  ! Power bond order factor
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *bond_params a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *factor the calculated bond order term :math:`c`
+  subroutine evaluate_bond_order_factor_power(separations,distances,bond_params,factor)
+    double precision, intent(in) :: separations(3,1), &
+         distances(1)
+    type(bond_order_parameters), intent(in) :: bond_params(1)
+    double precision, intent(out) :: factor(2)
+    double precision :: r1, decay1
+
+    r1 = distances(1)
+    if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
+       ! sum f(r_ij) ( a_ij / r_ij )^n_ij
+       call smoothening_factor(r1,bond_params(1)%cutoff,&
+            bond_params(1)%soft_cutoff,decay1)
+       factor = decay1 * ( bond_params(1)%parameters(1,2) / r1 )**(bond_params(1)%parameters(2,2)) ! symmetric, so factor(1) = factor(2)
+    end if
+
+  end subroutine evaluate_bond_order_factor_power
+
+
+  ! Power bond order factor gradient
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *bond_params a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *gradient the calculated bond order term :math:`c`
+  subroutine evaluate_bond_order_gradient_power(separations,distances,bond_params,gradient)
+    double precision, intent(in) :: separations(3,1), &
+         distances(1)
+    type(bond_order_parameters), intent(in) :: bond_params(1)
+    double precision, intent(out) :: gradient(3,2,2)
+    double precision :: r1, decay1, tmp1(3), n, a, ratio, ratio_n, inv_r1
+
+    r1 = distances(1)
+    if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
+
+       n = bond_params(1)%parameters(2,2)
+       a = bond_params(1)%parameters(1,2)
+       inv_r1 = 1.d0/r1
+       ratio = a * inv_r1
+       ratio_n = ratio**n
+
+       ! D sum f(r_ij) ( a_ij / r_ij )^n_ij =
+       ! sum f'(r) ( a/r )^n + f(r) n ( a/r )^(n-1) ( -a/r^2 ) =
+       ! sum f'(r) ( a/r )^n + f(r) (-n) ( a/r )^n 1/r 
+       call smoothening_gradient(separations(1:3,1) * inv_r1,r1,&
+            bond_params(1)%cutoff,&
+            bond_params(1)%soft_cutoff,&
+            tmp1)
+       call smoothening_factor(r1,bond_params(1)%cutoff,&
+            bond_params(1)%soft_cutoff,decay1)
+
+       gradient(1:3,1,1) = -tmp1(1:3) * ratio_n + n * decay1 * ratio_n * inv_r1 * inv_r1 * separations(1:3,1)
+       gradient(1:3,2,1) = gradient(1:3,1,1)
+       gradient(1:3,1,2) = -gradient(1:3,1,1)
+       gradient(1:3,2,2) = -gradient(1:3,1,1)
+    end if
+
+  end subroutine evaluate_bond_order_gradient_power
+
+
+
+
+
+  !********************!
+  ! Square root scaler !
+  !********************!
+
+
+  ! Square root scaler characterizer initialization
+  !
+  ! *index index of the bond order factor
+  subroutine create_bond_order_factor_characterizer_scaler_sqrt(index)
+    implicit none
+    integer, intent(in) :: index
+    integer :: max_params
+
+
+    bond_order_descriptors(index)%type_index = index
+    call pad_string('sqrt_scale',pot_name_length,bond_order_descriptors(index)%name)
+
+    bond_order_descriptors(index)%n_targets = 1
+    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    bond_order_descriptors(index)%n_parameters(1) = 1 ! 4 1-body parameters
+
+    bond_order_descriptors(index)%includes_post_processing = .true.
+    max_params = 1 ! maxval(bond_order_descriptors(index)%n_parameters)
+
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    call pad_string('epsilon',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
+    call pad_string('energy scale constant',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
+
+    call pad_string('Square root scaling function: '//&
+         'b_i(n_i) = epsilon_i sqrt(n_i)', &
+         pot_note_length,bond_order_descriptors(index)%description)
+
+  end subroutine create_bond_order_factor_characterizer_scaler_sqrt
+
+
+  ! Square root scaler post process factor
+  !
+  ! *raw_sum the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+  ! *bond_params a :data:`bond_order_parameters` specifying the parameters
+  ! *factor_out the calculated bond order factor :math:`b_i`
+  subroutine post_process_bond_order_factor_scaler_sqrt(raw_sum, bond_params, factor_out)
+    implicit none
+    double precision, intent(in) :: raw_sum
+    type(bond_order_parameters), intent(in) :: bond_params
+    double precision, intent(out) :: factor_out
+
+    factor_out = bond_params%parameters(1,1) * sqrt(raw_sum)
+
+  end subroutine post_process_bond_order_factor_scaler_sqrt
+
+
+  ! Square root scaler post process gradient
+  !
+  ! *raw_sum the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+  ! *raw_gradient the precalculated bond order gradient sum, :math:`\nabla_\alpha \sum_j c_ij` in the above example
+  ! *bond_params a :data:`bond_order_parameters` specifying the parameters
+  ! *factor_out the calculated bond order factor :math:`b_i`
+  subroutine post_process_bond_order_gradient_scaler_sqrt(raw_sum, raw_gradient, bond_params, factor_out)
+    implicit none
+    double precision, intent(in) :: raw_sum, raw_gradient(3)
+    type(bond_order_parameters), intent(in) :: bond_params
+    double precision, intent(out) :: factor_out(3)
+    double precision :: beta, eta, dN, expo, inv_exp
+
+    if(raw_sum <= 0.d0)then
+       factor_out = 0.d0
+       return
+    end if
+    factor_out = bond_params%parameters(1,1) / (2.d0 * sqrt(raw_sum)) * raw_gradient
+
+  end subroutine post_process_bond_order_gradient_scaler_sqrt
 
 
 
