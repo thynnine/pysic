@@ -2748,6 +2748,7 @@ contains
        total_forces = forces
 #endif
 
+       write(*,*) "checkpoint"
        if(evaluate_ewald)then
           filter = .true.
           call calculate_ewald_forces(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&

@@ -1,13 +1,14 @@
 #! /usr/bin/env python
 import pysic
 import pysic_fortran as pf
+import pysic_utility as pu
 import ase
 import numpy as np
 import debug as d
 import math
 import time
 
-system = ase.Atoms('CNOH',[[0.01,0.02,0.03], [2.03,-0.02,62.1], [2.3,33.5,2.6], [1.8,2.1,30.02]])
+system = ase.Atoms('CNOH',[[0.01,0.02,0.03], [2.03,-0.02,62.1], [2.3,33.5,2.6], [1.8,2.1,30.92]])
 #system = ase.Atoms('HHeLi',[[0.1,0.2,0.3], [2.1,-0.2,0.01], [0,2,0]])
 #system = ase.Atoms('HLiHe',[[0.0,0.0,0.0], [2.0,-0.0,0.0], [0,2,0]])
 #system = ase.Atoms('H3',[[0.0,0.0,0.0], [2.0,-0.0,0.0], [0,2,0]])
@@ -34,15 +35,17 @@ pot.set_parameter_value('Qmin2',-4.0)
 #pot = pysic.Potential('LJ',cutoff=6.0,symbols=['H','H'],parameters=[1.0,1.0])
 #pot = pysic.Potential('Buckingham',cutoff=10.0,symbols=['H','He'],parameters=[1.0,1.0,1.0])
 #pot = pysic.Potential('bond_bend', cutoff=12.5, symbols=['He','H','He'])
-pot = pysic.Potential('bond_bend', cutoff=2.2, symbols=[['He','H','Li']])
+#pot = pysic.Potential('bond_bend', cutoff=2.2, symbols=[['He','H','Li']])
 #pot = pysic.Potential('bond_bend', cutoff=12.5, symbols=['H','H','H'])
 pot = pysic.Potential('dihedral', cutoff=13.2, symbols=['H','O','N','C'])
 pot.set_parameter_value('k',1.0)
 pot.set_parameter_value('theta_0',0.0)
 pot.set_cutoff_margin(0.4)
 
+pot = pysic.Potential('power', cutoff=4.5, symbols=pu.expand_symbols_table([['H','O','N','C'],['H','O','N','C']]), parameters=[1.5,2.1,3.0])
+
 #pot = pysic.Potential('constant',symbols=[['H'],['He'],['Li']],parameters=[1.0])
-pot = pysic.Potential('constant',symbols=[['H'],['O'],['N'],['C']],parameters=[1.0])
+#pot = pysic.Potential('constant',symbols=[['H'],['O'],['N'],['C']],parameters=[1.0])
 
 
 bonds = pysic.BondOrderParameters('tersoff')
@@ -86,8 +89,8 @@ if False:
 
 crd = pysic.Coordinator( [bonds,bonds3] )
 
-if True:
-    bonds = pysic.BondOrderParameters('power')
+if False:
+    bonds = pysic.BondOrderParameters('power_bond')
     bonds.set_cutoff(4.3)
     bonds.set_cutoff_margin(0.4)
     bonds.set_symbols([['H','C'],
@@ -117,7 +120,7 @@ if True:
     crd = pysic.Coordinator( [bonds] )
     crd = pysic.Coordinator( [sqrter,bonds] )
 
-pot.set_coordinator(crd)
+    pot.set_coordinator(crd)
 
 system.set_calculator(calc)
 calc.add_potential(pot)
@@ -186,7 +189,6 @@ for index in range(len(system)):
         sep = system.positions[index] - (system.positions[i] + np.dot(offset, system.get_cell()))
         print "("+str(index)+","+str(i)+")", sep, math.sqrt(np.dot(sep,sep))
 
-quit()
 d.bp()
 
 
@@ -218,7 +220,7 @@ print np.linalg.inv(system.get_cell()).transpose()
 
 
 
-"""
+if False:
     system = ase.Atoms('Na4Cl4',[[0.5,0.5,0.5],
     [1.5,1.5,0.5],
     [1.5,0.5,1.5],
@@ -238,12 +240,11 @@ print np.linalg.inv(system.get_cell()).transpose()
     ewald = pysic.CoulombSummation()
     ewald.set_parameter_value('real_cutoff',6.0)
     ewald.set_parameter_value('k_cutoff',6.0)
-    ewald.set_parameter_value('sigma',0.3)
+    ewald.set_parameter_value('sigma',0.5)
     ewald.set_parameter_value('epsilon',1.0/(math.pi*4.0))
     calc.set_coulomb_summation(ewald)
     
-    calc.set_core()
-    """
+    calc.set_core()    
 
 
 """
@@ -279,7 +280,7 @@ print np.linalg.inv(system.get_cell()).transpose()
     er=str(ewald_ene/4+1.747564594633))
     """            
 
-"""
+if False:
     #pot = pysic.Potential('force',parameters=[1.0,2.0,3.0],symbols=[['Na'],['Cl']])
     #calc.add_potential(pot)
     
@@ -298,8 +299,7 @@ print np.linalg.inv(system.get_cell()).transpose()
     print "numeric forces: \n", np.array( [ calc.get_numerical_energy_gradient(0),  calc.get_numerical_energy_gradient(1) ] )
     
     #pysic.Pysic.core.view_fortran()
-    """
-
+    
 
 """
     import ase.calculators.neighborlist as nbl

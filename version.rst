@@ -9,25 +9,21 @@ Version history
 
 This is a list of the main updates in the different versions of Pysic.
 
-
-Version 0.4.3
+Version 0.4.2
 -------------
 
 - Restructured the interaction evaluation loops in the Fortran core (:ref:`potentials`)
 - Added support for 4-body potentials
 - Added the :ref:`dihedral angle potential` potential
-- Bug fix: fixed an issue where the cutoff of a bond order factor could overwrite a longer cutoff a potential
-- Bug fix: fixed an indexing error in evaluation of 3-body interaction which gave to incorrect forces
-
-
-Version 0.4.2
--------------
-
-- Some code restructuring in the Fortran core (:ref:`potentials`)
 - Added the :ref:`Buckingham potential` potential
+- Added the :ref:`power decay potential` potential
+- Added the :ref:`power decay bond order factor` bond order factor
+- Added the :ref:`square root scaling function`
 - Bug fix: fixed an issue with periodic boundaries in :class:`~pysic.FastNeighborList`
 - Bug fix: fixed an issue with special parameter values in Tersoff bond order factor evaluation
-
+- Bug fix: fixed an issue where the cutoff of a bond order factor could overwrite a longer cutoff a potential
+- Bug fix: fixed an indexing error in evaluation of 3-body interaction which gave to incorrect forces
+- Bug fix: fixed and indexing error in neighbor offsets in :class:`~pysic.FastNeighborList`
 
 Version 0.4.1
 -------------

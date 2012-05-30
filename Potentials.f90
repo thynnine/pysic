@@ -120,7 +120,7 @@ module potentials
   ! *param_note_length maximum length allowed for the descriptions of parameters
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
-       n_potential_types = 8, &
+       n_potential_types = 9, &
        n_bond_order_types = 6, &
        n_max_params = 12, &
        pot_note_length = 500, &
@@ -146,6 +146,9 @@ module potentials
   ! *mono_const_index internal index for the constant force potential
   ! *tri_bend_index internal index for the bond bending potential
   ! *mono_none_index internal index for the constant potential
+  ! *pair_buck_index internal index for the Buckingham potential
+  ! *quad_dihedral_index internal index for the dihedral angle potential
+  ! *pair_power_index internal index for the power law potential
   integer, parameter :: pair_lj_index = 1, &
        pair_spring_index = 2, &
        mono_const_index = 3, &
@@ -153,7 +156,8 @@ module potentials
        pair_exp_index = 5, &
        mono_none_index = 6, &
        pair_buck_index = 7, &
-       quad_dihedral_index = 8
+       quad_dihedral_index = 8, &
+       pair_power_index = 9
 
 
   !***********************************!
@@ -163,15 +167,19 @@ module potentials
   ! Indices for bond order factor types.
   ! Similar to potential types above.
   !
-  ! *coordiantion_index internal index for the coordination bondorder factor
+  ! *coordiantion_index internal index for the coordination bond order factor
   ! *tersoff_index internal index for the Tersoff bond order factor
   ! *c_scale_index internal index for the coordination scaling potential
+  ! *triplet_index internal index for the triplet bond order factor
+  ! *power_index internal index for the power law bond order factor
+  ! *sqrt_scale_index internal index for the square root scaling potential
   integer, parameter :: coordination_index = 1, &
        tersoff_index = 2, &
        c_scale_index = 3, &
        triplet_index = 4, &
        power_index = 5, &
        sqrt_scale_index = 6
+       
 
   ! *no_name The label for unlabeled atoms. In other words, there are routines that expect atomic symbols as arguments, but if there are no symbols to pass, this should be given to mark an empty entry.
   character(len=label_length), parameter :: no_name = "xx"
@@ -1336,7 +1344,8 @@ contains
                    distance = .norm.separation
 
                    if(distance < real_cutoff)then
-                      !write(*,'(A,I8,I8,F8.2,F8.2,F8.2,F10.3)') "pair ", index1, index2, separation, distance
+
+                      !write(*,'(A,I8,I8,F8.2,F8.2,F8.2,F10.3)') "    Ewald pair ", index1, index2, separation, distance
 
                       ! q_i q_j / r * erfc(r / (sqrt(2) sigma))
                       energy(1) = energy(1) + charge1*charge2/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
@@ -1484,12 +1493,13 @@ contains
          tmp_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
          -reciprocal_cutoff(2):reciprocal_cutoff(2), &
          -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         nabla_factor(3, 2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         tmp_nabla_factor(3, 2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
+         !nabla_factor(3, 2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+         !-reciprocal_cutoff(2):reciprocal_cutoff(2), &
+         !-reciprocal_cutoff(3):reciprocal_cutoff(3)), &
+         !tmp_nabla_factor(3, 2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+         !-reciprocal_cutoff(2):reciprocal_cutoff(2), &
+         !-reciprocal_cutoff(3):reciprocal_cutoff(3)), &
+         nabla_factor(3,2), &
          k_vector(3), dot, &
          dipole(1:3), tmp_dipole(1:3)
     integer :: index1, index2, j, k1, k2, k3
@@ -1502,7 +1512,7 @@ contains
     s_factor = 0.d0
     tmp_factor = 0.d0
     nabla_factor = 0.d0
-    tmp_nabla_factor = 0.d0
+    !tmp_nabla_factor = 0.d0
 
     inv_eps_4pi = 1.d0 / (4.d0 * pi * electric_constant)
     inv_eps_2v = 1.d0 / (2.d0 * cell%volume * electric_constant)
@@ -1590,10 +1600,10 @@ contains
                               (/ charge1 * cos_dot, - charge1 * sin_dot /)
 
                          ! \nabla S(k) = i q k [cos(k.r) + i sin(k.r)]
-                         tmp_nabla_factor(1:3,1,index1,k1,k2,k3) = &
-                              -charge1 * sin_dot * k_vector ! real part
-                         tmp_nabla_factor(1:3,2,index1,k1,k2,k3) = &
-                              charge1 * cos_dot * k_vector ! imaginary part              
+                         !tmp_nabla_factor(1:3,1,index1,k1,k2,k3) = &
+                         !     -charge1 * sin_dot * k_vector ! real part
+                         !tmp_nabla_factor(1:3,2,index1,k1,k2,k3) = &
+                         !     charge1 * cos_dot * k_vector ! imaginary part              
 
                       end if
                    end do
@@ -1611,53 +1621,66 @@ contains
     ! collect structure factors from all cpus in MPI (tmp_factor -> factor)
     call mpi_allreduce(tmp_factor,s_factor,size(s_factor),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
-    call mpi_allreduce(tmp_nabla_factor,nabla_factor,size(nabla_factor),mpi_double_precision,&
-         mpi_sum,mpi_comm_world,mpistat)
+    !call mpi_allreduce(tmp_nabla_factor,nabla_factor,size(nabla_factor),mpi_double_precision,&
+    !     mpi_sum,mpi_comm_world,mpistat)
     if(include_dipole_correction)then
        call mpi_allreduce(tmp_dipole,dipole,1,mpi_double_precision,&
             mpi_sum,mpi_comm_world,mpistat)
     end if
 #else
     s_factor = tmp_factor
-    nabla_factor = tmp_nabla_factor
+    !nabla_factor = tmp_nabla_factor
     dipole = tmp_dipole
 #endif
 
     do index1 = 1, n_atoms
+       if(is_my_atom(index1) .and. filter(index1))then
+          
+          atom1 = atoms(index1)
+          !
+          ! calculate the dipole correction
+          ! 
+          if(include_dipole_correction)then
+             forces(1:3,3,index1) = atoms(index1)%charge*scaler(index1) * inv_eps_2v / (-1.5d0) * dipole(1:3)
+          end if
+          
+          
+          !
+          ! calculate the reciprocal space sum
+          !
+          do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+             do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+                do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                   if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
+                      
+                      k_vector = k1*cell%reciprocal_cell(1:3,1) + &
+                           k2*cell%reciprocal_cell(1:3,2) + &
+                           k3*cell%reciprocal_cell(1:3,3)
+                      distance = .norm.k_vector
+                      dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                      sin_dot = sin(dot)
+                      cos_dot = cos(dot)
+                      
+                      ! \nabla S(k) = i q k [cos(k.r) + i sin(k.r)]
+                      k_vector = -charge1 * k_vector
+                      nabla_factor(1:3,1) = &
+                           -sin_dot * k_vector ! real part
+                      nabla_factor(1:3,2) = &
+                           cos_dot * k_vector ! imaginary part   
 
-       !
-       ! calculate the dipole correction
-       ! 
-       if(include_dipole_correction)then
-          forces(1:3,3,index1) = atoms(index1)%charge*scaler(index1) * inv_eps_2v / (-1.5d0) * dipole(1:3)
-       end if
-
-
-       !
-       ! calculate the reciprocal space sum
-       !
-       do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
-          do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-             do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
-                if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
-
-                   k_vector = k1*cell%reciprocal_cell(1:3,1) + &
-                        k2*cell%reciprocal_cell(1:3,2) + &
-                        k3*cell%reciprocal_cell(1:3,3)
-                   distance = .norm.k_vector
-
-                   ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
-                   ! Re[ z1 z2 ] = x1 x2 - y1 y2
-                   forces(1:3,2,index1) = forces(1:3,2,index1) - inv_eps_2v * &
-                        exp(-gaussian_width*gaussian_width*distance*distance*0.5d0) / &
-                        (distance*distance) * 2.d0 * &
-                        (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1,index1,k1,k2,k3) - &
-                        s_factor(2,k1,k2,k3)*nabla_factor(1:3,2,index1,k1,k2,k3))
-
-                end if
+                      ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
+                      ! Re[ z1 z2 ] = x1 x2 - y1 y2
+                      forces(1:3,2,index1) = forces(1:3,2,index1) - inv_eps_2v * &
+                           exp(-gaussian_width*gaussian_width*distance*distance*0.5d0) / &
+                           (distance*distance) * 2.d0 * &
+                           (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1) - &
+                           s_factor(2,k1,k2,k3)*nabla_factor(1:3,2))
+                      
+                   end if
+                end do
              end do
           end do
-       end do
+       end if
     end do
 
 #ifdef MPI
@@ -1959,6 +1982,9 @@ contains
     ! **** Dihedral angle potential ****
     call create_potential_characterizer_dihedral(quad_dihedral_index)
 
+    ! **** Power law potential ****
+    call create_potential_characterizer_power(pair_power_index)
+
 
     descriptors_created = .true.
 
@@ -2195,10 +2221,12 @@ contains
        call evaluate_force_charge_exp(separations(1:3,1),distances(1),interaction,force(1:3,1:2),atoms(1:2))
     case (mono_none_index) ! constant potential
        call evaluate_force_constant_potential(interaction,force(1:3,1))
-    case(pair_buck_index)
+    case(pair_buck_index)  ! Buckingham potential
        call evaluate_force_buckingham(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
-    case (quad_dihedral_index) ! bond bending
+    case (quad_dihedral_index) ! dihedral angle potential
        call evaluate_force_dihedral(separations(1:3,1:3),distances(1:3),interaction,force(1:3,1:4),atoms(1:4))
+    case (pair_power_index) ! power law potential
+       call evaluate_force_power(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
     end select
 
   end subroutine evaluate_forces
@@ -2258,6 +2286,8 @@ contains
        call evaluate_energy_buckingham(separations(1:3,1),distances(1),interaction,energy)
     case(quad_dihedral_index) ! bond-bending
        call evaluate_energy_dihedral(separations(1:3,1:3),distances(1:3),interaction,energy,atoms(1:4))
+    case(pair_power_index) ! power law potential
+       call evaluate_energy_power(separations(1:3,1),distances(1),interaction,energy)
     end select
 
   end subroutine evaluate_energy
@@ -4621,7 +4651,7 @@ contains
     ! Record the name of the bond order factor.
     ! This is a keyword used for accessing the type of factor
     ! in pysic, also in the python interface.
-    call pad_string('power',pot_name_length,bond_order_descriptors(index)%name)
+    call pad_string('power_bond',pot_name_length,bond_order_descriptors(index)%name)
 
     ! Record the number of targets
     bond_order_descriptors(index)%n_targets = 2 
@@ -4812,6 +4842,111 @@ contains
     factor_out = bond_params%parameters(1,1) / (2.d0 * sqrt(raw_sum)) * raw_gradient
 
   end subroutine post_process_bond_order_gradient_scaler_sqrt
+
+
+
+
+  !*****************!
+  ! Power potential !
+  !*****************!
+
+  ! Power law characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_power(index)
+    implicit none
+    integer, intent(in) :: index
+
+    ! Record type index
+    potential_descriptors(index)%type_index = index
+
+    ! Record the name of the potential.
+    ! This is a keyword used for accessing the type of potential
+    ! in pysic, also in the python interface.
+    call pad_string('power', pot_name_length,potential_descriptors(index)%name)
+
+    ! Record the number of parameters
+    potential_descriptors(index)%n_parameters = 3
+
+    ! Record the number of targets (i.e., is the potential 1-body, 2-body etc.)
+    potential_descriptors(index)%n_targets = 2
+
+    ! Allocate space for storing the parameter names and descriptions.
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+
+    ! Record parameter names and descriptions.
+    ! Names are keywords with which one can intuitively 
+    ! and easily access the parameters in the python
+    ! interface.
+    ! Descriptions are short descriptions of the
+    ! physical or mathematical meaning of the parameters.
+    ! They can be viewed from the python interface to
+    ! remind the user how to parameterize the potential.
+    call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('a', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('atomic distance or lattice constant', &
+         param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('n', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('exponent', &
+         param_note_length,potential_descriptors(index)%parameter_notes(3))
+
+    ! Record a description of the entire potential.
+    ! This description can also be viewed in the python
+    ! interface as a reminder of the properties of the
+    ! potential.
+    ! The description should contain the mathematical
+    ! formulation of the potential as well as a short
+    ! verbal description.
+    call pad_string('A standard Lennard-Jones potential: V(r) = epsilon * ( a/r )^n ', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_power
+
+
+  ! Power force
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  subroutine evaluate_force_power(separations,distances,interaction,force)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,2)
+    double precision :: r1, ratio, n
+
+    r1 = distances(1)
+    n = interaction%parameters(3)
+    ratio = interaction%parameters(2) / r1
+    force(1:3,1) = interaction%parameters(1) * ( -n * ratio**n ) * separations(1:3,1) / (r1*r1)
+    force(1:3,2) = -force(1:3,1)
+ 
+  end subroutine evaluate_force_power
+
+
+  ! Power energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  subroutine evaluate_energy_power(separations,distances,interaction,energy)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    double precision :: r1, r6, ratio
+
+    r1 = distances(1)
+    ratio = interaction%parameters(2) / r1
+    energy = interaction%parameters(1) * ratio**interaction%parameters(3)
+    
+  end subroutine evaluate_energy_power
+
 
 
 
