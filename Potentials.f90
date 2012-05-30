@@ -1418,12 +1418,12 @@ contains
                 k_vector = k1*cell%reciprocal_cell(1:3,1) + &
                      k2*cell%reciprocal_cell(1:3,2) + &
                      k3*cell%reciprocal_cell(1:3,3)
-                distance = .norm.k_vector
+                distance = (k_vector .o. k_vector) ! |k|^2
 
                 ! exp(- sigma^2 k^2 / 2) / k^2 |S(k)|^2
                 ! |z|^2 = x^2 + y^2
-                energy(3) = energy(3) + exp(-gaussian_width*gaussian_width*distance*distance*0.5d0) / &
-                     (distance*distance) * &
+                energy(3) = energy(3) + exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
+                     (distance) * &
                      (s_factor(1,k1,k2,k3)*s_factor(1,k1,k2,k3) + s_factor(2,k1,k2,k3)*s_factor(2,k1,k2,k3))
 
              end if
@@ -1493,12 +1493,6 @@ contains
          tmp_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
          -reciprocal_cutoff(2):reciprocal_cutoff(2), &
          -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         !nabla_factor(3, 2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         !-reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         !-reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         !tmp_nabla_factor(3, 2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         !-reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         !-reciprocal_cutoff(3):reciprocal_cutoff(3)), &
          nabla_factor(3,2), &
          k_vector(3), dot, &
          dipole(1:3), tmp_dipole(1:3)
@@ -1512,7 +1506,6 @@ contains
     s_factor = 0.d0
     tmp_factor = 0.d0
     nabla_factor = 0.d0
-    !tmp_nabla_factor = 0.d0
 
     inv_eps_4pi = 1.d0 / (4.d0 * pi * electric_constant)
     inv_eps_2v = 1.d0 / (2.d0 * cell%volume * electric_constant)
@@ -1599,12 +1592,6 @@ contains
                          tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
                               (/ charge1 * cos_dot, - charge1 * sin_dot /)
 
-                         ! \nabla S(k) = i q k [cos(k.r) + i sin(k.r)]
-                         !tmp_nabla_factor(1:3,1,index1,k1,k2,k3) = &
-                         !     -charge1 * sin_dot * k_vector ! real part
-                         !tmp_nabla_factor(1:3,2,index1,k1,k2,k3) = &
-                         !     charge1 * cos_dot * k_vector ! imaginary part              
-
                       end if
                    end do
                 end do
@@ -1621,8 +1608,6 @@ contains
     ! collect structure factors from all cpus in MPI (tmp_factor -> factor)
     call mpi_allreduce(tmp_factor,s_factor,size(s_factor),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
-    !call mpi_allreduce(tmp_nabla_factor,nabla_factor,size(nabla_factor),mpi_double_precision,&
-    !     mpi_sum,mpi_comm_world,mpistat)
     if(include_dipole_correction)then
        call mpi_allreduce(tmp_dipole,dipole,1,mpi_double_precision,&
             mpi_sum,mpi_comm_world,mpistat)
@@ -1637,6 +1622,8 @@ contains
        if(is_my_atom(index1) .and. filter(index1))then
           
           atom1 = atoms(index1)
+          charge1 = atom1%charge*scaler(index1)
+
           !
           ! calculate the dipole correction
           ! 
@@ -1656,13 +1643,13 @@ contains
                       k_vector = k1*cell%reciprocal_cell(1:3,1) + &
                            k2*cell%reciprocal_cell(1:3,2) + &
                            k3*cell%reciprocal_cell(1:3,3)
-                      distance = .norm.k_vector
+                      distance = k_vector .o. k_vector ! |k|^2
                       dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
                       sin_dot = sin(dot)
                       cos_dot = cos(dot)
                       
                       ! \nabla S(k) = i q k [cos(k.r) + i sin(k.r)]
-                      k_vector = -charge1 * k_vector
+                      k_vector = charge1 * k_vector
                       nabla_factor(1:3,1) = &
                            -sin_dot * k_vector ! real part
                       nabla_factor(1:3,2) = &
@@ -1671,8 +1658,8 @@ contains
                       ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
                       ! Re[ z1 z2 ] = x1 x2 - y1 y2
                       forces(1:3,2,index1) = forces(1:3,2,index1) - inv_eps_2v * &
-                           exp(-gaussian_width*gaussian_width*distance*distance*0.5d0) / &
-                           (distance*distance) * 2.d0 * &
+                           exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
+                           (distance) * 2.d0 * &
                            (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1) - &
                            s_factor(2,k1,k2,k3)*nabla_factor(1:3,2))
                       
