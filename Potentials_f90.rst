@@ -842,7 +842,7 @@ Full documentation of subroutines in potentials
     **total_energy**: double precision  **intent(out)**    *scalar*  
         the calculated energy
             
-  .. function:: calculate_ewald_forces(n_atoms, atoms, cell, real_cutoff, reciprocal_cutoff, gaussian_width, electric_constant, filter, scaler, include_dipole_correction, total_forces)
+  .. function:: calculate_ewald_forces(n_atoms, atoms, cell, real_cutoff, reciprocal_cutoff, gaussian_width, electric_constant, filter, scaler, include_dipole_correction, total_forces, total_stress)
 
     Calculates the forces due to long ranged :math:`\frac{1}{r}` potentials.
     These forces are the gradients of the energies :math:`U` given by :func:`calculate_ewald_energy`
@@ -876,6 +876,8 @@ Full documentation of subroutines in potentials
         if true, a dipole correction term is included in the energy
     **total_forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
         the calculated forces
+    **total_stress**: double precision  **intent(out)**    *size(6)*  
+        the calculated stress
             
   .. function:: clear_bond_order_factor_characterizers()
 

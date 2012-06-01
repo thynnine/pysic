@@ -52,6 +52,8 @@ module pysic_core
   double precision, pointer :: saved_bond_order_factors(:,:)
   ! *saved_bond_order_gradients Array for storing calculated bond order gradients. Indexing: (xyz, atom index, group_index_save_slot(group index), target index)
   double precision, pointer :: saved_bond_order_gradients(:,:,:,:)
+  ! *saved_bond_order_virials Array for storing calculated bond order virials. Indexing: (xyz, group_index_save_slot(group index), target index)
+  double precision, pointer :: saved_bond_order_virials(:,:,:)
   ! *n_saved_bond_order_factors number of saved bond order factors
   integer :: n_saved_bond_order_factors = 0
   ! * group_index_save_slot A list joining group indices and bond factor save slots: Group indices are indices for potentials, but not every potential needs to have a bond order factor. Therefore, the saved bond order arrays should have less columns than the number of groups. This array changes the group index into the column index of the saved bond order arrays.
@@ -363,12 +365,14 @@ contains
        deallocate(saved_bond_order_sums)
        deallocate(saved_bond_order_factors)
        deallocate(saved_bond_order_gradients)
+       deallocate(saved_bond_order_virials)
        deallocate(use_saved_bond_order_gradients)
        deallocate(group_index_save_slot)
     else
        nullify(saved_bond_order_sums)
        nullify(saved_bond_order_factors)
        nullify(saved_bond_order_gradients)
+       nullify(saved_bond_order_virials)
        nullify(use_saved_bond_order_gradients)
        nullify(group_index_save_slot)
     end if
@@ -416,6 +420,7 @@ contains
     else
        if(bond_storage_allocated)then
           saved_bond_order_gradients = 0.d0
+          saved_bond_order_virials = 0.d0
           use_saved_bond_order_gradients = -1
        end if
     end if
@@ -442,6 +447,7 @@ contains
     allocate(saved_bond_order_sums(n_atoms,n_factors))
     allocate(saved_bond_order_factors(n_atoms,n_factors))
     allocate(saved_bond_order_gradients(3,n_atoms,n_factors,4))
+    allocate(saved_bond_order_virials(6,n_factors,4))
     allocate(use_saved_bond_order_gradients(n_factors,4))
     allocate(group_index_save_slot(0:n_groups))
     bond_storage_allocated = .true.
@@ -500,10 +506,11 @@ contains
   ! *atom_index index of the atom whose bond order factor is differentiated
   ! *slot_index index denoting the position of the atom in an interacting group (such as A-B-C triplet)
   ! *bond_order_gradients the calculated gradients of the bond order factor
-  subroutine core_get_bond_order_gradients(n_atoms,group_index,atom_index,slot_index,bond_order_gradients)
+  subroutine core_get_bond_order_gradients(n_atoms,group_index,atom_index,slot_index,&
+       bond_order_gradients,bond_order_virial)
     implicit none
     integer, intent(in) :: n_atoms, group_index, atom_index, slot_index
-    double precision, intent(out) :: bond_order_gradients(1:3,n_atoms)
+    double precision, intent(out) :: bond_order_gradients(3,n_atoms), bond_order_virial(6)
     double precision :: bond_order_sums(n_atoms)
     logical :: found_grads
     integer :: save_slot
@@ -515,6 +522,7 @@ contains
           if(use_saved_bond_order_gradients(save_slot,slot_index) == atom_index)then
              found_grads = .true.
              bond_order_gradients(1:3,1:n_atoms) = saved_bond_order_gradients(1:3,1:n_atoms,save_slot,slot_index)
+             bond_order_virial(1:6) = saved_bond_order_virials(1:6,save_slot,slot_index)
           end if
        end if
        if(.not.found_grads)then
@@ -523,8 +531,10 @@ contains
                group_index,&
                atom_index,&
                bond_order_sums,&
-               bond_order_gradients)
+               bond_order_gradients,&
+               bond_order_virial)
           saved_bond_order_gradients(1:3,1:n_atoms,save_slot,slot_index) = bond_order_gradients(1:3,1:n_atoms)
+          saved_bond_order_virials(1:6,save_slot,slot_index) = bond_order_virial(1:6)
           use_saved_bond_order_gradients(save_slot,slot_index) = atom_index
        end if
     else
@@ -533,7 +543,8 @@ contains
             group_index,&
             atom_index,&
             bond_order_sums,&
-            bond_order_gradients)
+            bond_order_gradients,&
+            bond_order_virial)
     end if
 
   end subroutine core_get_bond_order_gradients
@@ -928,13 +939,13 @@ contains
   ! *total_gradient the calculated bond order gradients :math:`\nabla_\alpha b_i`
   ! *for_factor a switch for requesting the gradients for a given :math:`i` instead of a given :math:`\alpha`
   subroutine core_calculate_bond_order_gradients(n_atoms,group_index,&
-       atom_index,raw_sums,total_gradient,for_factor)
+       atom_index,raw_sums,total_gradient,total_virial,for_factor)
     implicit none
     integer, intent(in) :: n_atoms, group_index, atom_index
-    double precision, intent(out) :: total_gradient(3,n_atoms)
+    double precision, intent(out) :: total_gradient(3,n_atoms), total_virial(6)
     double precision, intent(in) :: raw_sums(n_atoms)
     logical, optional, intent(in) :: for_factor
-    double precision :: gradient(3,n_atoms)
+    double precision :: gradient(3,n_atoms), virial(6)
     type(atom) :: atom1, atom2, atom3
     type(atom) :: atom_list(3)
     type(neighbor_list) :: nbors1, nbors2
@@ -946,6 +957,8 @@ contains
 
     gradient = 0.d0
     total_gradient = 0.d0
+    virial = 0.d0
+    total_virial = 0.d0
     
     ! If for_factor is given and true, we return
     ! gradients for the given factor.
@@ -958,7 +971,9 @@ contains
        end if
     end if
 
-    ! target atom, given as argument (the atom moved in differentiation)
+    ! target atom, given as argument 
+    ! (the atom moved in differentiation or 
+    ! the atom whose factor is differentiated)
     index1 = atom_index
     atom1 = atoms(atom_index)
     nbors1 = atom1%neighbor_list
@@ -1023,11 +1038,20 @@ contains
                       ! with respect to moving atom1 and atom2
                       gradient(1:3,index1) = gradient(1:3,index1) + tmp_grad(1:3,1,1)
                       gradient(1:3,index2) = gradient(1:3,index2) + tmp_grad(1:3,1,2)
+
+                      ! virial: r_a*f_b (xx, yy, zz, yz, xz, xy)
+                      virial(1) = virial(1) + separations(1,1) * tmp_grad(1,1,2)
+                      virial(2) = virial(2) + separations(2,1) * tmp_grad(2,1,2)
+                      virial(3) = virial(3) + separations(3,1) * tmp_grad(3,1,2)
+                      virial(4) = virial(4) + separations(2,1) * tmp_grad(3,1,2)
+                      virial(5) = virial(5) + separations(1,1) * tmp_grad(3,1,2)
+                      virial(6) = virial(6) + separations(1,1) * tmp_grad(2,1,2)
                    else
                       ! store the gradients of the atom1 and atom2 terms
                       ! with respect to movind atom1 (the target atom)
                       gradient(1:3,index1) = gradient(1:3,index1) + tmp_grad(1:3,1,1)
                       gradient(1:3,index2) = gradient(1:3,index2) + tmp_grad(1:3,2,1)
+
                    end if
 
                 else if( n_targets > 2 )then
@@ -1173,6 +1197,22 @@ contains
                                   gradient(1:3,index2) = gradient(1:3,index2) + tmp_grad(1:3,2,1)
                                   gradient(1:3,index1) = gradient(1:3,index1) + tmp_grad(1:3,2,2)
                                   gradient(1:3,index3) = gradient(1:3,index3) + tmp_grad(1:3,2,3)
+
+                                  ! virial: r_a*f_b (xx, yy, zz, yz, xz, xy) 
+                                  ! r from atom1 to other atoms - now atom1 is center atom
+                                  virial(1) = virial(1) - separations(1,1) * tmp_grad(1,2,1) & ! r_12*f2
+                                                        + separations(1,2) * tmp_grad(1,2,3)   ! r_13*f3
+                                  virial(2) = virial(2) - separations(2,1) * tmp_grad(2,2,1) & ! r_12*f2
+                                                        + separations(2,2) * tmp_grad(2,2,3)   ! r_13*f3
+                                  virial(3) = virial(3) - separations(3,1) * tmp_grad(3,2,1) & ! r_12*f2
+                                                        + separations(3,2) * tmp_grad(3,2,3)   ! r_13*f3
+                                  virial(4) = virial(4) - separations(2,1) * tmp_grad(3,2,1) & ! r_12*f2
+                                                        + separations(2,2) * tmp_grad(3,2,3)   ! r_13*f3
+                                  virial(5) = virial(5) - separations(1,1) * tmp_grad(3,2,1) & ! r_12*f2
+                                                        + separations(1,2) * tmp_grad(3,2,3)   ! r_13*f3
+                                  virial(6) = virial(6) - separations(1,1) * tmp_grad(2,2,1) & ! r_12*f2
+                                                        + separations(1,2) * tmp_grad(2,2,3)   ! r_13*f3
+
                                else
                                   ! store the gradients of the atom1, atom2, and atom3 terms
                                   ! with respect to moving atom1 (the target atom)
@@ -1183,6 +1223,7 @@ contains
                                   gradient(1:3,index2) = gradient(1:3,index2) + tmp_grad(1:3,1,2)
                                   gradient(1:3,index1) = gradient(1:3,index1) + tmp_grad(1:3,2,2)
                                   gradient(1:3,index3) = gradient(1:3,index3) + tmp_grad(1:3,3,2)
+
                                end if
 
                             end if ! is_active
@@ -1301,6 +1342,21 @@ contains
                                   gradient(1:3,index1) = gradient(1:3,index1) + tmp_grad(1:3,1,1)
                                   gradient(1:3,index2) = gradient(1:3,index2) + tmp_grad(1:3,1,2)
                                   gradient(1:3,index3) = gradient(1:3,index3) + tmp_grad(1:3,1,3)
+
+                                  ! virial: r_a*f_b (xx, yy, zz, yz, xz, xy) 
+                                  ! r from atom1 to other atoms - now atom1 is first atom
+                                  virial(1) = virial(1) + separations(1,1) * tmp_grad(1,2,1) & ! r_12*f2
+                                       + (separations(1,1)+separations(1,2)) * tmp_grad(1,2,3)   ! r_13*f3
+                                  virial(2) = virial(2) + separations(2,1) * tmp_grad(2,2,1) & ! r_12*f2
+                                       + (separations(2,1)+separations(2,2)) * tmp_grad(2,2,3)   ! r_13*f3
+                                  virial(3) = virial(3) + separations(3,1) * tmp_grad(3,2,1) & ! r_12*f2
+                                       + (separations(3,1)+separations(3,2)) * tmp_grad(3,2,3)   ! r_13*f3
+                                  virial(4) = virial(4) + separations(2,1) * tmp_grad(3,2,1) & ! r_12*f2
+                                       + (separations(2,1)+separations(2,2)) * tmp_grad(3,2,3)   ! r_13*f3
+                                  virial(5) = virial(5) + separations(1,1) * tmp_grad(3,2,1) & ! r_12*f2
+                                       + (separations(1,1)+separations(1,2)) * tmp_grad(3,2,3)   ! r_13*f3
+                                  virial(6) = virial(6) + separations(1,1) * tmp_grad(2,2,1) & ! r_12*f2
+                                       + (separations(1,1)+separations(1,2)) * tmp_grad(2,2,3)   ! r_13*f3
                                else
                                   ! store the gradients of the atom1, atom2, and atom3 terms
                                   ! with respect to movind atom1 (the target atom)
@@ -1311,6 +1367,7 @@ contains
                                   gradient(1:3,index1) = gradient(1:3,index1) + tmp_grad(1:3,1,1)
                                   gradient(1:3,index2) = gradient(1:3,index2) + tmp_grad(1:3,2,1)
                                   gradient(1:3,index3) = gradient(1:3,index3) + tmp_grad(1:3,3,1)
+
                                end if
 
 
@@ -1340,7 +1397,7 @@ contains
 
     if(gradients_for_factor)then
        call core_post_process_bond_order_gradients_of_factor(n_atoms,group_index,index1,raw_sums(index1),&
-            gradient,total_gradient)
+            gradient,total_gradient,virial,total_virial)
     else
        call core_post_process_bond_order_gradients(n_atoms,group_index,raw_sums,&
             gradient,total_gradient)
@@ -1377,14 +1434,14 @@ contains
   ! *raw_sums precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
   ! *total_gradient the calculated bond order gradients :math:`\nabla_\alpha b_i`
   subroutine core_calculate_bond_order_gradients_of_factor(n_atoms,group_index,&
-       atom_index,raw_sums,total_gradient)
+       atom_index,raw_sums,total_gradient,total_virial)
     implicit none
     integer, intent(in) :: n_atoms, group_index, atom_index
-    double precision, intent(out) :: total_gradient(3,n_atoms)
+    double precision, intent(out) :: total_gradient(3,n_atoms),total_virial(6)
     double precision, intent(in) :: raw_sums(n_atoms)
 
     call core_calculate_bond_order_gradients(n_atoms,group_index,&
-       atom_index,raw_sums,total_gradient,.true.)
+       atom_index,raw_sums,total_gradient,total_virial,.true.)
 
   end subroutine core_calculate_bond_order_gradients_of_factor
 
@@ -2045,11 +2102,11 @@ contains
   ! *total_bond_gradients the calculated bond order gradients :math:`\nabla_\alpha b_i`
   ! *mpi_split A switch for enabling MPI parallelization. By default the routine is sequential since the calculation may be called from within an already parallelized routine.
   subroutine core_post_process_bond_order_gradients_of_factor(n_atoms,group_index,atom_index,raw_sum,&
-       raw_gradients,total_bond_gradients,mpi_split)
+       raw_gradients,total_bond_gradients,raw_virial,total_virial,mpi_split)
     implicit none
     integer, intent(in) :: n_atoms, group_index, atom_index
-    double precision, intent(out) :: total_bond_gradients(3,n_atoms)
-    double precision, intent(in) :: raw_sum, raw_gradients(3,n_atoms)
+    double precision, intent(out) :: total_bond_gradients(3,n_atoms), total_virial(6)
+    double precision, intent(in) :: raw_sum, raw_gradients(3,n_atoms), raw_virial(6)
     logical, optional, intent(in) :: mpi_split
     integer :: index1, index2
     double precision :: bond_gradients(3,n_atoms)
@@ -2111,18 +2168,32 @@ contains
                   bond_gradients(1:3,index1) ) ! in Potentials.f90
           else
              bond_gradients(1:3,index1) = 0.d0
-          end if
+          end if ! evaluate
           
-       end do
+       end do ! index1
        
+       ! Post process the virial in two batches
+       ! The scaling function is the same as for the
+       ! gradient itself
+       call post_process_bond_order_gradient(raw_sum, &
+            raw_virial(1:3), &
+            bond_factors( post_process), &
+            total_virial(1:3) ) ! in Potentials.f90
+       call post_process_bond_order_gradient(raw_sum, &
+            raw_virial(4:6), &
+            bond_factors( post_process), &
+            total_virial(4:6) ) ! in Potentials.f90
+
     else
+       ! there is no post processing for this factor
        bond_gradients(1:3,1:n_atoms) = raw_gradients(1:3,1:n_atoms)
-    end if
+       total_virial(1:6) = raw_virial(1:6)
+    end if ! post_process
 
 #ifdef MPI
     ! collect data from all cpus if needed
     if(present(mpi_split))then
-       if(mpi_split)then
+       if(mpi_split .and. post_process > 0)then ! if we did not scale, the values are already good
           call mpi_allreduce(bond_gradients,total_bond_gradients,size(bond_gradients),mpi_double_precision,&
                mpi_sum,mpi_comm_world,mpistat)
        else
@@ -2153,14 +2224,18 @@ contains
   ! *total_energy calculated energy
   ! *total_forces calculated forces
   ! *total_enegs calculated electronegativities
-  subroutine core_loop_over_local_interactions(n_atoms,calculation_type,total_energy,total_forces,total_enegs)
+  ! *total_stress calculated stress
+  subroutine core_loop_over_local_interactions(n_atoms,calculation_type,&
+       total_energy,total_forces,total_enegs,total_stress)
     implicit none
     integer, intent(in) :: n_atoms, calculation_type
-    double precision, intent(out) :: total_energy, total_forces(3,n_atoms), total_enegs(n_atoms)
+    double precision, intent(out) :: total_energy, total_forces(3,n_atoms), &
+         total_enegs(n_atoms), total_stress(6)
     integer :: j, k, l, m, n_targets, index1, index2, index3, index4
     double precision :: energy,  &
          forces(3,n_atoms),  &
          enegs(n_atoms),  &
+         stress(6), &
          separations(3,3), distances(3), directions(3,3), &
          stopwatch_0, stopwatch_1
     type(atom) :: atom1, atom2, atom3, atom4
@@ -2180,6 +2255,9 @@ contains
 
     enegs = 0.d0
     total_enegs = 0.d0
+
+    stress = 0.d0
+    total_stress = 0.d0
 
     ! For MPI load balancing, the execution time of each cpu
     ! is recorded. After the forces have been calculated, the
@@ -2270,7 +2348,7 @@ contains
                      2, & ! test for atom2, since interaction indices filters for atom1 already
                      interaction_indices, &
                      separations(1:3,1), directions(1:3,1), distances(1), &
-                     calculation_type,energy,forces,enegs, &
+                     calculation_type,energy,forces,enegs,stress, &
                      many_bodies_found)
 
                 ! Only do the 3-body loop if we found many-body potentials 
@@ -2370,7 +2448,7 @@ contains
                               1, 3, & ! atom1 is 2nd in the triplet, so test for 1st and 3rd
                               interaction_indices, &
                               separations(1:3,1:2), directions(1:3,1:2), distances(1:2), &
-                              calculation_type, energy, forces, enegs, &
+                              calculation_type, energy, forces, enegs, stress, &
                               many_bodies_found)
 
                          if(many_bodies_found)then
@@ -2439,7 +2517,7 @@ contains
                                        1, 2, 4, & ! atom1 is 3rd in the quadruplet
                                        interaction_indices, &
                                        separations(1:3,1:3), directions(1:3,1:3), distances(1:3), &
-                                       calculation_type, energy, forces, enegs, &
+                                       calculation_type, energy, forces, enegs, stress, &
                                        many_bodies_found)
 
 
@@ -2495,7 +2573,7 @@ contains
                                        1, 3, 4, & ! atom1 is 2nd in the quadruplet
                                        interaction_indices, &
                                        separations(1:3,1:3), directions(1:3,1:3), distances(1:3), &
-                                       calculation_type, energy, forces, enegs, &
+                                       calculation_type, energy, forces, enegs, stress, &
                                        many_bodies_found)
 
                                end if ! index4 > index3
@@ -2555,7 +2633,7 @@ contains
                               2, 3, & ! atom1 is 1st in the triplet, so test for 2nd and 3rd
                               interaction_indices, &
                               separations(1:3,1:2), directions(1:3,1:2), distances(1:2), &
-                              calculation_type, energy, forces, enegs, &
+                              calculation_type, energy, forces, enegs, stress, &
                               many_bodies_found)
 
 
@@ -2625,7 +2703,7 @@ contains
                                        1, 3, 4, & ! atom1 is 2nd in the quadruplet
                                        interaction_indices, &
                                        separations(1:3,1:3), directions(1:3,1:3), distances(1:3), &
-                                       calculation_type, energy, forces, enegs, &
+                                       calculation_type, energy, forces, enegs, stress, &
                                        many_bodies_found)
 
 
@@ -2681,7 +2759,7 @@ contains
                                        2, 3, 4, & ! atom1 is 1st in the quadruplet
                                        interaction_indices, &
                                        separations(1:3,1:3), directions(1:3,1:3), distances(1:3), &
-                                       calculation_type, energy, forces, enegs, &
+                                       calculation_type, energy, forces, enegs, stress, &
                                        many_bodies_found)
 
                                end if ! index4 > index3
@@ -2725,7 +2803,9 @@ contains
           filter = .true.
           call calculate_ewald_energy(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
                ewald_epsilon,filter,ewald_scaler,.false.,energy)
+
           total_energy = total_energy + energy
+
        end if
 
     case(force_evaluation_index)
@@ -2742,15 +2822,19 @@ contains
        ! collect data from all cpus in MPI
        call mpi_allreduce(forces,total_forces,size(forces),mpi_double_precision,&
             mpi_sum,mpi_comm_world,mpistat)
+       call mpi_allreduce(stress,total_stress,size(stress),mpi_double_precision,&
+            mpi_sum,mpi_comm_world,mpistat)
 #else
        total_forces = forces
+       total_stress = stress
 #endif
 
        if(evaluate_ewald)then
           filter = .true.
           call calculate_ewald_forces(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
-               ewald_epsilon,filter,ewald_scaler,.false.,forces)
+               ewald_epsilon,filter,ewald_scaler,.false.,forces,stress)
           total_forces = total_forces + forces
+          total_stress = total_stress + stress
        end if
 
     case(electronegativity_evaluation_index)
@@ -2791,7 +2875,16 @@ contains
 
   end subroutine core_loop_over_local_interactions
 
-
+  ! Evaluates the local potential affecting a single atom
+  !
+  ! *n_atoms number of atoms
+  ! *index1 index of the atom
+  ! *atom_singlet the atom that is targeted
+  ! *interaction_indices the interactions targeting the given atom
+  ! *calculation_type specifies if we are evaluating the energy, forces, or electronegativities
+  ! *energy calculated energy
+  ! *forces calculated forces
+  ! *enegs calculated electronegativities
   subroutine core_evaluate_local_singlet(n_atoms, &
        index1, &
        atom_singlet, &
@@ -2806,7 +2899,7 @@ contains
     type(potential) :: interaction
     double precision :: bo_factors(n_atoms), bo_sums(n_atoms), bo_gradients(3,n_atoms,3), &
          tmp_energy, tmp_forces(3,1), tmp_enegs(1), &
-         dummy_sep(3,0), dummy_dist(0)
+         dummy_sep(3,0), dummy_dist(0), dummy_virial(6)
 
 
     ! loop over potentials affecting atom1
@@ -2869,7 +2962,8 @@ contains
                      interaction%pot_index,&
                      index1,& ! atom index
                      1, & ! slot_index
-                     bo_gradients(1:3,1:n_atoms,1))
+                     bo_gradients(1:3,1:n_atoms,1),&
+                     dummy_virial)
 
                 ! Add the bond order gradient terms involving the atom1 self energy for all atoms.
                 ! That is, add the (\nabla_a b_i) v_i term with the given i (atom1) for all a.
@@ -2921,6 +3015,7 @@ contains
   end subroutine core_evaluate_local_singlet
 
 
+  !
   subroutine core_evaluate_local_doublet(n_atoms, &
        atom_doublet, &
        index1, index2, &
@@ -2932,7 +3027,7 @@ contains
     implicit none
     integer, intent(in) :: calculation_type, n_atoms, index1, index2, test_index1
     integer, pointer :: interaction_indices(:)
-    double precision, intent(out) :: energy, forces(3,n_atoms), enegs(n_atoms)
+    double precision, intent(out) :: energy, forces(3,n_atoms), enegs(n_atoms), stress(6)
     type(atom), intent(in) :: atom_doublet(2)
     double precision, intent(in) :: separations(3,1), directions(3,1), distances(1)
     logical, intent(out) :: many_bodies_found
@@ -2942,12 +3037,14 @@ contains
     type(potential) :: interaction
     double precision :: bo_factors(n_atoms), bo_sums(n_atoms), bo_gradients(3,n_atoms,3), &
          tmp_energy, tmp_forces(3,2), tmp_enegs(2), &
-         cut_factors(1), cut_gradients(3,1)
+         cut_factors(1), cut_gradients(3,1), &
+         pair_forces(3,2), bo_virial(6,2)
     logical :: is_active
 
     many_bodies_found = .false.
     atom1 = atom_doublet(1)
     atom2 = atom_doublet(2)
+
 
     ! loop over potentials affecting atom1
     do k = 1, size(interaction_indices)
@@ -3064,13 +3161,15 @@ contains
                         interaction%pot_index,&
                         index1,& ! atom index
                         1, & ! slot_index
-                        bo_gradients(1:3,1:n_atoms,1))
+                        bo_gradients(1:3,1:n_atoms,1), &
+                        bo_virial(1:6,1))
                    ! get (\nabla_a b_j) (for all a)
                    call core_get_bond_order_gradients(n_atoms,&
                         interaction%pot_index,&
                         index2,& ! atom index
                         2, & ! slot_index
-                        bo_gradients(1:3,1:n_atoms,2))
+                        bo_gradients(1:3,1:n_atoms,2), &
+                        bo_virial(1:6,2))
 
                    ! Add the bond order gradient terms involving the 
                    ! atom1-atom2 energy for all atoms.
@@ -3079,6 +3178,10 @@ contains
                    forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
                         - tmp_energy*cut_factors(1)*&
                         (bo_gradients(1:3,1:n_atoms,1)+bo_gradients(1:3,1:n_atoms,2))*0.5d0
+
+                   ! Add the contribution of bond order gradients to the stress tensor
+                   stress(1:6) = stress(1:6) - tmp_energy*cut_factors(1)* &
+                        (bo_virial(1:6,1) + bo_virial(1:6,2))*0.5d0
 
                 else
                    bo_factors = 1.d0
@@ -3090,18 +3193,30 @@ contains
                 call evaluate_forces(2,separations(1:3,1),distances(1),&
                      interaction,tmp_forces(1:3,1:2),atom_doublet) ! in Potentials.f90
 
-                ! force on atom 1:
-                forces(1:3,index1) = forces(1:3,index1) + &
-                     ( tmp_forces(1:3,1) * cut_factors(1) + &
+                ! force on atom 1:                 
+                     pair_forces(1:3,1) = ( tmp_forces(1:3,1) * cut_factors(1) + &
                      tmp_energy * cut_gradients(1:3,1) ) * &
                      ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
 
                 ! force on atom 2:
-                forces(1:3,index2) = forces(1:3,index2) + &
-                     ( tmp_forces(1:3,2) * cut_factors(1) - &
+                     pair_forces(1:3,2) = ( tmp_forces(1:3,2) * cut_factors(1) - &
                      tmp_energy * cut_gradients(1:3,1) ) * &
                      ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
 
+                forces(1:3,index1) = forces(1:3,index1) + pair_forces(1:3,1)
+                forces(1:3,index2) = forces(1:3,index2) + pair_forces(1:3,2)
+
+                !***************!
+                ! stress tensor !
+                !***************!
+                
+                ! s_xx, s_yy, s_zz, s_yz, s_xz, s_xy:
+                stress(1) = stress(1) + separations(1,1) * pair_forces(1,2)
+                stress(2) = stress(2) + separations(2,1) * pair_forces(2,2)
+                stress(3) = stress(3) + separations(3,1) * pair_forces(3,2)
+                stress(4) = stress(4) + separations(2,1) * pair_forces(3,2)
+                stress(5) = stress(5) + separations(1,1) * pair_forces(3,2)
+                stress(6) = stress(6) + separations(1,1) * pair_forces(2,2)
 
              case(electronegativity_evaluation_index)
 
@@ -3168,12 +3283,12 @@ contains
        test_index1, test_index2, &
        interaction_indices, &
        separations, directions, distances, &
-       calculation_type,energy,forces,enegs, &
+       calculation_type,energy,forces,enegs,stress, &
        many_bodies_found)
     implicit none
     integer, intent(in) :: calculation_type, n_atoms, index1, index2, index3, test_index1, test_index2
     integer, pointer :: interaction_indices(:)
-    double precision, intent(out) :: energy, forces(3,n_atoms), enegs(n_atoms)
+    double precision, intent(out) :: energy, forces(3,n_atoms), enegs(n_atoms), stress(6)
     double precision, intent(in) :: separations(3,2), directions(3,2), distances(2)
     logical, intent(out) :: many_bodies_found
     type(atom), intent(in) :: atom_triplet(3)
@@ -3183,7 +3298,8 @@ contains
     type(potential) :: interaction
     double precision :: bo_factors(n_atoms), bo_sums(n_atoms), bo_gradients(3,n_atoms,3), &
          tmp_energy, tmp_forces(3,3), tmp_enegs(3), &
-         cut_factors(2), cut_gradients(3,2)
+         cut_factors(2), cut_gradients(3,2), &
+         triplet_forces(3,3), bo_virial(6,3)
     logical :: is_active
 
     many_bodies_found = .false.
@@ -3320,25 +3436,28 @@ contains
                       ! get b_i (for all i, they have been precalculated)
                       call core_get_bond_order_factors(n_atoms,&
                            interaction%pot_index,&
-                           bo_factors) ! in Potentials.f90
+                           bo_factors)
                       ! get (\nabla_a b_i) (for all a)
                       call core_get_bond_order_gradients(n_atoms,&
                            interaction%pot_index,&
                            index1,& ! atom index
                            1, & ! slot_index
-                           bo_gradients(1:3,1:n_atoms,1)) ! in Potentials.f90
+                           bo_gradients(1:3,1:n_atoms,1), &
+                           bo_virial(1:6,1))
                       ! get (\nabla_a b_j) (for all a)
                       call core_get_bond_order_gradients(n_atoms,&
                            interaction%pot_index,&
                            index2,& ! atom index
                            2, & ! slot_index
-                           bo_gradients(1:3,1:n_atoms,2)) ! in Potentials.f90
+                           bo_gradients(1:3,1:n_atoms,2), &
+                           bo_virial(1:6,2))
                       ! get (\nabla_a b_k) (for all a)
                       call core_get_bond_order_gradients(n_atoms,&
                            interaction%pot_index,&
                            index3,& ! atom index
                            3, & ! slot_index
-                           bo_gradients(1:3,1:n_atoms,3)) ! in Potentials.f90
+                           bo_gradients(1:3,1:n_atoms,3), &
+                           bo_virial(1:6,3))
 
                       ! Add the bond order gradient terms involving the 
                       ! atom2-atom1-atom3 energy for all atoms.
@@ -3349,6 +3468,11 @@ contains
                            ( bo_gradients(1:3,1:n_atoms,1) &
                            + bo_gradients(1:3,1:n_atoms,2) &
                            + bo_gradients(1:3,1:n_atoms,3) )/3.d0
+
+                      stress(1:6) = stress(1:6) - tmp_energy*cut_factors(1)*cut_factors(2)*&
+                           ( bo_virial(1:6,1) &
+                           + bo_virial(1:6,2) &
+                           + bo_virial(1:6,3) )/3.d0
 
                    else
                       bo_factors = 1.d0
@@ -3362,16 +3486,14 @@ contains
 
 
                    ! force on atom 1:
-                   forces(1:3,index1) = forces(1:3,index1) + &
-                        ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2) + &
+                   triplet_forces(1:3,1) = ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2) + &
                         cut_gradients(1:3,1)*cut_factors(2)*tmp_energy ) * &
                         ( bo_factors(index1) &
                         + bo_factors(index2) &
                         + bo_factors(index3) )/3.d0
 
                    ! force on atom 2:
-                   forces(1:3,index2) = forces(1:3,index2) + &
-                        ( tmp_forces(1:3,2)*cut_factors(1)*cut_factors(2) + &
+                   triplet_forces(1:3,2) = ( tmp_forces(1:3,2)*cut_factors(1)*cut_factors(2) + &
                         (-cut_gradients(1:3,1)*cut_factors(2) + &
                         cut_gradients(1:3,2)*cut_factors(1)) * tmp_energy ) * &
                         ( bo_factors(index1) &
@@ -3379,13 +3501,33 @@ contains
                         + bo_factors(index3) )/3.d0
 
                    ! force on atom 3:
-                   forces(1:3,index3) = forces(1:3,index3) + &
-                        ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2) - &
+                   triplet_forces(1:3,3) = ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2) - &
                         cut_gradients(1:3,2)*cut_factors(1)*tmp_energy ) * &
                         ( bo_factors(index1) &
                         + bo_factors(index2) &
                         + bo_factors(index3) )/3.d0
 
+                   forces(1:3,index1) = forces(1:3,index1) + triplet_forces(1:3,1)
+                   forces(1:3,index2) = forces(1:3,index2) + triplet_forces(1:3,2)
+                   forces(1:3,index3) = forces(1:3,index3) + triplet_forces(1:3,3)
+                        
+                   !***************!
+                   ! stress tensor !
+                   !***************!
+                   
+                   ! s_xx, s_yy, s_zz, s_yz, s_xz, s_xy:
+                   stress(1) = stress(1) + separations(1,1) * triplet_forces(1,2) &
+                        + (separations(1,1) + separations(1,2)) * triplet_forces(1,3)
+                   stress(2) = stress(2) + separations(2,1) * triplet_forces(2,2) &
+                        + (separations(2,1) + separations(2,2)) * triplet_forces(2,3)
+                   stress(3) = stress(3) + separations(3,1) * triplet_forces(3,2) &
+                        + (separations(3,1) + separations(3,2)) * triplet_forces(3,3)
+                   stress(4) = stress(4) + separations(2,1) * triplet_forces(3,2) &
+                        + (separations(2,1) + separations(2,2)) * triplet_forces(3,3)
+                   stress(5) = stress(5) + separations(1,1) * triplet_forces(3,2) &
+                        + (separations(1,1) + separations(1,2)) * triplet_forces(3,3)
+                   stress(6) = stress(6) + separations(1,1) * triplet_forces(2,2) &
+                        + (separations(1,1) + separations(1,2)) * triplet_forces(2,3)
 
                 case(electronegativity_evaluation_index)
 
@@ -3471,13 +3613,13 @@ contains
        test_index1, test_index2, test_index3, &
        interaction_indices, &
        separations, directions, distances, &
-       calculation_type,energy,forces,enegs, &
+       calculation_type,energy,forces,enegs,stress, &
        many_bodies_found)
     implicit none
     integer, intent(in) :: calculation_type, n_atoms, index1, index2, index3, index4, &
          test_index1, test_index2, test_index3
     integer, pointer :: interaction_indices(:)
-    double precision, intent(out) :: energy, forces(3,n_atoms), enegs(n_atoms)
+    double precision, intent(out) :: energy, forces(3,n_atoms), enegs(n_atoms), stress(6)
     double precision, intent(in) :: separations(3,3), directions(3,3), distances(3)
     logical, intent(out) :: many_bodies_found
     type(atom), intent(in) :: atom_quadruplet(4)
@@ -3487,7 +3629,7 @@ contains
     type(potential) :: interaction
     double precision :: bo_factors(n_atoms), bo_sums(n_atoms), bo_gradients(3,n_atoms,4), &
          tmp_energy, tmp_forces(3,4), tmp_enegs(4), &
-         cut_factors(3), cut_gradients(3,3)
+         cut_factors(3), cut_gradients(3,3), quad_forces(3,4), bo_virial(6,4)
     logical :: is_active
 
 
@@ -3645,25 +3787,29 @@ contains
                               interaction%pot_index,&
                               index1,& ! atom index
                               1, & ! slot_index
-                              bo_gradients(1:3,1:n_atoms,1)) ! in Potentials.f90
+                              bo_gradients(1:3,1:n_atoms,1), &
+                              bo_virial(1:6,1)) ! in Potentials.f90
                          ! get (\nabla_a b_j) (for all a)
                          call core_get_bond_order_gradients(n_atoms,&
                               interaction%pot_index,&
                               index2,& ! atom index
                               2, & ! slot_index
-                              bo_gradients(1:3,1:n_atoms,2)) ! in Potentials.f90
+                              bo_gradients(1:3,1:n_atoms,2), &
+                              bo_virial(1:6,2)) ! in Potentials.f90
                          ! get (\nabla_a b_k) (for all a)
                          call core_get_bond_order_gradients(n_atoms,&
                               interaction%pot_index,&
                               index3,& ! atom index
                               3, & ! slot_index
-                              bo_gradients(1:3,1:n_atoms,3)) ! in Potentials.f90
+                              bo_gradients(1:3,1:n_atoms,3), &
+                              bo_virial(1:6,3)) ! in Potentials.f90
                          ! get (\nabla_a b_l) (for all a)
                          call core_get_bond_order_gradients(n_atoms,&
                               interaction%pot_index,&
                               index4,& ! atom index
                               4, & ! slot_index
-                              bo_gradients(1:3,1:n_atoms,4)) ! in Potentials.f90
+                              bo_gradients(1:3,1:n_atoms,4), &
+                              bo_virial(1:6,4)) ! in Potentials.f90
 
                          ! Add the bond order gradient terms involving the 
                          ! atom2-atom1-atom3 energy for all atoms.
@@ -3675,6 +3821,12 @@ contains
                               + bo_gradients(1:3,1:n_atoms,2) &
                               + bo_gradients(1:3,1:n_atoms,3) &
                               + bo_gradients(1:3,1:n_atoms,4) )/4.d0
+
+                         stress(1:6) = stress(1:6) - tmp_energy*cut_factors(1)*cut_factors(2)*cut_factors(3)* &
+                              ( bo_virial(1:6,1) &
+                              + bo_virial(1:6,2) &
+                              + bo_virial(1:6,3) &
+                              + bo_virial(1:6,4) )/4.d0
 
                       else
                          bo_factors = 1.d0
@@ -3688,8 +3840,7 @@ contains
                            tmp_forces(1:3,1:4),atom_quadruplet) ! in Potentials.f90
 
                       ! force on atom 1:
-                      forces(1:3,index1) = forces(1:3,index1) + &
-                           ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2)*cut_factors(3) + &
+                      quad_forces(1:3,1) = ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2)*cut_factors(3) + &
                            cut_gradients(1:3,1)*cut_factors(2)*cut_factors(3)*tmp_energy ) * &
                            ( bo_factors(index1) &
                            + bo_factors(index2) &
@@ -3697,8 +3848,7 @@ contains
                            + bo_factors(index4) )/4.d0
 
                       ! force on atom 2:
-                      forces(1:3,index2) = forces(1:3,index2) + &
-                           ( tmp_forces(1:3,2)*cut_factors(1)*cut_factors(2)*cut_factors(3) + &
+                      quad_forces(1:3,2) = ( tmp_forces(1:3,2)*cut_factors(1)*cut_factors(2)*cut_factors(3) + &
                            (-cut_gradients(1:3,1)*cut_factors(2)*cut_factors(3) + &
                            cut_gradients(1:3,2)*cut_factors(1)*cut_factors(3)) * tmp_energy ) * &
                            ( bo_factors(index1) &
@@ -3707,8 +3857,7 @@ contains
                            + bo_factors(index4) )/4.d0
 
                       ! force on atom 3:
-                      forces(1:3,index3) = forces(1:3,index3) + &
-                           ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2)*cut_factors(3) + &
+                      quad_forces(1:3,3) = ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2)*cut_factors(3) + &
                            (cut_gradients(1:3,3)*cut_factors(1)*cut_factors(2) - &
                            cut_gradients(1:3,2)*cut_factors(1)*cut_factors(3)) * tmp_energy ) * &
                            ( bo_factors(index1) &
@@ -3717,13 +3866,41 @@ contains
                            + bo_factors(index4) )/4.d0
 
                       ! force on atom 4:
-                      forces(1:3,index4) = forces(1:3,index4) + &
-                           ( tmp_forces(1:3,4)*cut_factors(1)*cut_factors(2)*cut_factors(3) - &
+                      quad_forces(1:3,4) = ( tmp_forces(1:3,4)*cut_factors(1)*cut_factors(2)*cut_factors(3) - &
                            cut_gradients(1:3,3)*cut_factors(1)*cut_factors(2)*tmp_energy ) * &
                            ( bo_factors(index1) &
                            + bo_factors(index2) &
                            + bo_factors(index3) &
                            + bo_factors(index4) )/4.d0
+
+                      forces(1:3,index1) = forces(1:3,index1) + quad_forces(1:3,1)
+                      forces(1:3,index2) = forces(1:3,index2) + quad_forces(1:3,2)
+                      forces(1:3,index3) = forces(1:3,index3) + quad_forces(1:3,3)
+                      forces(1:3,index4) = forces(1:3,index4) + quad_forces(1:3,4)
+                        
+                   !***************!
+                   ! stress tensor !
+                   !***************!
+                   
+                   ! s_xx, s_yy, s_zz, s_yz, s_xz, s_xy:
+                   stress(1) = stress(1) + separations(1,1) * quad_forces(1,2) &
+                        + (separations(1,1) + separations(1,2)) * quad_forces(1,3) &
+                        + (separations(1,1) + separations(1,2) + separations(1,3)) * quad_forces(1,4)
+                   stress(2) = stress(2) + separations(2,1) * quad_forces(2,2) &
+                        + (separations(2,1) + separations(2,2)) * quad_forces(2,3) &
+                        + (separations(2,1) + separations(2,2) + separations(2,3)) * quad_forces(2,4)
+                   stress(3) = stress(3) + separations(3,1) * quad_forces(3,2) &
+                        + (separations(3,1) + separations(3,2)) * quad_forces(3,3) &
+                        + (separations(3,1) + separations(3,2) + separations(3,3)) * quad_forces(3,4)
+                   stress(4) = stress(4) + separations(2,1) * quad_forces(3,2) &
+                        + (separations(2,1) + separations(2,2)) * quad_forces(3,3) &
+                        + (separations(2,1) + separations(2,2) + separations(2,3)) * quad_forces(3,4)
+                   stress(5) = stress(5) + separations(1,1) * quad_forces(3,2) &
+                        + (separations(1,1) + separations(1,2)) * quad_forces(3,3) &
+                        + (separations(1,1) + separations(1,2) + separations(1,3)) * quad_forces(3,4)
+                   stress(6) = stress(6) + separations(1,1) * quad_forces(2,2) &
+                        + (separations(1,1) + separations(1,2)) * quad_forces(2,3) &
+                        + (separations(1,1) + separations(1,2) + separations(1,3)) * quad_forces(2,4)
 
 
                    case(electronegativity_evaluation_index)
@@ -3803,43 +3980,6 @@ contains
   end subroutine core_evaluate_local_quadruplet
 
 
-  subroutine core_calculate_stress(n_atoms,stress)
-    implicit none
-    integer, intent(in) :: n_atoms
-    double precision, intent(out) :: stress(6)
-    double precision :: forces(3,n_atoms), inv_v, wrapped(3), velocity(3), &
-         s_xx, s_yy, s_zz, s_xy, s_xz, s_yz
-    integer :: i
-
-    call core_calculate_forces(n_atoms,forces)
-    ! the stress vector has the components (xx,yy,zz,yz,xz,xy)
-    
-    ! s_ab = 1/V sum ( m_i v_i,a v_i,b + r_i,a f_i,b )
-    s_xx = 0.d0
-    s_xy = 0.d0
-    s_xz = 0.d0
-    s_yy = 0.d0
-    s_yz = 0.d0
-    s_zz = 0.d0
-
-    inv_v = 1.d0 / cell%volume
-
-    do i = 1, n_atoms
-       !call wrapped_coordinates(atoms(i)%position(1:3),cell,wrapped)
-       wrapped(1:3) = atoms(i)%position(1:3)
-       velocity(1:3) = atoms(i)%momentum(1:3) / atoms(i)%mass
-
-       s_xx = s_xx + velocity(1) * atoms(i)%momentum(1) + wrapped(1) * forces(1,i)
-       s_yy = s_yy + velocity(2) * atoms(i)%momentum(2) + wrapped(2) * forces(2,i)
-       s_zz = s_zz + velocity(3) * atoms(i)%momentum(3) + wrapped(3) * forces(3,i)
-       s_xy = s_xy + velocity(1) * atoms(i)%momentum(2) + wrapped(1) * forces(2,i)
-       s_xz = s_xz + velocity(1) * atoms(i)%momentum(3) + wrapped(1) * forces(3,i)
-       s_yz = s_yz + velocity(2) * atoms(i)%momentum(3) + wrapped(2) * forces(3,i)
-    end do
-
-    stress = (/ s_xx, s_yy, s_zz, s_yz, s_xz, s_xy /) * inv_v
-
-  end subroutine core_calculate_stress
 
 
 ! !!!: core_calculate_forces
@@ -3862,13 +4002,15 @@ contains
   !
   ! *n_atoms number of atoms
   ! *total_forces an array containing the calculated forces for all atoms
-  subroutine core_calculate_forces(n_atoms,total_forces)
+  ! *total_stress as array containing the calculated stress tensor
+  subroutine core_calculate_forces(n_atoms,total_forces,total_stress)
     implicit none
     integer, intent(in) :: n_atoms
-    double precision, intent(out) :: total_forces(3,n_atoms)
+    double precision, intent(out) :: total_forces(3,n_atoms), total_stress(6)
     double precision :: dummy_energy, dummy_enegs(n_atoms)
 
-    call core_loop_over_local_interactions(n_atoms,force_evaluation_index,dummy_energy,total_forces,dummy_enegs)
+    call core_loop_over_local_interactions(n_atoms,force_evaluation_index,&
+         dummy_energy,total_forces,dummy_enegs,total_stress)
     return
 
   end subroutine core_calculate_forces
@@ -3901,9 +4043,10 @@ contains
     implicit none
     integer, intent(in) :: n_atoms
     double precision, intent(out) :: total_enegs(n_atoms)
-    double precision :: dummy_energy, dummy_forces(3,n_atoms)
+    double precision :: dummy_energy, dummy_forces(3,n_atoms), dummy_stress(6)
 
-    call core_loop_over_local_interactions(n_atoms,electronegativity_evaluation_index,dummy_energy,dummy_forces,total_enegs)
+    call core_loop_over_local_interactions(n_atoms,electronegativity_evaluation_index,&
+         dummy_energy,dummy_forces,total_enegs,dummy_stress)
     return
 
   end subroutine core_calculate_electronegativities
@@ -3929,9 +4072,10 @@ contains
     implicit none
     integer, intent(in) :: n_atoms
     double precision, intent(out) :: total_energy
-    double precision :: dummy_forces(3,n_atoms), dummy_enegs(n_atoms)
+    double precision :: dummy_forces(3,n_atoms), dummy_enegs(n_atoms), dummy_stress(6)
 
-    call core_loop_over_local_interactions(n_atoms,energy_evaluation_index,total_energy,dummy_forces,dummy_enegs)
+    call core_loop_over_local_interactions(n_atoms,energy_evaluation_index,&
+         total_energy,dummy_forces,dummy_enegs,dummy_stress)
     return
 
   end subroutine core_calculate_energy

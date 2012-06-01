@@ -597,10 +597,10 @@ contains
     implicit none
     integer, intent(in) :: n_atoms, group_index, atom_index
     double precision, intent(out) :: gradients(3,n_atoms)
-    double precision :: bond_orders(n_atoms)
+    double precision :: bond_orders(n_atoms), virial(6)
  
     call core_get_bond_order_sums(n_atoms,group_index,bond_orders) ! in Core.f90
-    call core_calculate_bond_order_gradients(n_atoms,group_index,atom_index,bond_orders,gradients) ! in Core.f90
+    call core_calculate_bond_order_gradients(n_atoms,group_index,atom_index,bond_orders,gradients,virial) ! in Core.f90
 
   end subroutine calculate_bond_order_gradients
 
@@ -626,10 +626,10 @@ contains
     implicit none
     integer, intent(in) :: n_atoms, group_index, atom_index
     double precision, intent(out) :: gradients(3,n_atoms)
-    double precision :: bond_orders(n_atoms)
+    double precision :: bond_orders(n_atoms), virial(6)
  
     call core_get_bond_order_sums(n_atoms,group_index,bond_orders) ! in Core.f90
-    call core_calculate_bond_order_gradients_of_factor(n_atoms,group_index,atom_index,bond_orders,gradients) ! in Core.f90
+    call core_calculate_bond_order_gradients_of_factor(n_atoms,group_index,atom_index,bond_orders,gradients,virial) ! in Core.f90
 
   end subroutine calculate_bond_order_gradients_of_factor
 
@@ -650,18 +650,19 @@ contains
   end subroutine calculate_energy
 
 
-  ! Returns forces acting on the particles
+  ! Returns forces acting on the particles and the stress tensor
   ! 
   ! Calls :func:`core_calculate_forces`
   ! 
   ! *n_atoms number of atoms
   ! *forces array of forces on all atoms
-  subroutine calculate_forces(n_atoms,forces)
+  ! *stress array containing the components of the stress tensor (in order :math:`xx,yy,zz,yz,xz,xy`)
+  subroutine calculate_forces(n_atoms,forces,stress)
     implicit none
     integer, intent(in) :: n_atoms
-    double precision, intent(out) :: forces(3,n_atoms)
+    double precision, intent(out) :: forces(3,n_atoms), stress(6)
 
-    call core_calculate_forces(n_atoms,forces) ! in Core.f90
+    call core_calculate_forces(n_atoms,forces,stress) ! in Core.f90
 
   end subroutine calculate_forces
 
@@ -681,20 +682,6 @@ contains
 
   end subroutine calculate_electronegativities
 
-
-
-  ! Calculates the stress tensor of the cell
-  !
-  ! ToDo: implement this through force calculation and coordinates
-  !
-  subroutine calculate_stress(n_atoms,stress)
-    implicit none
-    integer, intent(in) :: n_atoms
-    double precision, intent(out) :: stress(6)
-    
-    call core_calculate_stress(n_atoms,stress) ! in Core.f90
-
-  end subroutine calculate_stress
 
 
   ! Below are a group of routines used for inquiring the core

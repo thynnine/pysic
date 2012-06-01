@@ -16,6 +16,7 @@ import copy
 import debug as d
 import math
 
+version = '0.4.3'
 
 #
 # PySiC : Pythonic Simulation Code
@@ -2159,7 +2160,7 @@ class FastNeighborList(nbl.NeighborList):
             """
         
         if not Pysic.core.atoms_ready(atoms):
-            raise MissingAtomsError("Atoms have not been initialized in the core.")
+            raise MissingAtomsError("Atoms in the core do not match.")
         if Pysic.core.get_atoms() != atoms:
             raise MissingAtomsError("Atoms in the core do not match.")
         
@@ -2354,7 +2355,7 @@ class CoreMirror:
         atoms: `ASE Atoms`_ object
             The atoms to be compared.
         """
-        if self.structure == None:
+        if self.structure is None:
             return False
         if(len(self.structure) != len(atoms)):
             return False
@@ -2397,7 +2398,7 @@ class CoreMirror:
         atoms: `ASE Atoms`_ object
             The cell to be compared.
         """
-        if self.structure == None:
+        if self.structure is None:
             return False
         if((self.structure.get_cell() != atoms.get_cell()).any()):
             return False
@@ -2712,7 +2713,8 @@ class Pysic:
 
 
     def get_stress(self, atoms=None):
-        """Returns the stress.
+        """Returns the stress tensor in the format 
+        :math:`[\sigma_{xx},\sigma_{yy},\sigma_{zz},\sigma_{yz},\sigma_{xz},\sigma_{xy}]`
 
         If the atoms parameter is given, it will be used for updating the
         structure assigned to the calculator prior to calculating the stress.
@@ -2722,6 +2724,32 @@ class Pysic:
         via :meth:`~pysic.Pysic.calculation_required`. If the structure
         has changed, the stress is calculated using :meth:`~pysic.Pysic.calculate_stress`
 
+        Stress (potential part) and force are evaluated in tandem. 
+        Therefore, invoking the evaluation of
+        one automatically leads to the evaluation of the other. Thus, if you have just
+        evaluated the forces, the stress will already be known.
+    
+        This is because the
+        stress tensor is formally defined as
+            
+        .. math::
+        
+            \\sigma_{AB} = \\frac{1}{V} \\sum_i \\left[ m_i (v_i)_A (v_i)_B + (r_i)_A (f_i)_B \\right],
+        
+            
+        where :math:`m`, :math:`v`, :math:`r`, and :math:`f` are mass, velocity,
+        position and force of atom :math:`i`, and :math:`A`, :math:`B` denote the
+        cartesian coordinates :math:`x,y,z`. However, if periodic boundaries are used,
+        the absolute coordinates cannot be used (there would be discontinuities at the
+        boundaries of the simulation cell). Instead, the potential energy terms 
+        :math:`(r_i)_A (f_i)_B` must be evaluated locally for pair, triplet, and many
+        body forces using the relative coordinates of the particles involved in the
+        local interactions. These coordinates are only available during the actual force
+        evaluation when the local interactions are looped over. Thus, calculating the stress
+        requires doing the full force evaluation cycle. On the other hand, calculating the
+        stress is not a great effort compared to the force evaluation, so it is convenient
+        to evaluate the stress always when the forces are evaluated.
+                        
         Parameters:
 
         atoms: `ASE atoms`_ object
@@ -2731,7 +2759,23 @@ class Pysic:
         if self.calculation_required(atoms,'stress'):
             self.calculate_stress()
         
-        return self.stress
+        # self.stress contains the potential contribution to the stress tensor
+        # but we add the kinetic contribution on the fly
+        momenta = self.structure.get_momenta()
+        masses = self.structure.get_masses()
+        velocities = np.divide( momenta, np.array([masses,masses,masses]).transpose() )
+
+        kinetic_stress = np.array([0.0]*6)
+        
+        # s_xx, s_yy, s_zz, s_yz, s_xz, s_xy
+        kinetic_stress[0] = np.dot( momenta[:,0], velocities[:,0] )
+        kinetic_stress[1] = np.dot( momenta[:,1], velocities[:,1] )
+        kinetic_stress[2] = np.dot( momenta[:,2], velocities[:,2] )
+        kinetic_stress[3] = np.dot( momenta[:,1], velocities[:,2] )
+        kinetic_stress[4] = np.dot( momenta[:,0], velocities[:,2] )
+        kinetic_stress[5] = np.dot( momenta[:,0], velocities[:,1] )
+                
+        return ( kinetic_stress + self.stress ) / self.structure.get_volume()
 
     
     def set_atoms(self, atoms=None):
@@ -3023,7 +3067,7 @@ class Pysic:
         if self.charge_relaxation != None:
             self.charge_relaxation.charge_relaxation()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
-        self.forces = pf.pysic_interface.calculate_forces(n_atoms).transpose()
+        self.forces, self.stress = pf.pysic_interface.calculate_forces(n_atoms).transpose()
         
 
     def calculate_energy(self):
@@ -3046,17 +3090,12 @@ class Pysic:
 
         Calls the Fortran core to calculate the stress tensor for the currently assigned structure.
         """
-
-        #
-        # ToDo: implement stress tensor calculation based on the forces and positions
-        #
-        self.stress = [0.0]*6
         if self.charge_relaxation != None:
             self.charge_relaxation.charge_relaxation()
         
         self.set_core()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
-        self.stress = pf.pysic_interface.calculate_stress(n_atoms)
+        self.forces, self.stress = pf.pysic_interface.calculate_forces(n_atoms)
     
 
     def set_core(self):
@@ -3085,14 +3124,14 @@ class Pysic:
             self.initialize_fortran_core()
         else:
             
+            if not Pysic.core.cell_ready(self.structure):
+                self.update_core_supercell()
+            
             if not Pysic.core.atoms_ready(self.structure):
                 self.update_core_coordinates()
 
             if not Pysic.core.charges_ready(self.structure):
                 self.update_core_charges()
-
-            if not Pysic.core.cell_ready(self.structure):
-                self.update_core_supercell()
                     
             if not Pysic.core.potentials_ready(self.potentials):
                 self.update_core_potentials()

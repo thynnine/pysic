@@ -1474,14 +1474,15 @@ contains
   ! *scaler a list of numerical values to scale the individual charges of the atoms
   ! *include_dipole_correction if true, a dipole correction term is included in the energy
   ! *total_forces the calculated forces
+  ! *total_stress the calculated stress
   subroutine calculate_ewald_forces(n_atoms,atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
-       electric_constant,filter,scaler,include_dipole_correction,total_forces)
+       electric_constant,filter,scaler,include_dipole_correction,total_forces,total_stress)
     implicit none
     type(atom), intent(in) :: atoms(n_atoms)
     type(supercell), intent(in) :: cell
     double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(n_atoms)
     integer, intent(in) :: n_atoms, reciprocal_cutoff(3)
-    double precision, intent(out) :: total_forces(3,n_atoms)
+    double precision, intent(out) :: total_forces(3,n_atoms), total_stress(6)
     logical, intent(in) :: filter(n_atoms), include_dipole_correction
     double precision :: forces(3,3,n_atoms), sum_forces(3,3,n_atoms), tmp_forces(3), charge1, charge2, &
          inv_eps_2v, inv_eps_4pi, sin_dot, cos_dot, &
@@ -1493,7 +1494,7 @@ contains
          tmp_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
          -reciprocal_cutoff(2):reciprocal_cutoff(2), &
          -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         nabla_factor(3,2), &
+         nabla_factor(3,2), stress(6), &
          k_vector(3), dot, &
          dipole(1:3), tmp_dipole(1:3)
     integer :: index1, index2, j, k1, k2, k3
@@ -1506,6 +1507,9 @@ contains
     s_factor = 0.d0
     tmp_factor = 0.d0
     nabla_factor = 0.d0
+
+    stress = 0.d0
+    total_stress = 0.d0
 
     inv_eps_4pi = 1.d0 / (4.d0 * pi * electric_constant)
     inv_eps_2v = 1.d0 / (2.d0 * cell%volume * electric_constant)
@@ -1559,6 +1563,19 @@ contains
 
                       forces(1:3,1,index1) = forces(1:3,1,index1) + tmp_forces
                       forces(1:3,1,index2) = forces(1:3,1,index2) - tmp_forces
+
+                      !***************!
+                      ! stress tensor !
+                      !***************!
+                
+                      ! s_xx, s_yy, s_zz, s_yz, s_xz, s_xy:
+                      stress(1) = stress(1) - separation(1) * tmp_forces(1)
+                      stress(2) = stress(2) - separation(2) * tmp_forces(2)
+                      stress(3) = stress(3) - separation(3) * tmp_forces(3)
+                      stress(4) = stress(4) - separation(2) * tmp_forces(3)
+                      stress(5) = stress(5) - separation(1) * tmp_forces(3)
+                      stress(6) = stress(6) - separation(1) * tmp_forces(2)
+
                    end if
 
                 end if
@@ -1614,7 +1631,6 @@ contains
     end if
 #else
     s_factor = tmp_factor
-    !nabla_factor = tmp_nabla_factor
     dipole = tmp_dipole
 #endif
 
@@ -1667,6 +1683,15 @@ contains
                 end do
              end do
           end do
+
+          ! stress tensor
+          stress(1) = stress(1) + atoms(index1)%position(1) * (forces(1,2,index1) + forces(1,3,index1))
+          stress(2) = stress(2) + atoms(index1)%position(2) * (forces(2,2,index1) + forces(2,3,index1))
+          stress(3) = stress(3) + atoms(index1)%position(3) * (forces(3,2,index1) + forces(3,3,index1))
+          stress(4) = stress(4) + atoms(index1)%position(2) * (forces(3,2,index1) + forces(3,3,index1))
+          stress(5) = stress(5) + atoms(index1)%position(1) * (forces(3,2,index1) + forces(3,3,index1))
+          stress(6) = stress(6) + atoms(index1)%position(1) * (forces(2,2,index1) + forces(2,3,index1))
+
        end if
     end do
 
@@ -1676,9 +1701,13 @@ contains
          mpi_sum,mpi_comm_world,mpistat)
     total_forces(1:3,1:n_atoms) = sum_forces(1:3,1,1:n_atoms) + &
          sum_forces(1:3,2,1:n_atoms) + sum_forces(1:3,3,1:n_atoms)
+    ! collect stress tensor
+    call mpi_allreduce(stress,total_stress,size(stress),mpi_double_precision,&
+         mpi_sum,mpi_comm_world,mpistat)
 #else
     total_forces(1:3,1:n_atoms) = forces(1:3,1,1:n_atoms) + &
          forces(1:3,2,1:n_atoms) + forces(1:3,3,1:n_atoms)
+    total_stress = stress
 #endif
 
 

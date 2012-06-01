@@ -9,6 +9,13 @@ Version history
 
 This is a list of the main updates in the different versions of Pysic.
 
+Version 0.4.3
+-------------
+
+- Added calculation of the stress tensor with the method :meth:`pysic.Pysic.get_stress`.
+- Bug fix: Fixed an issue with core initialization where changing the size of the supercell would lead to a conflict in neighbor list updating (the list update was tried before the cell update but failed due to the cell having been changed).
+
+
 Version 0.4.2
 -------------
 

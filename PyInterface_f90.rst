@@ -64,7 +64,6 @@ to, if the routine is just a redirect of the call.
     - :func:`calculate_electronegativities`
     - :func:`calculate_energy`
     - :func:`calculate_forces`
-    - :func:`calculate_stress`
     - :func:`create_atoms`
     - :func:`create_bond_order_factor_list`
     - :func:`create_cell`
@@ -336,9 +335,9 @@ Full documentation of subroutines in pysic_interface
     **energy**: double precision  **intent(out)**    *scalar*  
         total potential energy
             
-  .. function:: calculate_forces(n_atoms, forces)
+  .. function:: calculate_forces(n_atoms, forces, stress)
 
-    Returns forces acting on the particles
+    Returns forces acting on the particles and the stress tensor
     
     Calls :func:`core_calculate_forces`
     
@@ -349,14 +348,8 @@ Full documentation of subroutines in pysic_interface
         number of atoms
     **forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
         array of forces on all atoms
-            
-  .. function:: calculate_stress()
-
-    Calculates the stress tensor of the cell
-    
-    ToDo: implement this through force calculation and coordinates
-    
-
+    **stress**: double precision  **intent(out)**    *size(6)*  
+        array containing the components of the stress tensor (in order :math:`xx,yy,zz,yz,xz,xy`)
             
   .. function:: create_atoms(n_atoms, masses, charges, positions, momenta, tags, elements)
 
