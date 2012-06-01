@@ -14,11 +14,12 @@ Version 0.4.2
 
 - Restructured the interaction evaluation loops in the Fortran core (:ref:`potentials`)
 - Added support for 4-body potentials
-- Added the :ref:`dihedral angle potential` potential
-- Added the :ref:`Buckingham potential` potential
-- Added the :ref:`power decay potential` potential
-- Added the :ref:`power decay bond order factor` bond order factor
+- Added the :ref:`dihedral angle potential`
+- Added the :ref:`Buckingham potential`
+- Added the :ref:`power decay potential`
+- Added the :ref:`power decay bond order factor`
 - Added the :ref:`square root scaling function`
+- Bug fix: fixed a memory issue in Ewald summation :class:`~pysic.CoulombSummation`
 - Bug fix: fixed an issue with periodic boundaries in :class:`~pysic.FastNeighborList`
 - Bug fix: fixed an issue with special parameter values in Tersoff bond order factor evaluation
 - Bug fix: fixed an issue where the cutoff of a bond order factor could overwrite a longer cutoff a potential

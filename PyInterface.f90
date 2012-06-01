@@ -687,8 +687,12 @@ contains
   !
   ! ToDo: implement this through force calculation and coordinates
   !
-  subroutine calculate_stress()
+  subroutine calculate_stress(n_atoms,stress)
     implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(out) :: stress(6)
+    
+    call core_calculate_stress(n_atoms,stress) ! in Core.f90
 
   end subroutine calculate_stress
 

@@ -2140,8 +2140,6 @@ contains
 
 ! !!!: core_loop_over_local_interactions
 
-! ToDo: add atom quadruplets to local loops
-
   ! Loops over atoms, atomic pairs, atomic triplets, and atomic quadruplets
   ! and calculates the contributions from local potentials to energy, forces, 
   ! or electronegativities. This routine is called from the routines
@@ -2929,7 +2927,7 @@ contains
        test_index1, &
        interaction_indices, &
        separations, directions, distances, &
-       calculation_type,energy,forces,enegs, &
+       calculation_type,energy,forces,enegs,stress, &
        many_bodies_found)
     implicit none
     integer, intent(in) :: calculation_type, n_atoms, index1, index2, test_index1
@@ -3805,6 +3803,43 @@ contains
   end subroutine core_evaluate_local_quadruplet
 
 
+  subroutine core_calculate_stress(n_atoms,stress)
+    implicit none
+    integer, intent(in) :: n_atoms
+    double precision, intent(out) :: stress(6)
+    double precision :: forces(3,n_atoms), inv_v, wrapped(3), velocity(3), &
+         s_xx, s_yy, s_zz, s_xy, s_xz, s_yz
+    integer :: i
+
+    call core_calculate_forces(n_atoms,forces)
+    ! the stress vector has the components (xx,yy,zz,yz,xz,xy)
+    
+    ! s_ab = 1/V sum ( m_i v_i,a v_i,b + r_i,a f_i,b )
+    s_xx = 0.d0
+    s_xy = 0.d0
+    s_xz = 0.d0
+    s_yy = 0.d0
+    s_yz = 0.d0
+    s_zz = 0.d0
+
+    inv_v = 1.d0 / cell%volume
+
+    do i = 1, n_atoms
+       !call wrapped_coordinates(atoms(i)%position(1:3),cell,wrapped)
+       wrapped(1:3) = atoms(i)%position(1:3)
+       velocity(1:3) = atoms(i)%momentum(1:3) / atoms(i)%mass
+
+       s_xx = s_xx + velocity(1) * atoms(i)%momentum(1) + wrapped(1) * forces(1,i)
+       s_yy = s_yy + velocity(2) * atoms(i)%momentum(2) + wrapped(2) * forces(2,i)
+       s_zz = s_zz + velocity(3) * atoms(i)%momentum(3) + wrapped(3) * forces(3,i)
+       s_xy = s_xy + velocity(1) * atoms(i)%momentum(2) + wrapped(1) * forces(2,i)
+       s_xz = s_xz + velocity(1) * atoms(i)%momentum(3) + wrapped(1) * forces(3,i)
+       s_yz = s_yz + velocity(2) * atoms(i)%momentum(3) + wrapped(2) * forces(3,i)
+    end do
+
+    stress = (/ s_xx, s_yy, s_zz, s_yz, s_xz, s_xy /) * inv_v
+
+  end subroutine core_calculate_stress
 
 
 ! !!!: core_calculate_forces

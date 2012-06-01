@@ -2589,13 +2589,13 @@ class Pysic:
         
         for mark in list_of_quantities:
             if mark == 'energy':
-                do_it.append(self.energy == None)
+                do_it.append(self.energy is None)
             elif mark == 'forces':
-                do_it.append(self.forces == None)
+                do_it.append(self.forces is None)
             elif mark == 'electronegativities':
-                do_it.append(self.electronegativities == None)
+                do_it.append(self.electronegativities is None)
             elif mark == 'stress':
-                do_it.append(self.stress == None)
+                do_it.append(self.stress is None)
             else:
                 do_it.append(False)
         
@@ -3050,9 +3050,14 @@ class Pysic:
         #
         # ToDo: implement stress tensor calculation based on the forces and positions
         #
-        self.stress = 0.0
+        self.stress = [0.0]*6
+        if self.charge_relaxation != None:
+            self.charge_relaxation.charge_relaxation()
+        
+        self.set_core()
+        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        self.stress = pf.pysic_interface.calculate_stress(n_atoms)
     
-
 
     def set_core(self):
         """Sets up the Fortran core for calculation.
