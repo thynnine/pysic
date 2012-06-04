@@ -220,7 +220,7 @@ print np.linalg.inv(system.get_cell()).transpose()
 
 
 
-if False:
+if True:
     system = ase.Atoms('Na4Cl4',[[0.5,0.5,0.5],
     [1.5,1.5,0.5],
     [1.5,0.5,1.5],
@@ -231,7 +231,7 @@ if False:
     [1.5,1.5,1.5]])
     
     system.set_charges([2,1,1,1,-1,-1,-1,-1])
-    system.set_cell([2,2,2])
+    system.set_cell([[2,0,0],[0,2,0],[0,0,2]])
     system.set_pbc([True,True,True])
     
     calc = pysic.Pysic()
@@ -280,7 +280,7 @@ if False:
     er=str(ewald_ene/4+1.747564594633))
     """            
 
-if False:
+if True:
     #pot = pysic.Potential('force',parameters=[1.0,2.0,3.0],symbols=[['Na'],['Cl']])
     #calc.add_potential(pot)
     

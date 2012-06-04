@@ -14,7 +14,7 @@ Version 0.4.3
 
 - Added calculation of the stress tensor with the method :meth:`pysic.Pysic.get_stress`.
 - Bug fix: Fixed an issue with core initialization where changing the size of the supercell would lead to a conflict in neighbor list updating (the list update was tried before the cell update but failed due to the cell having been changed).
-
+- Bug fix: Fixed an issue with the parallel neighbor list building algorithm which did not properly broadcast the calculated lists to all cpus.
 
 Version 0.4.2
 -------------

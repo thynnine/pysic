@@ -17,6 +17,7 @@ import debug as d
 import math
 
 version = '0.4.3'
+"""program version"""
 
 #
 # PySiC : Pythonic Simulation Code
@@ -2734,12 +2735,14 @@ class Pysic:
             
         .. math::
         
-            \\sigma_{AB} = \\frac{1}{V} \\sum_i \\left[ m_i (v_i)_A (v_i)_B + (r_i)_A (f_i)_B \\right],
+            \\sigma_{AB} = -\\frac{1}{V} \\sum_i \\left[ m_i (v_i)_A (v_i)_B + (r_i)_A (f_i)_B \\right],
         
             
         where :math:`m`, :math:`v`, :math:`r`, and :math:`f` are mass, velocity,
         position and force of atom :math:`i`, and :math:`A`, :math:`B` denote the
-        cartesian coordinates :math:`x,y,z`. However, if periodic boundaries are used,
+        cartesian coordinates :math:`x,y,z`. 
+        (The minus sign is there just to be consistent with the NPT routines in `ASE`_.) 
+        However, if periodic boundaries are used,
         the absolute coordinates cannot be used (there would be discontinuities at the
         boundaries of the simulation cell). Instead, the potential energy terms 
         :math:`(r_i)_A (f_i)_B` must be evaluated locally for pair, triplet, and many
@@ -2775,7 +2778,8 @@ class Pysic:
         kinetic_stress[4] = np.dot( momenta[:,0], velocities[:,2] )
         kinetic_stress[5] = np.dot( momenta[:,0], velocities[:,1] )
                 
-        return ( kinetic_stress + self.stress ) / self.structure.get_volume()
+        # ASE NPT simulator wants the pressure with an inversed sign
+        return -( kinetic_stress + self.stress ) / self.structure.get_volume()
 
     
     def set_atoms(self, atoms=None):
@@ -3056,7 +3060,7 @@ class Pysic:
         
     
     def calculate_forces(self):
-        """Calculates forces.
+        """Calculates forces (and the potential part of the stress tensor).
 
         Calls the Fortran core to calculate forces for the currently assigned structure.
             
@@ -3067,7 +3071,8 @@ class Pysic:
         if self.charge_relaxation != None:
             self.charge_relaxation.charge_relaxation()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
-        self.forces, self.stress = pf.pysic_interface.calculate_forces(n_atoms).transpose()
+        self.forces, self.stress = pf.pysic_interface.calculate_forces(n_atoms)#.transpose()
+        self.forces = self.forces.transpose()
         
 
     def calculate_energy(self):
@@ -3086,7 +3091,7 @@ class Pysic:
 
 
     def calculate_stress(self):
-        """Calculates the stress tensor.
+        """Calculates the potential part of the stress tensor (and forces).
 
         Calls the Fortran core to calculate the stress tensor for the currently assigned structure.
         """
@@ -3096,7 +3101,8 @@ class Pysic:
         self.set_core()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.forces, self.stress = pf.pysic_interface.calculate_forces(n_atoms)
-    
+        self.forces = self.forces.transpose()
+
 
     def set_core(self):
         """Sets up the Fortran core for calculation.

@@ -4011,7 +4011,6 @@ contains
 
     call core_loop_over_local_interactions(n_atoms,force_evaluation_index,&
          dummy_energy,total_forces,dummy_enegs,total_stress)
-    return
 
   end subroutine core_calculate_forces
 
@@ -4342,8 +4341,9 @@ contains
 
     ! stack the lists on cpu 0 and broadcast them to all cpus
     call mpi_stack(nbors_and_offsets,n_nbs,4,n_atoms,max_n_nbors)
-    call mpi_bcast(nbors_and_offsets,n_atoms*max_n_nbors,mpi_integer,0,mpi_comm_world,mpistat)
+    call mpi_bcast(nbors_and_offsets,4*n_atoms*max_n_nbors,mpi_integer,0,mpi_comm_world,mpistat)
     call mpi_bcast(n_nbs,n_atoms,mpi_integer,0,mpi_comm_world,mpistat)
+
 
 #endif
 
@@ -4351,7 +4351,6 @@ contains
        call core_create_neighbor_list(n_nbs(atom1_index),atom1_index,&
             nbors_and_offsets(1,1:n_nbs(atom1_index),atom1_index),&
             nbors_and_offsets(2:4,1:n_nbs(atom1_index),atom1_index))
-       !write(*,*) "atom ", atom1_index, ":", nbors_and_offsets(1,1:n_nbs(atom1_index),atom1_index)-1
     end do
 
   end subroutine core_build_neighbor_lists
@@ -4395,5 +4394,65 @@ contains
 
   end subroutine core_get_neighbor_list_of_atom
 
+
+  ! Write atomic coordinates and other info in a file.
+  ! This is only for debugging.
+  subroutine core_debug_dump(forces)
+    implicit none
+    double precision, intent(in) :: forces(:,:)
+    integer :: step = 10
+    character(len=13) :: filename
+    integer :: i, j, k, channel, lowest, lowest_index
+    double precision :: separation(3)
+    type(neighbor_list) :: nbors
+    logical, allocatable :: taken(:)
+    
+
+    step = step+1
+    write(*,*) "atom 1 at step ",step,"on cpu ", cpu_id, atoms(1)%position(1:3)
+    write(filename,'(A5,I1,A1,I2,A4)') "dump_",cpu_id,"_",step,".txt"
+    channel = 1234+cpu_id*100+step*10
+    open(channel,FILE=filename)
+
+    do i = 1, size(atoms)
+       write(channel,'(I10,F20.10,F20.10,F20.10)') i, atoms(i)%position(1:3)
+    end do
+
+    write(channel,*) ""
+
+    do i = 1, size(atoms)
+       write(channel,'(I10,F20.10,F20.10,F20.10)') i, forces(1:3,i)
+    end do
+
+    write(channel,*) ""
+
+    do i = 1, size(atoms)
+       nbors = atoms(i)%neighbor_list
+       write(channel,'(I4,I5)',advance='no') i, nbors%n_neighbors
+       allocate(taken(nbors%n_neighbors))
+       taken = .false.
+       do j = 1, nbors%n_neighbors      
+          lowest = 999999999
+          do k = 1, nbors%n_neighbors      
+             if( nbors%neighbors(k) < lowest .and. .not.taken(k) )then
+                lowest = nbors%neighbors(k)
+                lowest_index = k
+             end if
+          end do
+          taken(lowest_index) = .true.
+          call separation_vector(atoms(i)%position, &
+               atoms(nbors%neighbors(lowest_index))%position, &
+               nbors%pbc_offsets(1:3,lowest_index), &
+               cell, &
+               separation)
+          write(channel,'(I4,F9.3)',advance='no') nbors%neighbors(lowest_index), .norm.(separation)
+       end do
+       write(channel,'(A)') ""
+       deallocate(taken)
+    end do
+
+    close(channel)    
+
+  end subroutine core_debug_dump
 
 end module pysic_core

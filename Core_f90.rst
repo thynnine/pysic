@@ -83,6 +83,7 @@ to Python are simply calling routines here.
     - :func:`core_create_cell`
     - :func:`core_create_neighbor_list`
     - :func:`core_create_space_partitioning`
+    - :func:`core_debug_dump`
     - :func:`core_empty_bond_order_gradient_storage`
     - :func:`core_empty_bond_order_storage`
     - :func:`core_evaluate_local_doublet`
@@ -770,6 +771,16 @@ Full documentation of subroutines in pysic_core
     Parameters:
 
     max_cutoff: double precision  *intent(in)*    *scalar*  
+        
+            
+  .. function:: core_debug_dump(forces)
+
+    Write atomic coordinates and other info in a file.
+    This is only for debugging.
+
+    Parameters:
+
+    forces: double precision  *intent(in)*    *size(:, :)*  
         
             
   .. function:: core_empty_bond_order_gradient_storage(index)

@@ -1407,6 +1407,15 @@ contains
     s_factor = tmp_factor
 #endif
 
+
+#ifdef MPI
+    ! collect energies from all cpus in MPI (energy -> tmp_energy)
+    call mpi_allreduce(energy,tmp_energy,size(energy),mpi_double_precision,&
+         mpi_sum,mpi_comm_world,mpistat)
+#else
+    tmp_energy = energy
+#endif
+
     !
     ! calculate the reciprocal space sum
     !
@@ -1422,7 +1431,7 @@ contains
 
                 ! exp(- sigma^2 k^2 / 2) / k^2 |S(k)|^2
                 ! |z|^2 = x^2 + y^2
-                energy(3) = energy(3) + exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
+                tmp_energy(3) = tmp_energy(3) + exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
                      (distance) * &
                      (s_factor(1,k1,k2,k3)*s_factor(1,k1,k2,k3) + s_factor(2,k1,k2,k3)*s_factor(2,k1,k2,k3))
 
@@ -1431,13 +1440,6 @@ contains
        end do
     end do
 
-#ifdef MPI
-    ! collect energies from all cpus in MPI (energy -> tmp_energy)
-    call mpi_allreduce(energy,tmp_energy,size(energy),mpi_double_precision,&
-         mpi_sum,mpi_comm_world,mpistat)
-#else
-    tmp_energy = energy
-#endif
 
     ! multiply with leading coefficients
     energy(1) = tmp_energy(1) * inv_eps_4pi ! real space
@@ -1815,8 +1817,8 @@ contains
                       ! q_j / r * erfc(r / (sqrt(2) sigma))
                       tmp = -inv_eps_4pi/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
 
-                      enegs(index1) = enegs(index1) + charge2*tmp
-                      enegs(index2) = enegs(index2) + charge1*tmp
+                      tmp_enegs(index1) = tmp_enegs(index1) + charge2*tmp
+                      tmp_enegs(index2) = tmp_enegs(index2) + charge1*tmp
 
                    end if
 
@@ -1856,7 +1858,7 @@ contains
              !
              ! calculate the self energy term
              !
-             enegs(index1) = enegs(index1) + 2.d0*charge1 * inv_eps_4pi * inv_sigma_sqrt_2pi 
+             tmp_enegs(index1) = tmp_enegs(index1) + 2.d0*charge1 * inv_eps_4pi * inv_sigma_sqrt_2pi 
 
              !
              ! calculate the total charge (charged background term)
@@ -1891,61 +1893,60 @@ contains
 
     do index1 = 1, n_atoms
 
-       !
-       ! calculate the total charged background and dipole correction terms
-       !
-       enegs(index1) = enegs(index1) + scaler(index1) * inv_eps_2v * &
-            ( - gaussian_width*gaussian_width *qsum(1) )
+       if(is_my_atom(index1) .and. filter(index1))then
+          atom1 = atoms(index1)
 
-    end do
+          !
+          ! calculate the total charged background and dipole correction terms
+          !
+          tmp_enegs(index1) = tmp_enegs(index1) + scaler(index1) * inv_eps_2v * &
+               ( - gaussian_width*gaussian_width *qsum(1) )
+          
+          if(include_dipole_correction)then
+             !
+             ! dipole correction terms
+             !
+             tmp_enegs(index1) = tmp_enegs(index1) + scaler(index1) * inv_eps_2v * &
+                  ( -0.666666666666666667d0 ) * &
+                  ( atom1%position(1) * qsum(2) + &
+                  atom1%position(2) * qsum(3) + &
+                  atom1%position(3) * qsum(4) ) 
+          end if
 
-    if(include_dipole_correction)then
-       !
-       ! dipole correction terms
-       !
-       enegs(index1) = enegs(index1) + scaler(index1) * inv_eps_2v * &
-            ( -0.666666666666666667d0 ) * &
-            ( atom1%position(1) * qsum(2) + &
-            atom1%position(2) * qsum(3) + &
-            atom1%position(3) * qsum(4) ) 
-    end if
-
-    do index1 = 1, n_atoms
-       !
-       ! calculate the reciprocal space sum
-       !
-       do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
-          do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-             do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
-                if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
-
-                   k_vector = k1*cell%reciprocal_cell(1:3,1) + &
-                        k2*cell%reciprocal_cell(1:3,2) + &
-                        k3*cell%reciprocal_cell(1:3,3)
-                   distance = .norm.k_vector
-
-                   ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) d S(k) ]
-                   ! Re[ z1 z2 ] = x1 x2 - y1 y2
-                   enegs(index1) = enegs(index1) - inv_eps_2v * &
-                        exp(-gaussian_width*gaussian_width*distance*distance*0.5d0) / &
-                        (distance*distance) * 2.d0 * &
-                        (s_factor(1,k1,k2,k3)*diff_factor(1,index1,k1,k2,k3) - &
-                        s_factor(2,k1,k2,k3)*diff_factor(2,index1,k1,k2,k3))
-
-                end if
+          !
+          ! calculate the reciprocal space sum
+          !
+          do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+             do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+                do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                   if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
+                      
+                      k_vector = k1*cell%reciprocal_cell(1:3,1) + &
+                           k2*cell%reciprocal_cell(1:3,2) + &
+                           k3*cell%reciprocal_cell(1:3,3)
+                      distance = .norm.k_vector
+                      
+                      ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) d S(k) ]
+                      ! Re[ z1 z2 ] = x1 x2 - y1 y2
+                      tmp_enegs(index1) = tmp_enegs(index1) - inv_eps_2v * &
+                           exp(-gaussian_width*gaussian_width*distance*distance*0.5d0) / &
+                           (distance*distance) * 2.d0 * &
+                           (s_factor(1,k1,k2,k3)*diff_factor(1,index1,k1,k2,k3) - &
+                           s_factor(2,k1,k2,k3)*diff_factor(2,index1,k1,k2,k3))
+                      
+                   end if
+                end do
              end do
           end do
-       end do
-
+       end if
     end do
 
 #ifdef MPI
-    ! collect energies from all cpus in MPI (energy -> tmp_energy)
-    call mpi_allreduce(enegs,total_enegs,size(enegs),mpi_double_precision,&
+    ! collect electronegativities from all cpus in MPI
+    call mpi_allreduce(tmp_enegs,total_enegs,size(enegs),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
 #else
-    ! enegs: 1 - real space, 2 - self, 3 - reciprocal, 4 - dipole
-    total_enegs = enegs
+    total_enegs = tmp_enegs
 #endif
 
   end subroutine calculate_ewald_electronegativities
