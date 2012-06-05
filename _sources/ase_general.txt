@@ -1,5 +1,0 @@
-.. file:ase_general
-
-The Atomic Simulation Environment
----------------------------------
-

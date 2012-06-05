@@ -1,4 +1,0 @@
-.. file:object_oriented
-
-Thinking in objects
--------------------

@@ -1,5 +1,0 @@
-.. file:importing_pysic
-
-Importing Pysic to Python
--------------------------
-

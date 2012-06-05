@@ -1,4 +1,0 @@
-Daily build for Wed Jan 18 23:55:35 EET 2012
-
-Added a framework for the BondOrderParameters class.
-Implemented the coordination calculator in the core, but the method for calling it in Python is still missing.

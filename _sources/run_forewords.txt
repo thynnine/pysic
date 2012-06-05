@@ -1,4 +1,0 @@
-.. file:run_forewords
-
-Running Pysic
-=============

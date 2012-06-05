@@ -1,4 +1,0 @@
-Added a class CoreMirror in the python side of the program to reflect all changes made to the core. When calculations are required, it is then enough to compare the status of the Pysic calculator to the CoreMirror to determine if something has changed and the core needs updating. This is much better than the old scheme where the calculator itself just kept track of changes made. The old scheme could not catch if changes occurred outside the calculator (say, a potential was changed) and was prone to conflict if several Pysic instances were created.
-
-
-
