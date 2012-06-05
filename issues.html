@@ -1,0 +1,137 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Development &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="prev" title="Roadmap" href="roadmap.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="roadmap.html" title="Roadmap"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Development</a><ul>
+<li><a class="reference internal" href="#fixed-bugs">Fixed bugs</a></li>
+<li><a class="reference internal" href="#known-issues">Known issues</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="roadmap.html"
+                        title="previous chapter">Roadmap</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/issues.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="development">
+<span id="issues"></span><h1>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h1>
+<p>Currently, the main developer and maintainer of the code is <a class="reference external" href="http://butler.cc.tut.fi/~hynnine5/personal/">Teemu Hynninen</a> (<a class="reference external" href="http://www.tut.fi">Tampere University of Technology</a> and <a class="reference external" href="http://www.aalto.fi">Aalto University, Helsinki</a>).</p>
+<p>Please notify me of any bugs you find by mailing to teemu.hynninen tut.fi or contact me on Twitter, <a class="reference external" href="https://twitter.com/#!/thynnine">&#64;thynnine</a>. Large parts of the code are still untested so you should expect to find bugs.</p>
+<div class="section" id="fixed-bugs">
+<h2>Fixed bugs<a class="headerlink" href="#fixed-bugs" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Very serious MPI bug in the <a class="reference internal" href="fastneighborlist class.html#pysic.FastNeighborList.build" title="pysic.FastNeighborList.build"><tt class="xref py py-meth docutils literal"><span class="pre">build()</span></tt></a> method of <a class="reference internal" href="fastneighborlist class.html#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">pysic.FastNeighborList</span></tt></a>: The final lists were not broadcast correctly to all cpus leading to some cpus not having the full neighbor lists. Due to the way interactions are evaluated, this usually allowed the simulations to start normally, but at some point the error would manifest as incorrectly calculated forces. Moreover, the errorneous behavior was not reproducible due to the way the result of the incorrect MPI broadcast depended on the relative speed of the cpus during list building. (4.6.2012, 0.4.3)</li>
+<li>MPI bug in Ewald energy and electronegativity calculation (<a class="reference internal" href="coulombsummation class.html#pysic.CoulombSummation" title="pysic.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">pysic.CoulombSummation</span></tt></a>): Some energy components were evaluated on all cpus and summed together. (3.6.2012, 0.4.3)</li>
+<li>Core update issue: Changing the size of the supercell lead to conflict in neighbor list update in <a class="reference internal" href="fastneighborlist class.html#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">pysic.FastNeighborList</span></tt></a> since the list update was tried before the cell was updated in the core. This was no problem for the ASE neighbor list, but the new list building method requires that the Fortran core matches the atomic system in Python. (31.5.2012)</li>
+<li>Performance issue in Ewald force calculation (<a class="reference internal" href="coulombsummation class.html#pysic.CoulombSummation" title="pysic.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">pysic.CoulombSummation</span></tt></a>, <a class="reference internal" href="Potentials_f90.html#calculate_ewald_forces" title="calculate_ewald_forces"><tt class="xref py py-meth docutils literal"><span class="pre">calculate_ewald_forces()</span></tt></a>): The force calculation routine saved in memory a huge array of structure factor gradients which were only used once and not calculated in parallel. This was a huge waste of memory and a performance bottleneck. (30.5.2012, 0.4.2)</li>
+<li>Index error in FastNeighborList offsets (<a class="reference internal" href="fastneighborlist class.html#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">pysic.FastNeighborList</span></tt></a>). Also, the offsets passed to Python were in Fortran array order, i.e., transposed. (29.5.2012, 0.4.2)</li>
+<li>Issue with bond order cutoff overwriting longer potential cutoffs: When neighbors are determined, a list of maximum cutoffs (cutoff for each atom) are needed (<a class="reference internal" href="pysic class.html#pysic.Pysic.get_individual_cutoffs" title="pysic.Pysic.get_individual_cutoffs"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.Pysic.get_individual_cutoffs()</span></tt></a>). In the determination, the cutoffs of potentials and bond order factors, as well as the Ewald real space cutoff are considered. There was an issue where the bond order factor if present was always used as the maximum even if the other were longer. (24.5.2012, 0.4.2)</li>
+<li>Index error in the 3-body evaluation loop leading to wrong forces. (24.5.2012, 0.4.2)</li>
+<li>Issues with how wrapping was done in the FastNeighborList search (<a class="reference internal" href="fastneighborlist class.html#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">pysic.FastNeighborList</span></tt></a>): The neighbor finding used only wrapped atomic coordinates to locate neighbors. This could lead to atoms crossing a periodic boundary and thus abruptly changing their wrapped position which was not seen by the neighbor offset until the list was refreshed. Changed this so that the list works in terms of absolute coordinate offsets, which do not change discontinuously. This is how the ASE list also works, and the proper way to handle the periodicity in the neighbor list. (18.05.2012, 0.4.2)</li>
+<li>Errorneous values for the Tersoff bond order factor for specific parameter values (<a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">pysic.Potential</span></tt></a>, <a class="reference internal" href="bondorderparameters class.html#tersoff-bond-order-factor"><em>Tersoff bond order factor</em></a>): There were special cases of parameters that allowed for <span class="math">\(0^0\)</span> (or <tt class="docutils literal"><span class="pre">0**0</span></tt>) and similar ill-defined expressions in the differentiation of the bond order factor, even if the gradient did exist. Added handling for some such cases. Note though that there are still parameter values that must not be used. For instance, if <span class="math">\(\eta &lt; 0\)</span>, if the sum of local bond terms is zero, one ends up evaluating <span class="math">\(\frac{1}{0}\)</span>, which is not defined either. (18.05.2012, 0.4.2)</li>
+</ul>
+</div>
+<div class="section" id="known-issues">
+<h2>Known issues<a class="headerlink" href="#known-issues" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="roadmap.html" title="Roadmap"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

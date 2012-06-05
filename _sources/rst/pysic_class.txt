@@ -1,0 +1,76 @@
+
+========================
+Pysic class
+========================
+
+This class provides an interface both to the `ASE`_ environment and the
+Fortran core of Pysic through the :mod:`~pysic_fortran` module.
+In `ASE`_ terms, Pysic is a `calculator`_, i.e., an object that calculates
+forces and energies of given atomistic structures provided as an
+`ASE Atoms`_ object.
+
+.. _ASE: https://wiki.fysik.dtu.dk/ase/
+.. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html  
+.. _calculator: https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html
+
+Pysic is not a fixed potential calculator, where the interactions are determined
+solely based on the elements present in the system. Instead, Pysic allows and requires 
+the user to specify the interactions governing the system. This is done by providing
+the calculator with one or several :class:`~pysic.Potential` objects.
+
+
+List of methods
+---------------
+
+Below is a list of methods in :class:`~pysic.Pysic`, grouped according to
+the type of functionality.
+
+Structure handling
+__________________
+
+- :meth:`~pysic.Pysic.create_neighbor_lists`
+- :meth:`~pysic.Pysic.get_atoms`
+- :meth:`~pysic.Pysic.get_neighbor_lists`
+- :meth:`~pysic.Pysic.set_atoms`
+
+Potential handling
+__________________
+
+- :meth:`~pysic.Pysic.add_potential`
+- :meth:`~pysic.Pysic.get_individual_cutoffs`
+- :meth:`~pysic.Pysic.get_potentials`
+- :meth:`~pysic.Pysic.set_potentials`
+
+Calculations
+____________
+
+- :meth:`~pysic.Pysic.calculate_energy`
+- :meth:`~pysic.Pysic.calculate_forces`
+- :meth:`~pysic.Pysic.calculate_stress`
+- :meth:`~pysic.Pysic.calculation_required`
+- :meth:`~pysic.Pysic.get_forces`
+- :meth:`~pysic.Pysic.get_potential_energy`
+- :meth:`~pysic.Pysic.get_stress`
+
+Core
+____
+
+- :data:`~pysic.Pysic.core`
+- :meth:`~pysic.Pysic.core_initialization_is_forced`
+- :meth:`~pysic.Pysic.force_core_initialization`
+- :meth:`~pysic.Pysic.initialize_fortran_core`
+- :meth:`~pysic.Pysic.set_core`
+- :meth:`~pysic.Pysic.update_core_coordinates`
+- :meth:`~pysic.Pysic.update_core_neighbor_lists`
+- :meth:`~pysic.Pysic.update_core_potential_lists`
+- :meth:`~pysic.Pysic.update_core_supercell`
+
+
+
+Full documentation of the Pysic class
+-------------------------------------
+
+.. currentmodule:: pysic
+.. autoclass:: Pysic
+   :members:
+   :undoc-members:

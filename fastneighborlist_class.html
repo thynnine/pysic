@@ -1,0 +1,225 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>FastNeighborList class &mdash; Pysic 0.4.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.2 documentation" href="index.html" />
+    <link rel="up" title="Pysic module" href="pysic.html" />
+    <link rel="next" title="CoreMirror class" href="coremirror_class.html" />
+    <link rel="prev" title="ChargeRelaxation class" href="chargerelaxation_class.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coremirror_class.html" title="CoreMirror class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="chargerelaxation_class.html" title="ChargeRelaxation class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.2 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">FastNeighborList class</a><ul>
+<li><a class="reference internal" href="#the-benefit-of-neighbor-lists">The benefit of neighbor lists</a></li>
+<li><a class="reference internal" href="#faster-neighbor-search">Faster neighbor search</a></li>
+<li><a class="reference internal" href="#limitations-in-the-implementation">Limitations in the implementation</a></li>
+<li><a class="reference internal" href="#methods-inherited-from-ase-neighborlist">Methods inherited from ASE NeighborList</a></li>
+<li><a class="reference internal" href="#list-of-methods">List of methods</a></li>
+<li><a class="reference internal" href="#full-documentation-of-the-fastneighborlist-class">Full documentation of the FastNeighborList class</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="chargerelaxation_class.html"
+                        title="previous chapter">ChargeRelaxation class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="coremirror_class.html"
+                        title="next chapter">CoreMirror class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/fastneighborlist_class.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="fastneighborlist-class"></span><div class="section" id="id2">
+<h1>FastNeighborList class<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h1>
+<p>This class extends the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists">ASE NeighborList</a> class to provide a more efficient neighbor finding tool.
+The neighbor finding routine searches the neighborhoods of all atoms and for each atom records which other atoms are closer than a given cutoff distance.</p>
+<span class="target" id="neighbor-lists"></span><div class="section" id="the-benefit-of-neighbor-lists">
+<h2>The benefit of neighbor lists<a class="headerlink" href="#the-benefit-of-neighbor-lists" title="Permalink to this headline">¶</a></h2>
+<p>Atomistic pair and many-body potentials typically depend on the local atomic structure and especially the relative coordinates of the atoms. However, finding the separation vector and distance between coordinates in periodic 3D space is computationally fairly costly operation and the number of atom-atom pairs in the system grows as <span class="math">\(\mathcal{O}(n^2)\)</span>. Therefore the evaluation of local potentials can be made efficient by storing lists of nearby atoms for all particles to narrow down the scope of search for interacting neighbors.</p>
+<p>Typically one chooses a cutoff distance <span class="math">\(r_\mathrm{cut}\)</span> beyond which the atoms do not see each other. Then, the neighbor lists should always contain all the atoms within this cutoff radius <span class="math">\(r_{ij} \le r_\mathrm{cut}\)</span>. In dynamic simulations where the atoms move, the typical scheme is to list atoms within a slightly longer radius, <span class="math">\(r_\mathrm{cut} + r_\mathrm{skin}\)</span> because then the lists need not be updated until an atom has moved by more than <span class="math">\(r_\mathrm{skin}\)</span>.</p>
+<span class="target" id="fast-search"></span></div>
+<div class="section" id="faster-neighbor-search">
+<h2>Faster neighbor search<a class="headerlink" href="#faster-neighbor-search" title="Permalink to this headline">¶</a></h2>
+<p>There is a built in neighbor searching tool in ASE, <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists">ASE NeighborList</a>. It is, however, a pure Python implementation using a brute-force <span class="math">\(\mathcal{O}(n^2)\)</span> algorithm making it slow - even prohibitively slow - for large systems especially when periodic boundary conditions are used.</p>
+<p>To overcome this performance bottleneck, Pysic implements the <a class="reference internal" href="#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">FastNeighborList</span></tt></a> class. This class inherits other properties from the built-in ASE class except for the <a class="reference internal" href="#pysic.FastNeighborList.build" title="pysic.FastNeighborList.build"><tt class="xref py py-meth docutils literal"><span class="pre">build()</span></tt></a> method, which is replaced by a faster algorithm. The fast neighbor search is implemented in Fortran and parallelized with MPI. The algorithm is based on a spatial divisioning, i.e.</p>
+<ul class="simple">
+<li>the simulation volume is divided in subvolumes</li>
+<li>for each atom the subvolume where it is contained is found</li>
+<li>for each atom, the neighbors are searched for only in the adjacent subvolumes</li>
+</ul>
+<p>For a fixed cutoff, the neighborhood searched for each atom is constant and thus this is an <span class="math">\(\mathcal{O}(n)\)</span> algorithm. <a class="footnote-reference" href="#id4" id="id3">[1]</a> The method is also faster the shorter the cutoffs are. For short cutoffs (~ 5 Å), a 10000 atom periodic system is expected to be handled 100 or even 1000 fold faster with <a class="reference internal" href="#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">FastNeighborList</span></tt></a> than with the ASE method.</p>
+<table class="docutils footnote" frame="void" id="id4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[1]</a></td><td>For very large systems the number of subdivisions is limited to conserve memory so the <span class="math">\(\mathcal{O}(n)\)</span> scaling is eventually lost. Say we divide the volume in a hundred subvolumes along each axis; we end up with a million subvolumes which is a lot!</td></tr>
+</tbody>
+</table>
+<span class="target" id="limitations"></span></div>
+<div class="section" id="limitations-in-the-implementation">
+<h2>Limitations in the implementation<a class="headerlink" href="#limitations-in-the-implementation" title="Permalink to this headline">¶</a></h2>
+<p>Since the fast algorithm is implemented in Fortran, it operates on the structure allocated in the Fortran core. Therefore, even though the <a class="reference internal" href="#pysic.FastNeighborList.build" title="pysic.FastNeighborList.build"><tt class="xref py py-meth docutils literal"><span class="pre">build()</span></tt></a> method takes an <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object as an argument, it does not analyze the given structure. It does check against <a class="reference internal" href="coremirror_class.html#pysic.CoreMirror" title="pysic.CoreMirror"><tt class="xref py py-class docutils literal"><span class="pre">CoreMirror</span></tt></a> to see if the given structure matches the one in the core and raises an error if not, but accessing the core has to still be done through <a class="reference internal" href="pysic_class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>. When <a class="reference internal" href="pysic_class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> is run normally, this is automatically taken care of. As the implementation is MPI parallelized, it is also necessary that the MPI environment has been set up - especially the distribution of load (i.e. atoms) between processors must be done before the lists can be built.</p>
+<p>Another more profound limitation in the current implementation of the algorithm is the fact that it limits the neighbor finding to neighboring subvolumes. Since the subvolumes are not allowed to be larger than the actual simulation volume, the cutoffs cannot be longer than the shortest perpendicular separation between facets of the subvolume. For rectangular cells, this is just the minimum of the lengths of the vectors spanning the cell, <span class="math">\(\mathbf{v}_{i,j,k}\)</span>. For inclined cell shapes, the perpendicular distance between cell facets, <span class="math">\(d\)</span>, is</p>
+<div class="math">
+\[\begin{eqnarray}
+d_i & = & \frac{|\mathbf{v}_i \cdot \mathbf{n_i}|}{|\mathbf{n}_{i}|}\\
+\mathbf{n}_i & = & \mathbf{v}_j \times \mathbf{v}_k
+\end{eqnarray}\]</div><p>where <span class="math">\(\mathbf{n}_i\)</span> are the normal vectors of the plane spanned by the vectors <span class="math">\(\mathbf{v}_{j,k}\)</span>. If one wishes to find neighbors in a radius containing the simulation volume several times, the original <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists">ASE NeighborList</a> should be used instead. <a class="reference internal" href="pysic_class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> does this choice automatically when building the neighbor lists. One should usually avoid such long cutoffs in the first place, but if your system is very small that may not be possible.</p>
+</div>
+<div class="section" id="methods-inherited-from-ase-neighborlist">
+<h2>Methods inherited from ASE NeighborList<a class="headerlink" href="#methods-inherited-from-ase-neighborlist" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#ase.calculators.neighborlist.NeighborList.get_neighbors">get_neighbors</a></li>
+<li><a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#ase.calculators.neighborlist.NeighborList.update">update</a></li>
+</ul>
+</div>
+<div class="section" id="list-of-methods">
+<h2>List of methods<a class="headerlink" href="#list-of-methods" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.FastNeighborList.build" title="pysic.FastNeighborList.build"><tt class="xref py py-meth docutils literal"><span class="pre">build()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="full-documentation-of-the-fastneighborlist-class">
+<h2>Full documentation of the FastNeighborList class<a class="headerlink" href="#full-documentation-of-the-fastneighborlist-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pysic.FastNeighborList">
+<em class="property">class </em><tt class="descclassname">pysic.</tt><tt class="descname">FastNeighborList</tt><big>(</big><em>cutoffs</em>, <em>skin=0.5</em><big>)</big><a class="reference internal" href="_modules/pysic.html#FastNeighborList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.FastNeighborList" title="Permalink to this definition">¶</a></dt>
+<dd><p>ASE has a neighbor list class built in, but its implementation is
+currently inefficient, and building of the list is an <span class="math">\(O(n^2)\)</span>
+operation. This neighbor list class overrides the 
+<tt class="xref py py-meth docutils literal"><span class="pre">build()</span></tt> method with
+an <span class="math">\(O(n)\)</span> time routine. The fast routine is based on a
+spatial partitioning algorithm.</p>
+<p>The way cutoffs are handled is also somewhat different to the original
+ASE list. In ASE, the distances for two atoms are compared against
+the sum of the individual cutoffs + neighbor list skin. This list, however,
+searches for the neighbors of each atom at a distance of the cutoff of the
+given atom only, plus skin.</p>
+<dl class="method">
+<dt id="pysic.FastNeighborList.build">
+<tt class="descname">build</tt><big>(</big><em>atoms</em><big>)</big><a class="reference internal" href="_modules/pysic.html#FastNeighborList.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.FastNeighborList.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>Builds the neighbor list.</p>
+<p>The routine requires that the given atomic structure matches
+the one in the core. This is because the method invokes the
+Fortran core to do the neighbor search.
+The method overrides the similar
+method in the original ASE neighborlist class, which directly operates
+on the given structure, so this method also takes the atomic structure 
+as an argument. However, in order to keep the core modification routines in
+the <a class="reference internal" href="pysic_class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> class, this method does not change the core
+structure. It does raise an error if the structures do not match, though.</p>
+<p>The neighbor search is done via the <a class="reference internal" href="PyInterface_f90.html#generate_neighbor_lists" title="generate_neighbor_lists"><tt class="xref py py-meth docutils literal"><span class="pre">generate_neighbor_lists()</span></tt></a> routine.
+The routine builds the neighbor list in the core, after which the list is
+fed back to the <a class="reference internal" href="#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">FastNeighborList</span></tt></a> object by looping over all
+atoms and saving the lists of neighbors and offsets.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>atoms: ASE Atoms object</dt>
+<dd>the structure for which the neighbors are searched</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coremirror_class.html" title="CoreMirror class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="chargerelaxation_class.html" title="ChargeRelaxation class"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.2 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

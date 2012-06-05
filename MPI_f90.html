@@ -1,0 +1,470 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mpi (MPI.f90) &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="up" title="Pysic Fortran module" href="pysic_fortran.html" />
+    <link rel="next" title="quaternions (Quaternions.f90)" href="Quaternions_f90.html" />
+    <link rel="prev" title="utility (Utility.f90)" href="Utility_f90.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Quaternions_f90.html" title="quaternions (Quaternions.f90)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Utility_f90.html" title="utility (Utility.f90)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="pysic_fortran.html" accesskey="U">Pysic Fortran module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">mpi (MPI.f90)</a><ul>
+<li><a class="reference internal" href="#modules-used-by-mpi">Modules used by mpi</a></li>
+<li><a class="reference internal" href="#list-of-global-variables-in-mpi">List of global variables in mpi</a></li>
+<li><a class="reference internal" href="#list-of-subroutines-in-mpi">List of subroutines in mpi</a></li>
+<li><a class="reference internal" href="#full-documentation-of-global-variables-in-mpi">Full documentation of global variables in mpi</a></li>
+<li><a class="reference internal" href="#full-documentation-of-subroutines-in-mpi">Full documentation of subroutines in mpi</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Utility_f90.html"
+                        title="previous chapter">utility (Utility.f90)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Quaternions_f90.html"
+                        title="next chapter">quaternions (Quaternions.f90)</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/MPI_f90.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="mpi-mpi-f90">
+<span id="mpi"></span><h1>mpi (MPI.f90)<a class="headerlink" href="#mpi-mpi-f90" title="Permalink to this headline">¶</a></h1>
+<p>Module for Message Parsing Interface parallellization
+utilities.</p>
+<p>This module handles the initialization of the MPI environment
+and assigns the cpus their indices.
+Parallellization is done by
+distributing atoms on the processors and the routine for
+doing this randomly is provided. Also tools for monitoring
+the loads of all the cpus and redistributing them are also implemented.</p>
+<div class="section" id="modules-used-by-mpi">
+<h2>Modules used by mpi<a class="headerlink" href="#modules-used-by-mpi" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="Mersenne_f90.html#mt95"><em>mt95 (Mersenne.f90)</em></a></li>
+</ul>
+</div>
+<div class="section" id="list-of-global-variables-in-mpi">
+<h2>List of global variables in mpi<a class="headerlink" href="#list-of-global-variables-in-mpi" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#all_atoms" title="all_atoms"><tt class="xref py py-data docutils literal"><span class="pre">all_atoms</span></tt></a></li>
+<li><a class="reference internal" href="#all_loads" title="all_loads"><tt class="xref py py-data docutils literal"><span class="pre">all_loads</span></tt></a></li>
+<li><a class="reference internal" href="#atom_buffer" title="atom_buffer"><tt class="xref py py-data docutils literal"><span class="pre">atom_buffer</span></tt></a></li>
+<li><a class="reference internal" href="#cpu_id" title="cpu_id"><tt class="xref py py-data docutils literal"><span class="pre">cpu_id</span></tt></a></li>
+<li><a class="reference internal" href="#is_my_atom" title="is_my_atom"><tt class="xref py py-data docutils literal"><span class="pre">is_my_atom</span></tt></a></li>
+<li><a class="reference internal" href="#load_length" title="load_length"><tt class="xref py py-data docutils literal"><span class="pre">load_length</span></tt></a></li>
+<li><a class="reference internal" href="#loadout" title="loadout"><tt class="xref py py-data docutils literal"><span class="pre">loadout</span></tt></a></li>
+<li><a class="reference internal" href="#loads_mask" title="loads_mask"><tt class="xref py py-data docutils literal"><span class="pre">loads_mask</span></tt></a></li>
+<li><a class="reference internal" href="#mpi_atoms_allocated" title="mpi_atoms_allocated"><tt class="xref py py-data docutils literal"><span class="pre">mpi_atoms_allocated</span></tt></a></li>
+<li><a class="reference internal" href="#mpistat" title="mpistat"><tt class="xref py py-data docutils literal"><span class="pre">mpistat</span></tt></a></li>
+<li><a class="reference internal" href="#mpistatus" title="mpistatus"><tt class="xref py py-data docutils literal"><span class="pre">mpistatus</span></tt></a></li>
+<li><a class="reference internal" href="#my_atoms" title="my_atoms"><tt class="xref py py-data docutils literal"><span class="pre">my_atoms</span></tt></a></li>
+<li><a class="reference internal" href="#my_load" title="my_load"><tt class="xref py py-data docutils literal"><span class="pre">my_load</span></tt></a></li>
+<li><a class="reference internal" href="#n_cpus" title="n_cpus"><tt class="xref py py-data docutils literal"><span class="pre">n_cpus</span></tt></a></li>
+<li><a class="reference internal" href="#stopwatch" title="stopwatch"><tt class="xref py py-data docutils literal"><span class="pre">stopwatch</span></tt></a></li>
+<li><a class="reference internal" href="#track_loads" title="track_loads"><tt class="xref py py-data docutils literal"><span class="pre">track_loads</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="list-of-subroutines-in-mpi">
+<h2>List of subroutines in mpi<a class="headerlink" href="#list-of-subroutines-in-mpi" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#balance_loads" title="balance_loads"><tt class="xref py py-func docutils literal"><span class="pre">balance_loads()</span></tt></a></li>
+<li><a class="reference internal" href="#close_loadmonitor" title="close_loadmonitor"><tt class="xref py py-func docutils literal"><span class="pre">close_loadmonitor()</span></tt></a></li>
+<li><a class="reference internal" href="#initialize_load" title="initialize_load"><tt class="xref py py-func docutils literal"><span class="pre">initialize_load()</span></tt></a></li>
+<li><a class="reference internal" href="#mpi_distribute" title="mpi_distribute"><tt class="xref py py-func docutils literal"><span class="pre">mpi_distribute()</span></tt></a></li>
+<li><a class="reference internal" href="#mpi_finish" title="mpi_finish"><tt class="xref py py-func docutils literal"><span class="pre">mpi_finish()</span></tt></a></li>
+<li><a class="reference internal" href="#mpi_initialize" title="mpi_initialize"><tt class="xref py py-func docutils literal"><span class="pre">mpi_initialize()</span></tt></a></li>
+<li><a class="reference internal" href="#mpi_master_bcast_int" title="mpi_master_bcast_int"><tt class="xref py py-func docutils literal"><span class="pre">mpi_master_bcast_int()</span></tt></a></li>
+<li><a class="reference internal" href="#mpi_stack" title="mpi_stack"><tt class="xref py py-func docutils literal"><span class="pre">mpi_stack()</span></tt></a></li>
+<li><a class="reference internal" href="#mpi_sync" title="mpi_sync"><tt class="xref py py-func docutils literal"><span class="pre">mpi_sync()</span></tt></a></li>
+<li><a class="reference internal" href="#mpi_wall_clock" title="mpi_wall_clock"><tt class="xref py py-func docutils literal"><span class="pre">mpi_wall_clock()</span></tt></a></li>
+<li><a class="reference internal" href="#open_loadmonitor" title="open_loadmonitor"><tt class="xref py py-func docutils literal"><span class="pre">open_loadmonitor()</span></tt></a></li>
+<li><a class="reference internal" href="#record_load" title="record_load"><tt class="xref py py-func docutils literal"><span class="pre">record_load()</span></tt></a></li>
+<li><a class="reference internal" href="#start_timer" title="start_timer"><tt class="xref py py-func docutils literal"><span class="pre">start_timer()</span></tt></a></li>
+<li><a class="reference internal" href="#timer" title="timer"><tt class="xref py py-func docutils literal"><span class="pre">timer()</span></tt></a></li>
+<li><a class="reference internal" href="#write_loadmonitor" title="write_loadmonitor"><tt class="xref py py-func docutils literal"><span class="pre">write_loadmonitor()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="full-documentation-of-global-variables-in-mpi">
+<h2>Full documentation of global variables in mpi<a class="headerlink" href="#full-documentation-of-global-variables-in-mpi" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="data">
+<dt id="all_atoms">
+<tt class="descname">all_atoms</tt><a class="headerlink" href="#all_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em></p>
+<p>the total number of atoms</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="all_loads">
+<tt class="descname">all_loads</tt><a class="headerlink" href="#all_loads" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision  <em>allocatable</em>  <em>size(:)</em></p>
+<p>list of the loads of all cpus</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="atom_buffer">
+<tt class="descname">atom_buffer</tt><a class="headerlink" href="#atom_buffer" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer  <em>allocatable</em>  <em>size(:)</em></p>
+<p>list used for passing atom indices during load balancing</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="cpu_id">
+<tt class="descname">cpu_id</tt><a class="headerlink" href="#cpu_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em></p>
+<p>identification number for the cpu, from 0 to <span class="math">\(n_\mathrm{cpus}-1\)</span></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="is_my_atom">
+<tt class="descname">is_my_atom</tt><a class="headerlink" href="#is_my_atom" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical  <em>allocatable</em>  <em>size(:)</em></p>
+<p>logical array, true for the indices of the atoms that are distributed to this cpu</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="load_length">
+<tt class="descname">load_length</tt><a class="headerlink" href="#load_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em></p>
+<p>the number of times loads have been recorded</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="loadout">
+<tt class="descname">loadout</tt><a class="headerlink" href="#loadout" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em></p>
+<p><em>initial value</em> = 2352</p>
+<p>an integer of the output channel for loads</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="loads_mask">
+<tt class="descname">loads_mask</tt><a class="headerlink" href="#loads_mask" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical  <em>allocatable</em>  <em>size(:)</em></p>
+<p>logical array used in load rebalancing, true for cpus whose loads have not yet been balanced</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="mpi_atoms_allocated">
+<tt class="descname">mpi_atoms_allocated</tt><a class="headerlink" href="#mpi_atoms_allocated" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical    <em>scalar</em></p>
+<p><em>initial value</em> = .false.</p>
+<p>logical switch for denoting that the mpi allocatable arrays have been allocated</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="mpistat">
+<tt class="descname">mpistat</tt><a class="headerlink" href="#mpistat" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em></p>
+<p>mpi return value</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="mpistatus">
+<tt class="descname">mpistatus</tt><a class="headerlink" href="#mpistatus" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>size(mpi_status_size)</em></p>
+<p>array for storing the mpi status return values</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="my_atoms">
+<tt class="descname">my_atoms</tt><a class="headerlink" href="#my_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em></p>
+<p>the number of atoms distributed to this cpu</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="my_load">
+<tt class="descname">my_load</tt><a class="headerlink" href="#my_load" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision    <em>scalar</em></p>
+<p>storage for the load of this particular cpu</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="n_cpus">
+<tt class="descname">n_cpus</tt><a class="headerlink" href="#n_cpus" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em></p>
+<p>number of cpus, <span class="math">\(n_\mathrm{cpus}\)</span></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="stopwatch">
+<tt class="descname">stopwatch</tt><a class="headerlink" href="#stopwatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision    <em>scalar</em></p>
+<p>cpu time storage</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="track_loads">
+<tt class="descname">track_loads</tt><a class="headerlink" href="#track_loads" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical    <em>scalar</em>  <em>parameter</em></p>
+<p><em>initial value</em> = .false.</p>
+<p>logical switch, if true, the loads of cpus are written to a file during run</p>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="full-documentation-of-subroutines-in-mpi">
+<h2>Full documentation of subroutines in mpi<a class="headerlink" href="#full-documentation-of-subroutines-in-mpi" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="balance_loads">
+<tt class="descname">balance_loads</tt><big>(</big><big>)</big><a class="headerlink" href="#balance_loads" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load balancing.</p>
+<p>The loads are gathered from all cpus and sorted. Then load (atoms)
+is passed from the most loaded cpus to the least loaded ones.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="close_loadmonitor">
+<tt class="descname">close_loadmonitor</tt><big>(</big><big>)</big><a class="headerlink" href="#close_loadmonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the output for wirting workload data</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="initialize_load">
+<tt class="descname">initialize_load</tt><big>(</big><em>reallocate</em><big>)</big><a class="headerlink" href="#initialize_load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes the load monitoring arrays.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>reallocate: logical  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>Logical switch for reallocating the arrays. If true, the related arrays are allocated. Otherwise only the load counters are set to zero.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="mpi_distribute">
+<tt class="descname">mpi_distribute</tt><big>(</big><em>n_atoms</em><big>)</big><a class="headerlink" href="#mpi_distribute" title="Permalink to this definition">¶</a></dt>
+<dd><p>distributes atoms among processors</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="mpi_finish">
+<tt class="descname">mpi_finish</tt><big>(</big><big>)</big><a class="headerlink" href="#mpi_finish" title="Permalink to this definition">¶</a></dt>
+<dd><p>closes the mpi framework</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mpi_initialize">
+<tt class="descname">mpi_initialize</tt><big>(</big><big>)</big><a class="headerlink" href="#mpi_initialize" title="Permalink to this definition">¶</a></dt>
+<dd><p>intializes the mpi framework</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mpi_master_bcast_int">
+<tt class="descname">mpi_master_bcast_int</tt><big>(</big><em>sync_int</em><big>)</big><a class="headerlink" href="#mpi_master_bcast_int" title="Permalink to this definition">¶</a></dt>
+<dd><p>the master cpu broadcasts an integer value to all other cpus</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt><strong>sync_int</strong>: integer  <strong>intent(inout)</strong>    <em>scalar</em></dt>
+<dd>the broadcast integer</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="mpi_stack">
+<tt class="descname">mpi_stack</tt><big>(</big><em>list</em>, <em>items</em>, <em>depth</em>, <em>length</em>, <em>width</em><big>)</big><a class="headerlink" href="#mpi_stack" title="Permalink to this definition">¶</a></dt>
+<dd><p>stacks the &#8220;lists&#8221; from all cpus together according to the lengths given in &#8220;items&#8221;
+and gathers the complete list to cpu 0.
+For example:</p>
+<div class="highlight-python"><pre>cpu 0          cpu 1          cpu 0
+abc....        12.....        abc12..
+de.....        3456...   -&gt;   de3456.
+fghij..        78.....        fghij78</pre>
+</div>
+<p>The stacking is done for the second array index: list(1,:,1).
+The stacking works so that first every cpu 2n+1 sends its data to cpu 2n,
+then 2*(2n+1) sends data to 2*2n, and so on, until the final cpu 2^m sends its data to cpu 0:</p>
+<div class="highlight-python"><pre>cpu
+0 1 2 3 4 5 6 7 8 9 10
+|-/ |-/ |-/ |-/ |-/ |
+|---/   |---/   |---/
+|-------/       |
+|---------------/
+x</pre>
+</div>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>list: INTEGER  <em>intent()</em>    <em>size(:, :, :)</em></dt>
+<dd>3d arrays containing lists to be stacked</dd>
+<dt>items: INTEGER  <em>intent()</em>    <em>size(:)</em></dt>
+<dd>the numbers of items to be stacked in each list</dd>
+<dt>depth: INTEGER  <em>intent()</em>    <em>scalar</em></dt>
+<dd>dimensionality of the stacked objects (size of list(:,1,1))</dd>
+<dt>length: INTEGER  <em>intent()</em>    <em>scalar</em></dt>
+<dd>the number of lists (size of list(1,1,:))</dd>
+<dt>width: INTEGER  <em>intent()</em>    <em>scalar</em></dt>
+<dd>max size of lists (size of list(1,:,1))</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="mpi_sync">
+<tt class="descname">mpi_sync</tt><big>(</big><big>)</big><a class="headerlink" href="#mpi_sync" title="Permalink to this definition">¶</a></dt>
+<dd><p>syncs the cpus by calling mpi_barrier</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="mpi_wall_clock">
+<tt class="descname">mpi_wall_clock</tt><big>(</big><em>clock</em><big>)</big><a class="headerlink" href="#mpi_wall_clock" title="Permalink to this definition">¶</a></dt>
+<dd><p>returns the global time through mpi_wtime</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt><strong>clock</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the measured time</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="open_loadmonitor">
+<tt class="descname">open_loadmonitor</tt><big>(</big><big>)</big><a class="headerlink" href="#open_loadmonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the output for writing workload data to a file called &#8220;mpi_load.out&#8221;</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="record_load">
+<tt class="descname">record_load</tt><big>(</big><em>amount</em><big>)</big><a class="headerlink" href="#record_load" title="Permalink to this definition">¶</a></dt>
+<dd><p>Saves the given load.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>amount: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the load to be stored</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="start_timer">
+<tt class="descname">start_timer</tt><big>(</big><big>)</big><a class="headerlink" href="#start_timer" title="Permalink to this definition">¶</a></dt>
+<dd><p>records the wall clock time to <a class="reference internal" href="#stopwatch" title="stopwatch"><tt class="xref py py-data docutils literal"><span class="pre">stopwatch</span></tt></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="timer">
+<tt class="descname">timer</tt><big>(</big><em>stamp</em><big>)</big><a class="headerlink" href="#timer" title="Permalink to this definition">¶</a></dt>
+<dd><p>reads the elapsed wall clock time since the previous starting of the
+timer (saved in <a class="reference internal" href="#stopwatch" title="stopwatch"><tt class="xref py py-data docutils literal"><span class="pre">stopwatch</span></tt></a>)
+and then restarts the timer.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt><strong>stamp</strong>: double precision  <strong>intent(inout)</strong>    <em>scalar</em></dt>
+<dd>the elapsed real time</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="write_loadmonitor">
+<tt class="descname">write_loadmonitor</tt><big>(</big><big>)</big><a class="headerlink" href="#write_loadmonitor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Routine for writing force calculation workload analysis data to a file
+called &#8220;mpi_load.out&#8221;</p>
+</dd></dl>
+
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Quaternions_f90.html" title="quaternions (Quaternions.f90)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Utility_f90.html" title="utility (Utility.f90)"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="pysic_fortran.html" >Pysic Fortran module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

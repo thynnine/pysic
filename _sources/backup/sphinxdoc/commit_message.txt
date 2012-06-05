@@ -1,0 +1,4 @@
+A bug fix in potential generation in the core.
+
+The original symbols/indices of a potential were generated incorrectly when a potential with a list of symbols/indices was created. All the created potentials had the original indices of just one of the many symbol pairs or triplets. This broke the bond-bending potential which filters according to the original symbols.
+

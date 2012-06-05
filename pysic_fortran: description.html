@@ -1,0 +1,111 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Pysic Fortran Module &mdash; pysic 0.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="pysic 0.1 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">pysic 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pysic_fortran: description.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="module-pysic_fortran"></span><span class="target" id="module-pysic_fortran.pysic_interface"></span><div class="section" id="pysic-fortran-module">
+<span id="id1"></span><h1>Pysic Fortran Module<a class="headerlink" href="#pysic-fortran-module" title="Permalink to this headline">¶</a></h1>
+<p>Pysic Fortran (<a class="reference internal" href="#module-pysic_fortran" title="pysic_fortran"><tt class="xref py py-mod docutils literal"><span class="pre">pysic_fortran</span></tt></a>) is the Python interface of the Fortran core generated
+using <a class="reference external" href="http://www.scipy.org/F2py">f2py</a> from PyInterface.F90. This is the only Fortran source file of Pysic
+that should be wrapped with f2py: the rest of the core needs to be directly
+compiled with a Fortran compiler to .mod Fortran modules.</p>
+<p>The module is naturally accessible from within Python,
+but usually there should be no need to directly invoke its functions as <a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a>
+defines a more refined interface to the Fortran core, mainly through the
+class <a class="reference internal" href="pysic_class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>. It is assumed that the arguments passed to the functions
+have proper data types and array dimensions, and that they are called in such an
+order that the necessary memory allocations have been done within Fortran before data
+structures are accessed. Methods in <a class="reference internal" href="pysic_class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> do this automatically and are
+thus much safer to use than directly calling the functions in this module. The Fortran routines are documented here mostly for development purposes.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">pysic 0.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

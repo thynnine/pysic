@@ -1,0 +1,200 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Physics of Pysic &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="next" title="Getting Pysic" href="setup.html" />
+    <link rel="prev" title="Pysic (Pythonic simulation code)" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="setup.html" title="Getting Pysic"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Pysic (Pythonic simulation code)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Physics of Pysic</a></li>
+<li><a class="reference internal" href="#applications-and-goals">Applications and goals</a></li>
+<li><a class="reference internal" href="#atomistic-interactions">Atomistic interactions</a></li>
+<li><a class="reference internal" href="#dynamic-charges">Dynamic charges</a></li>
+<li><a class="reference internal" href="#pysic-approach">Pysic approach</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Pysic (Pythonic simulation code)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="setup.html"
+                        title="next chapter">Getting Pysic</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/physics.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="physics"></span><div class="section" id="physics-of-pysic">
+<span id="physics-forewords"></span><h1>Physics of Pysic<a class="headerlink" href="#physics-of-pysic" title="Permalink to this headline">¶</a></h1>
+<p>In this section we briefly describe the physical motivation and main ideas behind Pysic. The details of actual algorithms, functions, and implementations included in Pysic are discussed later in sections <a class="reference internal" href="running.html#run-forewords"><em>Running Pysic</em></a> and <a class="reference internal" href="syntax.html#syntax-forewords"><em>Structure and syntax of Pysic</em></a>.</p>
+</div>
+<div class="section" id="applications-and-goals">
+<span id="target-problems"></span><h1>Applications and goals<a class="headerlink" href="#applications-and-goals" title="Permalink to this headline">¶</a></h1>
+<p>Phenomena such as Si covalent bonding and charge redistribution at defects and interfaces make semiconductors a very challenging group of materials to describe computationally. Usually quantum mechanical methods such as density functional theory are used, but these approaches are limited by their high computational cost. More sophisticated empirical potentials are being developed for these materials, however, combining fairly accurate precision with a reasonable cost. Notably, the ReaxFF <a class="footnote-reference" href="#id8" id="id1">[1]</a> and COMB <a class="footnote-reference" href="#id9" id="id2">[2]</a> <a class="footnote-reference" href="#id10" id="id3">[3]</a> variable charge potentials have been recently introduced and shown to reproduce the structural properties of for instance Si, SiO<sub>2</sub> and HfO<sub>2</sub>. Still these methods are efficient enough to allow the simulation of semiconductor systems at size and time scales relevant for actual device performance (hundreds of thousands of atoms).</p>
+</div>
+<div class="section" id="atomistic-interactions">
+<span id="interactions"></span><h1>Atomistic interactions<a class="headerlink" href="#atomistic-interactions" title="Permalink to this headline">¶</a></h1>
+<p>To accurately model condensed matter systems, one often needs to know how the electrons behave, as electrons determine the chemical properies of atoms. Even if the primary interest is the atomic structure, not the electronic one, it may be necessary to include electrons in the simulations in order to calculate the atomistic interactions. The electronic structure must be treated on a quantum mechanical level making these kinds of calculations quite heavy, and so one would often wish to bypass the electronic level of detail and only work with the atomistic structure and a classical description. If we assume that the atomic and electronic degrees of freedom are separate (this is the Born-Oppenheimer approximation, and it is often justified), then in principle the electronic ground state <span class="math">\(| \psi \rangle\)</span> is determined by the atomic coordinates <span class="math">\(\{ \mathbf{R}_i \}\)</span> and nuclear charges <span class="math">\(\{ Q_i \}\)</span> through the Schrödinger equation</p>
+<div class="math">
+\[\begin{eqnarray}
+H(\{ \mathbf{R}_i \}, \{ Q_i \}) | \psi \rangle  & = & E | \psi \rangle \\
+\Rightarrow | \psi \rangle & = & \psi(\{ \mathbf{R}_i \}, \{ Q_i \}),
+\end{eqnarray}\]</div><p>where <span class="math">\(H = H(\{ \mathbf{R}_i \}, \{ Q_i \})\)</span> is the Hamiltonian.
+As the total energy of the system, <span class="math">\(E\)</span>, is determined by the electronic state, it too is a function of the atomic configuration</p>
+<div class="math">
+\[E = \langle \psi | H | \psi \rangle = E(\{ \mathbf{R}_i \}, \{ Q_i \}).\]</div>
+<p>So, in principle, the energy of the system and the atomic forces <span class="math">\(F_\alpha = -\nabla_{\mathbf{R}_\alpha} E\)</span> can be determined from the atomic configuration. Construction of the energy function <span class="math">\(E(\{ \mathbf{R}_i \}, \{ Q_i \})\)</span> is very challenging though. It is a very complicated function of the coordinates of <em>all</em> the atoms in the system, and in practice one needs to further assume that the system can be split in local substructures for which the energy function can be parameterized, and that the total energy is obtained as a sum of the local contributions. For <span class="math">\(n\)</span>-body local interactions, this could be written</p>
+<div class="math" id="equation-local_energy">
+<span class="eqno">(1)</span>\[E \approx \sum_{(i_1,i_2,\ldots,i_n)} E_\mathrm{local}(\mathbf{R}_{i_1}, \ldots, \mathbf{R}_{i_n}, Q_{i_1}, \ldots, Q_{i_n}),\]</div>
+<p>where <span class="math">\((i_1,i_2,\ldots,i_n)\)</span> are all the sets of <span class="math">\(n\)</span> atoms in the system.</p>
+</div>
+<div class="section" id="dynamic-charges">
+<span id="charge-equilibration"></span><h1>Dynamic charges<a class="headerlink" href="#dynamic-charges" title="Permalink to this headline">¶</a></h1>
+<p>In practice, calculations get exponentially more complex when the number of bodies included in the local <span class="math">\(n\)</span>-body energy <span class="math">\(E_\mathrm{local}(\mathbf{R}_{i_1}, \ldots, \mathbf{R}_{i_n}, Q_{i_1}, \ldots, Q_{i_n})\)</span> in <a href="#equation-local_energy">(1)</a> increases. Therefore usually only few particles close to each other are included in the local energy function, and all configurations with distant atoms are given a zero energy. This approach does not work, however, if the system exhibits long-ranged collective electronic reconstruction such as local charging or polarization, for instance, due to the presence of defects or interfaces. Changes in charge distribution can drastically alter the local energy function <span class="math">\(E_\mathrm{local}\)</span>. Increasing the number of bodies <span class="math">\(n\)</span> in the local interaction function does not solve this problem in general, since the charge redistribution may be a system wide phenomenon that no local function can properly capture.</p>
+<p>One way to treat the redistribution of charge is to make the local energy also a function of the total atomic charge <span class="math">\(q_i = Q_i - \eta_i e\)</span>, where <span class="math">\(\eta_i\)</span> is the (possibly fractional) number of electrons associated with the atom</p>
+<div class="math">
+\[E_\mathrm{local} = E_\mathrm{local}(\mathbf{R}_{i_1}, \ldots, \mathbf{R}_{i_n}, Q_{i_1}, \ldots, Q_{i_n}, q_{i_1}, \ldots, q_{i_n}).\]</div>
+<p>Although electrons do not specifically belong to any atom making <span class="math">\(\eta_i\)</span> ambiguous, this approach allows the inclusion of long ranged charge distribution in the model with reasonable computational cost.</p>
+<p>In addition, having the local charge as a parameter of the energy function allows for the optimization of the energy with respect to the local charges, allowing one to search for an equilibrium charge distribution. This is analogous to finding equilibrium structures by optimizing the energy with respect to the atomic coordinates <span class="math">\(\mathbf{R}_i\)</span>.</p>
+</div>
+<div class="section" id="pysic-approach">
+<span id="id4"></span><h1>Pysic approach<a class="headerlink" href="#pysic-approach" title="Permalink to this headline">¶</a></h1>
+<p>The immediate aim in the development of Pysic is to implement atomistic potentials with variable local atomic charges and apply them in the study of semiconductor interfaces, e.g., silicon-hafnia. In the long term, Pysic will include a full library of different atomistic potentials.</p>
+<p>Pysic implements a very general framework for calculating energies and forces due to arbitrary local atomistic pair or many body potentials. It is straightforward to implement new types of interactions in the code, and mixing different potentials during the simulations is simple. Furthermore, one can easily evaluate the contribution of different interactions on the total energy and forces by switching on and off specific interactions. So called bond order, or Tersoff, potentials <a class="footnote-reference" href="#id11" id="id5">[4]</a> are also supported, and the user is free to scale any potential with a bond-dependent factor. In addition, in a system with local charges, long ranged Coulomb interactions need to be evaluated. Such <span class="math">\(1/r\)</span>-potentials are calculated with the standard Ewald summation algorithm. Implementation of other algorithms such as Particle mesh Ewald <a class="footnote-reference" href="#id12" id="id6">[5]</a> or Wolf summation <a class="footnote-reference" href="#id13" id="id7">[6]</a> is also planned.</p>
+<p>In addition, it is planned that various advanced analysis tools are included with the Pysic package. These would include tools for tasks such as potential parametrization or structural analysis using techniques like evolutionary algorithms, machine learning, or Bayesian mehods.</p>
+<span class="target" id="references"></span><table class="docutils footnote" frame="void" id="id8" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>A. van Duin, S. Dasgupta, F. Lorant, and W. Goddard, J Phys Chem A 105, 9396 (2001).</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id9" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>T.-R. Shan, B. D. Devine, T. W. Kemper, S. B. Sinnott, and S. R. Phillpot, Phys Rev B 81, 125328 (2010).</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id10" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[3]</a></td><td>T.-R. Shan, D. Bryce, J. Hawkins, A. Asthagiri, S. Phillpot, and S. Sinnott, Phys Rev B 82, 235302 (2010).</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id11" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id5">[4]</a></td><td>J. Tersoff, Phys Rev B 37, 6991 (1988).</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id12" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id6">[5]</a></td><td>T. Darden, D. York, and L. Pedersen, Journal of Chemical Physics 98, 10089 (1993).</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id13" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id7">[6]</a></td><td>D. Wolf, P. Keblinski, S. Phillpot, and J. Eggebrecht, Journal of Chemical Physics 110, 8254 (1999).</td></tr>
+</tbody>
+</table>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="setup.html" title="Getting Pysic"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Pysic (Pythonic simulation code)"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

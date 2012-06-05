@@ -1,0 +1,661 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>BondOrderParameters class &mdash; Pysic 0.4.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.2 documentation" href="index.html" />
+    <link rel="up" title="Pysic module" href="pysic.html" />
+    <link rel="next" title="ChargeRelaxation class" href="chargerelaxation_class.html" />
+    <link rel="prev" title="Coordinator class" href="coordinator_class.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="chargerelaxation_class.html" title="ChargeRelaxation class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="coordinator_class.html" title="Coordinator class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.2 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">BondOrderParameters class</a><ul>
+<li><a class="reference internal" href="#id3">Bond order cutoffs</a></li>
+<li><a class="reference internal" href="#defining-parameters">Defining parameters</a></li>
+<li><a class="reference internal" href="#list-of-currently-available-bond-order-factors">List of currently available bond order factors</a><ul>
+<li><a class="reference internal" href="#id4">Coordination scaling function</a></li>
+<li><a class="reference internal" href="#coordination">Coordination</a></li>
+<li><a class="reference internal" href="#tersoff-bond-order">Tersoff bond order</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#list-of-methods">List of methods</a><ul>
+<li><a class="reference internal" href="#static-methods">Static methods</a></li>
+<li><a class="reference internal" href="#parameter-handling">Parameter handling</a></li>
+<li><a class="reference internal" href="#target-handling">Target handling</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#full-documentation-of-the-bondorderparameters-class">Full documentation of the BondOrderParameters class</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="coordinator_class.html"
+                        title="previous chapter">Coordinator class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="chargerelaxation_class.html"
+                        title="next chapter">ChargeRelaxation class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/bondorderparameters_class.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="bondorderparameters-class"></span><div class="section" id="id2">
+<h1>BondOrderParameters class<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h1>
+<p>This class defines a set of parameters for a bond order factor, to be used
+in conjunction with the <a class="reference internal" href="coordinator_class.html#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> class.</p>
+<p>Similarly to the potentials, the available types of bond order factors
+are always inquired from the
+Fortran core to ensure that any changes made to the core are
+automatically reflected in the Python interface.</p>
+<p>The same utility functions in <a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a> for inquiring
+keywords and other data needed for creating the potentials also work for
+fetching information on bond order factors, if applicable.
+The functions check automatically if the inquired name matches a potential
+or a bond order factor and gather the correct type of information based on this.</p>
+<p>For example:</p>
+<ul class="simple">
+<li>Inquire the names of available bond order factors: <a class="reference internal" href="pysic.html#pysic.list_valid_bond_order_factors" title="pysic.list_valid_bond_order_factors"><tt class="xref py py-meth docutils literal"><span class="pre">list_valid_bond_order_factors()</span></tt></a></li>
+<li>Inquire the names of parameters for a bond order factors: <a class="reference internal" href="pysic.html#pysic.names_of_parameters" title="pysic.names_of_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">names_of_parameters()</span></tt></a></li>
+</ul>
+<span class="target" id="bond-order-cutoffs"></span><div class="section" id="id3">
+<h2>Bond order cutoffs<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<p>Atomic coordination is an example of a simple bond order factor.
+It is calculated by checking all atom pairs
+and counting which ones are &#8220;close&#8221; to each others. Close naturally means
+closer than some predefined cutoff distance.
+However, in order to make the coordination a continuous and
+differentiable function, a continuous cutoff has to be applied.
+This is done similarly to the smooth cutoffs used in <a class="reference internal" href="potential_class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>
+by defining a proximity function which is 1 for small separations and
+0 for large distances.</p>
+<div class="math">
+\[\begin{split}f(r) = \begin{cases} 1, &amp; r &lt; r_\mathrm{soft} \\ \frac{1}{2}\left(1+\cos \pi\frac{r-r_\mathrm{soft}}{r_\mathrm{hard}-r_\mathrm{soft}}\right), &amp; r_\mathrm{soft} &lt; r &lt; r_\mathrm{hard} \\ 0, &amp; r &gt; r_\mathrm{hard} \end{cases}.\end{split}\]</div>
+<p>[<a class="reference external" href="./plot_directive/inline/1cd7aa1eaf.hires.png">hires.png</a>, <a class="reference external" href="./plot_directive/inline/1cd7aa1eaf.pdf">pdf</a>]</p>
+<div class="figure">
+<img alt="_images/1cd7aa1eaf.png" src="_images/1cd7aa1eaf.png" />
+</div>
+<p>Since bond order factors such as
+atomic coordination need not decay as a function of distance, one must always
+define a margin for continuous cutoff in bond order factors.</p>
+<span class="target" id="defining-parameters-for-bond-order-factors"></span></div>
+<div class="section" id="defining-parameters">
+<h2>Defining parameters<a class="headerlink" href="#defining-parameters" title="Permalink to this headline">¶</a></h2>
+<p>A <a class="reference internal" href="#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> instance defines the type of the bond order factor,
+the cutoffs, and parameters for one set of elements. The parameters are formally split
+according to the number of atoms they act on. So, an n-body factor can have parameters
+which are applied for 1-body, 2-body, etc. terms. Bond order factors are applied and
+parameterized by atomic element types (chemical symbols). An n-body factor must always have
+one or several sets of n symbols to designate the atoms it affects. So, 2- and 3-body factors
+could accept for instance the following lists of symbols, respectively:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">two_body_targets</span> <span class="o">=</span> <span class="p">[[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">three_body_targets</span> <span class="o">=</span> <span class="p">[[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>As a rule of thumb, if an n-body bond order factor incorporates parameters for m bodies
+(m &lt;= n), then these parameters are targeted at the first m symbols of the target list.
+For instance, if a 3-body factor has the targets of the above example (three_body_targets)
+and it contains 1- and 2-body parameters, then the 1-body parameters are targeted at Si atoms
+and the 2-body parameters at Si-O bonds.</p>
+<p>As an example, the Tersoff bond order factor</p>
+<div class="math">
+\[b_i = \left[ 1 + \left( \beta_i \sum_{j \ne i} \sum_{k \ne i,j} \xi_{ijk} g_{ijk}  \right)^{\eta_i} \right]^{-\frac{1}{2 \eta_i}}\]</div>
+<div class="math">
+\[\xi_{ijk} = f(r_{ij}) f(r_{ik}) \exp\left[a_{ij}^{\mu_i} (r_{ij} - r_{ik})^{\mu_i} \right]\]</div>
+<div class="math">
+\[g_{ijk} = 1 + \frac{c_{ij}^2}{d_{ij}^2} - \frac{c_{ij}^2}{d_{ij}^2 + (h_{ij} - \cos \theta_{ijk})^2}\]</div>
+<p>is a three-body factor (it includes terms depending on atom triplets i, j, k) and therefore requires a set of three
+elements as its target. It incorporates three single body and four two body parameters.
+Such a bond order factor could be created with the following command:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;tersoff&#39;</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">3.2</span><span class="p">,</span> <span class="n">cutoff_margin</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+<span class="gp">... </span>                                  <span class="n">symbols</span><span class="o">=</span><span class="p">[[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">]],</span>
+<span class="gp">... </span>                                  <span class="n">parameters</span><span class="o">=</span><span class="p">[[</span><span class="n">beta</span><span class="p">,</span> <span class="n">eta</span><span class="p">,</span> <span class="n">mu</span><span class="p">],</span>
+<span class="gp">... </span>                                              <span class="p">[</span><span class="n">a</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">,</span> <span class="n">h</span><span class="p">],</span>
+<span class="gp">... </span>                                              <span class="p">[</span> <span class="p">]])</span>
+</pre></div>
+</div>
+<p>or alternatively in pieces by a series of commands:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;tersoff&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">set_cutoff</span><span class="p">(</span><span class="mf">3.2</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">set_cutoff_margin</span><span class="p">(</span><span class="mf">0.4</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">([[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;beta&#39;</span><span class="p">,</span> <span class="n">beta</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;eta&#39;</span><span class="p">,</span> <span class="n">eta</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;mu&#39;</span><span class="p">,</span> <span class="n">mu</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="n">a</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;d&#39;</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;h&#39;</span><span class="p">,</span> <span class="n">h</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To be used in calculations, this is then passed on to a <a class="reference internal" href="coordinator_class.html#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a>,
+<a class="reference internal" href="potential_class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>, and <a class="reference internal" href="pysic_class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> with:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crd</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Coordinator</span><span class="p">(</span> <span class="n">bonds</span> <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pot</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span> <span class="o">...</span> <span class="p">,</span> <span class="n">coordinator</span><span class="o">=</span><span class="n">crd</span> <span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">cal</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">(</span> <span class="n">potentials</span><span class="o">=</span><span class="n">pot</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>The above example creates a bond order factor which is applied to all Si triplets (symbols=[[&#8216;Si&#8217;,&#8217;Si&#8217;,&#8217;Si&#8217;]]). The command also assigns 1-body parameters beta, eta, and mu, and 2-body parameters
+a, c, d, and h. If there are other elements in the system besides silicon, they will be completely ignored: The bond order factors are calculated as if the other elements do not exist. If one wishes to include, say, Si-O bonds in the bond order factor calculation, the list of symbols needs to be expanded by:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">add_symbols</span><span class="p">([[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="p">[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                   <span class="p">[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">get_symbols</span><span class="p">()</span>
+<span class="go">[[&#39;Si&#39;, &#39;Si&#39;, &#39;Si&#39;], [&#39;Si&#39;, &#39;Si&#39;, &#39;O&#39;], [&#39;Si&#39;, &#39;O&#39;, &#39;Si&#39;], [&#39;Si&#39;, &#39;O&#39;, &#39;O&#39;]]</span>
+</pre></div>
+</div>
+<p>The format of the symbol list is as follows. In each triplet, the first symbol determines the element on which the factor is calculated. Since above the first symbol of each triplet is &#8216;Si&#8217;, the factor
+will only be applied on Si atoms. The other symbols define the other elements in the triplets which are taken in to account. The second and third symbols are not, however, symmetric. As the bond order factor is defined using 2-body parameters (a_ij etc.), the first two symbols determine the elements of those two atoms (atoms i and j). The third symbol determines the element of the third atom (atom k) of the triplet. I.e., in the example above, Si-O bond parameters are included with:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">[[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>where the first works for triplets O-Si-Si and the second for O-Si-O.
+However, one should note especially that a triplet A-B-C is only taken in to account if both bonds (A-B) and (B-C) have parameters associated with them. Therefore, [&#8216;Si&#8217;, &#8216;O&#8217;, &#8216;O&#8217;] is enough to fully define O-Si-O bond triplets, but to fully describe Si-Si-O, one also has to define the Si-Si bond with O as the third partner, which is given by:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">[[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>Instead of giving a list of symbols to a single <a class="reference internal" href="#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a>, one can define many instances with different symbols and different parameters, and feed a list of these to a <a class="reference internal" href="coordinator_class.html#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> object.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">bond_siosi</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;tersoff&#39;</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">3.2</span><span class="p">,</span> <span class="n">cutoff_margin</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
+<span class="gp">... </span>                                       <span class="n">symbols</span><span class="o">=</span><span class="p">[[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">]],</span>
+<span class="gp">... </span>                                       <span class="n">parameters</span><span class="o">=</span><span class="p">[[</span><span class="n">beta_si</span><span class="p">,</span> <span class="n">eta_si</span><span class="p">,</span> <span class="n">mu_si</span><span class="p">],</span>
+<span class="gp">... </span>                                                   <span class="p">[</span><span class="n">a_sio</span><span class="p">,</span> <span class="n">c_sio</span><span class="p">,</span> <span class="n">d_sio</span><span class="p">,</span> <span class="n">h_sio</span><span class="p">],</span>
+<span class="gp">... </span>                                                   <span class="p">[</span> <span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bond_sisio</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;tersoff&#39;</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">3.5</span><span class="p">,</span> <span class="n">cutoff_margin</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span>
+<span class="gp">... </span>                                       <span class="n">symbols</span><span class="o">=</span><span class="p">[[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">]],</span>
+<span class="gp">... </span>                                       <span class="n">parameters</span><span class="o">=</span><span class="p">[[</span><span class="n">beta_si</span><span class="p">,</span> <span class="n">eta_si</span><span class="p">,</span> <span class="n">mu_si</span><span class="p">],</span>
+<span class="gp">... </span>                                                   <span class="p">[</span><span class="n">a_sisi</span><span class="p">,</span> <span class="n">c_sisi</span><span class="p">,</span> <span class="n">d_sisi</span><span class="p">,</span> <span class="n">h_sisi</span><span class="p">],</span>
+<span class="gp">... </span>                                                   <span class="p">[]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bond_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">bond_siosi</span><span class="p">,</span><span class="n">bond_sisio</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">crd</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Coordinator</span><span class="p">(</span> <span class="n">bond_list</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>The above example would assign the parameter values</p>
+<div class="math">
+\[\begin{split}\beta_\mathrm{Si} = \mathtt{beta\_si} \\
+\eta_\mathrm{Si} = \mathtt{eta\_si} \\
+\mu_\mathrm{Si} = \mathtt{mu\_si} \\
+a_\mathrm{Si-O} = \mathtt{a\_sio} \\
+c_\mathrm{Si-O} = \mathtt{c\_sio} \\
+d_\mathrm{Si-O} = \mathtt{d\_sio} \\
+h_\mathrm{Si-O} = \mathtt{h\_sio} \\
+a_\mathrm{Si-Si} = \mathtt{a\_sisi} \\
+c_\mathrm{Si-Si} = \mathtt{c\_sisi} \\
+d_\mathrm{Si-Si} = \mathtt{d\_sisi} \\
+h_\mathrm{Si-Si} = \mathtt{h\_sisi}\end{split}\]</div>
+<p>This gives the user the possibility to precisely control the parameters, including cutoffs, for different elements.</p>
+<p>Note that the beta, eta, and mu parameters are the same for both <a class="reference internal" href="#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> objects defined in the above example. They could be different in principle, but when the factors are calculated, the 1-body parameters are taken from the first object in the list of bonds (bond_list) for which the first element is of the correct type. Because of this, the 1-body parameters in bond_sisio are in fact ignored. This feature can be exploited for mixing different types of bond order factors, as explained below.</p>
+<p>For three different elements, say C, O, and H, the possible triplets are:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">[</span> <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>  <span class="c"># H-H bond in an H-H-H triplet</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">],</span>  <span class="c"># H-H bond in an H-H-C triplet</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">],</span>  <span class="c"># H-H bond in an H-H-O triplet</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>  <span class="c"># H-O bond in an H-H-O triplet</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">],</span>  <span class="c"># H-O bond in an O-H-C triplet</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">],</span>  <span class="c"># H-O bond in an O-H-O triplet</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>  <span class="c"># etc.</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">],</span>
+<span class="gp">... </span>  <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">]</span> <span class="p">]</span>
+</pre></div>
+</div>
+<p>In principle, one can attach a different set of parameters to each of these.
+Often though the parameters are mostly the same,
+and writing these kinds of lists for all possible combinations is cumbersome.
+To help in generating the tables, the utility method
+<a class="reference internal" href="pysic_utility.html#pysic_utility.expand_symbols_table" title="pysic_utility.expand_symbols_table"><tt class="xref py py-meth docutils literal"><span class="pre">expand_symbols_table()</span></tt></a> can be used.
+For instance, the full list of triplets above can be created with:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pysic_utility</span><span class="o">.</span><span class="n">expand_symbols_table</span><span class="p">([[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                                    <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                                    <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">]])</span>
+</pre></div>
+</div>
+<span class="target" id="list-of-bond-order-factors"></span></div>
+<div class="section" id="list-of-currently-available-bond-order-factors">
+<h2>List of currently available bond order factors<a class="headerlink" href="#list-of-currently-available-bond-order-factors" title="Permalink to this headline">¶</a></h2>
+<span class="target" id="coordination-scaling-function"></span><div class="section" id="id4">
+<h3>Coordination scaling function<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h3>
+<p>The coordiantion scaling function is defined as</p>
+<div class="math">
+\[\begin{split}b_i(\Sigma_i) = \varepsilon_i \frac{\Delta \Sigma_i}{1+\exp(\gamma_i \Delta \Sigma_i)}\\
+\Delta \Sigma_i = C_i (\Sigma_i - N_i).\end{split}\]</div>
+<p>where <span class="math">\(\Sigma_i\)</span> is the bond order sum.</p>
+<p>In other words, the bond order factor only overrides the scaling function of another
+bond order factor when mixed. Especially, it is zero if not paired with other bond order factors.
+Formally, it is a 1-body bond order factor.</p>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;c_scale&#39;</span><span class="p">)</span>
+<span class="go">[[&#39;epsilon&#39;, &#39;N&#39;, &#39;C&#39;, &#39;gamma&#39;]]</span>
+</pre></div>
+</div>
+<span class="target" id="coordination-bond-order-factor"></span></div>
+<div class="section" id="coordination">
+<h3>Coordination<a class="headerlink" href="#coordination" title="Permalink to this headline">¶</a></h3>
+<p>The coordination of an atom is simply the sum of the proximity functions.</p>
+<div class="math">
+\[b_i = \sum_{j \ne i} f(r_{ij}).\]</div>
+<p>This is a parameterless (besides cutoffs) 2-body bond order factor.</p>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;neighbors&#39;</span><span class="p">)</span>
+<span class="go">[[], []]</span>
+</pre></div>
+</div>
+<span class="target" id="tersoff-bond-order-factor"></span></div>
+<div class="section" id="tersoff-bond-order">
+<span id="tersoff"></span><h3>Tersoff bond order<a class="headerlink" href="#tersoff-bond-order" title="Permalink to this headline">¶</a></h3>
+<p>The Tersoff-like bond order factor for atom i is given by</p>
+<div class="math">
+\[b_i = \left[ 1 + \left( \beta_i \sum_{j \ne i} \sum_{k \ne i,j} \xi_{ijk} g_{ijk}  \right)^{\eta_i} \right]^{-\frac{1}{2 \eta_i}}\]</div>
+<div class="math">
+\[\xi_{ijk} = f(r_{ij}) f(r_{ik}) \exp\left[a_{ij}^{\mu_i} (r_{ij} - r_{ik})^{\mu_i} \right]\]</div>
+<div class="math">
+\[g_{ijk} = 1 + \frac{c_{ij}^2}{d_{ij}^2} - \frac{c_{ij}^2}{d_{ij}^2 + (h_{ij} - \cos \theta_{ijk})^2}\]</div>
+<p>where r and theta are distances and angles between the atoms.</p>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;tersoff&#39;</span><span class="p">)</span>
+<span class="go">[[&#39;beta&#39;, &#39;eta&#39;, &#39;mu&#39;], [&#39;a&#39;, &#39;c&#39;, &#39;d&#39;, &#39;h&#39;], []]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="list-of-methods">
+<h2>List of methods<a class="headerlink" href="#list-of-methods" title="Permalink to this headline">¶</a></h2>
+<p>Below is a list of methods in <a class="reference internal" href="#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a>, grouped according to
+the type of functionality.</p>
+<div class="section" id="static-methods">
+<h3>Static methods<a class="headerlink" href="#static-methods" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><tt class="xref py py-meth docutils literal"><span class="pre">expand_symbols_table()</span></tt></li>
+</ul>
+</div>
+<div class="section" id="parameter-handling">
+<h3>Parameter handling<a class="headerlink" href="#parameter-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.BondOrderParameters.accepts_parameters" title="pysic.BondOrderParameters.accepts_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">accepts_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.get_bond_order_type" title="pysic.BondOrderParameters.get_bond_order_type"><tt class="xref py py-meth docutils literal"><span class="pre">get_bond_order_type()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.get_cutoff" title="pysic.BondOrderParameters.get_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">get_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.get_cutoff_margin" title="pysic.BondOrderParameters.get_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">get_cutoff_margin()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.get_number_of_parameters" title="pysic.BondOrderParameters.get_number_of_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">get_number_of_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.get_parameter_names" title="pysic.BondOrderParameters.get_parameter_names"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameter_names()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.get_parameter_value" title="pysic.BondOrderParameters.get_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameter_value()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.get_parameter_values" title="pysic.BondOrderParameters.get_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameter_values()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.get_parameters_as_list" title="pysic.BondOrderParameters.get_parameters_as_list"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameters_as_list()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.get_soft_cutoff" title="pysic.BondOrderParameters.get_soft_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">get_soft_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.set_cutoff" title="pysic.BondOrderParameters.set_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.set_cutoff_margin" title="pysic.BondOrderParameters.set_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff_margin()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.set_parameter_value" title="pysic.BondOrderParameters.set_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_value()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.set_parameter_values" title="pysic.BondOrderParameters.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.set_parameters" title="pysic.BondOrderParameters.set_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.set_soft_cutoff" title="pysic.BondOrderParameters.set_soft_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_soft_cutoff()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="target-handling">
+<h3>Target handling<a class="headerlink" href="#target-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.BondOrderParameters.accepts_target_list" title="pysic.BondOrderParameters.accepts_target_list"><tt class="xref py py-meth docutils literal"><span class="pre">accepts_target_list()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.add_symbols" title="pysic.BondOrderParameters.add_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">add_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.get_different_symbols" title="pysic.BondOrderParameters.get_different_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.get_number_of_targets" title="pysic.BondOrderParameters.get_number_of_targets"><tt class="xref py py-meth docutils literal"><span class="pre">get_number_of_targets()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.get_symbols" title="pysic.BondOrderParameters.get_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">get_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.BondOrderParameters.set_symbols" title="pysic.BondOrderParameters.set_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">set_symbols()</span></tt></a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="full-documentation-of-the-bondorderparameters-class">
+<h2>Full documentation of the BondOrderParameters class<a class="headerlink" href="#full-documentation-of-the-bondorderparameters-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pysic.BondOrderParameters">
+<em class="property">class </em><tt class="descclassname">pysic.</tt><tt class="descname">BondOrderParameters</tt><big>(</big><em>bond_order_type</em>, <em>cutoff=0.0</em>, <em>cutoff_margin=0.0</em>, <em>parameters=None</em>, <em>symbols=None</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for representing a collection of parameters for bond order calculations.</p>
+<p>Calculating bond order factors using Tersoff-like methods defined in
+<a class="reference internal" href="coordinator_class.html#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> requires several parameters per element and
+element pair. To facilitate the handling of all these parameters, they are
+wrapped in a BondOrderParameters object.</p>
+<p>The object can be created empty and filled later with the parameters. Alternatively,
+a list of parameters can be given upon initialization in which case it is passed
+to the <tt class="xref py py-meth docutils literal"><span class="pre">set_parameters()</span></tt> method.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>bond_order_type: string</dt>
+<dd>a keyword specifying the type of the bond order factor</dd>
+<dt>soft_cut: double</dt>
+<dd>The soft cutoff for calculating partial coordination.
+Any atom closer than this is considered a full neighbor.</dd>
+<dt>hard_cut: double</dt>
+<dd>The hard cutoff for calculating partial coordination.
+Any atom closer than this is considered (at least) a partial neighbor
+and will give a fractional contribution to the total coordination.
+Any atom farther than this will not contribute to the neighbor count.</dd>
+<dt>parameters: list of doubles</dt>
+<dd>a list of parameters to be contained in the parameter object</dd>
+<dt>symbols: list of strings</dt>
+<dd>a list of elements on which the factor is applied</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.BondOrderParameters.accepts_parameters">
+<tt class="descname">accepts_parameters</tt><big>(</big><em>params</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.accepts_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.accepts_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Test if the given parameters array has the correct dimensions.</p>
+<p>A bond order parameter can contain separate parameters for single,
+pair etc. elements and each class can have a different number of
+parameters. This method checks if the given list has the correct
+dimensions.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>params: list of doubles</dt>
+<dd>list of parameters</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.accepts_target_list">
+<tt class="descname">accepts_target_list</tt><big>(</big><em>targets</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.accepts_target_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.accepts_target_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests whether a list is suitable as a list of targets, i.e., element symbols
+and returns True or False accordingly.</p>
+<p>A list of targets should be of the format:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">targets</span> <span class="o">=</span> <span class="p">[[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>where the length of the sublists must equal the number of targets.</p>
+<p>It is not tested that the values contained in the list are valid.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>targets: list of strings or integers</dt>
+<dd>a list whose format is checked</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.add_symbols">
+<tt class="descname">add_symbols</tt><big>(</big><em>symbols</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.add_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.add_symbols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the given symbols to the list of symbols.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>symbols: list of strings</dt>
+<dd>list of additional symbols on which the bond order factor acts</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.get_bond_order_type">
+<tt class="descname">get_bond_order_type</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_bond_order_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_bond_order_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the keyword specifying the type of the bond order factor.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.get_cutoff">
+<tt class="descname">get_cutoff</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the cutoff.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.get_cutoff_margin">
+<tt class="descname">get_cutoff_margin</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_cutoff_margin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_cutoff_margin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the margin for a smooth cutoff.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.get_different_symbols">
+<tt class="descname">get_different_symbols</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_different_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_different_symbols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list containing each symbol the potential affects once.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.get_number_of_parameters">
+<tt class="descname">get_number_of_parameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_number_of_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_number_of_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of parameters the bond order parameter object contains.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.get_number_of_targets">
+<tt class="descname">get_number_of_targets</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_number_of_targets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_number_of_targets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the (maximum) number of targets the bond order factor affects.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.get_parameter_names">
+<tt class="descname">get_parameter_names</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_parameter_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_parameter_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of the names of the parameters of the potential.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.get_parameter_value">
+<tt class="descname">get_parameter_value</tt><big>(</big><em>param_name</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_parameter_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_parameter_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the given parameter.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>param_name: string</dt>
+<dd>name of the parameter</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.get_parameter_values">
+<tt class="descname">get_parameter_values</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_parameter_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_parameter_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list containing the current parameter values of the potential.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.get_parameters_as_list">
+<tt class="descname">get_parameters_as_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_parameters_as_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_parameters_as_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the parameters of the bond order factor as a single list.</p>
+<p>The generated list first contains the single element parameters, then
+pair parameters, etc.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.get_soft_cutoff">
+<tt class="descname">get_soft_cutoff</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_soft_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_soft_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the lower limit for a smooth cutoff.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.get_symbols">
+<tt class="descname">get_symbols</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_symbols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the symbols the bond parameters affect.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.set_cutoff">
+<tt class="descname">set_cutoff</tt><big>(</big><em>cutoff</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the cutoff to a given value.</p>
+<p>This method affects the hard cutoff.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>cutoff: double</dt>
+<dd>new cutoff for the bond order factor</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.set_cutoff_margin">
+<tt class="descname">set_cutoff_margin</tt><big>(</big><em>margin</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_cutoff_margin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_cutoff_margin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the margin for smooth cutoff to a given value.</p>
+<p>This method defines the decay interval <span class="math">\(r_\mathrm{hard}-r_\mathrm{soft}\)</span>.
+Note that if the soft cutoff value is made smaller than 0 or larger than the
+hard cutoff value an <a class="reference internal" href="pysic.html#pysic.InvalidParametersError" title="pysic.InvalidParametersError"><tt class="xref py py-class docutils literal"><span class="pre">InvalidParametersError</span></tt></a> is raised.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>margin: double</dt>
+<dd>The new cutoff margin</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.set_parameter_value">
+<tt class="descname">set_parameter_value</tt><big>(</big><em>parameter_name</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_parameter_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_parameter_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets a given parameter to the desired value.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>parameter_name: string</dt>
+<dd>name of the parameter</dd>
+<dt>value: double</dt>
+<dd>the new value of the parameter</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.set_parameter_values">
+<tt class="descname">set_parameter_values</tt><big>(</big><em>values</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_parameter_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_parameter_values" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the numeric values of all parameters.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>params: list of doubles</dt>
+<dd>list of values to be assigned to parameters</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.set_parameters">
+<tt class="descname">set_parameters</tt><big>(</big><em>params</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the numeric values of all parameters.</p>
+<p>Equivalent to <a class="reference internal" href="#pysic.BondOrderParameters.set_parameter_values" title="pysic.BondOrderParameters.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a>.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>params: list of doubles</dt>
+<dd>list of values to be assigned to parameters</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.set_soft_cutoff">
+<tt class="descname">set_soft_cutoff</tt><big>(</big><em>cutoff</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_soft_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_soft_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the soft cutoff to a given value.</p>
+<p>Note that actually the cutoff margin is recorded, so changing the
+hard cutoff (see <a class="reference internal" href="#pysic.BondOrderParameters.set_cutoff" title="pysic.BondOrderParameters.set_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff()</span></tt></a>) will also affect the
+soft cutoff.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>cutoff: double</dt>
+<dd>The new soft cutoff</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.BondOrderParameters.set_symbols">
+<tt class="descname">set_symbols</tt><big>(</big><em>symbols</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_symbols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the list of symbols to equal the given list.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>symbols: list of strings</dt>
+<dd>list of element symbols on which the bond order factor acts</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="chargerelaxation_class.html" title="ChargeRelaxation class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="coordinator_class.html" title="Coordinator class"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.2 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,530 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>quaternions (Quaternions.f90) &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="up" title="Pysic Fortran module" href="pysic_fortran.html" />
+    <link rel="next" title="mt95 (Mersenne.f90)" href="Mersenne_f90.html" />
+    <link rel="prev" title="mpi (MPI.f90)" href="MPI_f90.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Mersenne_f90.html" title="mt95 (Mersenne.f90)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="MPI_f90.html" title="mpi (MPI.f90)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="pysic_fortran.html" accesskey="U">Pysic Fortran module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">quaternions (Quaternions.f90)</a><ul>
+<li><a class="reference internal" href="#list-of-global-variables-in-quaternions">List of global variables in quaternions</a></li>
+<li><a class="reference internal" href="#list-of-custom-types-in-quaternions">List of custom types in quaternions</a></li>
+<li><a class="reference internal" href="#list-of-subroutines-in-quaternions">List of subroutines in quaternions</a></li>
+<li><a class="reference internal" href="#list-of-functions-in-quaternions">List of functions in quaternions</a></li>
+<li><a class="reference internal" href="#full-documentation-of-global-variables-in-quaternions">Full documentation of global variables in quaternions</a></li>
+<li><a class="reference internal" href="#full-documentation-of-custom-types-in-quaternions">Full documentation of custom types in quaternions</a></li>
+<li><a class="reference internal" href="#full-documentation-of-subroutines-in-quaternions">Full documentation of subroutines in quaternions</a></li>
+<li><a class="reference internal" href="#full-documentation-of-functions-in-quaternions">Full documentation of functions in quaternions</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="MPI_f90.html"
+                        title="previous chapter">mpi (MPI.f90)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Mersenne_f90.html"
+                        title="next chapter">mt95 (Mersenne.f90)</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/Quaternions_f90.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="quaternions-quaternions-f90">
+<span id="quaternions"></span><h1>quaternions (Quaternions.f90)<a class="headerlink" href="#quaternions-quaternions-f90" title="Permalink to this headline">¶</a></h1>
+<p>A module for basic quarternion operations
+and 3D spatial rotations using quaternion representation
+Quaternions are a 4-component analogue to complex numbers</p>
+<div class="math">
+\[\mathbf{q} = w + x \mathbf{i} + y \mathbf{j} + z \mathbf{k} = [w,x,y,z]\]</div>
+<p>where the three imaginary components obey <span class="math">\(\mathbf{ijk} = \mathbf{i}^2 = \mathbf{j}^2 = \mathbf{k}^2 = -1\)</span>.
+This leads to a structure similar to that of complex numbers, except that the quaternion product defined
+according to the above rules is non-commutative <span class="math">\(\mathbf{q}_1\mathbf{q}_2 \ne \mathbf{q}_2\mathbf{q}_1\)</span>.</p>
+<p>It turns out that unit quaternions <span class="math">\(||\mathbf{q}|| = \sqrt{w^2+x^2+y^2+z^2} = 1\)</span> represent the space
+of 3D rotations so that the rotation by angle <span class="math">\(\alpha\)</span> around unit axis <span class="math">\(\mathbf{u} = [x,y,z]\)</span>
+is represented by the quaternion</p>
+<div class="math">
+\[\mathbf{q} = [\cos \frac{\alpha}{2}, x \sin \frac{\alpha}{2}, y \sin \frac{\alpha}{2}, z \sin \frac{\alpha}{2}]\]</div>
+<p>and joining rotations is represented as a a quaternion product
+(rotating first by <span class="math">\(\mathbf{q}_1\)</span>, then by <span class="math">\(\mathbf{q}_2\)</span> yields the combined rotation
+of <span class="math">\(\mathbf{q}_{12} = \mathbf{q}_2 \mathbf{q}_1\)</span>).</p>
+<div class="section" id="list-of-global-variables-in-quaternions">
+<h2>List of global variables in quaternions<a class="headerlink" href="#list-of-global-variables-in-quaternions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#norm_tolerance" title="norm_tolerance"><tt class="xref py py-data docutils literal"><span class="pre">norm_tolerance</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="list-of-custom-types-in-quaternions">
+<h2>List of custom types in quaternions<a class="headerlink" href="#list-of-custom-types-in-quaternions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#qtrn" title="qtrn"><tt class="xref py py-data docutils literal"><span class="pre">qtrn</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="list-of-subroutines-in-quaternions">
+<h2>List of subroutines in quaternions<a class="headerlink" href="#list-of-subroutines-in-quaternions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#norm_quaternion" title="norm_quaternion"><tt class="xref py py-func docutils literal"><span class="pre">norm_quaternion()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="list-of-functions-in-quaternions">
+<h2>List of functions in quaternions<a class="headerlink" href="#list-of-functions-in-quaternions" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#cross" title="cross"><tt class="xref py py-func docutils literal"><span class="pre">cross()</span></tt></a></li>
+<li><a class="reference internal" href="#dot" title="dot"><tt class="xref py py-func docutils literal"><span class="pre">dot()</span></tt></a></li>
+<li><a class="reference internal" href="#q2angle" title="q2angle"><tt class="xref py py-func docutils literal"><span class="pre">q2angle()</span></tt></a></li>
+<li><a class="reference internal" href="#q2axis" title="q2axis"><tt class="xref py py-func docutils literal"><span class="pre">q2axis()</span></tt></a></li>
+<li><a class="reference internal" href="#q2matrix" title="q2matrix"><tt class="xref py py-func docutils literal"><span class="pre">q2matrix()</span></tt></a></li>
+<li><a class="reference internal" href="#qconj" title="qconj"><tt class="xref py py-func docutils literal"><span class="pre">qconj()</span></tt></a></li>
+<li><a class="reference internal" href="#qdiv" title="qdiv"><tt class="xref py py-func docutils literal"><span class="pre">qdiv()</span></tt></a></li>
+<li><a class="reference internal" href="#qinv" title="qinv"><tt class="xref py py-func docutils literal"><span class="pre">qinv()</span></tt></a></li>
+<li><a class="reference internal" href="#qminus" title="qminus"><tt class="xref py py-func docutils literal"><span class="pre">qminus()</span></tt></a></li>
+<li><a class="reference internal" href="#qnorm" title="qnorm"><tt class="xref py py-func docutils literal"><span class="pre">qnorm()</span></tt></a></li>
+<li><a class="reference internal" href="#qplus" title="qplus"><tt class="xref py py-func docutils literal"><span class="pre">qplus()</span></tt></a></li>
+<li><a class="reference internal" href="#qprod" title="qprod"><tt class="xref py py-func docutils literal"><span class="pre">qprod()</span></tt></a></li>
+<li><a class="reference internal" href="#qtimes" title="qtimes"><tt class="xref py py-func docutils literal"><span class="pre">qtimes()</span></tt></a></li>
+<li><a class="reference internal" href="#qtimesB" title="qtimesB"><tt class="xref py py-func docutils literal"><span class="pre">qtimesB()</span></tt></a></li>
+<li><a class="reference internal" href="#rot2q" title="rot2q"><tt class="xref py py-func docutils literal"><span class="pre">rot2q()</span></tt></a></li>
+<li><a class="reference internal" href="#rotate_a" title="rotate_a"><tt class="xref py py-func docutils literal"><span class="pre">rotate_a()</span></tt></a></li>
+<li><a class="reference internal" href="#rotate_au" title="rotate_au"><tt class="xref py py-func docutils literal"><span class="pre">rotate_au()</span></tt></a></li>
+<li><a class="reference internal" href="#rotate_q" title="rotate_q"><tt class="xref py py-func docutils literal"><span class="pre">rotate_q()</span></tt></a></li>
+<li><a class="reference internal" href="#vec2q" title="vec2q"><tt class="xref py py-func docutils literal"><span class="pre">vec2q()</span></tt></a></li>
+<li><a class="reference internal" href="#vnorm" title="vnorm"><tt class="xref py py-func docutils literal"><span class="pre">vnorm()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="full-documentation-of-global-variables-in-quaternions">
+<h2>Full documentation of global variables in quaternions<a class="headerlink" href="#full-documentation-of-global-variables-in-quaternions" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="data">
+<dt id="norm_tolerance">
+<tt class="descname">norm_tolerance</tt><a class="headerlink" href="#norm_tolerance" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision    <em>scalar</em>  <em>parameter</em></p>
+<p><em>initial value</em> = 1.0d-8</p>
+<p>the threshold value for the norm for treating vectors as zero vectors</p>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="full-documentation-of-custom-types-in-quaternions">
+<h2>Full documentation of custom types in quaternions<a class="headerlink" href="#full-documentation-of-custom-types-in-quaternions" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="data">
+<dt id="qtrn">
+<tt class="descname">qtrn</tt><a class="headerlink" href="#qtrn" title="Permalink to this definition">¶</a></dt>
+<dd><p>The quarternion type. It only contains four
+real components, but the main advantage for
+defining it as a custom type is the possibility
+to write routines and operators for quaternion
+algebra.</p>
+<p>Contained data:</p>
+<dl class="docutils">
+<dt>y: double precision    <em>scalar</em></dt>
+<dd>an &#8220;imaginary&#8221; component of the quaternion</dd>
+<dt>x: double precision    <em>scalar</em></dt>
+<dd>an &#8220;imaginary&#8221; component of the quaternion</dd>
+<dt>z: double precision    <em>scalar</em></dt>
+<dd>an &#8220;imaginary&#8221; component of the quaternion</dd>
+<dt>w: double precision    <em>scalar</em></dt>
+<dd>the &#8220;real&#8221; component of the quaternion</dd>
+</dl>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="full-documentation-of-subroutines-in-quaternions">
+<h2>Full documentation of subroutines in quaternions<a class="headerlink" href="#full-documentation-of-subroutines-in-quaternions" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="norm_quaternion">
+<tt class="descname">norm_quaternion</tt><big>(</big><em>qq</em><big>)</big><a class="headerlink" href="#norm_quaternion" title="Permalink to this definition">¶</a></dt>
+<dd><p>norms the given quaternion</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>qq: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>quaternion to be normed to unity</dd>
+</dl>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="full-documentation-of-functions-in-quaternions">
+<h2>Full documentation of functions in quaternions<a class="headerlink" href="#full-documentation-of-functions-in-quaternions" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="cross">
+<tt class="descname">cross</tt><big>(</big><em>v</em>, <em>u</em><big>)</big><a class="headerlink" href="#cross" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normal cross product of vectors <span class="math">\(\mathbf{v} \times \mathbf{u}\)</span> (Note: for 3-vectors only!)</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>v: double precision  <em>intent()</em>    <em>size(3)</em></dt>
+<dd>vector</dd>
+<dt>u: double precision  <em>intent()</em>    <em>size(3)</em></dt>
+<dd>vector</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="dot">
+<tt class="descname">dot</tt><big>(</big><em>v</em>, <em>u</em><big>)</big><a class="headerlink" href="#dot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Normal dot product of vectors <span class="math">\(\mathbf{v}\cdot\mathbf{u}\)</span> (Note: for 3-vectors only!)</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>v: double precision  <em>intent()</em>    <em>size(3)</em></dt>
+<dd>vector</dd>
+<dt>u: double precision  <em>intent()</em>    <em>size(3)</em></dt>
+<dd>vector</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="q2angle">
+<tt class="descname">q2angle</tt><big>(</big><em>q</em><big>)</big><a class="headerlink" href="#q2angle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the angle of rotation described by the
+UNIT quarternion <span class="math">\(\mathbf{q}\)</span>. Note that the unity of <span class="math">\(\mathbf{q}\)</span>
+is not checked (as it would be time consuming to
+calculate the norm all the time if we know
+the quaternions used have unit length).</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>q: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion representation of rotation</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="q2axis">
+<tt class="descname">q2axis</tt><big>(</big><em>q</em><big>)</big><a class="headerlink" href="#q2axis" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the axis of rotation described by the
+UNIT quarternion <span class="math">\(\mathbf{q}\)</span>. Note that the unity of <span class="math">\(\mathbf{q}\)</span>
+is not checked (as it would be time consuming to
+calculate the norm all the time if we know
+the quaternions used have unit length).</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>q: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion representation of rotation</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="q2matrix">
+<tt class="descname">q2matrix</tt><big>(</big><em>q</em><big>)</big><a class="headerlink" href="#q2matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the rotation matrix described by the
+UNIT quarternion <span class="math">\(\mathbf{q}\)</span>. Note that the unity of <span class="math">\(\mathbf{q}\)</span>
+is not checked (as it would be time consuming to
+calculate the norm all the time if we know
+the quaternions used have unit length).</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>q: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion representation of rotation</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="qconj">
+<tt class="descname">qconj</tt><big>(</big><em>q</em><big>)</big><a class="headerlink" href="#qconj" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the quarternion conjugate of <span class="math">\(\mathbf{q}\)</span>: <span class="math">\(\mathbf{q}^* = w+x\mathbf{i}+y\mathbf{j}+z\mathbf{k} \to w-x\mathbf{i}-y\mathbf{j}-z\mathbf{k}\)</span></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>q: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="qdiv">
+<tt class="descname">qdiv</tt><big>(</big><em>q</em>, <em>r</em><big>)</big><a class="headerlink" href="#qdiv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the quarternion <span class="math">\(\mathbf{q}\)</span> divided by scalar <span class="math">\(r\)</span>
+component-wise</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>q: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion</dd>
+<dt>r: double precision  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a real scalar</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="qinv">
+<tt class="descname">qinv</tt><big>(</big><em>q</em><big>)</big><a class="headerlink" href="#qinv" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the quarternion inverse of <span class="math">\(\mathbf{q}\)</span>: <span class="math">\(\mathbf{q}^*/||\mathbf{q}||\)</span></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>q: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="qminus">
+<tt class="descname">qminus</tt><big>(</big><em>q</em>, <em>r</em><big>)</big><a class="headerlink" href="#qminus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the quarternion <span class="math">\(\mathbf{q}\)</span> subtracted by scalar <span class="math">\(r\)</span>
+component-wise</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>q: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion</dd>
+<dt>r: double precision  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a real scalar</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="qnorm">
+<tt class="descname">qnorm</tt><big>(</big><em>q</em><big>)</big><a class="headerlink" href="#qnorm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the quarternion norm of <span class="math">\(\mathbf{q}\)</span>: <span class="math">\(||\mathbf{q}|| = \sqrt{w^2+x^2+y^2+z^2}\)</span></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>q: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="qplus">
+<tt class="descname">qplus</tt><big>(</big><em>q</em>, <em>r</em><big>)</big><a class="headerlink" href="#qplus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the quarternion <span class="math">\(\mathbf{q}\)</span> added by scalar <span class="math">\(r\)</span>
+component-wise</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>q: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion</dd>
+<dt>r: double precision  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a real scalar</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="qprod">
+<tt class="descname">qprod</tt><big>(</big><em>q1</em>, <em>q2</em><big>)</big><a class="headerlink" href="#qprod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the quarternion product <span class="math">\(\mathbf{q}_1\mathbf{q}_2\)</span>
+Note that the product is non-commutative:  <span class="math">\(\mathbf{q}_1\mathbf{q}_2 \ne \mathbf{q}_2\mathbf{q}_1\)</span></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>q1: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion</dd>
+<dt>q2: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="qtimes">
+<tt class="descname">qtimes</tt><big>(</big><em>r</em>, <em>q</em><big>)</big><a class="headerlink" href="#qtimes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the quarternion <span class="math">\(\mathbf{q}\)</span> multiplied by scalar <span class="math">\(r\)</span>
+component-wise</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>r: double precision  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a real scalar</dd>
+<dt>q: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="qtimesB">
+<tt class="descname">qtimesB</tt><big>(</big><em>q</em>, <em>r</em><big>)</big><a class="headerlink" href="#qtimesB" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the quarternion <span class="math">\(\mathbf{q}\)</span> multiplied by scalar <span class="math">\(r\)</span>
+component-wise</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>q: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion</dd>
+<dt>r: double precision  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a real scalar</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="rot2q">
+<tt class="descname">rot2q</tt><big>(</big><em>a</em>, <em>u</em><big>)</big><a class="headerlink" href="#rot2q" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the quarternion representing a rotation
+around axis <span class="math">\(\mathbf{u}\)</span> by angle <span class="math">\(\alpha\)</span></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>a: double precision  <em>intent()</em>    <em>scalar</em></dt>
+<dd>angle in radians</dd>
+<dt>u: double precision  <em>intent()</em>    <em>size(3)</em></dt>
+<dd>3D vector, defining an axis of rotation</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="rotate_a">
+<tt class="descname">rotate_a</tt><big>(</big><em>vec</em>, <em>da</em><big>)</big><a class="headerlink" href="#rotate_a" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the vector rotated according to
+the vector <span class="math">\(\mathbf{d}\)</span>. The axis of rotation is given by
+the direction of <span class="math">\(\mathbf{d}\)</span> and the angle by <span class="math">\(||\mathbf{d}||\)</span>.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>vec: double precision  <em>intent()</em>    <em>size(3)</em></dt>
+<dd>vector to be rotated</dd>
+<dt>da: double precision  <em>intent()</em>    <em>size(3)</em></dt>
+<dd>rotation vector (e.g., angular velocity x time <span class="math">\(\mathbf{\omega} t\)</span>)</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="rotate_au">
+<tt class="descname">rotate_au</tt><big>(</big><em>vec</em>, <em>a</em>, <em>u</em><big>)</big><a class="headerlink" href="#rotate_au" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the vector rotated according to
+the axis <span class="math">\(\mathbf{u}\)</span> and angle <span class="math">\(\alpha\)</span>.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>vec: double precision  <em>intent()</em>    <em>size(3)</em></dt>
+<dd>vector to be rotated</dd>
+<dt>a: double precision  <em>intent()</em>    <em>scalar</em></dt>
+<dd>angle of rotation</dd>
+<dt>u: double precision  <em>intent()</em>    <em>size(3)</em></dt>
+<dd>axis of rotation</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="rotate_q">
+<tt class="descname">rotate_q</tt><big>(</big><em>vec</em>, <em>q</em><big>)</big><a class="headerlink" href="#rotate_q" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the 3D vector rotated according to
+the UNIT quarternion <span class="math">\(\mathbf{q}\)</span>. Note that the unity of <span class="math">\(\mathbf{q}\)</span>
+is not checked (as it would be time consuming to
+calculate the norm all the time if we know
+the quaternions used have unit length).</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>vec: double precision  <em>intent()</em>    <em>size(3)</em></dt>
+<dd>vector to be rotated</dd>
+<dt>q: TYPE(qtrn)  <em>intent()</em>    <em>scalar</em></dt>
+<dd>a quaternion representation of rotation</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="vec2q">
+<tt class="descname">vec2q</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#vec2q" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the quarternion representing a rotation
+around axis <span class="math">\(\mathbf{v}\)</span> by angle <span class="math">\(||\mathbf{v}||\)</span>. If <span class="math">\(\mathbf{v} = 0\)</span>,
+the quaternion <span class="math">\(\mathbf{q} = [1 0 0 0]\)</span> will be returned.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>v: double precision  <em>intent()</em>    <em>size(3)</em></dt>
+<dd>3D vector, defining both the angle and axis of rotation</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="vnorm">
+<tt class="descname">vnorm</tt><big>(</big><em>v</em><big>)</big><a class="headerlink" href="#vnorm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Norm of a vector, <span class="math">\(||\mathbf{v}||\)</span></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>v: double precision  <em>intent()</em>    <em>size(3)</em></dt>
+<dd>vector</dd>
+</dl>
+</dd></dl>
+
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Mersenne_f90.html" title="mt95 (Mersenne.f90)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="MPI_f90.html" title="mpi (MPI.f90)"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="pysic_fortran.html" >Pysic Fortran module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

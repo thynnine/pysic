@@ -1,0 +1,12 @@
+.. module: pysic_utility
+
+.. _pysic_utility_module:
+
+====================
+Pysic Utility Module
+====================
+
+A module for providing utility tools and parameters.
+
+.. automodule:: pysic_utility
+   :members:

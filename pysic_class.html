@@ -1,0 +1,657 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Pysic class &mdash; Pysic 0.4.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.2 documentation" href="index.html" />
+    <link rel="up" title="Pysic module" href="pysic.html" />
+    <link rel="next" title="Potential class" href="potential_class.html" />
+    <link rel="prev" title="Pysic module" href="pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="potential_class.html" title="Potential class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="pysic.html" title="Pysic module"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.2 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Pysic class</a><ul>
+<li><a class="reference internal" href="#list-of-methods">List of methods</a><ul>
+<li><a class="reference internal" href="#structure-handling">Structure handling</a></li>
+<li><a class="reference internal" href="#potential-handling">Potential handling</a></li>
+<li><a class="reference internal" href="#coulomb-handling">Coulomb handling</a></li>
+<li><a class="reference internal" href="#charge-relaxation-handling">Charge relaxation handling</a></li>
+<li><a class="reference internal" href="#calculations">Calculations</a></li>
+<li><a class="reference internal" href="#core">Core</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#full-documentation-of-the-pysic-class">Full documentation of the Pysic class</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="pysic.html"
+                        title="previous chapter">Pysic module</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="potential_class.html"
+                        title="next chapter">Potential class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pysic_class.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="pysic-class"></span><div class="section" id="id2">
+<h1>Pysic class<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h1>
+<p>This class provides an interface both to the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a> environment and the
+Fortran core of Pysic through the <a class="reference internal" href="pysic_fortran.html#module-pysic_fortran" title="pysic_fortran"><tt class="xref py py-mod docutils literal"><span class="pre">pysic_fortran</span></tt></a> module.
+In <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a> terms, Pysic is a <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html">calculator</a>, i.e., an object that calculates
+forces and energies of given atomistic structures provided as an
+<a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object.</p>
+<p>Pysic is not a fixed potential calculator, where the interactions are determined
+solely based on the elements present in the system. Instead, Pysic allows and requires
+the user to specify the interactions governing the system. This is done by providing
+the calculator with one or several <a class="reference internal" href="potential_class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects.</p>
+<div class="section" id="list-of-methods">
+<h2>List of methods<a class="headerlink" href="#list-of-methods" title="Permalink to this headline">¶</a></h2>
+<p>Below is a list of methods in <a class="reference internal" href="#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, grouped according to
+the type of functionality.</p>
+<div class="section" id="structure-handling">
+<h3>Structure handling<a class="headerlink" href="#structure-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.Pysic.create_neighbor_lists" title="pysic.Pysic.create_neighbor_lists"><tt class="xref py py-meth docutils literal"><span class="pre">create_neighbor_lists()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.Pysic.get_atoms" title="pysic.Pysic.get_atoms"><tt class="xref py py-meth docutils literal"><span class="pre">get_atoms()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.get_neighbor_lists" title="pysic.Pysic.get_neighbor_lists"><tt class="xref py py-meth docutils literal"><span class="pre">get_neighbor_lists()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.neighbor_lists_expanded" title="pysic.Pysic.neighbor_lists_expanded"><tt class="xref py py-meth docutils literal"><span class="pre">neighbor_lists_expanded()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.Pysic.set_atoms" title="pysic.Pysic.set_atoms"><tt class="xref py py-meth docutils literal"><span class="pre">set_atoms()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="potential-handling">
+<h3>Potential handling<a class="headerlink" href="#potential-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.Pysic.add_potential" title="pysic.Pysic.add_potential"><tt class="xref py py-meth docutils literal"><span class="pre">add_potential()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.get_individual_cutoffs" title="pysic.Pysic.get_individual_cutoffs"><tt class="xref py py-meth docutils literal"><span class="pre">get_individual_cutoffs()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.get_potentials" title="pysic.Pysic.get_potentials"><tt class="xref py py-meth docutils literal"><span class="pre">get_potentials()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.set_potentials" title="pysic.Pysic.set_potentials"><tt class="xref py py-meth docutils literal"><span class="pre">set_potentials()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="coulomb-handling">
+<h3>Coulomb handling<a class="headerlink" href="#coulomb-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.Pysic.get_coulomb_summation" title="pysic.Pysic.get_coulomb_summation"><tt class="xref py py-meth docutils literal"><span class="pre">get_coulomb_summation()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.set_coulomb_summation" title="pysic.Pysic.set_coulomb_summation"><tt class="xref py py-meth docutils literal"><span class="pre">set_coulomb_summation()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="charge-relaxation-handling">
+<h3>Charge relaxation handling<a class="headerlink" href="#charge-relaxation-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.Pysic.get_charge_relaxation" title="pysic.Pysic.get_charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">get_charge_relaxation()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.set_charge_relaxation" title="pysic.Pysic.set_charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">set_charge_relaxation()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="calculations">
+<h3>Calculations<a class="headerlink" href="#calculations" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.Pysic.calculate_electronegativities" title="pysic.Pysic.calculate_electronegativities"><tt class="xref py py-meth docutils literal"><span class="pre">calculate_electronegativities()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.Pysic.calculate_energy" title="pysic.Pysic.calculate_energy"><tt class="xref py py-meth docutils literal"><span class="pre">calculate_energy()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.Pysic.calculate_forces" title="pysic.Pysic.calculate_forces"><tt class="xref py py-meth docutils literal"><span class="pre">calculate_forces()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.Pysic.calculate_stress" title="pysic.Pysic.calculate_stress"><tt class="xref py py-meth docutils literal"><span class="pre">calculate_stress()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.Pysic.calculation_required" title="pysic.Pysic.calculation_required"><tt class="xref py py-meth docutils literal"><span class="pre">calculation_required()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.Pysic.get_electronegativities" title="pysic.Pysic.get_electronegativities"><tt class="xref py py-meth docutils literal"><span class="pre">get_electronegativities()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.get_electronegativity_differences" title="pysic.Pysic.get_electronegativity_differences"><tt class="xref py py-meth docutils literal"><span class="pre">get_electronegativity_differences()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.get_forces" title="pysic.Pysic.get_forces"><tt class="xref py py-meth docutils literal"><span class="pre">get_forces()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.get_numerical_bond_order_gradient" title="pysic.Pysic.get_numerical_bond_order_gradient"><tt class="xref py py-meth docutils literal"><span class="pre">get_numerical_bond_order_gradient()</span></tt></a> (for testing)</li>
+<li><a class="reference internal" href="#pysic.Pysic.get_numerical_energy_gradient" title="pysic.Pysic.get_numerical_energy_gradient"><tt class="xref py py-meth docutils literal"><span class="pre">get_numerical_energy_gradient()</span></tt></a> (for testing)</li>
+<li><a class="reference internal" href="#pysic.Pysic.get_numerical_electronegativity" title="pysic.Pysic.get_numerical_electronegativity"><tt class="xref py py-meth docutils literal"><span class="pre">get_numerical_electronegativity()</span></tt></a> (for testing)</li>
+<li><a class="reference internal" href="#pysic.Pysic.get_potential_energy" title="pysic.Pysic.get_potential_energy"><tt class="xref py py-meth docutils literal"><span class="pre">get_potential_energy()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.get_stress" title="pysic.Pysic.get_stress"><tt class="xref py py-meth docutils literal"><span class="pre">get_stress()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="core">
+<h3>Core<a class="headerlink" href="#core" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.Pysic.core" title="pysic.Pysic.core"><tt class="xref py py-data docutils literal"><span class="pre">core</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.core_initialization_is_forced" title="pysic.Pysic.core_initialization_is_forced"><tt class="xref py py-meth docutils literal"><span class="pre">core_initialization_is_forced()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.force_core_initialization" title="pysic.Pysic.force_core_initialization"><tt class="xref py py-meth docutils literal"><span class="pre">force_core_initialization()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.initialize_fortran_core" title="pysic.Pysic.initialize_fortran_core"><tt class="xref py py-meth docutils literal"><span class="pre">initialize_fortran_core()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.set_core" title="pysic.Pysic.set_core"><tt class="xref py py-meth docutils literal"><span class="pre">set_core()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.Pysic.update_core_charges" title="pysic.Pysic.update_core_charges"><tt class="xref py py-meth docutils literal"><span class="pre">update_core_charges()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.Pysic.update_core_coordinates" title="pysic.Pysic.update_core_coordinates"><tt class="xref py py-meth docutils literal"><span class="pre">update_core_coordinates()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.Pysic.update_core_coulomb" title="pysic.Pysic.update_core_coulomb"><tt class="xref py py-meth docutils literal"><span class="pre">update_core_coulomb()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.Pysic.update_core_neighbor_lists" title="pysic.Pysic.update_core_neighbor_lists"><tt class="xref py py-meth docutils literal"><span class="pre">update_core_neighbor_lists()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.Pysic.update_core_potential_lists" title="pysic.Pysic.update_core_potential_lists"><tt class="xref py py-meth docutils literal"><span class="pre">update_core_potential_lists()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.Pysic.update_core_supercell" title="pysic.Pysic.update_core_supercell"><tt class="xref py py-meth docutils literal"><span class="pre">update_core_supercell()</span></tt></a> (meant for internal use)</li>
+</ul>
+</div>
+</div>
+<div class="section" id="full-documentation-of-the-pysic-class">
+<h2>Full documentation of the Pysic class<a class="headerlink" href="#full-documentation-of-the-pysic-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pysic.Pysic">
+<em class="property">class </em><tt class="descclassname">pysic.</tt><tt class="descname">Pysic</tt><big>(</big><em>atoms=None</em>, <em>potentials=None</em>, <em>charge_relaxation=None</em>, <em>coulomb=None</em>, <em>full_initialization=False</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic" title="Permalink to this definition">¶</a></dt>
+<dd><p>A calculator class providing the necessary methods for interfacing with <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a>.</p>
+<p>Pysic is a calculator for evaluating energies and forces for given atomic structures
+according to the given <a class="reference internal" href="potential_class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> set. Neither the geometry nor the
+potentials have to be specified upon creating the calculator, as they can be specified
+or changed later. They are necessary for actual calculation, of course.</p>
+<p>Simulation geometries must be defined as <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a>. This object contains both the
+atomistic coordinates and supercell parameters.</p>
+<p>Potentials must be defined as a list of <a class="reference internal" href="potential_class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects. 
+The total potential of the system is then the sum of the individual potentials.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>atoms: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object</dt>
+<dd>an Atoms object containing the full simulation geometry</dd>
+<dt>potentials: list of <a class="reference internal" href="potential_class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects</dt>
+<dd>list of potentials for describing interactions</dd>
+<dt>force_initialization: boolean</dt>
+<dd>If true, calculations always fully initialize the Fortran core.
+If false, the Pysic tries to evaluate what needs updating by
+consulting the <a class="reference internal" href="#pysic.Pysic.core" title="pysic.Pysic.core"><tt class="xref py py-data docutils literal"><span class="pre">core</span></tt></a> instance of <a class="reference internal" href="coremirror_class.html#pysic.CoreMirror" title="pysic.CoreMirror"><tt class="xref py py-class docutils literal"><span class="pre">CoreMirror</span></tt></a>.</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.Pysic.add_potential">
+<tt class="descname">add_potential</tt><big>(</big><em>potential</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.add_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.add_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a potential to the list of potentials.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>potential: <a class="reference internal" href="potential_class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> object</dt>
+<dd>a new potential to describe interactions</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.calculate_electronegativities">
+<tt class="descname">calculate_electronegativities</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.calculate_electronegativities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.calculate_electronegativities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates electronegativities.</p>
+<p>Calls the Fortran core to calculate forces for the currently assigned structure.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.calculate_energy">
+<tt class="descname">calculate_energy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.calculate_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.calculate_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the potential energy.</p>
+<p>Calls the Fortran core to calculate the potential energy for the currently assigned structure.</p>
+<p>If a link exists to a <a class="reference internal" href="chargerelaxation_class.html#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>, it is first made to
+relax the atomic charges before the forces are calculated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.calculate_forces">
+<tt class="descname">calculate_forces</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.calculate_forces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.calculate_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates forces.</p>
+<p>Calls the Fortran core to calculate forces for the currently assigned structure.</p>
+<p>If a link exists to a <a class="reference internal" href="chargerelaxation_class.html#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>, it is first made to
+relax the atomic charges before the forces are calculated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.calculate_stress">
+<tt class="descname">calculate_stress</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.calculate_stress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.calculate_stress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the stress tensor.</p>
+<p>Calls the Fortran core to calculate the stress tensor for the currently assigned structure.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.calculation_required">
+<tt class="descname">calculation_required</tt><big>(</big><em>atoms=None, quantities=['forces', 'energy', 'stress', 'electronegativities']</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.calculation_required"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.calculation_required" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a calculation is required.</p>
+<p>When forces or energy are calculated, the calculator saves the
+result in case it is needed several times. This method tells
+if a wanted quantity is not yet calculated for the current
+structure and needs to be calculated explicitly. If a list of
+several quantities is given, the method returns true if any one of
+them needs to be calculated.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>atoms: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object</dt>
+<dd>ignored at the moment</dd>
+<dt>quantities: list of strings</dt>
+<dd>list of keywords &#8216;energy&#8217;, &#8216;forces&#8217;, &#8216;stress&#8217;, &#8216;electronegativities&#8217;</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pysic.Pysic.core">
+<tt class="descname">core</tt><em class="property"> = CoreMirror()</em><a class="headerlink" href="#pysic.Pysic.core" title="Permalink to this definition">¶</a></dt>
+<dd><p>An object storing the data passed to the core.</p>
+<p>Whenever a <a class="reference internal" href="#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator alters the Fortran core,
+it should also modify the <a class="reference internal" href="#pysic.Pysic.core" title="pysic.Pysic.core"><tt class="xref py py-data docutils literal"><span class="pre">core</span></tt></a> object so that
+it is always a valid representation of the actual core.
+Then, whenever <a class="reference internal" href="#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> needs to check if the
+representation in the core is up to date, it only needs to compare
+against <a class="reference internal" href="#pysic.Pysic.core" title="pysic.Pysic.core"><tt class="xref py py-data docutils literal"><span class="pre">core</span></tt></a> instead of accessing the
+Fortran core itself.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.core_initialization_is_forced">
+<tt class="descname">core_initialization_is_forced</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.core_initialization_is_forced"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.core_initialization_is_forced" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns true if the core is always fully initialized, false otherwise.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.create_neighbor_lists">
+<tt class="descname">create_neighbor_lists</tt><big>(</big><em>cutoffs=None</em>, <em>marginal=0.5</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.create_neighbor_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.create_neighbor_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes the neighbor lists.</p>
+<p>In order to do calculations at reasonable speed, the calculator needs 
+a list of neighbors for each atom. For this purpose, the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists">ASE NeighborList</a>
+are used. This method initializes these lists according to the given
+cutoffs.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>cutoffs: list of doubles</dt>
+<dd>a list containing the cutoff distance for each atom</dd>
+<dt>marginal: double</dt>
+<dd>the skin width of the neighbor list</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.force_core_initialization">
+<tt class="descname">force_core_initialization</tt><big>(</big><em>new_mode</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.force_core_initialization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.force_core_initialization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the core initialization mode.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>new_mode: logical</dt>
+<dd>true if full initialization is required, false if not</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_atoms">
+<tt class="descname">get_atoms</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object assigned to the calculator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_charge_relaxation">
+<tt class="descname">get_charge_relaxation</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_charge_relaxation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_charge_relaxation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the <a class="reference internal" href="chargerelaxation_class.html#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> object connected to the calculator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_coulomb_summation">
+<tt class="descname">get_coulomb_summation</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_coulomb_summation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_coulomb_summation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Coulomb summation algorithm of this calculator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_electronegativities">
+<tt class="descname">get_electronegativities</tt><big>(</big><em>atoms=None</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_electronegativities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_electronegativities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the electronegativities of atoms.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_electronegativity_differences">
+<tt class="descname">get_electronegativity_differences</tt><big>(</big><em>atoms=None</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_electronegativity_differences"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_electronegativity_differences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the electronegativity differences of atoms from the average of the entire system.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_forces">
+<tt class="descname">get_forces</tt><big>(</big><em>atoms=None</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_forces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the forces.</p>
+<p>If the atoms parameter is given, it will be used for updating the
+structure assigned to the calculator prior to calculating the forces.
+Otherwise the structure already associated with the calculator is used.</p>
+<p>The calculator checks if the forces have been calculated already
+via <a class="reference internal" href="#pysic.Pysic.calculation_required" title="pysic.Pysic.calculation_required"><tt class="xref py py-meth docutils literal"><span class="pre">calculation_required()</span></tt></a>. If the structure
+has changed, the forces are calculated using <a class="reference internal" href="#pysic.Pysic.calculate_forces" title="pysic.Pysic.calculate_forces"><tt class="xref py py-meth docutils literal"><span class="pre">calculate_forces()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>atoms: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE atoms</a> object</dt>
+<dd>the structure for which the forces are determined</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_individual_cutoffs">
+<tt class="descname">get_individual_cutoffs</tt><big>(</big><em>scaler=1.0</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_individual_cutoffs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_individual_cutoffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a list of maximum cutoffs for all atoms.</p>
+<p>For each atom, the interaction with the longest cutoff is found and
+the associated maximum cutoffs are returned as a list. In case the a list
+of scaled values are required, the scaler can be adjusted. E.g., scaler = 0.5
+will return the cutoffs halved.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>scaler: double</dt>
+<dd>a number for scaling all values in the generated list</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_neighbor_lists">
+<tt class="descname">get_neighbor_lists</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_neighbor_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_neighbor_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the <a class="reference internal" href="fastneighborlist_class.html#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">FastNeighborList</span></tt></a> or <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists">ASE NeighborList</a> 
+object assigned to the calculator.</p>
+<p>The neighbor lists are generated according to the given <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object
+and the <a class="reference internal" href="potential_class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects of the calculator. Note that the lists
+are created when the core is set or if the method 
+<a class="reference internal" href="#pysic.Pysic.create_neighbor_lists" title="pysic.Pysic.create_neighbor_lists"><tt class="xref py py-meth docutils literal"><span class="pre">create_neighbor_lists()</span></tt></a> is called.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_numerical_bond_order_gradient">
+<tt class="descname">get_numerical_bond_order_gradient</tt><big>(</big><em>coordinator</em>, <em>atom_index</em>, <em>moved_index</em>, <em>shift=0.001</em>, <em>atoms=None</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_numerical_bond_order_gradient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_numerical_bond_order_gradient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Numerically calculates the gradient of a bond order factor with respect to moving a single particle.</p>
+<p>This is for debugging the bond orders.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_numerical_electronegativity">
+<tt class="descname">get_numerical_electronegativity</tt><big>(</big><em>atom_index</em>, <em>shift=0.001</em>, <em>atoms=None</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_numerical_electronegativity"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_numerical_electronegativity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Numerically calculates the derivative of energy with respect to charging a single particle.</p>
+<p>This is for debugging the electronegativities.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_numerical_energy_gradient">
+<tt class="descname">get_numerical_energy_gradient</tt><big>(</big><em>atom_index</em>, <em>shift=0.0001</em>, <em>atoms=None</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_numerical_energy_gradient"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_numerical_energy_gradient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Numerically calculates the negative gradient of energy with respect to moving a single particle.</p>
+<p>This is for debugging the forces.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_potential_energy">
+<tt class="descname">get_potential_energy</tt><big>(</big><em>atoms=None</em>, <em>force_consistent=False</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_potential_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_potential_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the potential energy.</p>
+<p>If the atoms parameter is given, it will be used for updating the
+structure assigned to the calculator prior to calculating the energy.
+Otherwise the structure already associated with the calculator is used.</p>
+<p>The calculator checks if the energy has been calculated already
+via <a class="reference internal" href="#pysic.Pysic.calculation_required" title="pysic.Pysic.calculation_required"><tt class="xref py py-meth docutils literal"><span class="pre">calculation_required()</span></tt></a>. If the structure
+has changed, the energy is calculated using <a class="reference internal" href="#pysic.Pysic.calculate_energy" title="pysic.Pysic.calculate_energy"><tt class="xref py py-meth docutils literal"><span class="pre">calculate_energy()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>atoms: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE atoms</a> object</dt>
+<dd>the structure for which the energy is determined</dd>
+<dt>force_consistent: logical</dt>
+<dd>ignored at the moment</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_potentials">
+<tt class="descname">get_potentials</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_potentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of potentials assigned to the calculator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.get_stress">
+<tt class="descname">get_stress</tt><big>(</big><em>atoms=None</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.get_stress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.get_stress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the stress.</p>
+<p>If the atoms parameter is given, it will be used for updating the
+structure assigned to the calculator prior to calculating the stress.
+Otherwise the structure already associated with the calculator is used.</p>
+<p>The calculator checks if the stress has been calculated already
+via <a class="reference internal" href="#pysic.Pysic.calculation_required" title="pysic.Pysic.calculation_required"><tt class="xref py py-meth docutils literal"><span class="pre">calculation_required()</span></tt></a>. If the structure
+has changed, the stress is calculated using <a class="reference internal" href="#pysic.Pysic.calculate_stress" title="pysic.Pysic.calculate_stress"><tt class="xref py py-meth docutils literal"><span class="pre">calculate_stress()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>atoms: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE atoms</a> object</dt>
+<dd>the structure for which the stress is determined</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.initialize_fortran_core">
+<tt class="descname">initialize_fortran_core</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.initialize_fortran_core"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.initialize_fortran_core" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fully initializes the Fortran core, creating the atoms, supercell, potentials, and neighbor lists.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.neighbor_lists_expanded">
+<tt class="descname">neighbor_lists_expanded</tt><big>(</big><em>cutoffs</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.neighbor_lists_expanded"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.neighbor_lists_expanded" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if the cutoffs have been expanded.</p>
+<p>If the cutoffs have been made longer than before,
+the neighbor lists have to be recalculated.
+This method checks the individual cutoffs of all atoms
+to check if the cutoffs have changed.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>cutoffs: list of doubles</dt>
+<dd>new cutoffs</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.set_atoms">
+<tt class="descname">set_atoms</tt><big>(</big><em>atoms=None</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.set_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.set_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns the calculator with the given structure.</p>
+<p>This method is always called when any method is given the
+atomic structure as an argument. If the argument is missing
+or None, nothing is done. Otherwise a copy of the given structure
+is saved (according to the instructions in 
+<a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#calculator-interface">ASE API</a>.)</p>
+<p>If a structure is already in memory and it is different to the given
+one (as compared with <tt class="docutils literal"><span class="pre">__ne__</span></tt>), it is noted that all quantities
+are unknown for the new system. If the structure is the same as the
+one already known, nothing is done.
+This is because if one wants to
+access the energy of forces of the same system repeatedly, it is unnecessary
+to always calculate them from scratch. Therefore the calculator saves
+the computed values along with a flag stating that the values have been
+computed.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>atoms: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE atoms</a> object</dt>
+<dd>the structure to be calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.set_charge_relaxation">
+<tt class="descname">set_charge_relaxation</tt><big>(</big><em>charge_relaxation</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.set_charge_relaxation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.set_charge_relaxation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a charge relaxation algorithm to the calculator.</p>
+<p>If a charge relaxation scheme has been added to the <a class="reference internal" href="#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>
+calculator, it will be automatically asked to do the charge relaxation 
+before the calculation of energies or forces via 
+<a class="reference internal" href="chargerelaxation_class.html#pysic.ChargeRelaxation.charge_relaxation" title="pysic.ChargeRelaxation.charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">charge_relaxation()</span></tt></a>.</p>
+<p>It is also possible to pass the <a class="reference internal" href="#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator to the 
+<a class="reference internal" href="chargerelaxation_class.html#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> algorithm without creating the opposite
+link using <a class="reference internal" href="chargerelaxation_class.html#pysic.ChargeRelaxation.set_calculator" title="pysic.ChargeRelaxation.set_calculator"><tt class="xref py py-meth docutils literal"><span class="pre">set_calculator()</span></tt></a>. 
+In that case, the calculator does not automatically relax the charges, but
+the user can manually trigger the relaxation with 
+<a class="reference internal" href="chargerelaxation_class.html#pysic.ChargeRelaxation.charge_relaxation" title="pysic.ChargeRelaxation.charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">charge_relaxation()</span></tt></a>.</p>
+<p>If you wish to remove automatic charge relaxation, just call this method
+again with None as argument.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>charge_relaxation: <a class="reference internal" href="chargerelaxation_class.html#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> object</dt>
+<dd>the charge relaxation algorithm</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.set_core">
+<tt class="descname">set_core</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.set_core"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.set_core" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets up the Fortran core for calculation.</p>
+<p>If the core is not initialized, if the number of atoms has changed, or
+if full initialization is forced, the core is initialized from scratch.
+Otherwise, only the atomic coordinates and momenta are updated.
+Potentials, neighbor lists etc. are also updated if they have been edited.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.set_coulomb_summation">
+<tt class="descname">set_coulomb_summation</tt><big>(</big><em>coulomb</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.set_coulomb_summation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.set_coulomb_summation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the Coulomb summation algorithm for the calculator.</p>
+<p>If a Coulomb summation algorithm is set, the Coulomb interactions
+between all charged atoms are evaluated automatically during
+energy and force evaluation. If not, the charges do not directly
+interact.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>coulomb: <a class="reference internal" href="coulombsummation_class.html#pysic.CoulombSummation" title="pysic.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a></dt>
+<dd>the Coulomb summation algorithm</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.set_cutoffs">
+<tt class="descname">set_cutoffs</tt><big>(</big><em>cutoffs</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.set_cutoffs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.set_cutoffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Copy and save the list of individual cutoff radii.</p>
+<p>Parameters:</p>
+<p>cutoffs: list of doubles
+new cutoffs</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.set_potentials">
+<tt class="descname">set_potentials</tt><big>(</big><em>potentials</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.set_potentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.set_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assign a list of potentials to the calculator.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>potentials: list of <a class="reference internal" href="potential_class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects</dt>
+<dd>a list of potentials to describe interactinos</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.update_core_charges">
+<tt class="descname">update_core_charges</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.update_core_charges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.update_core_charges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates atomic charges in the core.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.update_core_coordinates">
+<tt class="descname">update_core_coordinates</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.update_core_coordinates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.update_core_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the positions and momenta of atoms in the Fortran core.</p>
+<p>The core must be initialized and the number of atoms must match.
+Upon the update, it is automatically checked if the neighbor lists
+should be updated as well.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.update_core_coulomb">
+<tt class="descname">update_core_coulomb</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.update_core_coulomb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.update_core_coulomb" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the Coulomb summation parameters in the Fortran core.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.update_core_neighbor_lists">
+<tt class="descname">update_core_neighbor_lists</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.update_core_neighbor_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.update_core_neighbor_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the neighbor lists in the Fortran core.</p>
+<p>If uninitialized, the lists are created first via <a class="reference internal" href="#pysic.Pysic.create_neighbor_lists" title="pysic.Pysic.create_neighbor_lists"><tt class="xref py py-meth docutils literal"><span class="pre">create_neighbor_lists()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.update_core_potential_lists">
+<tt class="descname">update_core_potential_lists</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.update_core_potential_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.update_core_potential_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes the potential lists.</p>
+<p>Since one often runs <a class="reference internal" href="#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> with a set of potentials,
+the core pre-analyzes which potentials affect each atom and saves a list
+of such potentials for every particle. This method asks the core to
+generate these lists.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.update_core_potentials">
+<tt class="descname">update_core_potentials</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.update_core_potentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.update_core_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates potentials for the Fortran core.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.Pysic.update_core_supercell">
+<tt class="descname">update_core_supercell</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Pysic.update_core_supercell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Pysic.update_core_supercell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the supercell in the Fortran core.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="potential_class.html" title="Potential class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="pysic.html" title="Pysic module"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.2 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

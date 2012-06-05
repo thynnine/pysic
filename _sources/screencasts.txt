@@ -1,0 +1,25 @@
+.. file:screencasts
+
+.. _screencasts:
+
+Screencasts
+-----------
+
+We have also prepared screencasts demonstrating the use of Pysic.
+
+
+
+.. file:Pysic basics
+
+Pysic basics
+____________
+
+This is a demonstration of a very simple simulation setup while running Pysic in an interactive Python session.
+
+.. raw:: html
+
+  <iframe width="853" height="480" src="http://www.youtube-nocookie.com/embed/f3VKiclBvQY?rel=0" frameborder="0" allowfullscreen></iframe>
+
+`YouTube link <http://www.youtube.com/watch?v=f3VKiclBvQY>`_
+
+.. file:syntax

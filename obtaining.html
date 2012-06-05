@@ -1,0 +1,173 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Getting Pysic &mdash; Pysic 0.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.2 documentation" href="index.html" />
+    <link rel="next" title="Running Pysic" href="running.html" />
+    <link rel="prev" title="Pysic (Pythonic simulation code)" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="running.html" title="Running Pysic"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Pysic (Pythonic simulation code)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Getting Pysic</a></li>
+<li><a class="reference internal" href="#compiling-pysic">Compiling Pysic</a></li>
+<li><a class="reference internal" href="#external-resources">External resources</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Pysic (Pythonic simulation code)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="running.html"
+                        title="next chapter">Running Pysic</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/obtaining.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="getting-pysic">
+<h1>Getting Pysic<a class="headerlink" href="#getting-pysic" title="Permalink to this headline">¶</a></h1>
+<p>Pysic is currently in development and not yet suitable for actual simulations.
+Nonetheless, the source code is available through <a class="reference external" href="https://gitorious.org/pysic/pysic">Gitorious</a> if you wish to
+play with it. The code is provided with no warranty or support.</p>
+</div>
+<div class="section" id="compiling-pysic">
+<h1>Compiling Pysic<a class="headerlink" href="#compiling-pysic" title="Permalink to this headline">¶</a></h1>
+<p>No installers of makefiles are currently provided with Pysic. Once Pysic is in
+a production capable stage, some kind of an installation tool will be provided.</p>
+<p>To run Pysic, you will need <a class="reference external" href="http://www.python.org">Python 2.7</a> and the <a class="reference external" href="http://numpy.scipy.org/">numpy</a> and <a class="reference external" href="http://www.scipy.org/">scipy</a> modules.
+For dynamic simulation, the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a> package is required. Some plotting tools
+also require the matplotlib package, but Pysic will work without it.</p>
+<p>To compile the
+Fortran core, one needs a Fortran 90 compiler and <a class="reference external" href="http://www.scipy.org/F2py">f2py</a> (the latter is
+part of <a class="reference external" href="http://numpy.scipy.org/">numpy</a>.) For compiling an MPI compatible version, an MPI-Fortran
+compiler is needed.</p>
+<p>When compiling Pysic, one must wrap the interface module <a class="reference internal" href="PyInterface_f90.html#pysic-interface"><em>pysic_interface (PyInterface.f90)</em></a>
+with <a class="reference external" href="http://www.scipy.org/F2py">f2py</a> and compile all other Fortran source directly to .mod modules.
+This can be achieved with:</p>
+<div class="highlight-python"><pre>&gt; f2py -m pysic_fortran -h pysic_fortran.pyf PyInterface.F90
+&gt; f2py -c pysic_fortran.pyf Mersenne.F90 MPI.F90 Quaternions.F90 \
+&gt; Utility.F90 Geometry.F90 Potentials.F90 Core.F90 PyInterface.F90</pre>
+</div>
+<p>For MPI, use the conditional compiling flag <tt class="docutils literal"><span class="pre">-D</span> <span class="pre">MPI</span></tt>.
+This tells the Fortran compiler to include the MPI portions of the code:</p>
+<div class="highlight-python"><pre>&gt; f2py -m pysic_fortran -h pysic_fortran.pyf PyInterface.F90
+&gt; f2py -c --fcompiler=gfortran --f90exec=mpif90 --f90flags="-D MPI" \
+&gt; pysic_fortran.pyf Mersenne.F90 MPI.F90 Quaternions.F90 Utility.F90 \
+&gt; Geometry.F90 Potentials.F90 Core.F90 PyInterface.F90</pre>
+</div>
+<p>Above, the <tt class="docutils literal"><span class="pre">gfortran</span></tt> and <tt class="docutils literal"><span class="pre">mpif90</span></tt> compilers are used, but change the names to whichever compilers you wish to call.
+For further information on compiling with <a class="reference external" href="http://www.scipy.org/F2py">f2py</a>, consult the <a class="reference external" href="http://cens.ioc.ee/projects/f2py2e/usersguide/">f2py manual</a>.</p>
+<blockquote>
+<div></div></blockquote>
+</div>
+<div class="section" id="external-resources">
+<h1>External resources<a class="headerlink" href="#external-resources" title="Permalink to this headline">¶</a></h1>
+<p>Below is a list of tools one may find useful or even necessary when using Pysic:</p>
+<ul class="simple">
+<li><a class="reference external" href="http://www.python.org/">Python</a>: The Python language</li>
+<li><a class="reference external" href="http://www.scipy.org/F2py">F2py</a>: Fortran to Python interface generator</li>
+<li><a class="reference external" href="https://gitorious.org/pysic/pysic">Gitorious</a>: Version control and repository storing Pysic</li>
+<li><a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a>: Atomistic Simulation Environment</li>
+<li><a class="reference external" href="http://numpy.scipy.org/">NumPy</a>: Numerical Python</li>
+<li><a class="reference external" href="http://www.scipy.org/">SciPy</a>: Scientific Python</li>
+<li><a class="reference external" href="http://matplotlib.sourceforge.net/">Matplotlib</a>: Matplotlib Python plotting library</li>
+<li><a class="reference external" href="http://ipython.org/">iPython</a>: iPython enhanced Python interpreter</li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="running.html" title="Running Pysic"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Pysic (Pythonic simulation code)"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

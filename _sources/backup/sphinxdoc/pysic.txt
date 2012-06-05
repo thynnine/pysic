@@ -1,0 +1,121 @@
+.. currentmodule:: pysic
+
+============
+Pysic Module
+============
+
+Pysic defines two main classes: :class:`~pysic.Pysic`, which defines a calculator 
+for the `ASE`_ simulation environment [#]_ and :class:`~pysic.Potential`, which defines
+potentials to be used by :class:`~pysic.Pysic` for calculating atomic interactions.
+
+.. _ASE: https://wiki.fysik.dtu.dk/ase/
+
+Here is an example of setting up a Pysic calculator for `ASE`_::
+
+    >>> from ase import Atoms
+    >>> import pysic
+    >>> system = Atoms('He2', [[0.0, 0.0, 0.0], [0.0, 0.0, 3.0]])
+    >>> calc = pysic.Pysic()
+    >>> system.set_calculator(calc)
+    >>> physics = pysic.Potential('pair_LJ', cutoff = 10.0)
+    >>> physics.set_symbols(['He', 'He'])
+    >>> physics.set_parameter_value('epsilon', 0.1)
+    >>> physics.set_parameter_value('sigma', 2.5)
+    >>> calc.add_potential(physics)
+
+The example above creates a system of two helium atoms interacting via a Lennard-Jones
+potential 
+
+.. math::
+
+   V(r) = \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r} \right)^{6} \right]
+   
+   \varepsilon = 0.1
+
+   \sigma = 2.5
+
+A more compact way to create the calculator would be::
+
+    >>> physics = pysic.Potential('pair_LJ', 
+    ...                           cutoff = 10.0, 
+    ...                           symbols = ['He','He'],
+    ...                           parameters = [0.1, 2.5])
+    >>> calc = pysic.Pysic(system, physics)
+
+Setting up more complicated interactions works similarly.
+
+Classes of the pysic module
+---------------------------
+
+.. toctree::
+   :maxdepth: 3
+
+   pysic_class
+   potential_class
+   coordinator_class
+   bondorderparameters_class
+
+
+
+List of methods
+---------------
+
+Below is a list of methods in :mod:`~pysic`.
+
+
+Potential inquiry
+__________________
+
+- :meth:`~pysic.list_potentials`
+- :meth:`~pysic.list_valid_potentials`
+- :meth:`~pysic.is_potential`
+- :meth:`~pysic.is_valid_potential`
+- :meth:`~pysic.number_of_targets`
+- :meth:`~pysic.number_of_parameters`
+- :meth:`~pysic.names_of_parameters`
+- :meth:`~pysic.index_of_parameter`
+- :meth:`~pysic.descriptions_of_parameters`
+- :meth:`~pysic.description_of_potential`
+
+Message Parsing Interface
+_________________________
+
+- :meth:`~pysic.finish_mpi`
+- :meth:`~pysic.get_number_of_cpus`
+- :meth:`~pysic.get_cpu_id`
+
+
+Errors defined by the pysic module
+----------------------------------
+
+The module defines a group of intrinsic errors to describe situations where
+one tries to use or set up the calculator with errorneous or insufficient
+information.
+
+.. autoclass:: InvalidPotentialError
+   :members:
+.. autoclass:: MissingAtomsError
+   :members:
+.. autoclass:: MissingNeighborsError
+   :members:
+.. autoclass:: LockedCoreError
+   :members:
+
+
+
+Functions of the pysic module
+-----------------------------
+
+The module defines a group of functions to directly access the Fortran core for
+information on available potentials.
+
+.. automodule:: pysic
+   :members: list_potentials, list_valid_potentials,is_potential,
+   	     is_valid_potential, number_of_targets,
+   	     number_of_parameters, names_of_parameters, index_of_parameter,
+	     descriptions_of_parameters, description_of_potential,
+	     finish_mpi, get_number_of_cpus, get_cpu_id
+
+
+.. [#] ASE: Comput. Sci. Eng., Vol. 4, 56-66, 2002; https://wiki.fysik.dtu.dk/ase/
+

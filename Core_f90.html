@@ -1,0 +1,1391 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic_core (Core.f90) &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="up" title="Pysic Fortran module" href="pysic_fortran.html" />
+    <link rel="next" title="potentials (Potentials.f90)" href="Potentials_f90.html" />
+    <link rel="prev" title="pysic_interface (PyInterface.f90)" href="PyInterface_f90.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Potentials_f90.html" title="potentials (Potentials.f90)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="PyInterface_f90.html" title="pysic_interface (PyInterface.f90)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="pysic_fortran.html" accesskey="U">Pysic Fortran module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pysic_core (Core.f90)</a><ul>
+<li><a class="reference internal" href="#modules-used-by-pysic-core">Modules used by pysic_core</a></li>
+<li><a class="reference internal" href="#list-of-global-variables-in-pysic-core">List of global variables in pysic_core</a></li>
+<li><a class="reference internal" href="#list-of-subroutines-in-pysic-core">List of subroutines in pysic_core</a></li>
+<li><a class="reference internal" href="#full-documentation-of-global-variables-in-pysic-core">Full documentation of global variables in pysic_core</a></li>
+<li><a class="reference internal" href="#full-documentation-of-subroutines-in-pysic-core">Full documentation of subroutines in pysic_core</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="PyInterface_f90.html"
+                        title="previous chapter">pysic_interface (PyInterface.f90)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Potentials_f90.html"
+                        title="next chapter">potentials (Potentials.f90)</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/Core_f90.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pysic-core-core-f90">
+<span id="pysic-core"></span><h1>pysic_core (Core.f90)<a class="headerlink" href="#pysic-core-core-f90" title="Permalink to this headline">¶</a></h1>
+<p>Core, true to its name, is the heart of the Fortran core
+of Pysic. It contains the data structures defining the simulation
+geometry and interactions and defines the central routines for
+calculating the total energy of and the forces acting on the system.</p>
+<p>Many of the routines in <a class="reference internal" href="PyInterface_f90.html#pysic-interface"><em>pysic_interface (PyInterface.f90)</em></a> which <a class="reference external" href="http://www.scipy.org/F2py">f2py</a> interfaces
+to Python are simply calling routines here.</p>
+<div class="section" id="modules-used-by-pysic-core">
+<h2>Modules used by pysic_core<a class="headerlink" href="#modules-used-by-pysic-core" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="Geometry_f90.html#geometry"><em>geometry (Geometry.f90)</em></a></li>
+<li><a class="reference internal" href="MPI_f90.html#mpi"><em>mpi (MPI.f90)</em></a></li>
+<li><a class="reference internal" href="Potentials_f90.html#potentials"><em>potentials (Potentials.f90)</em></a></li>
+</ul>
+</div>
+<div class="section" id="list-of-global-variables-in-pysic-core">
+<h2>List of global variables in pysic_core<a class="headerlink" href="#list-of-global-variables-in-pysic-core" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#atoms" title="atoms"><tt class="xref py py-data docutils literal"><span class="pre">atoms</span></tt></a></li>
+<li><a class="reference internal" href="#atoms_created" title="atoms_created"><tt class="xref py py-data docutils literal"><span class="pre">atoms_created</span></tt></a></li>
+<li><a class="reference internal" href="#bond_factors" title="bond_factors"><tt class="xref py py-data docutils literal"><span class="pre">bond_factors</span></tt></a></li>
+<li><a class="reference internal" href="#bond_factors_allocated" title="bond_factors_allocated"><tt class="xref py py-data docutils literal"><span class="pre">bond_factors_allocated</span></tt></a></li>
+<li><a class="reference internal" href="#bond_storage_allocated" title="bond_storage_allocated"><tt class="xref py py-data docutils literal"><span class="pre">bond_storage_allocated</span></tt></a></li>
+<li><a class="reference internal" href="#cell" title="cell"><tt class="xref py py-data docutils literal"><span class="pre">cell</span></tt></a></li>
+<li><a class="reference internal" href="#electronegativity_evaluation_index" title="electronegativity_evaluation_index"><tt class="xref py py-data docutils literal"><span class="pre">electronegativity_evaluation_index</span></tt></a></li>
+<li><a class="reference internal" href="#energy_evaluation_index" title="energy_evaluation_index"><tt class="xref py py-data docutils literal"><span class="pre">energy_evaluation_index</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_ewald" title="evaluate_ewald"><tt class="xref py py-data docutils literal"><span class="pre">evaluate_ewald</span></tt></a></li>
+<li><a class="reference internal" href="#ewald_allocated" title="ewald_allocated"><tt class="xref py py-data docutils literal"><span class="pre">ewald_allocated</span></tt></a></li>
+<li><a class="reference internal" href="#ewald_cutoff" title="ewald_cutoff"><tt class="xref py py-data docutils literal"><span class="pre">ewald_cutoff</span></tt></a></li>
+<li><a class="reference internal" href="#ewald_epsilon" title="ewald_epsilon"><tt class="xref py py-data docutils literal"><span class="pre">ewald_epsilon</span></tt></a></li>
+<li><a class="reference internal" href="#ewald_k_cutoffs" title="ewald_k_cutoffs"><tt class="xref py py-data docutils literal"><span class="pre">ewald_k_cutoffs</span></tt></a></li>
+<li><a class="reference internal" href="#ewald_scaler" title="ewald_scaler"><tt class="xref py py-data docutils literal"><span class="pre">ewald_scaler</span></tt></a></li>
+<li><a class="reference internal" href="#ewald_sigma" title="ewald_sigma"><tt class="xref py py-data docutils literal"><span class="pre">ewald_sigma</span></tt></a></li>
+<li><a class="reference internal" href="#force_evaluation_index" title="force_evaluation_index"><tt class="xref py py-data docutils literal"><span class="pre">force_evaluation_index</span></tt></a></li>
+<li><a class="reference internal" href="#group_index_save_slot" title="group_index_save_slot"><tt class="xref py py-data docutils literal"><span class="pre">group_index_save_slot</span></tt></a></li>
+<li><a class="reference internal" href="#interactions" title="interactions"><tt class="xref py py-data docutils literal"><span class="pre">interactions</span></tt></a></li>
+<li><a class="reference internal" href="#n_bond_factors" title="n_bond_factors"><tt class="xref py py-data docutils literal"><span class="pre">n_bond_factors</span></tt></a></li>
+<li><a class="reference internal" href="#n_interactions" title="n_interactions"><tt class="xref py py-data docutils literal"><span class="pre">n_interactions</span></tt></a></li>
+<li><a class="reference internal" href="#n_saved_bond_order_factors" title="n_saved_bond_order_factors"><tt class="xref py py-data docutils literal"><span class="pre">n_saved_bond_order_factors</span></tt></a></li>
+<li><a class="reference internal" href="#potentials_allocated" title="potentials_allocated"><tt class="xref py py-data docutils literal"><span class="pre">potentials_allocated</span></tt></a></li>
+<li><a class="reference internal" href="#saved_bond_order_factors" title="saved_bond_order_factors"><tt class="xref py py-data docutils literal"><span class="pre">saved_bond_order_factors</span></tt></a></li>
+<li><a class="reference internal" href="#saved_bond_order_gradients" title="saved_bond_order_gradients"><tt class="xref py py-data docutils literal"><span class="pre">saved_bond_order_gradients</span></tt></a></li>
+<li><a class="reference internal" href="#saved_bond_order_sums" title="saved_bond_order_sums"><tt class="xref py py-data docutils literal"><span class="pre">saved_bond_order_sums</span></tt></a></li>
+<li><a class="reference internal" href="#saved_bond_order_virials" title="saved_bond_order_virials"><tt class="xref py py-data docutils literal"><span class="pre">saved_bond_order_virials</span></tt></a></li>
+<li><a class="reference internal" href="#use_saved_bond_order_factors" title="use_saved_bond_order_factors"><tt class="xref py py-data docutils literal"><span class="pre">use_saved_bond_order_factors</span></tt></a></li>
+<li><a class="reference internal" href="#use_saved_bond_order_gradients" title="use_saved_bond_order_gradients"><tt class="xref py py-data docutils literal"><span class="pre">use_saved_bond_order_gradients</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="list-of-subroutines-in-pysic-core">
+<h2>List of subroutines in pysic_core<a class="headerlink" href="#list-of-subroutines-in-pysic-core" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#core_add_bond_order_factor" title="core_add_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">core_add_bond_order_factor()</span></tt></a></li>
+<li><a class="reference internal" href="#core_add_potential" title="core_add_potential"><tt class="xref py py-func docutils literal"><span class="pre">core_add_potential()</span></tt></a></li>
+<li><a class="reference internal" href="#core_allocate_bond_order_factors" title="core_allocate_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">core_allocate_bond_order_factors()</span></tt></a></li>
+<li><a class="reference internal" href="#core_allocate_bond_order_storage" title="core_allocate_bond_order_storage"><tt class="xref py py-func docutils literal"><span class="pre">core_allocate_bond_order_storage()</span></tt></a></li>
+<li><a class="reference internal" href="#core_allocate_potentials" title="core_allocate_potentials"><tt class="xref py py-func docutils literal"><span class="pre">core_allocate_potentials()</span></tt></a></li>
+<li><a class="reference internal" href="#core_assign_bond_order_factor_indices" title="core_assign_bond_order_factor_indices"><tt class="xref py py-func docutils literal"><span class="pre">core_assign_bond_order_factor_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#core_assign_potential_indices" title="core_assign_potential_indices"><tt class="xref py py-func docutils literal"><span class="pre">core_assign_potential_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#core_build_neighbor_lists" title="core_build_neighbor_lists"><tt class="xref py py-func docutils literal"><span class="pre">core_build_neighbor_lists()</span></tt></a></li>
+<li><a class="reference internal" href="#core_calculate_bond_order_factors" title="core_calculate_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_bond_order_factors()</span></tt></a></li>
+<li><a class="reference internal" href="#core_calculate_bond_order_gradients" title="core_calculate_bond_order_gradients"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_bond_order_gradients()</span></tt></a></li>
+<li><a class="reference internal" href="#core_calculate_bond_order_gradients_of_factor" title="core_calculate_bond_order_gradients_of_factor"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_bond_order_gradients_of_factor()</span></tt></a></li>
+<li><a class="reference internal" href="#core_calculate_electronegativities" title="core_calculate_electronegativities"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_electronegativities()</span></tt></a></li>
+<li><a class="reference internal" href="#core_calculate_energy" title="core_calculate_energy"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_energy()</span></tt></a></li>
+<li><a class="reference internal" href="#core_calculate_forces" title="core_calculate_forces"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_forces()</span></tt></a></li>
+<li><a class="reference internal" href="#core_clear_atoms" title="core_clear_atoms"><tt class="xref py py-func docutils literal"><span class="pre">core_clear_atoms()</span></tt></a></li>
+<li><a class="reference internal" href="#core_clear_bond_order_factors" title="core_clear_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">core_clear_bond_order_factors()</span></tt></a></li>
+<li><a class="reference internal" href="#core_clear_bond_order_storage" title="core_clear_bond_order_storage"><tt class="xref py py-func docutils literal"><span class="pre">core_clear_bond_order_storage()</span></tt></a></li>
+<li><a class="reference internal" href="#core_clear_potentials" title="core_clear_potentials"><tt class="xref py py-func docutils literal"><span class="pre">core_clear_potentials()</span></tt></a></li>
+<li><a class="reference internal" href="#core_create_cell" title="core_create_cell"><tt class="xref py py-func docutils literal"><span class="pre">core_create_cell()</span></tt></a></li>
+<li><a class="reference internal" href="#core_create_neighbor_list" title="core_create_neighbor_list"><tt class="xref py py-func docutils literal"><span class="pre">core_create_neighbor_list()</span></tt></a></li>
+<li><a class="reference internal" href="#core_create_space_partitioning" title="core_create_space_partitioning"><tt class="xref py py-func docutils literal"><span class="pre">core_create_space_partitioning()</span></tt></a></li>
+<li><a class="reference internal" href="#core_debug_dump" title="core_debug_dump"><tt class="xref py py-func docutils literal"><span class="pre">core_debug_dump()</span></tt></a></li>
+<li><a class="reference internal" href="#core_empty_bond_order_gradient_storage" title="core_empty_bond_order_gradient_storage"><tt class="xref py py-func docutils literal"><span class="pre">core_empty_bond_order_gradient_storage()</span></tt></a></li>
+<li><a class="reference internal" href="#core_empty_bond_order_storage" title="core_empty_bond_order_storage"><tt class="xref py py-func docutils literal"><span class="pre">core_empty_bond_order_storage()</span></tt></a></li>
+<li><a class="reference internal" href="#core_evaluate_local_doublet" title="core_evaluate_local_doublet"><tt class="xref py py-func docutils literal"><span class="pre">core_evaluate_local_doublet()</span></tt></a></li>
+<li><a class="reference internal" href="#core_evaluate_local_quadruplet" title="core_evaluate_local_quadruplet"><tt class="xref py py-func docutils literal"><span class="pre">core_evaluate_local_quadruplet()</span></tt></a></li>
+<li><a class="reference internal" href="#core_evaluate_local_singlet" title="core_evaluate_local_singlet"><tt class="xref py py-func docutils literal"><span class="pre">core_evaluate_local_singlet()</span></tt></a></li>
+<li><a class="reference internal" href="#core_evaluate_local_triplet" title="core_evaluate_local_triplet"><tt class="xref py py-func docutils literal"><span class="pre">core_evaluate_local_triplet()</span></tt></a></li>
+<li><a class="reference internal" href="#core_fill_bond_order_storage" title="core_fill_bond_order_storage"><tt class="xref py py-func docutils literal"><span class="pre">core_fill_bond_order_storage()</span></tt></a></li>
+<li><a class="reference internal" href="#core_generate_atoms" title="core_generate_atoms"><tt class="xref py py-func docutils literal"><span class="pre">core_generate_atoms()</span></tt></a></li>
+<li><a class="reference internal" href="#core_get_bond_order_factor_of_atom" title="core_get_bond_order_factor_of_atom"><tt class="xref py py-func docutils literal"><span class="pre">core_get_bond_order_factor_of_atom()</span></tt></a></li>
+<li><a class="reference internal" href="#core_get_bond_order_factors" title="core_get_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">core_get_bond_order_factors()</span></tt></a></li>
+<li><a class="reference internal" href="#core_get_bond_order_gradients" title="core_get_bond_order_gradients"><tt class="xref py py-func docutils literal"><span class="pre">core_get_bond_order_gradients()</span></tt></a></li>
+<li><a class="reference internal" href="#core_get_bond_order_sums" title="core_get_bond_order_sums"><tt class="xref py py-func docutils literal"><span class="pre">core_get_bond_order_sums()</span></tt></a></li>
+<li><a class="reference internal" href="#core_get_cell_vectors" title="core_get_cell_vectors"><tt class="xref py py-func docutils literal"><span class="pre">core_get_cell_vectors()</span></tt></a></li>
+<li><a class="reference internal" href="#core_get_ewald_energy" title="core_get_ewald_energy"><tt class="xref py py-func docutils literal"><span class="pre">core_get_ewald_energy()</span></tt></a></li>
+<li><a class="reference internal" href="#core_get_neighbor_list_of_atom" title="core_get_neighbor_list_of_atom"><tt class="xref py py-func docutils literal"><span class="pre">core_get_neighbor_list_of_atom()</span></tt></a></li>
+<li><a class="reference internal" href="#core_get_number_of_atoms" title="core_get_number_of_atoms"><tt class="xref py py-func docutils literal"><span class="pre">core_get_number_of_atoms()</span></tt></a></li>
+<li><a class="reference internal" href="#core_get_number_of_neighbors" title="core_get_number_of_neighbors"><tt class="xref py py-func docutils literal"><span class="pre">core_get_number_of_neighbors()</span></tt></a></li>
+<li><a class="reference internal" href="#core_loop_over_local_interactions" title="core_loop_over_local_interactions"><tt class="xref py py-func docutils literal"><span class="pre">core_loop_over_local_interactions()</span></tt></a></li>
+<li><a class="reference internal" href="#core_post_process_bond_order_factors" title="core_post_process_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">core_post_process_bond_order_factors()</span></tt></a></li>
+<li><a class="reference internal" href="#core_post_process_bond_order_gradients" title="core_post_process_bond_order_gradients"><tt class="xref py py-func docutils literal"><span class="pre">core_post_process_bond_order_gradients()</span></tt></a></li>
+<li><a class="reference internal" href="#core_post_process_bond_order_gradients_of_factor" title="core_post_process_bond_order_gradients_of_factor"><tt class="xref py py-func docutils literal"><span class="pre">core_post_process_bond_order_gradients_of_factor()</span></tt></a></li>
+<li><a class="reference internal" href="#core_release_all_memory" title="core_release_all_memory"><tt class="xref py py-func docutils literal"><span class="pre">core_release_all_memory()</span></tt></a></li>
+<li><a class="reference internal" href="#core_set_ewald_parameters" title="core_set_ewald_parameters"><tt class="xref py py-func docutils literal"><span class="pre">core_set_ewald_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#core_update_atom_charges" title="core_update_atom_charges"><tt class="xref py py-func docutils literal"><span class="pre">core_update_atom_charges()</span></tt></a></li>
+<li><a class="reference internal" href="#core_update_atom_coordinates" title="core_update_atom_coordinates"><tt class="xref py py-func docutils literal"><span class="pre">core_update_atom_coordinates()</span></tt></a></li>
+<li><a class="reference internal" href="#expand_neighbor_storage" title="expand_neighbor_storage"><tt class="xref py py-func docutils literal"><span class="pre">expand_neighbor_storage()</span></tt></a></li>
+<li><a class="reference internal" href="#list_atoms" title="list_atoms"><tt class="xref py py-func docutils literal"><span class="pre">list_atoms()</span></tt></a></li>
+<li><a class="reference internal" href="#list_bonds" title="list_bonds"><tt class="xref py py-func docutils literal"><span class="pre">list_bonds()</span></tt></a></li>
+<li><a class="reference internal" href="#list_cell" title="list_cell"><tt class="xref py py-func docutils literal"><span class="pre">list_cell()</span></tt></a></li>
+<li><a class="reference internal" href="#list_interactions" title="list_interactions"><tt class="xref py py-func docutils literal"><span class="pre">list_interactions()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="full-documentation-of-global-variables-in-pysic-core">
+<h2>Full documentation of global variables in pysic_core<a class="headerlink" href="#full-documentation-of-global-variables-in-pysic-core" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="data">
+<dt id="atoms">
+<tt class="descname">atoms</tt><a class="headerlink" href="#atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>type(atom)  <em>pointer</em>  <em>size(:)</em></p>
+<p>an array of <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects representing the system</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="atoms_created">
+<tt class="descname">atoms_created</tt><a class="headerlink" href="#atoms_created" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical    <em>scalar</em></p>
+<p><em>initial value</em> = .false.</p>
+<p>logical tag indicating if atom storing arrays have been created</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="bond_factors">
+<tt class="descname">bond_factors</tt><a class="headerlink" href="#bond_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>type(bond_order_parameters)  <em>pointer</em>  <em>size(:)</em></p>
+<p>an array of <a class="reference internal" href="Potentials_f90.html#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> objects representing bond order factors modifying the potentials</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="bond_factors_allocated">
+<tt class="descname">bond_factors_allocated</tt><a class="headerlink" href="#bond_factors_allocated" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical    <em>scalar</em></p>
+<p><em>initial value</em> = .false.</p>
+<p>logical tag indicating if bond order parameter storing arrays have been allocated</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="bond_storage_allocated">
+<tt class="descname">bond_storage_allocated</tt><a class="headerlink" href="#bond_storage_allocated" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical    <em>scalar</em></p>
+<p><em>initial value</em> = .false.</p>
+<p>logical tag indicating if bond order factor storing arrays have been allocated</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="cell">
+<tt class="descname">cell</tt><a class="headerlink" href="#cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>type(supercell)    <em>scalar</em></p>
+<p>a <a class="reference internal" href="Geometry_f90.html#supercell" title="supercell"><tt class="xref py py-data docutils literal"><span class="pre">supercell</span></tt></a> object representing the simulation cell</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="electronegativity_evaluation_index">
+<tt class="descname">electronegativity_evaluation_index</tt><a class="headerlink" href="#electronegativity_evaluation_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
+<p><em>initial value</em> = 3</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="energy_evaluation_index">
+<tt class="descname">energy_evaluation_index</tt><a class="headerlink" href="#energy_evaluation_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
+<p><em>initial value</em> = 1</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="evaluate_ewald">
+<tt class="descname">evaluate_ewald</tt><a class="headerlink" href="#evaluate_ewald" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical    <em>scalar</em></p>
+<p><em>initial value</em> = .false.</p>
+<p>switch for enabling Ewald summation of coulomb interactions</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="ewald_allocated">
+<tt class="descname">ewald_allocated</tt><a class="headerlink" href="#ewald_allocated" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical    <em>scalar</em></p>
+<p><em>initial value</em> = .false.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="ewald_cutoff">
+<tt class="descname">ewald_cutoff</tt><a class="headerlink" href="#ewald_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="ewald_epsilon">
+<tt class="descname">ewald_epsilon</tt><a class="headerlink" href="#ewald_epsilon" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="ewald_k_cutoffs">
+<tt class="descname">ewald_k_cutoffs</tt><a class="headerlink" href="#ewald_k_cutoffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>size(3)</em></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="ewald_scaler">
+<tt class="descname">ewald_scaler</tt><a class="headerlink" href="#ewald_scaler" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision  <em>pointer</em>  <em>size(:)</em></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="ewald_sigma">
+<tt class="descname">ewald_sigma</tt><a class="headerlink" href="#ewald_sigma" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="force_evaluation_index">
+<tt class="descname">force_evaluation_index</tt><a class="headerlink" href="#force_evaluation_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
+<p><em>initial value</em> = 2</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="group_index_save_slot">
+<tt class="descname">group_index_save_slot</tt><a class="headerlink" href="#group_index_save_slot" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer  <em>pointer</em>  <em>size(:)</em></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="interactions">
+<tt class="descname">interactions</tt><a class="headerlink" href="#interactions" title="Permalink to this definition">¶</a></dt>
+<dd><p>type(potential)  <em>pointer</em>  <em>size(:)</em></p>
+<p>an array of <a class="reference internal" href="Potentials_f90.html#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> objects representing the interactions</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="n_bond_factors">
+<tt class="descname">n_bond_factors</tt><a class="headerlink" href="#n_bond_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em></p>
+<p><em>initial value</em> = 0</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="n_interactions">
+<tt class="descname">n_interactions</tt><a class="headerlink" href="#n_interactions" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em></p>
+<p><em>initial value</em> = 0</p>
+<p>number of potentials</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="n_saved_bond_order_factors">
+<tt class="descname">n_saved_bond_order_factors</tt><a class="headerlink" href="#n_saved_bond_order_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em></p>
+<p><em>initial value</em> = 0</p>
+<p>number of saved bond order factors</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="potentials_allocated">
+<tt class="descname">potentials_allocated</tt><a class="headerlink" href="#potentials_allocated" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical    <em>scalar</em></p>
+<p><em>initial value</em> = .false.</p>
+<p>logical tag indicating if potential storing arrays have been allocated</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saved_bond_order_factors">
+<tt class="descname">saved_bond_order_factors</tt><a class="headerlink" href="#saved_bond_order_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision  <em>pointer</em>  <em>size(:, :)</em></p>
+<p>Array for storing calculated bond order factors. Indexing: (atom index, group_index_save_slot(group index))</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saved_bond_order_gradients">
+<tt class="descname">saved_bond_order_gradients</tt><a class="headerlink" href="#saved_bond_order_gradients" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision  <em>pointer</em>  <em>size(:, :, :, :)</em></p>
+<p>Array for storing calculated bond order gradients. Indexing: (xyz, atom index, group_index_save_slot(group index), target index)</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saved_bond_order_sums">
+<tt class="descname">saved_bond_order_sums</tt><a class="headerlink" href="#saved_bond_order_sums" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision  <em>pointer</em>  <em>size(:, :)</em></p>
+<p>Array for storing calculated bond order sums. Indexing: (atom index, group_index_save_slot(group index))</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="saved_bond_order_virials">
+<tt class="descname">saved_bond_order_virials</tt><a class="headerlink" href="#saved_bond_order_virials" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision  <em>pointer</em>  <em>size(:, :, :)</em></p>
+<p>Array for storing calculated bond order virials. Indexing: (xyz, group_index_save_slot(group index), target index)</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="use_saved_bond_order_factors">
+<tt class="descname">use_saved_bond_order_factors</tt><a class="headerlink" href="#use_saved_bond_order_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical    <em>scalar</em></p>
+<p><em>initial value</em> = .false.</p>
+<p>Logical tag which enables / disables bond order saving. If true, bond order calculation routines try to find the precalculated factors in the saved bond order arrays instead of calculating.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="use_saved_bond_order_gradients">
+<tt class="descname">use_saved_bond_order_gradients</tt><a class="headerlink" href="#use_saved_bond_order_gradients" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer  <em>pointer</em>  <em>size(:, :)</em></p>
+<p>Array storing the atom index of the bond gradient stored for indices (group index, target index). Since gradients are needed for all factors (N) with respect to moving all atoms (N), storing them all would require an N x N matrix. Therefore only some are stored. This array is used for searching the stroage to see if the needed gradient is there or needs to be calculated.</p>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="full-documentation-of-subroutines-in-pysic-core">
+<h2>Full documentation of subroutines in pysic_core<a class="headerlink" href="#full-documentation-of-subroutines-in-pysic-core" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="core_add_bond_order_factor">
+<tt class="descname">core_add_bond_order_factor</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>n_split</em>, <em>bond_name</em>, <em>parameters</em>, <em>param_split</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>orig_elements</em>, <em>group_index</em><big>)</big><a class="headerlink" href="#core_add_bond_order_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates one additional bond_order_factor in the core.
+The routine assumes that adequate memory has been
+allocated already using core_allocate_bond_order_factors.</p>
+<p>When the bond order parameters in the Python interface are imported
+to the Fortran core, the target specifiers (elements)
+are permutated to create all equivalent bond order parameters.
+That is, if we have parameters for Si-O, both Si-O and O-Si
+parameters are created. This is because the energy and
+force calculation loops only deal with atom pairs A-B once
+(so only A-B or B-A is considered, not both) and if, say,
+the loop only finds an O-Si pair, it is important to apply
+the Si-O parameters also on that pair.
+In some cases, such as with the tersoff factor affecting
+triplets (A-B-C), the contribution is not symmetric for all the atoms.
+Therefore it is necessary to also store the original targets of
+the potential as specified in the Python interface. These are
+to be given in the &#8216;orig_elements&#8217; lists.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#add_bond_order_factor" title="add_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">add_bond_order_factor()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of targets (interacting bodies)</dd>
+<dt>n_params: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of parameters</dd>
+<dt>n_split: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of subsets in the list of parameters, should equal n_targets</dd>
+<dt>bond_name: character(len=*)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>bond order factor names</dd>
+<dt>parameters: double precision  <em>intent(in)</em>    <em>size(n_params)</em></dt>
+<dd>numeric parameters</dd>
+<dt>param_split: integer  <em>intent(in)</em>    <em>size(n_split)</em></dt>
+<dd>the numbers of parameters for 1-body, 2-body etc.</dd>
+<dt>cutoff: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>interaction hard cutoff</dd>
+<dt>smooth_cut: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>interaction soft cutoff</dd>
+<dt>elements: character(len=label_length)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
+<dd>atomic symbols specifying the elements the interaction acts on</dd>
+<dt>orig_elements: character(len=label_length)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
+<dd>original atomic symbols specifying the elements the interaction acts on</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index denoting the potential to which the factor is connected</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_add_potential">
+<tt class="descname">core_add_potential</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>pot_name</em>, <em>parameters</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>tags</em>, <em>indices</em>, <em>orig_elements</em>, <em>orig_tags</em>, <em>orig_indices</em>, <em>pot_index</em><big>)</big><a class="headerlink" href="#core_add_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates one additional potential in the core.
+The routine assumes that adequate memory has been
+allocated already using core_allocate_potentials.</p>
+<p>When the potentials in the Python interface are imported
+to the Fortran core, the target specifiers (elements, tags, indices)
+are permutated to create all equivalent potentials.
+That is, if we have a potential for Si-O, both Si-O and O-Si
+potentials are created. This is because the energy and
+force calculation loops only deal with atom pairs A-B once
+(so only A-B or B-A is considered, not both) and if, say,
+the loop only finds an O-Si pair, it is important to apply
+the Si-O interaction also on that pair.
+In some cases, such as with the bond-bending potential affecting
+triplets (A-B-C), the interaction is not symmetric for all the atoms.
+Therefore it is necessary to also store the original targets of
+the potential as specified in the Python interface. These are
+to be given in the &#8216;orig_*&#8217; lists.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#add_potential" title="add_potential"><tt class="xref py py-func docutils literal"><span class="pre">add_potential()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of targets (interacting bodies)</dd>
+<dt>n_params: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of parameters</dd>
+<dt>pot_name: character(len=*)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>potential names</dd>
+<dt>parameters: double precision  <em>intent(in)</em>    <em>size(n_params)</em></dt>
+<dd>numeric parameters</dd>
+<dt>cutoff: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>interaction hard cutoff</dd>
+<dt>smooth_cut: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>interaction soft cutoff</dd>
+<dt>elements: character(len=label_length)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
+<dd>atomic symbols specifying the elements the interaction acts on</dd>
+<dt>tags: integer  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
+<dd>tags specifying the atoms the interaction acts on</dd>
+<dt>indices: integer  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
+<dd>indices specifying the atoms the interaction acts on</dd>
+<dt>orig_elements: character(len=label_length)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
+<dd>original atomic symbols specifying the elements the interaction acts on</dd>
+<dt>orig_tags: integer  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
+<dd>original tags specifying the atoms the interaction acts on</dd>
+<dt>orig_indices: integer  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
+<dd>original indices specifying the atoms the interaction acts on</dd>
+<dt>pot_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the potential</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_allocate_bond_order_factors">
+<tt class="descname">core_allocate_bond_order_factors</tt><big>(</big><em>n_bond_factors</em><big>)</big><a class="headerlink" href="#core_allocate_bond_order_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allocates pointers for storing bond order factors.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#allocate_bond_order_factors" title="allocate_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">allocate_bond_order_factors()</span></tt></a></p>
+<p>Parameters:</p>
+<p>n_bond_factors: integer  <em>intent(in)</em>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_allocate_bond_order_storage">
+<tt class="descname">core_allocate_bond_order_storage</tt><big>(</big><em>n_atoms</em>, <em>n_groups</em>, <em>n_factors</em><big>)</big><a class="headerlink" href="#core_allocate_bond_order_storage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allocates arrays for storing precalculated values of bond order
+factors and gradients.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#allocate_bond_order_factors" title="allocate_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">allocate_bond_order_factors()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>n_groups: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of bond order groups</dd>
+<dt>n_factors: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of bond order parameters</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_allocate_potentials">
+<tt class="descname">core_allocate_potentials</tt><big>(</big><em>n_pots</em><big>)</big><a class="headerlink" href="#core_allocate_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Allocates pointers for storing potentials.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#allocate_potentials" title="allocate_potentials"><tt class="xref py py-func docutils literal"><span class="pre">allocate_potentials()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_pots: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of potentials</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_assign_bond_order_factor_indices">
+<tt class="descname">core_assign_bond_order_factor_indices</tt><big>(</big><big>)</big><a class="headerlink" href="#core_assign_bond_order_factor_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>This routine finds for each atom the potentials for which the
+atom is an accepted target at the first position.
+First position here means that for instance in an A-B-C triplet.
+A is in first position.
+Being an accepted target means that the atom has the correct
+element.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#create_bond_order_factor_list" title="create_bond_order_factor_list"><tt class="xref py py-func docutils literal"><span class="pre">create_bond_order_factor_list()</span></tt></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_assign_potential_indices">
+<tt class="descname">core_assign_potential_indices</tt><big>(</big><big>)</big><a class="headerlink" href="#core_assign_potential_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>This routine finds for each atom the potentials for which the
+atom is an accepted target at the first position.
+First position here means that for instance in an A-B-C triplet.
+A is in first position.
+Being an accepted target means that the atom has the correct
+element, index or tag (one that the potential targets).</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#create_potential_list" title="create_potential_list"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_list()</span></tt></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_build_neighbor_lists">
+<tt class="descname">core_build_neighbor_lists</tt><big>(</big><em>n_atoms</em>, <em>cutoffs</em><big>)</big><a class="headerlink" href="#core_build_neighbor_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>cutoffs: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_calculate_bond_order_factors">
+<tt class="descname">core_calculate_bond_order_factors</tt><big>(</big><em>n_atoms</em>, <em>group_index</em>, <em>total_bond_orders</em><big>)</big><a class="headerlink" href="#core_calculate_bond_order_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the bond order sums of all atoms for the given group.</p>
+<p>For a factor such as</p>
+<div class="math">
+\[b_i = f(\sum_j c_{ij})\]</div>
+<p>The routine calculates</p>
+<div class="math">
+\[\sum_j c_{ij}.\]</div>
+<p>The full bond order factor is then obtained by applying the
+scaling function <span class="math">\(f\)</span>. This is done with
+<a class="reference internal" href="#core_post_process_bond_order_factors" title="core_post_process_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">core_post_process_bond_order_factors()</span></tt></a>.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>an index denoting the potential to which the factor is connected</dd>
+<dt><strong>total_bond_orders</strong>: double precision  <strong>intent(out)</strong>    <em>size(n_atoms)</em></dt>
+<dd>the calculated bond order sums</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_calculate_bond_order_gradients">
+<tt class="descname">core_calculate_bond_order_gradients</tt><big>(</big><em>n_atoms</em>, <em>group_index</em>, <em>atom_index</em>, <em>raw_sums</em>, <em>total_gradient</em>, <em>total_virial</em>, <em>for_factor</em><big>)</big><a class="headerlink" href="#core_calculate_bond_order_gradients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the gradients of bond order factors.</p>
+<p>For a factor such as</p>
+<div class="math">
+\[b_i = f(\sum_j c_{ij})\]</div>
+<p>The routine calculates</p>
+<div class="math">
+\[\nabla_\alpha b_i = f'(\sum_j c_{ij}) \nabla_\alpha \sum_j c_{ij}.\]</div>
+<p>By default, the gradients of all factors <span class="math">\(i\)</span> are calculated with respect
+to moving the given atom <span class="math">\(\alpha\)</span>.
+If for_factor is .true., the gradients of the bond factor of the given
+atom are calculated with respect to moving all atoms.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>an index denoting the potential to which the factor is connected</dd>
+<dt>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the atom with respect to which the factors are differentiated (<span class="math">\(\alpha\)</span>), or the atoms whose factor is differentiated (<span class="math">\(i\)</span>) if for_factor is .true.</dd>
+<dt>raw_sums: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>precalculated bond order sums, <span class="math">\(\sum_j c_{ij}\)</span>, in the above example.</dd>
+<dt><strong>total_gradient</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
+<dd>the calculated bond order gradients <span class="math">\(\nabla_\alpha b_i\)</span></dd>
+</dl>
+<p><strong>total_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></p>
+<dl class="docutils">
+<dt>for_factor: logical  <em>intent(in)</em>    <em>scalar</em>  <em>optional</em></dt>
+<dd>a switch for requesting the gradients for a given <span class="math">\(i\)</span> instead of a given <span class="math">\(\alpha\)</span></dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_calculate_bond_order_gradients_of_factor">
+<tt class="descname">core_calculate_bond_order_gradients_of_factor</tt><big>(</big><em>n_atoms</em>, <em>group_index</em>, <em>atom_index</em>, <em>raw_sums</em>, <em>total_gradient</em>, <em>total_virial</em><big>)</big><a class="headerlink" href="#core_calculate_bond_order_gradients_of_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the gradients of one bond order factor with respect to
+moving all atoms.</p>
+<p>This calls <a class="reference internal" href="#core_calculate_bond_order_gradients" title="core_calculate_bond_order_gradients"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_bond_order_gradients()</span></tt></a> with for_factor = .true.</p>
+<p>For a factor such as</p>
+<div class="math">
+\[b_i = f(\sum_j c_{ij})\]</div>
+<p>The routine calculates</p>
+<div class="math">
+\[\nabla_\alpha b_i = f'(\sum_j c_{ij}) \nabla_\alpha \sum_j c_{ij}.\]</div>
+<p>The gradients of the bond factor of the given
+atom <span class="math">\(i\)</span> are calculated with respect to moving all atoms <span class="math">\(\alpha\)</span>.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>an index denoting the potential to which the factor is connected</dd>
+<dt>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the atom whose factor is differentiated (<span class="math">\(i\)</span>)</dd>
+<dt>raw_sums: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>precalculated bond order sums, <span class="math">\(\sum_j c_{ij}\)</span>, in the above example.</dd>
+<dt><strong>total_gradient</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
+<dd>the calculated bond order gradients <span class="math">\(\nabla_\alpha b_i\)</span></dd>
+</dl>
+<p><strong>total_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_calculate_electronegativities">
+<tt class="descname">core_calculate_electronegativities</tt><big>(</big><em>n_atoms</em>, <em>total_enegs</em><big>)</big><a class="headerlink" href="#core_calculate_electronegativities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates electronegativity forces acting on all atomic charges of the system.</p>
+<p>The routine calculates the electronegativities</p>
+<div class="math">
+\[\chi_{\alpha} = -\frac{\partial V}{\partial q_\alpha}\]</div>
+<p>for all atoms <span class="math">\(\alpha\)</span>. This is done according to the
+the structure and potentials allocated in the core, so the
+routine does not accept arguments. Instead, the core modifying
+routines such as <a class="reference internal" href="#core_generate_atoms" title="core_generate_atoms"><tt class="xref py py-func docutils literal"><span class="pre">core_generate_atoms()</span></tt></a> must be called
+first to set up the calculation.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#calculate_electronegativities" title="calculate_electronegativities"><tt class="xref py py-func docutils literal"><span class="pre">calculate_electronegativities()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt><strong>total_enegs</strong>: double precision  <strong>intent(out)</strong>    <em>size(n_atoms)</em></dt>
+<dd>an array containing the calculated charge forces for all atoms</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_calculate_energy">
+<tt class="descname">core_calculate_energy</tt><big>(</big><em>n_atoms</em>, <em>total_energy</em><big>)</big><a class="headerlink" href="#core_calculate_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the total potential energy of the system.</p>
+<p>This is done according to the
+the structure and potentials allocated in the core, so the
+routine does not accept arguments. Instead, the core modifying
+routines such as <a class="reference internal" href="#core_generate_atoms" title="core_generate_atoms"><tt class="xref py py-func docutils literal"><span class="pre">core_generate_atoms()</span></tt></a> must be called
+first to set up the calculation.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#calculate_energy" title="calculate_energy"><tt class="xref py py-func docutils literal"><span class="pre">calculate_energy()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt><strong>total_energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>calculated total potential energy</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_calculate_forces">
+<tt class="descname">core_calculate_forces</tt><big>(</big><em>n_atoms</em>, <em>total_forces</em>, <em>total_stress</em><big>)</big><a class="headerlink" href="#core_calculate_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates forces acting on all atoms of the system.</p>
+<p>The routine calculates the potential gradient</p>
+<div class="math">
+\[\mathbf{F}_\alpha = - \nabla_\alpha V\]</div>
+<p>for all atoms <span class="math">\(\alpha\)</span>. This is done according to the
+the structure and potentials allocated in the core, so the
+routine does not accept arguments. Instead, the core modifying
+routines such as <a class="reference internal" href="#core_generate_atoms" title="core_generate_atoms"><tt class="xref py py-func docutils literal"><span class="pre">core_generate_atoms()</span></tt></a> must be called
+first to set up the calculation.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#calculate_forces" title="calculate_forces"><tt class="xref py py-func docutils literal"><span class="pre">calculate_forces()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt><strong>total_forces</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
+<dd>an array containing the calculated forces for all atoms</dd>
+<dt><strong>total_stress</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></dt>
+<dd>as array containing the calculated stress tensor</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_clear_atoms">
+<tt class="descname">core_clear_atoms</tt><big>(</big><big>)</big><a class="headerlink" href="#core_clear_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deallocates the array of atoms in the core, if allocated.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_clear_bond_order_factors">
+<tt class="descname">core_clear_bond_order_factors</tt><big>(</big><big>)</big><a class="headerlink" href="#core_clear_bond_order_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deallocates pointers for bond order factors (the parameters)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_clear_bond_order_storage">
+<tt class="descname">core_clear_bond_order_storage</tt><big>(</big><big>)</big><a class="headerlink" href="#core_clear_bond_order_storage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deallocates pointers for bond order factors (the precalculated factor values).</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_clear_potentials">
+<tt class="descname">core_clear_potentials</tt><big>(</big><big>)</big><a class="headerlink" href="#core_clear_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Deallocates pointers for potentials</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_create_cell">
+<tt class="descname">core_create_cell</tt><big>(</big><em>vectors</em>, <em>inverse</em>, <em>periodicity</em><big>)</big><a class="headerlink" href="#core_create_cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a supercell for containing the calculation geometry.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#create_cell" title="create_cell"><tt class="xref py py-func docutils literal"><span class="pre">create_cell()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>vectors: double precision  <em>intent(in)</em>    <em>size(3, 3)</em></dt>
+<dd>A 3x3 matrix containing the vectors spanning the supercell. The first index runs over xyz and the second index runs over the three vectors.</dd>
+<dt>inverse: double precision  <em>intent(in)</em>    <em>size(3, 3)</em></dt>
+<dd>A 3x3 matrix containing the inverse matrix of the one given in vectors, i.e. <span class="math">\(A*B = I\)</span> for the two matrices. Since the latter represents a cell of non-zero volume, this inverse must exist. It is not tested that the given matrix actually is the inverse, the user must make sure it is.</dd>
+<dt>periodicity: logical  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>A 3-element vector containing logical tags specifying if the system is periodic in the directions of the three vectors spanning the supercell.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_create_neighbor_list">
+<tt class="descname">core_create_neighbor_list</tt><big>(</big><em>n_nbs</em>, <em>atom_index</em>, <em>neighbors</em>, <em>offsets</em><big>)</big><a class="headerlink" href="#core_create_neighbor_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns a precalculated neighbor list to a single atom of the given index.
+The neighbor list must be precalculated, this method only
+stores them in the core. The list must contain
+an array storing the indices of the neighboring atoms
+as well as the supercell offsets. The offsets are integer
+triplets showing how many times must the supercell vectors
+be added to the position of the neighbor to find the
+neighboring image in a periodic system.
+For example, let the supercell be:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]],</span>
+</pre></div>
+</div>
+<p>i.e., a unit cube, with periodic boundaries.
+Now, if we have particles with coordinates:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
+<span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">1.6</span><span class="p">,</span> <span class="mf">3.3</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>the closest separation vector <span class="math">\(\mathbf{r}_b-\mathbf{r}_a\)</span> between the particles is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="o">-.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">-.</span><span class="mi">2</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>obtained if we add the vector of periodicity:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>to the coordinates of particle b. The offset vector
+(for particle b, when listing neighbors of a) is then:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Note that if the system is small, one atom can in
+principle appear several times in the neighbor list with
+different offsets.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#create_neighbor_list" title="create_neighbor_list"><tt class="xref py py-func docutils literal"><span class="pre">create_neighbor_list()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_nbs: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of neighbors</dd>
+<dt>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the atom for which the neighbor list is created</dd>
+<dt>neighbors: integer  <em>intent(in)</em>    <em>size(n_nbs)</em></dt>
+<dd>An array containing the indices of the neighboring atoms</dd>
+<dt>offsets: integer  <em>intent(in)</em>    <em>size(3, n_nbs)</em></dt>
+<dd>An array containing vectors specifying the offsets of the neighbors in periodic systems.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_create_space_partitioning">
+<tt class="descname">core_create_space_partitioning</tt><big>(</big><em>max_cutoff</em><big>)</big><a class="headerlink" href="#core_create_space_partitioning" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>max_cutoff: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_debug_dump">
+<tt class="descname">core_debug_dump</tt><big>(</big><em>forces</em><big>)</big><a class="headerlink" href="#core_debug_dump" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write atomic coordinates and other info in a file.
+This is only for debugging.</p>
+<p>Parameters:</p>
+<p>forces: double precision  <em>intent(in)</em>    <em>size(:, :)</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_empty_bond_order_gradient_storage">
+<tt class="descname">core_empty_bond_order_gradient_storage</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#core_empty_bond_order_gradient_storage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears bond order factor gradients (the precalculated gradient values)
+but does not deallocate the arrays.
+If an index is given, then only that column is emptied.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer  <em>intent(in)</em>    <em>scalar</em>  <em>optional</em></dt>
+<dd>the column to be emptied</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_empty_bond_order_storage">
+<tt class="descname">core_empty_bond_order_storage</tt><big>(</big><big>)</big><a class="headerlink" href="#core_empty_bond_order_storage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears bond order factors (the precalculated factor values)
+but does not deallocate the arrays.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_evaluate_local_doublet">
+<tt class="descname">core_evaluate_local_doublet</tt><big>(</big><em>n_atoms</em>, <em>atom_doublet</em>, <em>index1</em>, <em>index2</em>, <em>test_index1</em>, <em>interaction_indices</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>calculation_type</em>, <em>energy</em>, <em>forces</em>, <em>enegs</em>, <em>stress</em>, <em>many_bodies_found</em><big>)</big><a class="headerlink" href="#core_evaluate_local_doublet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>atom_doublet: type(atom)  <em>intent(in)</em>    <em>size(2)</em></p>
+<p>index1: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>index2: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>test_index1: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>interaction_indices: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></p>
+<p>separations: double precision  <em>intent(in)</em>    <em>size(3, 1)</em></p>
+<p>directions: double precision  <em>intent(in)</em>    <em>size(3, 1)</em></p>
+<p>distances: double precision  <em>intent(in)</em>    <em>size(1)</em></p>
+<p>calculation_type: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></p>
+<p><strong>forces</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></p>
+<p><strong>enegs</strong>: double precision  <strong>intent(out)</strong>    <em>size(n_atoms)</em></p>
+<p><strong>stress</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></p>
+<p><strong>many_bodies_found</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_evaluate_local_quadruplet">
+<tt class="descname">core_evaluate_local_quadruplet</tt><big>(</big><em>n_atoms</em>, <em>atom_quadruplet</em>, <em>index1</em>, <em>index2</em>, <em>index3</em>, <em>index4</em>, <em>test_index1</em>, <em>test_index2</em>, <em>test_index3</em>, <em>interaction_indices</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>calculation_type</em>, <em>energy</em>, <em>forces</em>, <em>enegs</em>, <em>stress</em>, <em>many_bodies_found</em><big>)</big><a class="headerlink" href="#core_evaluate_local_quadruplet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>atom_quadruplet: type(atom)  <em>intent(in)</em>    <em>size(4)</em></p>
+<p>index1: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>index2: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>index3: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>index4: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>test_index1: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>test_index2: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>test_index3: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>interaction_indices: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></p>
+<p>separations: double precision  <em>intent(in)</em>    <em>size(3, 3)</em></p>
+<p>directions: double precision  <em>intent(in)</em>    <em>size(3, 3)</em></p>
+<p>distances: double precision  <em>intent(in)</em>    <em>size(3)</em></p>
+<p>calculation_type: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></p>
+<p><strong>forces</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></p>
+<p><strong>enegs</strong>: double precision  <strong>intent(out)</strong>    <em>size(n_atoms)</em></p>
+<p><strong>stress</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></p>
+<p><strong>many_bodies_found</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_evaluate_local_singlet">
+<tt class="descname">core_evaluate_local_singlet</tt><big>(</big><em>n_atoms</em>, <em>index1</em>, <em>atom_singlet</em>, <em>interaction_indices</em>, <em>calculation_type</em>, <em>energy</em>, <em>forces</em>, <em>enegs</em><big>)</big><a class="headerlink" href="#core_evaluate_local_singlet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates the local potential affecting a single atom</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>index1: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the atom</dd>
+<dt>atom_singlet: type(atom)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the atom that is targeted</dd>
+<dt>interaction_indices: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></dt>
+<dd>the interactions targeting the given atom</dd>
+<dt>calculation_type: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>specifies if we are evaluating the energy, forces, or electronegativities</dd>
+<dt><strong>energy</strong>: double precision  <strong>intent(inout)</strong>    <em>scalar</em></dt>
+<dd>calculated energy</dd>
+<dt><strong>forces</strong>: double precision  <strong>intent(inout)</strong>    <em>size(3, n_atoms)</em></dt>
+<dd>calculated forces</dd>
+<dt><strong>enegs</strong>: double precision  <strong>intent(inout)</strong>    <em>size(n_atoms)</em></dt>
+<dd>calculated electronegativities</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_evaluate_local_triplet">
+<tt class="descname">core_evaluate_local_triplet</tt><big>(</big><em>n_atoms</em>, <em>atom_triplet</em>, <em>index1</em>, <em>index2</em>, <em>index3</em>, <em>test_index1</em>, <em>test_index2</em>, <em>interaction_indices</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>calculation_type</em>, <em>energy</em>, <em>forces</em>, <em>enegs</em>, <em>stress</em>, <em>many_bodies_found</em><big>)</big><a class="headerlink" href="#core_evaluate_local_triplet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>atom_triplet: type(atom)  <em>intent(in)</em>    <em>size(3)</em></p>
+<p>index1: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>index2: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>index3: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>test_index1: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>test_index2: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>interaction_indices: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></p>
+<p>separations: double precision  <em>intent(in)</em>    <em>size(3, 2)</em></p>
+<p>directions: double precision  <em>intent(in)</em>    <em>size(3, 2)</em></p>
+<p>distances: double precision  <em>intent(in)</em>    <em>size(2)</em></p>
+<p>calculation_type: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></p>
+<p><strong>forces</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></p>
+<p><strong>enegs</strong>: double precision  <strong>intent(out)</strong>    <em>size(n_atoms)</em></p>
+<p><strong>stress</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></p>
+<p><strong>many_bodies_found</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_fill_bond_order_storage">
+<tt class="descname">core_fill_bond_order_storage</tt><big>(</big><em>n_atoms</em><big>)</big><a class="headerlink" href="#core_fill_bond_order_storage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fills the storage for bond order factors and bond order sums.
+This is meant to be called in the beginning of force and energy
+evaluation. The routine calculates all bond order factors
+(in parallel, if run in MPI) and stores them. Then during the
+energy or force calculation, it is sufficient to just
+look up the needed values in the arrays.
+The routine does not calculate and store bond factor gradients.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_generate_atoms">
+<tt class="descname">core_generate_atoms</tt><big>(</big><em>n_atoms</em>, <em>masses</em>, <em>charges</em>, <em>positions</em>, <em>momenta</em>, <em>tags</em>, <em>elements</em><big>)</big><a class="headerlink" href="#core_generate_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the atomic particles by invoking a subroutine in the geometry module.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#create_atoms" title="create_atoms"><tt class="xref py py-func docutils literal"><span class="pre">create_atoms()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>masses: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>masses of atoms</dd>
+<dt>charges: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>electric charges of atoms</dd>
+<dt>positions: double precision  <em>intent(in)</em>    <em>size(3, n_atoms)</em></dt>
+<dd>coordinates of atoms</dd>
+<dt>momenta: double precision  <em>intent(in)</em>    <em>size(3, n_atoms)</em></dt>
+<dd>momenta of atoms</dd>
+<dt>tags: integer  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>numeric tags for the atoms</dd>
+<dt>elements: character(len=label_length)  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>atomic symbols of the atoms</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_get_bond_order_factor_of_atom">
+<tt class="descname">core_get_bond_order_factor_of_atom</tt><big>(</big><em>n_atoms</em>, <em>group_index</em>, <em>atom_index</em>, <em>bond_order_factor</em><big>)</big><a class="headerlink" href="#core_get_bond_order_factor_of_atom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the bond order factors of the given atom for the given group.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index for the bond order factor group</dd>
+<dt>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the atom whose bond order factor is returned</dd>
+<dt><strong>bond_order_factor</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the calculated bond order factor</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_get_bond_order_factors">
+<tt class="descname">core_get_bond_order_factors</tt><big>(</big><em>n_atoms</em>, <em>group_index</em>, <em>bond_order_factors</em><big>)</big><a class="headerlink" href="#core_get_bond_order_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the bond order factors of all atoms for the given group.
+The routines tries to find the values in the stored precalculated
+values first if use_saved_bond_order_factors is true, and saves
+the calculated values if it does not find them.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index for the bond order factor group</dd>
+<dt><strong>bond_order_factors</strong>: double precision  <strong>intent(out)</strong>    <em>size(n_atoms)</em></dt>
+<dd>the calculated bond order factors</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_get_bond_order_gradients">
+<tt class="descname">core_get_bond_order_gradients</tt><big>(</big><em>n_atoms</em>, <em>group_index</em>, <em>atom_index</em>, <em>slot_index</em>, <em>bond_order_gradients</em>, <em>bond_order_virial</em><big>)</big><a class="headerlink" href="#core_get_bond_order_gradients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the gradients of the bond order factor of the given atom
+with respect to moving all atoms, for the given group.
+The routine tries to find the values in the stored precalculated
+values first if use_saved_bond_order_factors is true, and saves
+the calculated values if it does not find them.</p>
+<p>The slot index is the index of the atom in the interaction being
+evaluated (so for a triplet A-B-C, A would have slot 1, B slot 2,
+and C slot 3). This is only used for storing the values.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index for the bond order factor group</dd>
+<dt>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the atom whose bond order factor is differentiated</dd>
+<dt>slot_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index denoting the position of the atom in an interacting group (such as A-B-C triplet)</dd>
+<dt><strong>bond_order_gradients</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
+<dd>the calculated gradients of the bond order factor</dd>
+</dl>
+<p><strong>bond_order_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_get_bond_order_sums">
+<tt class="descname">core_get_bond_order_sums</tt><big>(</big><em>n_atoms</em>, <em>group_index</em>, <em>bond_order_sums</em><big>)</big><a class="headerlink" href="#core_get_bond_order_sums" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the bond order sums of all atoms for the given group.
+By &#8216;bond order sum&#8217;, we mean the summation of local terms
+without per atom scaling. E.g., for <span class="math">\(b_i = 1 + \sum c_{ij}\)</span>,
+<span class="math">\(\sum c_{ij}\)</span> is the sum.
+The routines tries to find the values in the stored precalculated
+values first if use_saved_bond_order_factors is true, and saves
+the calculated values if it does not find them.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index for the bond order factor group</dd>
+<dt><strong>bond_order_sums</strong>: double precision  <strong>intent(out)</strong>    <em>size(n_atoms)</em></dt>
+<dd>the calculated bond order sums</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_get_cell_vectors">
+<tt class="descname">core_get_cell_vectors</tt><big>(</big><em>vectors</em><big>)</big><a class="headerlink" href="#core_get_cell_vectors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the vectors defining the supercell stored in the core.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#get_cell_vectors" title="get_cell_vectors"><tt class="xref py py-func docutils literal"><span class="pre">get_cell_vectors()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt><strong>vectors</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, 3)</em></dt>
+<dd>A 3x3 matrix containing the vectors spanning the supercell. The first index runs over xyz and the second index runs over the three vectors.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_get_ewald_energy">
+<tt class="descname">core_get_ewald_energy</tt><big>(</big><em>real_cut</em>, <em>reciprocal_cut</em>, <em>sigma</em>, <em>epsilon</em>, <em>energy</em><big>)</big><a class="headerlink" href="#core_get_ewald_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Debug routine for Ewald</p>
+<p>Parameters:</p>
+<p>real_cut: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+<p>reciprocal_cut: integer  <em>intent(in)</em>    <em>size(3)</em></p>
+<p>sigma: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+<p>epsilon: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+<p><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_get_neighbor_list_of_atom">
+<tt class="descname">core_get_neighbor_list_of_atom</tt><big>(</big><em>atom_index</em>, <em>n_neighbors</em>, <em>neighbors</em>, <em>offsets</em><big>)</big><a class="headerlink" href="#core_get_neighbor_list_of_atom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>n_neighbors: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p><strong>neighbors</strong>: integer  <strong>intent(out)</strong>    <em>size(n_neighbors)</em></p>
+<p><strong>offsets</strong>: integer  <strong>intent(out)</strong>    <em>size(3, n_neighbors)</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_get_number_of_atoms">
+<tt class="descname">core_get_number_of_atoms</tt><big>(</big><em>n_atoms</em><big>)</big><a class="headerlink" href="#core_get_number_of_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of atoms in the array allocated in the core.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#get_number_of_atoms" title="get_number_of_atoms"><tt class="xref py py-func docutils literal"><span class="pre">get_number_of_atoms()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt><strong>n_atoms</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_get_number_of_neighbors">
+<tt class="descname">core_get_number_of_neighbors</tt><big>(</big><em>atom_index</em>, <em>n_neighbors</em><big>)</big><a class="headerlink" href="#core_get_number_of_neighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p><strong>n_neighbors</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_loop_over_local_interactions">
+<tt class="descname">core_loop_over_local_interactions</tt><big>(</big><em>n_atoms</em>, <em>calculation_type</em>, <em>total_energy</em>, <em>total_forces</em>, <em>total_enegs</em>, <em>total_stress</em><big>)</big><a class="headerlink" href="#core_loop_over_local_interactions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loops over atoms, atomic pairs, atomic triplets, and atomic quadruplets
+and calculates the contributions from local potentials to energy, forces,
+or electronegativities. This routine is called from the routines</p>
+<blockquote>
+<div><ul class="simple">
+<li><a class="reference internal" href="#core_calculate_energy" title="core_calculate_energy"><tt class="xref py py-meth docutils literal"><span class="pre">core_calculate_energy()</span></tt></a></li>
+<li><a class="reference internal" href="#core_calculate_forces" title="core_calculate_forces"><tt class="xref py py-meth docutils literal"><span class="pre">core_calculate_forces()</span></tt></a></li>
+<li><tt class="xref py py-meth docutils literal"><span class="pre">core_calculate_electronegaivities()</span></tt></li>
+</ul>
+</div></blockquote>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>calculation_type: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index to specify if the loop calculates energies, forces, or e-negativities</dd>
+<dt><strong>total_energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>calculated energy</dd>
+<dt><strong>total_forces</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
+<dd>calculated forces</dd>
+<dt><strong>total_enegs</strong>: double precision  <strong>intent(out)</strong>    <em>size(n_atoms)</em></dt>
+<dd>calculated electronegativities</dd>
+<dt><strong>total_stress</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></dt>
+<dd>calculated stress</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_post_process_bond_order_factors">
+<tt class="descname">core_post_process_bond_order_factors</tt><big>(</big><em>n_atoms</em>, <em>group_index</em>, <em>raw_sums</em>, <em>total_bond_orders</em><big>)</big><a class="headerlink" href="#core_post_process_bond_order_factors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bond-order post processing, i.e., application of per-atom scaling functions.</p>
+<p>By post processing, we mean any operations done after calculating the
+sum of pair- and many-body terms. That is, if a factor is, say,</p>
+<div class="math">
+\[b_i = f(\sum_j c_{ij}) = 1 + \sum_j c_{ij},\]</div>
+<p>the <span class="math">\(\sum_j c_{ij}\)</span> would have been calculated already
+(with <a class="reference internal" href="#core_calculate_bond_order_factors" title="core_calculate_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_bond_order_factors()</span></tt></a>)
+and the operation <span class="math">\(f(x) = 1 + x\)</span>
+remains to be carried out.
+The post processing is done per atom regardless of if the
+bond factor is of a pair or many body type.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>an index denoting the potential to which the factor is connected</dd>
+<dt>raw_sums: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>precalculated bond order sums, <span class="math">\(\sum_j c_{ij}\)</span>, in the above example.</dd>
+<dt><strong>total_bond_orders</strong>: double precision  <strong>intent(out)</strong>    <em>size(n_atoms)</em></dt>
+<dd>the calculated bond order factors <span class="math">\(b_i\)</span></dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_post_process_bond_order_gradients">
+<tt class="descname">core_post_process_bond_order_gradients</tt><big>(</big><em>n_atoms</em>, <em>group_index</em>, <em>raw_sums</em>, <em>raw_gradients</em>, <em>total_bond_gradients</em>, <em>mpi_split</em><big>)</big><a class="headerlink" href="#core_post_process_bond_order_gradients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bond-order post processing, i.e., application of per-atom scaling functions.
+This routine does the scaling for all bond factors with the given
+bond order sums and gradients of these sums.</p>
+<p>By post processing, we mean any operations done after calculating the
+sum of pair- and many-body terms. That is, if a factor is, say,</p>
+<div class="math">
+\[b_i = f(\sum_j c_{ij}) = 1 + \sum_j c_{ij},\]</div>
+<p>the <span class="math">\(\sum_j c_{ij}\)</span> would have been calculated already and the
+operation <span class="math">\(f(x) = 1 + x\)</span> remains to be carried out.
+The post processing is done per atom regardless of if the
+bond factor is of a pair or many body type.</p>
+<p>For gradients, one needs to evaluate</p>
+<div class="math">
+\[\nabla_\alpha b_i = f'(\sum_j c_{ij}) \nabla_\alpha \sum_j c_{ij}\]</div>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>an index denoting the potential to which the factor is connected</dd>
+<dt>raw_sums: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>precalculated bond order sums, <span class="math">\(\sum_j c_{ij}\)</span>, in the above example</dd>
+<dt>raw_gradients: double precision  <em>intent(in)</em>    <em>size(3, n_atoms)</em></dt>
+<dd>precalculated gradients of bond order sums, <span class="math">\(\nabla_\alpha \sum_j c_{ij}\)</span>, in the above example</dd>
+<dt><strong>total_bond_gradients</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
+<dd>the calculated bond order gradients <span class="math">\(\nabla_\alpha b_i\)</span></dd>
+<dt>mpi_split: logical  <em>intent(in)</em>    <em>scalar</em>  <em>optional</em></dt>
+<dd>A switch for enabling MPI parallelization. By default the routine is sequential since the calculation may be called from within an already parallelized routine.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_post_process_bond_order_gradients_of_factor">
+<tt class="descname">core_post_process_bond_order_gradients_of_factor</tt><big>(</big><em>n_atoms</em>, <em>group_index</em>, <em>atom_index</em>, <em>raw_sum</em>, <em>raw_gradients</em>, <em>total_bond_gradients</em>, <em>raw_virial</em>, <em>total_virial</em>, <em>mpi_split</em><big>)</big><a class="headerlink" href="#core_post_process_bond_order_gradients_of_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bond-order post processing, i.e., application of per-atom scaling functions.
+This routine does the scaling for the bond order factor of the given atom
+with respect to moving all atoms
+with the given bond order sum for the factor and
+the gradients of the sum with respect to moving all atoms.</p>
+<p>By post processing, we mean any operations done after calculating the
+sum of pair- and many-body terms. That is, if a factor is, say,</p>
+<div class="math">
+\[b_i = f(\sum_j c_{ij}) = 1 + \sum_j c_{ij},\]</div>
+<p>the <span class="math">\(\sum_j c_{ij}\)</span> would have been calculated already and the operation <span class="math">\(f(x) = 1 + x\)</span>
+remains to be carried out.
+The post processing is done per atom regardless of if the
+bond factor is of a pair or many body type.</p>
+<p>For gradients, one needs to evaluate</p>
+<div class="math">
+\[\nabla_\alpha b_i = f'(\sum_j c_{ij}) \nabla_\alpha \sum_j c_{ij}\]</div>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>an index denoting the potential to which the factor is connected</dd>
+<dt>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the index of the atom whose factor is differentiated (<span class="math">\(i\)</span>)</dd>
+<dt>raw_sum: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>precalculated bond order sum for the given atom, <span class="math">\(\sum_j c_{ij}\)</span>, in the above example</dd>
+<dt>raw_gradients: double precision  <em>intent(in)</em>    <em>size(3, n_atoms)</em></dt>
+<dd>precalculated gradients of bond order sums, <span class="math">\(\nabla_\alpha \sum_j c_{ij}\)</span>, in the above example</dd>
+<dt><strong>total_bond_gradients</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
+<dd>the calculated bond order gradients <span class="math">\(\nabla_\alpha b_i\)</span></dd>
+</dl>
+<p>raw_virial: double precision  <em>intent(in)</em>    <em>size(6)</em></p>
+<p><strong>total_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></p>
+<dl class="docutils">
+<dt>mpi_split: logical  <em>intent(in)</em>    <em>scalar</em>  <em>optional</em></dt>
+<dd>A switch for enabling MPI parallelization. By default the routine is sequential since the calculation may be called from within an already parallelized routine.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_release_all_memory">
+<tt class="descname">core_release_all_memory</tt><big>(</big><big>)</big><a class="headerlink" href="#core_release_all_memory" title="Permalink to this definition">¶</a></dt>
+<dd><p>Release all allocated pointer arrays in the core.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_set_ewald_parameters">
+<tt class="descname">core_set_ewald_parameters</tt><big>(</big><em>n_atoms</em>, <em>real_cut</em>, <em>reciprocal_cut</em>, <em>sigma</em>, <em>epsilon</em>, <em>scaler</em><big>)</big><a class="headerlink" href="#core_set_ewald_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the parameters for Ewald summation in the core.</p>
+<p>Parameters:</p>
+<p>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<dl class="docutils">
+<dt>real_cut: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the real-space cutoff</dd>
+<dt>reciprocal_cut: integer  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>the k-space cutoffs</dd>
+<dt>sigma: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the split parameter</dd>
+<dt>epsilon: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>electric constant</dd>
+<dt>scaler: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>scaling factors for the individual charges</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_update_atom_charges">
+<tt class="descname">core_update_atom_charges</tt><big>(</big><em>n_atoms</em>, <em>charges</em><big>)</big><a class="headerlink" href="#core_update_atom_charges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the charges of atomic particles.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#update_atom_charges" title="update_atom_charges"><tt class="xref py py-func docutils literal"><span class="pre">update_atom_charges()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>charges: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>new charges for the atoms</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_update_atom_coordinates">
+<tt class="descname">core_update_atom_coordinates</tt><big>(</big><em>n_atoms</em>, <em>positions</em>, <em>momenta</em><big>)</big><a class="headerlink" href="#core_update_atom_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the positions and momenta of atomic particles.</p>
+<p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#update_atom_coordinates" title="update_atom_coordinates"><tt class="xref py py-func docutils literal"><span class="pre">update_atom_coordinates()</span></tt></a></p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>positions: double precision  <em>intent(in)</em>    <em>size(3, n_atoms)</em></dt>
+<dd>new coordinates for the atoms</dd>
+<dt>momenta: double precision  <em>intent(in)</em>    <em>size(3, n_atoms)</em></dt>
+<dd>new momenta for the atoms</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="expand_neighbor_storage">
+<tt class="descname">expand_neighbor_storage</tt><big>(</big><em>nbors_and_offsets</em>, <em>length</em>, <em>new_length</em>, <em>n_atoms</em><big>)</big><a class="headerlink" href="#expand_neighbor_storage" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>nbors_and_offsets: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:, :, :)</em></p>
+<p>length: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>new_length: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="list_atoms">
+<tt class="descname">list_atoms</tt><big>(</big><big>)</big><a class="headerlink" href="#list_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints some information on the atoms stored in the core in stdout.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="list_bonds">
+<tt class="descname">list_bonds</tt><big>(</big><big>)</big><a class="headerlink" href="#list_bonds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints some information on the bond order factors stored in the core in stdout.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="list_cell">
+<tt class="descname">list_cell</tt><big>(</big><big>)</big><a class="headerlink" href="#list_cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints some information on the supercell stored in the core in stdout.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="list_interactions">
+<tt class="descname">list_interactions</tt><big>(</big><big>)</big><a class="headerlink" href="#list_interactions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints some information on the potentials stored in the core in stdout.</p>
+</dd></dl>
+
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Potentials_f90.html" title="potentials (Potentials.f90)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="PyInterface_f90.html" title="pysic_interface (PyInterface.f90)"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="pysic_fortran.html" >Pysic Fortran module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

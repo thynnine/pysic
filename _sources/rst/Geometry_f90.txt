@@ -1,0 +1,266 @@
+
+.. _geometry:
+        
+===============================================
+geometry (Geometry.f90)
+===============================================
+
+
+Modules used by geometry
+------------------------
+- :ref:`quaternions`
+
+List of global variables in geometry
+------------------------------------
+- :data:`label_length`
+
+List of custom types in geometry
+--------------------------------
+- :data:`atom`
+- :data:`neighbor_list`
+- :data:`supercell`
+
+List of subroutines in geometry
+-------------------------------
+        
+- :func:`absolute_coordinates`
+- :func:`assign_bond_order_factor_indices`
+- :func:`assign_neighbor_list`
+- :func:`assign_potential_indices`
+- :func:`generate_atoms`
+- :func:`generate_supercell`
+- :func:`relative_coordinates`
+- :func:`separation_vector`
+- :func:`update_atomic_positions`
+- :func:`wrapped_coordinates`
+
+
+Full documentation of global variables in geometry
+--------------------------------------------------
+        
+        
+  .. data:: label_length
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 2
+    
+    
+    
+
+Full documentation of custom types in geometry
+----------------------------------------------
+        
+        
+  .. data:: atom
+
+    Defines an atomic particle
+
+    Contained data:
+
+    neighbor_list: type(neighbor_list)    *scalar*
+        
+    index: integer    *scalar*
+        
+    n_pots: integer    *scalar*
+        
+    tags: integer    *scalar*
+        
+    potential_indices: integer  *pointer*  *size(:)*
+        
+    potentials_listed: logical    *scalar*
+        
+    element: character(len=label_length)    *scalar*
+        
+    charge: double precision    *scalar*
+        
+    bond_indices: integer  *pointer*  *size(:)*
+        
+    mass: double precision    *scalar*
+        
+    n_bonds: integer    *scalar*
+        
+    bond_order_factors_listed: logical    *scalar*
+        
+    position: double precision    *size(3)*
+        
+    momentum: double precision    *size(3)*
+        
+  .. data:: neighbor_list
+
+    Defines a list of neighbors for a single atom
+
+    Contained data:
+
+    neighbors: integer  *pointer*  *size(:)*
+        
+    max_length: integer    *scalar*
+        
+    pbc_offsets: integer  *pointer*  *size(:,* *:)*
+        
+    n_neighbors: integer    *scalar*
+        
+  .. data:: supercell
+
+    Defines the supercell
+
+    Contained data:
+
+    periodic: logical    *size(3)*
+        
+    vector_lengths: double precision    *size(3)*
+        
+    vectors: double precision    *size(3,* *3)*
+        
+    inverse_cell: double precision    *size(3,* *3)*
+        
+
+Full documentation of subroutines in geometry
+---------------------------------------------
+        
+        
+            
+  .. function:: absolute_coordinates(relative, cell, position)
+
+
+    Parameters:
+
+    relative: double precision  *intent(in)*    *size(3)*  
+        
+    cell: type(supercell)  *intent(in)*    *scalar*  
+        
+    **position**: double precision  **intent(out)**    *size(3)*  
+        
+            
+  .. function:: assign_bond_order_factor_indices(n_bonds, atom_in, indices)
+
+
+    Parameters:
+
+    n_bonds: integer  *intent(in)*    *scalar*  
+        
+    **atom_in**: type(atom)  **intent(inout)**    *scalar*  
+        
+    indices: integer  *intent(in)*    *size(n_bonds)*  
+        
+            
+  .. function:: assign_neighbor_list(n_nbs, nbor_list, neighbors, offsets)
+
+
+    Parameters:
+
+    n_nbs: integer  *intent(in)*    *scalar*  
+        
+    **nbor_list**: type(neighbor_list)  **intent(inout)**    *scalar*  
+        
+    neighbors: integer  *intent(in)*    *size(n_nbs)*  
+        
+    offsets: integer  *intent(in)*    *size(3,* *n_nbs)*  
+        
+            
+  .. function:: assign_potential_indices(n_pots, atom_in, indices)
+
+
+    Parameters:
+
+    n_pots: integer  *intent(in)*    *scalar*  
+        
+    **atom_in**: type(atom)  **intent(inout)**    *scalar*  
+        
+    indices: integer  *intent(in)*    *size(n_pots)*  
+        
+            
+  .. function:: generate_atoms(n_atoms, masses, charges, positions, momenta, tags, elements, atoms)
+
+    Creates atoms to construct the system to be simulated
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    masses: double precision  *intent(in)*    *size(n_atoms)*  
+        
+    charges: double precision  *intent(in)*    *size(n_atoms)*  
+        
+    positions: double precision  *intent(in)*    *size(3,* *n_atoms)*  
+        
+    momenta: double precision  *intent(in)*    *size(3,* *n_atoms)*  
+        
+    tags: integer  *intent(in)*    *size(n_atoms)*  
+        
+    elements: character(len=label_length)  *intent(in)*    *size(n_atoms)*  
+        
+    atoms: type(atom)  *intent()*  *pointer*  *size(:)*  
+        
+            
+  .. function:: generate_supercell(vectors, inverse, periodicity, cell)
+
+    Creates the supercell
+
+    Parameters:
+
+    vectors: double precision  *intent(in)*    *size(3,* *3)*  
+        
+    inverse: double precision  *intent(in)*    *size(3,* *3)*  
+        
+    periodicity: logical  *intent(in)*    *size(3)*  
+        
+    **cell**: type(supercell)  **intent(out)**    *scalar*  
+        
+            
+  .. function:: relative_coordinates(position, cell, relative)
+
+
+    Parameters:
+
+    position: double precision  *intent(in)*    *size(3)*  
+        
+    cell: type(supercell)  *intent(in)*    *scalar*  
+        
+    **relative**: double precision  **intent(out)**    *size(3)*  
+        
+            
+  .. function:: separation_vector(r1, r2, offset, cell, separation)
+
+    Calculates the minimum separation vector between two atoms, r2-r1, including possible periodicity
+
+    Parameters:
+
+    r1: double precision  *intent(in)*    *size(3)*  
+        
+    r2: double precision  *intent(in)*    *size(3)*  
+        
+    offset: integer  *intent(in)*    *size(3)*  
+        
+    cell: type(supercell)  *intent(in)*    *scalar*  
+        
+    **separation**: double precision  **intent(out)**    *size(3)*  
+        
+            
+  .. function:: update_atomic_positions(n_atoms, positions, momenta, atoms)
+
+    Updates the positions and momenta of atoms
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    positions: double precision  *intent(in)*    *size(3,* *n_atoms)*  
+        
+    momenta: double precision  *intent(in)*    *size(3,* *n_atoms)*  
+        
+    atoms: type(atom)  *intent()*  *pointer*  *size(:)*  
+        
+            
+  .. function:: wrapped_coordinates(position, cell, wrapped)
+
+    Wraps a general coordinate inside the supercell if the system is periodic
+
+    Parameters:
+
+    position: double precision  *intent(in)*    *size(3)*  
+        
+    cell: type(supercell)  *intent(in)*    *scalar*  
+        
+    **wrapped**: double precision  **intent(out)**    *size(3)*  
+        

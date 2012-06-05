@@ -1,0 +1,207 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Version history &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="next" title="Roadmap" href="roadmap.html" />
+    <link rel="prev" title="mt95 (Mersenne.f90)" href="Mersenne_f90.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="roadmap.html" title="Roadmap"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Mersenne_f90.html" title="mt95 (Mersenne.f90)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Version history</a><ul>
+<li><a class="reference internal" href="#version-0-4-3">Version 0.4.3</a></li>
+<li><a class="reference internal" href="#version-0-4-2">Version 0.4.2</a></li>
+<li><a class="reference internal" href="#version-0-4-1">Version 0.4.1</a></li>
+<li><a class="reference internal" href="#version-0-4">Version 0.4</a></li>
+<li><a class="reference internal" href="#version-0-3">Version 0.3</a></li>
+<li><a class="reference internal" href="#version-0-2">Version 0.2</a></li>
+<li><a class="reference internal" href="#version-0-1">Version 0.1</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Mersenne_f90.html"
+                        title="previous chapter">mt95 (Mersenne.f90)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="roadmap.html"
+                        title="next chapter">Roadmap</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/version.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="version-history">
+<span id="version"></span><h1>Version history<a class="headerlink" href="#version-history" title="Permalink to this headline">¶</a></h1>
+<p>This is a list of the main updates in the different versions of Pysic.</p>
+<div class="section" id="version-0-4-3">
+<h2>Version 0.4.3<a class="headerlink" href="#version-0-4-3" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added calculation of the stress tensor with the method <a class="reference internal" href="pysic class.html#pysic.Pysic.get_stress" title="pysic.Pysic.get_stress"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.Pysic.get_stress()</span></tt></a>.</li>
+<li>Bug fix: Fixed an issue with core initialization where changing the size of the supercell would lead to a conflict in neighbor list updating (the list update was tried before the cell update but failed due to the cell having been changed).</li>
+<li>Bug fix: Fixed an issue with the parallel neighbor list building algorithm which did not properly broadcast the calculated lists to all cpus.</li>
+</ul>
+</div>
+<div class="section" id="version-0-4-2">
+<h2>Version 0.4.2<a class="headerlink" href="#version-0-4-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Restructured the interaction evaluation loops in the Fortran core (<a class="reference internal" href="Potentials_f90.html#potentials"><em>potentials (Potentials.f90)</em></a>)</li>
+<li>Added support for 4-body potentials</li>
+<li>Added the <a class="reference internal" href="potential class.html#dihedral-angle-potential"><em>Dihedral angle potential</em></a></li>
+<li>Added the <a class="reference internal" href="potential class.html#buckingham-potential"><em>Buckingham potential</em></a></li>
+<li>Added the <a class="reference internal" href="potential class.html#power-decay-potential"><em>Power decay potential</em></a></li>
+<li>Added the <a class="reference internal" href="bondorderparameters class.html#power-decay-bond-order-factor"><em>Power decay bond order factor</em></a></li>
+<li>Added the <a class="reference internal" href="bondorderparameters class.html#square-root-scaling-function"><em>Square root scaling function</em></a></li>
+<li>Bug fix: fixed a memory issue in Ewald summation <a class="reference internal" href="coulombsummation class.html#pysic.CoulombSummation" title="pysic.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a></li>
+<li>Bug fix: fixed an issue with periodic boundaries in <a class="reference internal" href="fastneighborlist class.html#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">FastNeighborList</span></tt></a></li>
+<li>Bug fix: fixed an issue with special parameter values in Tersoff bond order factor evaluation</li>
+<li>Bug fix: fixed an issue where the cutoff of a bond order factor could overwrite a longer cutoff a potential</li>
+<li>Bug fix: fixed an indexing error in evaluation of 3-body interaction which gave to incorrect forces</li>
+<li>Bug fix: fixed and indexing error in neighbor offsets in <a class="reference internal" href="fastneighborlist class.html#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">FastNeighborList</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="version-0-4-1">
+<h2>Version 0.4.1<a class="headerlink" href="#version-0-4-1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Implemented an order <span class="math">\(\mathcal{O}(n)\)</span> neighbor finding algorithm in Fortran (see <a class="reference internal" href="fastneighborlist class.html#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">pysic.FastNeighborList</span></tt></a>)</li>
+</ul>
+</div>
+<div class="section" id="version-0-4">
+<h2>Version 0.4<a class="headerlink" href="#version-0-4" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Implemented the Ewald summation of <span class="math">\(\frac{1}{r}\)</span> potentials (see <a class="reference internal" href="coulombsummation class.html#pysic.CoulombSummation" title="pysic.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">pysic.CoulombSummation</span></tt></a>)</li>
+<li>The framework allows for the addition of other summation methods later on, but for now only standard Ewald is available</li>
+</ul>
+</div>
+<div class="section" id="version-0-3">
+<h2>Version 0.3<a class="headerlink" href="#version-0-3" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Implemented framework for charge relaxation (see <a class="reference internal" href="chargerelaxation class.html#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">pysic.ChargeRelaxation</span></tt></a>)</li>
+<li>Implemented the <a class="reference internal" href="chargerelaxation class.html#damped-dynamics"><em>Damped dynamics</em></a> charge relaxation algorithm.</li>
+<li>Implemented the <a class="reference internal" href="potential class.html#charge-exponential-potential"><em>Charge dependent exponential potential</em></a> potential.</li>
+</ul>
+</div>
+<div class="section" id="version-0-2">
+<h2>Version 0.2<a class="headerlink" href="#version-0-2" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Implemented bond order factors (see <a class="reference internal" href="coordinator class.html#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">pysic.Coordinator</span></tt></a> and <a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">pysic.BondOrderParameters</span></tt></a>) for scaling of potential energy according to local bond structure.</li>
+<li>Implemented a more robust method for tracking the status of the Fortran core (see <a class="reference internal" href="coremirror class.html#pysic.CoreMirror" title="pysic.CoreMirror"><tt class="xref py py-class docutils literal"><span class="pre">pysic.CoreMirror</span></tt></a>). This makes it less likely that wrong results are produced due to the changes in the user interface not propagating to the core.</li>
+</ul>
+</div>
+<div class="section" id="version-0-1">
+<h2>Version 0.1<a class="headerlink" href="#version-0-1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>First publicly available version</li>
+<li>Python interface<ul>
+<li><a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a></li>
+<li><a class="reference internal" href="pysic class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">pysic.Pysic</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">pysic.Potential</span></tt></a></li>
+<li><a class="reference internal" href="pysic_utility.html#module-pysic_utility" title="pysic_utility"><tt class="xref py py-mod docutils literal"><span class="pre">pysic_utility</span></tt></a></li>
+</ul>
+</li>
+<li>Framework for handling pair- and three-body potentials</li>
+<li>ASE compatibility<ul>
+<li><a class="reference internal" href="pysic class.html#pysic.Pysic.get_forces" title="pysic.Pysic.get_forces"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.Pysic.get_forces()</span></tt></a></li>
+<li><a class="reference internal" href="pysic class.html#pysic.Pysic.get_potential_energy" title="pysic.Pysic.get_potential_energy"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.Pysic.get_potential_energy()</span></tt></a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="roadmap.html" title="Roadmap"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Mersenne_f90.html" title="mt95 (Mersenne.f90)"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

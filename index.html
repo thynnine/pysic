@@ -1,0 +1,268 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Pysic (Pythonic simulation code) &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="#" />
+    <link rel="next" title="Physics of Pysic" href="physics.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="physics.html" title="Physics of Pysic"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">Pysic 0.4.3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Pysic (Pythonic simulation code)</a><ul>
+<li><a class="reference internal" href="#physical-background">Physical background</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#getting-pysic">Getting Pysic</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#performing-simulations-with-pysic">Performing simulations with Pysic</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#structure-and-syntax-in-pysic">Structure and syntax in Pysic</a><ul>
+</ul>
+</li>
+<li><a class="reference internal" href="#development-of-pysic">Development of Pysic</a><ul>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="physics.html"
+                        title="next chapter">Physics of Pysic</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pysic-pythonic-simulation-code">
+<span id="index"></span><h1>Pysic (Pythonic simulation code)<a class="headerlink" href="#pysic-pythonic-simulation-code" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="http://butler.cc.tut.fi/~hynnine5/personal/">Teemu Hynninen</a> (2011-2012)</p>
+<p><a class="reference external" href="http://www.tut.fi">Tampere University of Technology</a>
+<a class="reference external" href="http://www.aalto.fi">Aalto University, Helsinki</a></p>
+<p>Contact: teemu.hynninen tut.fi, <a class="reference external" href="https://twitter.com/#!/thynnine">&#64;thynnine</a></p>
+<p>Pysic is a calculator incorporating various empirical pair and many-body
+potentials in an object-based Python environment and user interface while
+implementing an efficient numeric core written in Fortran. The immediate aim
+of the Pysic project is to implement advanced variable charge potentials.</p>
+<p>Pysic is designed to interface with the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a> simulation environment.</p>
+<p>The code is developed as part of the <a class="reference external" href="http://webhotel2.tut.fi/fys/mordred/">Mordred</a> project.</p>
+<p>Pysic is an open source code with emphasis on making the program simple to learn and control as well as the source code readable, extendable and conforming to good programming standards. The source code is freely available at the <a class="reference external" href="https://gitorious.org/pysic/">Gitorious</a> repository.</p>
+<p>Pysic is in development. Simulations can be run with it, but many parts
+of the program are not yet fully tested and so bugs must be expected.
+Similarly, also this documentation is being constantly updated.</p>
+<p>This document is also available as a <a class="reference external" href="http://butler.cc.tut.fi/~hynnine5/programs/pysic/doc/pysic.pdf">pdf</a>.</p>
+<div class="section" id="physical-background">
+<h2>Physical background<a class="headerlink" href="#physical-background" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="physics.html">Physics of Pysic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physics.html#applications-and-goals">Applications and goals</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physics.html#atomistic-interactions">Atomistic interactions</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physics.html#dynamic-charges">Dynamic charges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physics.html#pysic-approach">Pysic approach</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="getting-pysic">
+<h2>Getting Pysic<a class="headerlink" href="#getting-pysic" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Getting Pysic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html#compiling-pysic">Compiling Pysic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html#external-resources">External resources</a></li>
+</ul>
+</div>
+</div>
+<div class="section" id="performing-simulations-with-pysic">
+<h2>Performing simulations with Pysic<a class="headerlink" href="#performing-simulations-with-pysic" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="running.html">Running Pysic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running.html#why-python">Why Python?</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running.html#the-atomic-simulation-environment">The Atomic Simulation Environment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="running.html#thinking-in-objects">Thinking in objects</a></li>
+<li class="toctree-l1"><a class="reference internal" href="run examples.html">Examples</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="run examples.html#first-steps-with-python">First steps with Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run examples.html#importing-pysic-to-python">Importing Pysic to Python</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run examples.html#minimal-example-of-running-pysic">Minimal example of running Pysic</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run examples.html#running-molecular-dynamics">Running molecular dynamics</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="run examples.html#screencasts">Screencasts</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="run examples.html#pysic-basics">Pysic basics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run examples.html#pysic-in-a-script">Pysic in a script</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="structure-and-syntax-in-pysic">
+<h2>Structure and syntax in Pysic<a class="headerlink" href="#structure-and-syntax-in-pysic" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="syntax.html">Structure and syntax of Pysic</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#modules">Modules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="syntax.html#classes">Classes</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pysic.html">Pysic module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pysic.html#classes-of-the-pysic-module">Classes of the pysic module</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pysic class.html">Pysic class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="potential class.html">Potential class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coulombsummation class.html">CoulombSummation class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coordinator class.html">Coordinator class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="bondorderparameters class.html">BondOrderParameters class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="chargerelaxation class.html">ChargeRelaxation class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="fastneighborlist class.html">FastNeighborList class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="coremirror class.html">CoreMirror class</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pysic.html#list-of-methods">List of methods</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pysic.html#potential-and-bond-order-factor-inquiry">Potential and bond order factor inquiry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pysic.html#charge-relaxation-inquiry">Charge relaxation inquiry</a></li>
+<li class="toctree-l3"><a class="reference internal" href="pysic.html#message-parsing-interface">Message Parsing Interface</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pysic.html#errors-defined-by-the-pysic-module">Errors defined by the pysic module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pysic.html#functions-of-the-pysic-module">Functions of the pysic module</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pysic_utility.html">Pysic Utility module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pysic_fortran.html">Pysic Fortran module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pysic_fortran.html#modules-of-the-fortran-core-of-pysic">Modules of the Fortran core of Pysic</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="PyInterface_f90.html">pysic_interface (PyInterface.f90)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Core_f90.html">pysic_core (Core.f90)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Potentials_f90.html">potentials (Potentials.f90)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Geometry_f90.html">geometry (Geometry.f90)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Utility_f90.html">utility (Utility.f90)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="MPI_f90.html">mpi (MPI.f90)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Quaternions_f90.html">quaternions (Quaternions.f90)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="Mersenne_f90.html">mt95 (Mersenne.f90)</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="development-of-pysic">
+<h2>Development of Pysic<a class="headerlink" href="#development-of-pysic" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="version.html">Version history</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="version.html#version-0-4-3">Version 0.4.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="version.html#version-0-4-2">Version 0.4.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="version.html#version-0-4-1">Version 0.4.1</a></li>
+<li class="toctree-l2"><a class="reference internal" href="version.html#version-0-4">Version 0.4</a></li>
+<li class="toctree-l2"><a class="reference internal" href="version.html#version-0-3">Version 0.3</a></li>
+<li class="toctree-l2"><a class="reference internal" href="version.html#version-0-2">Version 0.2</a></li>
+<li class="toctree-l2"><a class="reference internal" href="version.html#version-0-1">Version 0.1</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="roadmap.html">Roadmap</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="roadmap.html#version-0-5">Version 0.5</a></li>
+<li class="toctree-l2"><a class="reference internal" href="roadmap.html#version-0-6">Version 0.6</a></li>
+<li class="toctree-l2"><a class="reference internal" href="roadmap.html#other-planned-features">Other planned features</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="issues.html">Development</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="issues.html#fixed-bugs">Fixed bugs</a></li>
+<li class="toctree-l2"><a class="reference internal" href="issues.html#known-issues">Known issues</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="physics.html" title="Physics of Pysic"
+             >next</a> |</li>
+        <li><a href="#">Pysic 0.4.3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

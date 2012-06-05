@@ -1,0 +1,147 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Why Python? &mdash; Pysic 0.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.2 documentation" href="index.html" />
+    <link rel="next" title="The Atomic Simulation Environment" href="ase_general.html" />
+    <link rel="prev" title="Running Pysic" href="run_forewords.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ase_general.html" title="The Atomic Simulation Environment"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="run_forewords.html" title="Running Pysic"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="run_forewords.html"
+                        title="previous chapter">Running Pysic</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="ase_general.html"
+                        title="next chapter">The Atomic Simulation Environment</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/python_general.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="why-python">
+<h1>Why Python?<a class="headerlink" href="#why-python" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="http://www.python.org">Python</a> is a programming language with a simple human readable syntax yet powerful features and
+an extensive library. Python is an interpreted language meaning it does not need to be compiled.
+One can simply feed the source code to an interpreter which reads and interprets it during run.
+The Python interpreter can also perform calculations, read and write files, render graphics,
+etc. making Python a powerful tool for scripting. Python is also an object based language
+enabling sophisticated object oriented programming.</p>
+<p>In computational physics codes, the most common method of performing the calculations is to have
+the program read input files to extract the necessary parameters, perform the simulation based on
+the given input, and print output based on the results. The generated data is then analysed using
+separate tools. In some cases, more common in commercial programs, the user can control the
+program through a graphical user interface.</p>
+<p>In Pysic, another approach is chosen. Pysic is not a &#8220;black box&#8221; simulator that turns input data to
+output data. Instead, Pysic is a <em>Python module</em>. In essence, it is a library of tools one can use
+within Python to perform complicated calculations. Instead of writing an input file - often
+a complicated and error prone collection of numbers - the user needs
+to build the simulation in Python. Pysic can then be used in evaluating the energies,
+forces and other physical quantities of the given system. Python syntax is in general simple and
+simplicity and user friendlyness has also been a key goal in the design of Pysic syntax.</p>
+<p>Since Python is a programming language, having Pysic be a part of the language makes it straightforward
+to write scripts that generate the physical system to be studied and also extract the needed information
+from the simulations.
+Instead of generating enormous amounts of data which would then have to be fed to some other analysis
+program, one can precisely control what kind of data should be produced in the simulations and even analyse
+the results simultaneously as the simulation is run. Even controlling the simulation based on the
+produced data is not only possible but easy.</p>
+<p>The downside of Pysic being a Python module instead of an independent program is that one has to know the
+basics of how to run Python. <a class="reference external" href="http://docs.python.org/">Python documentation</a> is the best resource for getting started, but some
+simple first step instructions and <a class="reference internal" href="run_examples.html#examples"><em>Examples</em></a> are also given in this document.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="ase_general.html" title="The Atomic Simulation Environment"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="run_forewords.html" title="Running Pysic"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,247 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>utility (Utility.f90) &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="up" title="Pysic Fortran module" href="pysic_fortran.html" />
+    <link rel="next" title="mpi (MPI.f90)" href="MPI_f90.html" />
+    <link rel="prev" title="geometry (Geometry.f90)" href="Geometry_f90.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="MPI_f90.html" title="mpi (MPI.f90)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Geometry_f90.html" title="geometry (Geometry.f90)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="pysic_fortran.html" accesskey="U">Pysic Fortran module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">utility (Utility.f90)</a><ul>
+<li><a class="reference internal" href="#list-of-global-variables-in-utility">List of global variables in utility</a></li>
+<li><a class="reference internal" href="#list-of-subroutines-in-utility">List of subroutines in utility</a></li>
+<li><a class="reference internal" href="#full-documentation-of-global-variables-in-utility">Full documentation of global variables in utility</a></li>
+<li><a class="reference internal" href="#full-documentation-of-subroutines-in-utility">Full documentation of subroutines in utility</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Geometry_f90.html"
+                        title="previous chapter">geometry (Geometry.f90)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="MPI_f90.html"
+                        title="next chapter">mpi (MPI.f90)</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/Utility_f90.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="utility-utility-f90">
+<span id="utility"></span><h1>utility (Utility.f90)<a class="headerlink" href="#utility-utility-f90" title="Permalink to this headline">¶</a></h1>
+<p>A module containing utility functionas and constants.</p>
+<p>The module is a collection of standalone helper tools,
+not physically relevant functionality.</p>
+<div class="section" id="list-of-global-variables-in-utility">
+<h2>List of global variables in utility<a class="headerlink" href="#list-of-global-variables-in-utility" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#pi" title="pi"><tt class="xref py py-data docutils literal"><span class="pre">pi</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="list-of-subroutines-in-utility">
+<h2>List of subroutines in utility<a class="headerlink" href="#list-of-subroutines-in-utility" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#int2str" title="int2str"><tt class="xref py py-func docutils literal"><span class="pre">int2str()</span></tt></a></li>
+<li><a class="reference internal" href="#pad_string" title="pad_string"><tt class="xref py py-func docutils literal"><span class="pre">pad_string()</span></tt></a></li>
+<li><a class="reference internal" href="#str2int" title="str2int"><tt class="xref py py-func docutils literal"><span class="pre">str2int()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="full-documentation-of-global-variables-in-utility">
+<h2>Full documentation of global variables in utility<a class="headerlink" href="#full-documentation-of-global-variables-in-utility" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="data">
+<dt id="pi">
+<tt class="descname">pi</tt><a class="headerlink" href="#pi" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision    <em>scalar</em>  <em>parameter</em></p>
+<p><em>initial value</em> = 4.d0 * datan(1.d0)</p>
+<p>the constant <span class="math">\(\pi\)</span> calculated as <span class="math">\(\pi = 4 \arctan 1\)</span></p>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="full-documentation-of-subroutines-in-utility">
+<h2>Full documentation of subroutines in utility<a class="headerlink" href="#full-documentation-of-subroutines-in-utility" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="int2str">
+<tt class="descname">int2str</tt><big>(</big><em>length</em>, <em>ints</em>, <em>string_out</em><big>)</big><a class="headerlink" href="#int2str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms an integer array to string through a codec:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="mi">1</span> <span class="o">-</span> <span class="n">a</span>
+<span class="mi">2</span> <span class="o">-</span> <span class="n">b</span>
+<span class="o">...</span>
+<span class="mi">101</span> <span class="o">-</span> <span class="n">A</span>
+<span class="mi">102</span> <span class="o">-</span> <span class="n">B</span>
+<span class="o">...</span>
+<span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="o">-</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>Unrecognized numbers are treated as white spaces.</p>
+<p>The function is used for communicating string arrays between
+Python and Fortran oer f2py.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>length: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>string length</dd>
+<dt>ints: integer  <em>intent(in)</em>    <em>size(length)</em></dt>
+<dd>the integers</dd>
+<dt><strong>string_out</strong>: character(len=length)  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the string</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pad_string">
+<tt class="descname">pad_string</tt><big>(</big><em>str_in</em>, <em>str_length</em>, <em>str_out</em><big>)</big><a class="headerlink" href="#pad_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds spaces after the given string to
+create a string of a certain length.
+If the given string is longer than the
+specified length, it is truncated.</p>
+<p>This is used to ensure strings are of a
+certain length, since character arrays in
+Fortran may be forced to a certain length.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>str_in: character(len=*)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the original string</dd>
+<dt>str_length: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the required string length</dd>
+<dt><strong>str_out</strong>: character(len=str_length)  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the padded string</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="str2int">
+<tt class="descname">str2int</tt><big>(</big><em>length</em>, <em>string</em>, <em>ints</em><big>)</big><a class="headerlink" href="#str2int" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms a string to an integer array through a codec:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="mi">1</span> <span class="o">-</span> <span class="n">a</span>
+<span class="mi">2</span> <span class="o">-</span> <span class="n">b</span>
+<span class="o">...</span>
+<span class="mi">101</span> <span class="o">-</span> <span class="n">A</span>
+<span class="mi">102</span> <span class="o">-</span> <span class="n">B</span>
+<span class="o">...</span>
+<span class="o">-</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="o">-</span><span class="mi">2</span> <span class="o">-</span> <span class="mi">2</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>Unrecognized characters are mapped to 0.</p>
+<p>The function is used for communicating string arrays between
+Python and Fortran oer f2py.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>length: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>string length</dd>
+<dt>string: character(len=length)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the string</dd>
+<dt><strong>ints</strong>: integer  <strong>intent(out)</strong>    <em>size(length)</em></dt>
+<dd>the integers</dd>
+</dl>
+</dd></dl>
+
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="MPI_f90.html" title="mpi (MPI.f90)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Geometry_f90.html" title="geometry (Geometry.f90)"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="pysic_fortran.html" >Pysic Fortran module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

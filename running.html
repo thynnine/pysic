@@ -1,0 +1,189 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Running Pysic &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="next" title="Examples" href="run examples.html" />
+    <link rel="prev" title="Getting Pysic" href="setup.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="run examples.html" title="Examples"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="setup.html" title="Getting Pysic"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Running Pysic</a></li>
+<li><a class="reference internal" href="#why-python">Why Python?</a></li>
+<li><a class="reference internal" href="#the-atomic-simulation-environment">The Atomic Simulation Environment</a></li>
+<li><a class="reference internal" href="#thinking-in-objects">Thinking in objects</a></li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="setup.html"
+                        title="previous chapter">Getting Pysic</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="run examples.html"
+                        title="next chapter">Examples</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/running.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="running"></span><div class="section" id="running-pysic">
+<span id="run-forewords"></span><h1>Running Pysic<a class="headerlink" href="#running-pysic" title="Permalink to this headline">¶</a></h1>
+<p>Once you have Python and Pysic working, it&#8217;s time to learn how to use them. Next we will go through the basic concepts and ideas behind running simulations with Pysic. A collection of examples will demonstrate how to set up simulations in practice.</p>
+</div>
+<div class="section" id="why-python">
+<span id="python-general"></span><h1>Why Python?<a class="headerlink" href="#why-python" title="Permalink to this headline">¶</a></h1>
+<p><a class="reference external" href="http://www.python.org">Python</a> is a programming language with a simple human readable syntax yet powerful features and
+an extensive library. Python is an interpreted language meaning it does not need to be compiled.
+One can simply feed the source code to an interpreter which reads and interprets it during run.
+The Python interpreter can also perform calculations, read and write files, render graphics,
+etc. making Python a powerful tool for scripting. Python is also an object based language
+enabling sophisticated <a class="reference internal" href="#object-oriented"><em>Thinking in objects</em></a> programming.</p>
+<p>In computational physics codes, the most common method of performing the calculations is to have
+the program read input files to extract the necessary parameters, perform the simulation based on
+the given input, and print output based on the results. The generated data is then analysed using
+separate tools. In some cases, more common in commercial programs, the user can control the
+program through a graphical user interface.</p>
+<p>In Pysic, another approach is chosen. Pysic is not a &#8220;black box&#8221; simulator that turns input data to
+output data. Instead, Pysic is a <em>Python module</em>. In essence, it is a library of tools one can use
+within Python to perform complicated calculations. Instead of writing an input file - often
+a complicated and error prone collection of numbers - the user needs
+to build the simulation in Python. Pysic can then be used in evaluating the energies,
+forces and other physical quantities of the given system. Python syntax is in general simple and
+simplicity and user friendliness has also been a key goal in the design of Pysic syntax.</p>
+<p>Since Python is a programming language, having Pysic be a part of the language makes it straightforward
+to write scripts that generate the physical system to be studied and also extract the needed information
+from the simulations.
+Instead of generating enormous amounts of data which would then have to be fed to some other analysis
+program, one can precisely control what kind of data should be produced in the simulations and even analyse
+the results simultaneously as the simulation is run. Even controlling the simulation based on the
+produced data is not only possible but easy.</p>
+<p>The downside of Pysic being a Python module instead of an independent program is that one has to know the
+basics of how to run Python. <a class="reference external" href="http://docs.python.org/">Python documentation</a> is the best resource for getting started, but some
+simple first step instructions and <a class="reference internal" href="run examples.html#run-examples"><em>Examples</em></a> are also given in this document.</p>
+<p><img alt="&lt; ! &gt;" src="_images/exclamation.png" style="height: 32px;" /> See the official <a class="reference external" href="http://docs.python.org/">Python documentation</a> and <a class="reference external" href="http://docs.python.org/tutorial/index.html">tutorials</a>.</p>
+</div>
+<div class="section" id="the-atomic-simulation-environment">
+<span id="ase-general"></span><h1>The Atomic Simulation Environment<a class="headerlink" href="#the-atomic-simulation-environment" title="Permalink to this headline">¶</a></h1>
+<p>The Atomistic Simulation Environment (<a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a> <a class="footnote-reference" href="#id2" id="id1">[1]</a>) is a simulation tool developed originally at <a class="reference external" href="http://www.camd.dtu.dk/English/Software.aspx">CAMd</a>, DTU (Technical University of Denmark). The package defines a full atomistic simulation environment for Python, including utilities such as a <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/gui/gui.html#module-gui">graphical user interface</a>. Like Pysic, ASE is a collection of Python modules. These modules allow the user to construct atomistic systems, run <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/md.html#module-md">molecular dynamics</a> or <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/optimize.html#module-optimize">geometry optimization</a>, do calculations and analysis, etc.</p>
+<p><img alt="&lt; ! &gt;" src="_images/exclamation.png" style="height: 32px;" /> See the official <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/tutorials/tutorials.html">ASE tutorials</a>.</p>
+<p>ASE is easily extendable, and in fact, the common way to use ASE is join it with an external calculator which produces the needed physical quantities based on the structures defined by ASE. Pysic is such an extension. In the terms used in ASE, Pysic is a <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html">calculator</a>. The main role of calculators in ASE is to calculate forces and energies, and this is also what Pysic does. In addition, Pysic incorporates variable charge potentials with dynamic charge equilibration routines. Since ASE does not contain such routines, they are also handled by Pysic, making it more than just an extension of ASE. ASE does contain efficient dynamics and optimization routines including <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/constraints.html#module-constraints">constrained algorithms</a> and <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/neb.html#module-neb">nudged elastic band</a> as well as a choice of <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/md.html#constant-nvt-simulations-the-canonical-ensemble">thermostats</a>, and so Pysic does not implement any such functionality.</p>
+<p>The central object in ASE, also used by Pysic, is the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">Atoms</a> class. This class defines the complete system geometry including atomic species, coordinates, momenta, supercell, and boundary conditions. Pysic interprets instances of this class as the simulation geometry.</p>
+<table class="docutils footnote" frame="void" id="id2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>ASE: Comput. Sci. Eng., Vol. 4, 56-66, 2002; <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">https://wiki.fysik.dtu.dk/ase/</a></td></tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="thinking-in-objects">
+<span id="object-oriented"></span><h1>Thinking in objects<a class="headerlink" href="#thinking-in-objects" title="Permalink to this headline">¶</a></h1>
+<p>If you are already familiar with Python or languages such as Java or C++, you probably know what object oriented programming is. If you are more of a Fortran77 type, maybe not. Since Pysic relies heavily on the object paradigm, a few words should be said about it.</p>
+<p>Let&#8217;s say we want to simulate a bunch of atoms. To do this, we need to know where they are (coordinates), what element they are, what are their charges, momenta, etc. One way to store the information would be to assign indices to the atoms and create arrays containing the data. One for coordinates, another for momenta, third for charges etc. However, this type of bookkeeping approach gets more and more complicated the more strucuted data one needs to store. E.g., if we have a neighbor list as an array of atomic indices and wish to find the coordinates of a neighbor of a given atom, we first need to find the correct entry in the list of neighbors to find the index of the neighbor, and then find the entry corresponding to this index in the list of coordinates. In code, it could look like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">neighbor_atom_index</span> <span class="o">=</span> <span class="n">neighbor_lists</span><span class="p">[</span><span class="n">atom_index</span><span class="p">,</span> <span class="n">neighbor_index</span><span class="p">]</span>
+<span class="n">neighbor_atom_coordinates</span> <span class="o">=</span> <span class="n">coordinates</span><span class="p">[</span><span class="n">neighbor_atom_index</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>For complicated data hierarchies one may need to do this kind of index juggling for several rounds, which leads to code that is difficult to read and very susceptible to bugs. Furthermore, if one would want to edit the lists of atoms by, say, removing an atom from the system, all the arrays containing data related to atoms would have to be checked in case they contain the to be deleted particle and updated accordingly.</p>
+<p>In the object oriented approach, one defines a data structure (called a <em>class</em> in Python) capable of storing various types of information in a single instance. So one can define an &#8216;atom&#8217; datatype which contains the coordinates (as real numbers), momenta, etc. in one neat package. One can also define a &#8216;neighbor list&#8217; datatype which contains a list of &#8216;atom&#8217; datatypes. And the &#8216;atom&#8217; datatype can contain a &#8216;neighbor list&#8217; (although, this is not exactly how ASE handles neighbor lists). Now, the problem of finding the coordinates of a neighbor is solved in a more intuitive way by asking the atom who the neigbor is and the neighbor its coordinates. This might look something like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">neighbor_atom_coordinates</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">get_neighbor</span><span class="p">(</span><span class="n">neighbor_index</span><span class="p">)</span><span class="o">.</span><span class="n">get_coordinates</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>The above example also demonstrates <em>methods</em> - object specific functions allowing one to essentially give orders to objects. Objects and methods make it easy to write code that is simple to read and understand, since we humans intuitively see the world as objects, not as arrays of data. Another great benefit of the object based model is that when an object is modified, the changes automatically propagate everywhere where that object is referred.</p>
+<p>The classes and their methods defined in Pysic are documented in detail in <a class="reference internal" href="syntax.html#syntax-forewords"><em>Structure and syntax of Pysic</em></a>, and their basic use is shown in the collection of provided <a class="reference internal" href="run examples.html#run-examples"><em>Examples</em></a>. The central class in Pysic is <a class="reference internal" href="pysic class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, which is an energy and force calculator for <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a>. The interactions according to which the energies are calculated are constructed through the class <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>. Utilizing these classes is necessary to run meaningful calculations, though also other classes are defined for special purposes.</p>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="run examples.html" title="Examples"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="setup.html" title="Getting Pysic"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

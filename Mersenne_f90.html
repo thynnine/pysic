@@ -1,0 +1,151 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>mt95 (Mersenne.f90) &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="up" title="Pysic Fortran module" href="pysic_fortran.html" />
+    <link rel="next" title="Version history" href="version.html" />
+    <link rel="prev" title="quaternions (Quaternions.f90)" href="Quaternions_f90.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="version.html" title="Version history"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Quaternions_f90.html" title="quaternions (Quaternions.f90)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="pysic_fortran.html" accesskey="U">Pysic Fortran module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">mt95 (Mersenne.f90)</a><ul>
+<li><a class="reference internal" href="#routines-of-the-mt95-module">Routines of the mt95 module</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Quaternions_f90.html"
+                        title="previous chapter">quaternions (Quaternions.f90)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="version.html"
+                        title="next chapter">Version history</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/Mersenne_f90.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="mt95-mersenne-f90">
+<span id="mt95"></span><span id="mersenne-f90"></span><h1>mt95 (Mersenne.f90)<a class="headerlink" href="#mt95-mersenne-f90" title="Permalink to this headline">¶</a></h1>
+<p>The module mt95 contains a random number generator.
+Currently &#8216;Mersenne twister&#8217; is used, but it could in principle be replaced with any generator. This is an external module not written as part of the Pysic project.</p>
+<p>The generator is initialized with the routine <a class="reference internal" href="#genrand_init" title="genrand_init"><tt class="xref py py-func docutils literal"><span class="pre">genrand_init()</span></tt></a> and random real numbers  in [0,1] and [0,1) are extracted with <a class="reference internal" href="#genrand_real1" title="genrand_real1"><tt class="xref py py-func docutils literal"><span class="pre">genrand_real1()</span></tt></a> and <a class="reference internal" href="#genrand_real2" title="genrand_real2"><tt class="xref py py-func docutils literal"><span class="pre">genrand_real2()</span></tt></a>, respectively.</p>
+<div class="section" id="routines-of-the-mt95-module">
+<h2>Routines of the mt95 module<a class="headerlink" href="#routines-of-the-mt95-module" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="genrand_init">
+<tt class="descname">genrand_init</tt><big>(</big><em>seed</em><big>)</big><a class="headerlink" href="#genrand_init" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="genrand_real1">
+<tt class="descname">genrand_real1</tt><big>(</big><em>random</em><big>)</big><a class="headerlink" href="#genrand_real1" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="genrand_real2">
+<tt class="descname">genrand_real2</tt><big>(</big><em>random</em><big>)</big><a class="headerlink" href="#genrand_real2" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="version.html" title="Version history"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Quaternions_f90.html" title="quaternions (Quaternions.f90)"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="pysic_fortran.html" >Pysic Fortran module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

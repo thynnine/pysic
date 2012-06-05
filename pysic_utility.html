@@ -1,0 +1,501 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Pysic Utility module &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="next" title="Pysic Fortran module" href="pysic_fortran.html" />
+    <link rel="prev" title="CoreMirror class" href="coremirror class.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pysic_fortran.html" title="Pysic Fortran module"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="coremirror class.html" title="CoreMirror class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="coremirror class.html"
+                        title="previous chapter">CoreMirror class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="pysic_fortran.html"
+                        title="next chapter">Pysic Fortran module</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pysic_utility.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pysic-utility-module">
+<span id="pysic-utility"></span><h1>Pysic Utility module<a class="headerlink" href="#pysic-utility-module" title="Permalink to this headline">¶</a></h1>
+<p>A module for providing utility tools and parameters.</p>
+<span class="target" id="module-pysic_utility"></span><p>Contains necessary and supporting auxiliary functions for Pysic.</p>
+<dl class="class">
+<dt id="pysic_utility.Cell">
+<em class="property">class </em><tt class="descclassname">pysic_utility.</tt><tt class="descname">Cell</tt><big>(</big><em>vector1</em>, <em>vector2</em>, <em>vector3</em>, <em>pbc</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#Cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.Cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cell describing the simulation volume of a subvolume.</p>
+<p>This class can be used by the user for coordinate manipulation. Note however,
+that ASE does not use on this class, as it is part of Pysic. The class is
+merely a tool for examining the geometry.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>vector1: list of doubles</dt>
+<dd>3-vector specifying the first vector spanning the cell <span class="math">\(\mathbf{v}_1\)</span></dd>
+<dt>vector2: list of doubles</dt>
+<dd>3-vector specifying the second vector spanning the cell <span class="math">\(\mathbf{v}_2\)</span></dd>
+<dt>vector3: list of doubles</dt>
+<dd>3-vector specifying the third vector spanning the cell <span class="math">\(\mathbf{v}_3\)</span></dd>
+<dt>pbc: list of logicals</dt>
+<dd>three logic switches for specifying periodic boundaries - True denotes periodicity</dd>
+</dl>
+<dl class="method">
+<dt id="pysic_utility.Cell.get_absolute_coordinates">
+<tt class="descname">get_absolute_coordinates</tt><big>(</big><em>fractional</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#Cell.get_absolute_coordinates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.Cell.get_absolute_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>For the given fractional coordinates, returns the absolute coordinates.</p>
+<p>The absolute coordinates are the cell vectors multiplied by the fractional
+coordinates.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>fractional: numpy double 3-vector</dt>
+<dd>the fractional coordinates</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic_utility.Cell.get_distance">
+<tt class="descname">get_distance</tt><big>(</big><em>atom1</em>, <em>atom2</em>, <em>offsets=None</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#Cell.get_distance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.Cell.get_distance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the distance between two atoms.</p>
+<p>Offsets are multipliers for the cell vectors to be added to the
+plain separation vector r1-r2 between the atoms.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>atom1: ASE Atoms object</dt>
+<dd>first atom</dd>
+<dt>atom2: ASE Atoms object</dt>
+<dd>second atom</dd>
+<dt>offsets: Numpy integer 3-vector</dt>
+<dd>the periodic boundary offsets</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic_utility.Cell.get_relative_coordinates">
+<tt class="descname">get_relative_coordinates</tt><big>(</big><em>coordinates</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#Cell.get_relative_coordinates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.Cell.get_relative_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the coordinates of the given atom in fractional coordinates.</p>
+<p>The absolute position of the atom is given by multiplying the cell vectors
+by the fractional coordinates.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>coordinates: numpy double 3-vector</dt>
+<dd>the absolute coordinates</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic_utility.Cell.get_separation">
+<tt class="descname">get_separation</tt><big>(</big><em>atom1</em>, <em>atom2</em>, <em>offsets=None</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#Cell.get_separation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.Cell.get_separation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the separation vector between two atoms, r1-r2.</p>
+<p>Offsets are multipliers for the cell vectors to be added to the
+plain separation vector r1-r2 between the atoms.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>atom1: ASE Atoms object</dt>
+<dd>first atom</dd>
+<dt>atom2: ASE Atoms object</dt>
+<dd>second atom</dd>
+<dt>offsets: Numpy integer 3-vector</dt>
+<dd>the periodic boundary offsets</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic_utility.Cell.get_wrapped_coordinates">
+<tt class="descname">get_wrapped_coordinates</tt><big>(</big><em>coordinates</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#Cell.get_wrapped_coordinates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.Cell.get_wrapped_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps the coordinates of the given atom inside the simulation cell.</p>
+<p>This method return the equivalent position (with respect to the periodic boundaries)
+of the atom inside the cell.</p>
+<p>For instance, if the cell is spanned by vectors of length 10.0 in 
+directions of <span class="math">\(x\)</span>, <span class="math">\(y\)</span>, and <span class="math">\(z\)</span>,
+an the coordinates [-1.0, 12.0, 3.0] wrap to [9.0, 2.0, 3.0].</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>coordinates: numpy double 3-vector</dt>
+<dd>the absolute coordinates</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic_utility.char2int">
+<tt class="descclassname">pysic_utility.</tt><tt class="descname">char2int</tt><big>(</big><em>char_in</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#char2int"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.char2int" title="Permalink to this definition">¶</a></dt>
+<dd><p>Codes a single character to an integer.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic_utility.expand_symbols_table">
+<tt class="descclassname">pysic_utility.</tt><tt class="descname">expand_symbols_table</tt><big>(</big><em>symbol_list</em>, <em>type=None</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#expand_symbols_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.expand_symbols_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a table of symbols for a BondOrderParameters object.</p>
+<p>The syntax for defining the targets of bond order factors is precise
+but somewhat cumbersome due to the large number of permutations one gets
+when the number of bodies increases. Oftentimes one does not need such
+fine control over all the parameters since many of them have the same
+numerical values. Therefore it is convenient to be able to define
+the targets in a more compact way.</p>
+<p>This method generates the detailed target tables from compact syntax.
+By default, the method takes a list of list and multiplies each list
+with the others (note the call for a static method):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="o">.</span><span class="n">expand_symbols_table</span><span class="p">([</span>  <span class="s">&#39;Si&#39;</span><span class="p">,</span>
+<span class="gp">... </span>                                                 <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                                                 <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">]</span> <span class="p">])</span>
+<span class="go">[[&#39;Si&#39;, &#39;O&#39;, &#39;H&#39;],</span>
+<span class="go"> [&#39;Si&#39;, &#39;C&#39;, &#39;H&#39;],</span>
+<span class="go"> [&#39;Si&#39;, &#39;O&#39;, &#39;O&#39;],</span>
+<span class="go"> [&#39;Si&#39;, &#39;C&#39;, &#39;O&#39;]]</span>
+</pre></div>
+</div>
+<p>Other custom types of formatting can be defined with the type parameter.</p>
+<p>For type &#8216;triplet&#8217;, the target list is created for triplets A-B-C from an input list of the form:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="s">&#39;A&#39;</span><span class="p">,</span> <span class="s">&#39;B&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Remember that in the symbol table accepted by the BondOrderParameters, one needs to define
+the B-A and B-C bonds separately and so B appears as the first symbol in the output and the other
+two appear as second and third (both cases):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[[</span><span class="s">&#39;B&#39;</span><span class="p">,</span> <span class="s">&#39;A&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">],</span>
+ <span class="p">[</span><span class="s">&#39;B&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;A&#39;</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>However, for an A-B-A triplet, the A-B bond should only be defined once to prevent double counting.
+Like the default function, also here several triplets can be defined at once:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="o">.</span><span class="n">expand_symbols_table</span><span class="p">([</span> <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                                                  <span class="s">&#39;Si&#39;</span><span class="p">,</span>
+<span class="gp">... </span>                                                 <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">]</span> <span class="p">],</span>
+<span class="gp">... </span>                                               <span class="nb">type</span><span class="o">=</span><span class="s">&#39;triplet&#39;</span><span class="p">)</span>
+<span class="go">[[&#39;Si&#39;, &#39;H&#39;, &#39;O&#39;],</span>
+<span class="go"> [&#39;Si&#39;, &#39;O&#39;, &#39;H&#39;],</span>
+<span class="go"> [&#39;Si&#39;, &#39;H&#39;, &#39;C&#39;],</span>
+<span class="go"> [&#39;Si&#39;, &#39;C&#39;, &#39;H&#39;],</span>
+<span class="go"> [&#39;Si&#39;, &#39;O&#39;, &#39;O&#39;],</span>
+<span class="go"> [&#39;Si&#39;, &#39;O&#39;, &#39;C&#39;],</span>
+<span class="go"> [&#39;Si&#39;, &#39;C&#39;, &#39;O&#39;]]</span>
+</pre></div>
+</div>
+<p>Parameters:</p>
+<p>symbol_list: list of strings
+list to be expanded to a table
+type: string
+specifies a custom way of generating the table</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic_utility.int2char">
+<tt class="descclassname">pysic_utility.</tt><tt class="descname">int2char</tt><big>(</big><em>int_in</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#int2char"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.int2char" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decodes an integer to a single character.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic_utility.ints2str">
+<tt class="descclassname">pysic_utility.</tt><tt class="descname">ints2str</tt><big>(</big><em>ints_in</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#ints2str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.ints2str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decodes a list of integers to a string.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic_utility.plot_abs_force_on_line">
+<tt class="descclassname">pysic_utility.</tt><tt class="descname">plot_abs_force_on_line</tt><big>(</big><em>index, system, direction=None, length=None, steps=100, start=None, end=None, lims=[-10000000000.0, 10000000000.0]</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#plot_abs_force_on_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.plot_abs_force_on_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the absolute value of the force on a particle as a function of the position.</p>
+<p>The method probes the system by moving a single particle on a line
+and recording the force. A plot is drawn. Also a tuple containing arrays of
+the distance traveled and the recorded forces is returned.</p>
+<p>After the operation is complete, the initial structure is restored.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer</dt>
+<dd>index of the particle to be moved</dd>
+<dt>system: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object</dt>
+<dd>the structure to be explored</dd>
+<dt>direction: double 3-vector</dt>
+<dd>the direction where the atom is moved</dd>
+<dt>length: double</dt>
+<dd>the distance moved</dd>
+<dt>steps: integer</dt>
+<dd>number of points (taken uniformly on the movement path) for measuring the force</dd>
+<dt>start: double 3-vector (array or list)</dt>
+<dd>starting point for the trajectory - if not specified, the position of the particle in &#8216;system&#8217; is used</dd>
+<dt>end: double 3-vector (array or list)</dt>
+<dd>end point for the trajectory - alternative for direction and length (will override them)</dd>
+<dt>lims: double 2-vector (array or list)</dt>
+<dd>lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic_utility.plot_abs_force_on_plane">
+<tt class="descclassname">pysic_utility.</tt><tt class="descname">plot_abs_force_on_plane</tt><big>(</big><em>index, system, directions, lengths, steps=100, start=None, lims=[-10000000000.0, 10000000000.0]</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#plot_abs_force_on_plane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.plot_abs_force_on_plane" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the absolute value of force on a particle as a function of the position.</p>
+<p>The method probes the system by moving a single particle on a plane
+and recording the force. A contour plot is drawn. Also a tuple containing arrays of
+the distances traveled on the plane and the recorded forces is returned.</p>
+<p>After the operation is complete, the initial structure is restored.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer</dt>
+<dd>index of the particle to be moved</dd>
+<dt>system: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object</dt>
+<dd>the structure to be explored</dd>
+<dt>directions: double 2x3-matrix</dt>
+<dd>The directions where the atom is moved - i.e., the vectors defining the plane. If the second vector is not perpendicular to the first, the normal component is automatically used instead.</dd>
+<dt>lengths: double 2-vector</dt>
+<dd>the distances moved in the given directions</dd>
+<dt>steps: integer</dt>
+<dd>number of points (taken uniformly on the movement plane) for measuring the force</dd>
+<dt>start: double 3-vector (array or list)</dt>
+<dd>starting point for the trajectory, i.e., a corner for the plane to be probed - if not specified, the position of the particle in &#8216;system&#8217; is used</dd>
+<dt>lims: double 2-vector (array or list)</dt>
+<dd>lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic_utility.plot_energy_on_line">
+<tt class="descclassname">pysic_utility.</tt><tt class="descname">plot_energy_on_line</tt><big>(</big><em>index, system, direction=None, length=None, steps=100, start=None, end=None, lims=[-10000000000.0, 10000000000.0]</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#plot_energy_on_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.plot_energy_on_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the energy of the system as a function of the position of a single particle.</p>
+<p>The method probes the system by moving a single particle on a line
+and recording the energy. A plot is drawn. Also a tuple containing arrays of
+the distance traveled and the recorded energies is returned.</p>
+<p>After the operation is complete, the initial structure is restored.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer</dt>
+<dd>index of the particle to be moved</dd>
+<dt>system: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object</dt>
+<dd>the structure to be explored</dd>
+<dt>direction: double 3-vector</dt>
+<dd>the direction where the atom is moved</dd>
+<dt>length: double</dt>
+<dd>the distance moved</dd>
+<dt>steps: integer</dt>
+<dd>number of points (taken uniformly on the movement path) for measuring the energy</dd>
+<dt>start: double 3-vector (array or list)</dt>
+<dd>starting point for the trajectory - if not specified, the position of the particle in &#8216;system&#8217; is used</dd>
+<dt>end: double 3-vector (array or list)</dt>
+<dd>end point for the trajectory - alternative for direction and length (will override them)</dd>
+<dt>lims: double 2-vector (array or list)</dt>
+<dd>lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic_utility.plot_energy_on_plane">
+<tt class="descclassname">pysic_utility.</tt><tt class="descname">plot_energy_on_plane</tt><big>(</big><em>index, system, directions, lengths, steps=100, start=None, lims=[-10000000000.0, 10000000000.0]</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#plot_energy_on_plane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.plot_energy_on_plane" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the energy of the system as a function of the position of a particle.</p>
+<p>The method probes the system by moving a single particle on a plane
+and recording the energy. A contour plot is drawn. Also a tuple containing arrays of
+the distances traveled on the plane and the recorded energies is returned.</p>
+<p>After the operation is complete, the initial structure is restored.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer</dt>
+<dd>index of the particle to be moved</dd>
+<dt>system: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object</dt>
+<dd>the structure to be explored</dd>
+<dt>directions: double 2x3-matrix</dt>
+<dd>The directions where the atom is moved - i.e., the vectors defining the plane. If the second vector is not perpendicular to the first, the normal component is automatically used instead.</dd>
+<dt>lengths: double 2-vector</dt>
+<dd>the distances moved in the given directions</dd>
+<dt>steps: integer</dt>
+<dd>number of points (taken uniformly on the movement plane) for measuring the energy</dd>
+<dt>start: double 3-vector (array or list)</dt>
+<dd>starting point for the trajectory, i.e., a corner for the plane to be probed - if not specified, the position of the particle in &#8216;system&#8217; is used</dd>
+<dt>lims: double 2-vector (array or list)</dt>
+<dd>lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic_utility.plot_force_component_on_plane">
+<tt class="descclassname">pysic_utility.</tt><tt class="descname">plot_force_component_on_plane</tt><big>(</big><em>index, system, directions, lengths, component, steps=100, start=None, lims=[-10000000000.0, 10000000000.0]</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#plot_force_component_on_plane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.plot_force_component_on_plane" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the projected component of force on a particle as a function of the position.</p>
+<p>The method probes the system by moving a single particle on a plane
+and recording the force. The component of the force projected on a
+given vector is recorded.
+A contour plot is drawn. Also a tuple containing arrays of
+the distances traveled on the plane and the recorded forces is returned.</p>
+<p>After the operation is complete, the initial structure is restored.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer</dt>
+<dd>index of the particle to be moved</dd>
+<dt>system: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object</dt>
+<dd>the structure to be explored</dd>
+<dt>directions: double 2x3-matrix</dt>
+<dd>The directions where the atom is moved - i.e., the vectors defining the plane. If the second vector is not perpendicular to the first, the normal component is automatically used instead.</dd>
+<dt>lengths: double 2-vector</dt>
+<dd>the distances moved in the given directions</dd>
+<dt>component: double 3-vector</dt>
+<dd>the direction on which the force is projected - e.g., if component is [1,0,0], the x-component is recorded</dd>
+<dt>steps: integer</dt>
+<dd>number of points (taken uniformly on the movement plane) for measuring the force</dd>
+<dt>start: double 3-vector (array or list)</dt>
+<dd>starting point for the trajectory, i.e., a corner for the plane to be probed - if not specified, the position of the particle in &#8216;system&#8217; is used</dd>
+<dt>lims: double 2-vector (array or list)</dt>
+<dd>lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic_utility.plot_tangent_force_on_line">
+<tt class="descclassname">pysic_utility.</tt><tt class="descname">plot_tangent_force_on_line</tt><big>(</big><em>index, system, direction=None, length=None, steps=100, start=None, end=None, lims=[-10000000000.0, 10000000000.0]</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#plot_tangent_force_on_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.plot_tangent_force_on_line" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the tangential force on a particle as a function of the position.</p>
+<p>The method probes the system by moving a single particle on a line
+and recording the force tangent. A plot is drawn. Also a tuple containing arrays of
+the distance traveled and the recorded forces is returned.</p>
+<p>After the operation is complete, the initial structure is restored.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer</dt>
+<dd>index of the particle to be moved</dd>
+<dt>system: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object</dt>
+<dd>the structure to be explored</dd>
+<dt>direction: double 3-vector</dt>
+<dd>the direction where the atom is moved</dd>
+<dt>length: double</dt>
+<dd>the distance moved</dd>
+<dt>steps: integer</dt>
+<dd>number of points (taken uniformly on the movement path) for measuring the energy</dd>
+<dt>start: double 3-vector (array or list)</dt>
+<dd>starting point for the trajectory - if not specified, the position of the particle in &#8216;system&#8217; is used</dd>
+<dt>end: double 3-vector (array or list)</dt>
+<dd>end point for the trajectory - alternative for direction and length (will override them)</dd>
+<dt>lims: double 2-vector (array or list)</dt>
+<dd>lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic_utility.plot_tangent_force_on_plane">
+<tt class="descclassname">pysic_utility.</tt><tt class="descname">plot_tangent_force_on_plane</tt><big>(</big><em>index, system, directions, lengths, steps=100, start=None, lims=[-10000000000.0, 10000000000.0]</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#plot_tangent_force_on_plane"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.plot_tangent_force_on_plane" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plots the absolute value of the tangent component of force on a particle as a function of the position.</p>
+<p>The method probes the system by moving a single particle on a plane
+and recording the force. The force is projected on the same plane, and the absolute
+value of the projection is calculated.
+A contour plot is drawn. Also a tuple containing arrays of
+the distances traveled on the plane and the recorded forces is returned.</p>
+<p>After the operation is complete, the initial structure is restored.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer</dt>
+<dd>index of the particle to be moved</dd>
+<dt>system: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object</dt>
+<dd>the structure to be explored</dd>
+<dt>directions: double 2x3-matrix</dt>
+<dd>The directions where the atom is moved - i.e., the vectors defining the plane. If the second vector is not perpendicular to the first, the normal component is automatically used instead.</dd>
+<dt>lengths: double 2-vector</dt>
+<dd>the distances moved in the given directions</dd>
+<dt>steps: integer</dt>
+<dd>number of points (taken uniformly on the movement plane) for measuring the force</dd>
+<dt>start: double 3-vector (array or list)</dt>
+<dd>starting point for the trajectory, i.e., a corner for the plane to be probed - if not specified, the position of the particle in &#8216;system&#8217; is used</dd>
+<dt>lims: double 2-vector (array or list)</dt>
+<dd>lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic_utility.str2ints">
+<tt class="descclassname">pysic_utility.</tt><tt class="descname">str2ints</tt><big>(</big><em>string_in</em>, <em>target_length=0</em><big>)</big><a class="reference internal" href="_modules/pysic_utility.html#str2ints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic_utility.str2ints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Codes a string to a list of integers.</p>
+<p>Turns a string to a list of integers for f2py interfacing.
+If required, the length of the list can be specified and trailing spaces
+will be added to the end.</p>
+</dd></dl>
+
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="pysic_fortran.html" title="Pysic Fortran module"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="coremirror class.html" title="CoreMirror class"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

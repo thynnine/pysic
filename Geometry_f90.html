@@ -1,0 +1,782 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>geometry (Geometry.f90) &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="up" title="Pysic Fortran module" href="pysic_fortran.html" />
+    <link rel="next" title="utility (Utility.f90)" href="Utility_f90.html" />
+    <link rel="prev" title="potentials (Potentials.f90)" href="Potentials_f90.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Utility_f90.html" title="utility (Utility.f90)"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="Potentials_f90.html" title="potentials (Potentials.f90)"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="pysic_fortran.html" accesskey="U">Pysic Fortran module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">geometry (Geometry.f90)</a><ul>
+<li><a class="reference internal" href="#modules-used-by-geometry">Modules used by geometry</a></li>
+<li><a class="reference internal" href="#list-of-global-variables-in-geometry">List of global variables in geometry</a></li>
+<li><a class="reference internal" href="#list-of-custom-types-in-geometry">List of custom types in geometry</a></li>
+<li><a class="reference internal" href="#list-of-subroutines-in-geometry">List of subroutines in geometry</a></li>
+<li><a class="reference internal" href="#list-of-functions-in-geometry">List of functions in geometry</a></li>
+<li><a class="reference internal" href="#full-documentation-of-global-variables-in-geometry">Full documentation of global variables in geometry</a></li>
+<li><a class="reference internal" href="#full-documentation-of-custom-types-in-geometry">Full documentation of custom types in geometry</a></li>
+<li><a class="reference internal" href="#full-documentation-of-subroutines-in-geometry">Full documentation of subroutines in geometry</a></li>
+<li><a class="reference internal" href="#full-documentation-of-functions-in-geometry">Full documentation of functions in geometry</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="Potentials_f90.html"
+                        title="previous chapter">potentials (Potentials.f90)</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="Utility_f90.html"
+                        title="next chapter">utility (Utility.f90)</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/Geometry_f90.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="geometry-geometry-f90">
+<span id="geometry"></span><h1>geometry (Geometry.f90)<a class="headerlink" href="#geometry-geometry-f90" title="Permalink to this headline">¶</a></h1>
+<p>A module for handling the geometric structure of the system.</p>
+<div class="section" id="modules-used-by-geometry">
+<h2>Modules used by geometry<a class="headerlink" href="#modules-used-by-geometry" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="Quaternions_f90.html#quaternions"><em>quaternions (Quaternions.f90)</em></a></li>
+<li><a class="reference internal" href="Utility_f90.html#utility"><em>utility (Utility.f90)</em></a></li>
+</ul>
+</div>
+<div class="section" id="list-of-global-variables-in-geometry">
+<h2>List of global variables in geometry<a class="headerlink" href="#list-of-global-variables-in-geometry" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#label_length" title="label_length"><tt class="xref py py-data docutils literal"><span class="pre">label_length</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="list-of-custom-types-in-geometry">
+<h2>List of custom types in geometry<a class="headerlink" href="#list-of-custom-types-in-geometry" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a></li>
+<li><a class="reference internal" href="#neighbor_list" title="neighbor_list"><tt class="xref py py-data docutils literal"><span class="pre">neighbor_list</span></tt></a></li>
+<li><a class="reference internal" href="#subcell" title="subcell"><tt class="xref py py-data docutils literal"><span class="pre">subcell</span></tt></a></li>
+<li><a class="reference internal" href="#supercell" title="supercell"><tt class="xref py py-data docutils literal"><span class="pre">supercell</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="list-of-subroutines-in-geometry">
+<h2>List of subroutines in geometry<a class="headerlink" href="#list-of-subroutines-in-geometry" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#absolute_coordinates" title="absolute_coordinates"><tt class="xref py py-func docutils literal"><span class="pre">absolute_coordinates()</span></tt></a></li>
+<li><a class="reference internal" href="#assign_bond_order_factor_indices" title="assign_bond_order_factor_indices"><tt class="xref py py-func docutils literal"><span class="pre">assign_bond_order_factor_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#assign_neighbor_list" title="assign_neighbor_list"><tt class="xref py py-func docutils literal"><span class="pre">assign_neighbor_list()</span></tt></a></li>
+<li><a class="reference internal" href="#assign_potential_indices" title="assign_potential_indices"><tt class="xref py py-func docutils literal"><span class="pre">assign_potential_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#divide_cell" title="divide_cell"><tt class="xref py py-func docutils literal"><span class="pre">divide_cell()</span></tt></a></li>
+<li><a class="reference internal" href="#expand_subcell_atom_capacity" title="expand_subcell_atom_capacity"><tt class="xref py py-func docutils literal"><span class="pre">expand_subcell_atom_capacity()</span></tt></a></li>
+<li><a class="reference internal" href="#find_subcell_for_atom" title="find_subcell_for_atom"><tt class="xref py py-func docutils literal"><span class="pre">find_subcell_for_atom()</span></tt></a></li>
+<li><a class="reference internal" href="#generate_atoms" title="generate_atoms"><tt class="xref py py-func docutils literal"><span class="pre">generate_atoms()</span></tt></a></li>
+<li><a class="reference internal" href="#generate_supercell" title="generate_supercell"><tt class="xref py py-func docutils literal"><span class="pre">generate_supercell()</span></tt></a></li>
+<li><a class="reference internal" href="#get_optimal_splitting" title="get_optimal_splitting"><tt class="xref py py-func docutils literal"><span class="pre">get_optimal_splitting()</span></tt></a></li>
+<li><a class="reference internal" href="#relative_coordinates" title="relative_coordinates"><tt class="xref py py-func docutils literal"><span class="pre">relative_coordinates()</span></tt></a></li>
+<li><a class="reference internal" href="#separation_vector" title="separation_vector"><tt class="xref py py-func docutils literal"><span class="pre">separation_vector()</span></tt></a></li>
+<li><a class="reference internal" href="#update_atomic_charges" title="update_atomic_charges"><tt class="xref py py-func docutils literal"><span class="pre">update_atomic_charges()</span></tt></a></li>
+<li><a class="reference internal" href="#update_atomic_positions" title="update_atomic_positions"><tt class="xref py py-func docutils literal"><span class="pre">update_atomic_positions()</span></tt></a></li>
+<li><a class="reference internal" href="#wrapped_coordinates" title="wrapped_coordinates"><tt class="xref py py-func docutils literal"><span class="pre">wrapped_coordinates()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="list-of-functions-in-geometry">
+<h2>List of functions in geometry<a class="headerlink" href="#list-of-functions-in-geometry" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li><a class="reference internal" href="#pick" title="pick"><tt class="xref py py-func docutils literal"><span class="pre">pick()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="full-documentation-of-global-variables-in-geometry">
+<h2>Full documentation of global variables in geometry<a class="headerlink" href="#full-documentation-of-global-variables-in-geometry" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="data">
+<dt id="label_length">
+<tt class="descname">label_length</tt><a class="headerlink" href="#label_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
+<p><em>initial value</em> = 2</p>
+<p>the number of characters available for denoting chemical symbols</p>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="full-documentation-of-custom-types-in-geometry">
+<h2>Full documentation of custom types in geometry<a class="headerlink" href="#full-documentation-of-custom-types-in-geometry" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="data">
+<dt id="atom">
+<tt class="descname">atom</tt><a class="headerlink" href="#atom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines an atomic particle.</p>
+<p>Contained data:</p>
+<dl class="docutils">
+<dt>neighbor_list: type(neighbor_list)    <em>scalar</em></dt>
+<dd>the list of neighbors for the atom</dd>
+<dt>index: integer    <em>scalar</em></dt>
+<dd>index of the atom</dd>
+<dt>n_pots: integer    <em>scalar</em></dt>
+<dd>number of potentials that may affect the atom</dd>
+<dt>tags: integer    <em>scalar</em></dt>
+<dd>integer tag</dd>
+<dt>potential_indices: integer  <em>pointer</em>  <em>size(:)</em></dt>
+<dd>the indices of the potentials for which this atom is a valid target at first position (see <a class="reference internal" href="Potentials_f90.html#potential_affects_atom" title="potential_affects_atom"><tt class="xref py py-func docutils literal"><span class="pre">potential_affects_atom()</span></tt></a>)</dd>
+<dt>potentials_listed: logical    <em>scalar</em></dt>
+<dd>logical tag for checking if the potentials affecting the atom have been listed in potential_indices</dd>
+<dt>bond_indices: integer  <em>pointer</em>  <em>size(:)</em></dt>
+<dd>the indices of the bond order factors for which this atom is a valid target at first position (see <a class="reference internal" href="Potentials_f90.html#bond_order_factor_affects_atom" title="bond_order_factor_affects_atom"><tt class="xref py py-func docutils literal"><span class="pre">bond_order_factor_affects_atom()</span></tt></a>)</dd>
+<dt>element: character(len=label_length)    <em>scalar</em></dt>
+<dd>the chemical symbol of the atom</dd>
+<dt>charge: double precision    <em>scalar</em></dt>
+<dd>charge of the atom</dd>
+<dt>subcell_indices: integer    <em>size(3)</em></dt>
+<dd>indices of the subcell containing the atom, used for fast neighbor searching (see <a class="reference internal" href="#subcell" title="subcell"><tt class="xref py py-data docutils literal"><span class="pre">subcell</span></tt></a>)</dd>
+<dt>mass: double precision    <em>scalar</em></dt>
+<dd>mass of th atom</dd>
+<dt>n_bonds: integer    <em>scalar</em></dt>
+<dd>number of bond order factors that may affect the atom</dd>
+<dt>bond_order_factors_listed: logical    <em>scalar</em></dt>
+<dd>logical tag for checking if the bond order factors affecting the atom have been listed in bond_indices</dd>
+<dt>position: double precision    <em>size(3)</em></dt>
+<dd>coordinates of the atom</dd>
+<dt>momentum: double precision    <em>size(3)</em></dt>
+<dd>momentum of the atom</dd>
+</dl>
+</dd></dl>
+
+<dl class="data">
+<dt id="neighbor_list">
+<tt class="descname">neighbor_list</tt><a class="headerlink" href="#neighbor_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines a list of neighbors for a single atom.
+The list contains the indices of the neighboring atoms
+as well as the periodic boundary condition (PBC) offsets.</p>
+<p>The offsets are integer
+triplets showing how many times must the supercell vectors
+be added to the position of the neighbor to find the
+neighboring image in a periodic system.
+For example, let the supercell be:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]],</span>
+</pre></div>
+</div>
+<p>i.e., a unit cube, with periodic boundaries.
+Now, if we have particles with coordinates:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">a</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">]</span>
+<span class="n">b</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.4</span><span class="p">,</span> <span class="mf">1.6</span><span class="p">,</span> <span class="mf">3.3</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>the closest separation vector <span class="math">\(\mathbf{r}_b-\mathbf{r}_a\)</span> between the particles is:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="o">-.</span><span class="mi">1</span><span class="p">,</span> <span class="o">.</span><span class="mi">1</span><span class="p">,</span> <span class="o">-.</span><span class="mi">2</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>obtained if we add the vector of periodicity:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">3.0</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>to the coordinates of particle b. The offset vector
+(for particle b, when listing neighbors of a) is then:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">3</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>Note that if the system is small, one atom can in
+principle appear several times in the neighbor list with
+different offsets.</p>
+<p>Contained data:</p>
+<dl class="docutils">
+<dt>neighbors: integer  <em>pointer</em>  <em>size(:)</em></dt>
+<dd>indices of the neighboring atoms</dd>
+<dt>max_length: integer    <em>scalar</em></dt>
+<dd>The allocated length of the neighbor lists. To avoid deallocating and reallocating memory, extra space is reserved for the neighbors in case the number of neighbors increases during simulation (due to atoms moving).</dd>
+<dt>pbc_offsets: integer  <em>pointer</em>  <em>size(:, :)</em></dt>
+<dd>offsets for periodic boundaries for each neighbor</dd>
+<dt>n_neighbors: integer    <em>scalar</em></dt>
+<dd>the number of neighbors in the lists</dd>
+</dl>
+</dd></dl>
+
+<dl class="data">
+<dt id="subcell">
+<tt class="descname">subcell</tt><a class="headerlink" href="#subcell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Subvolume, which is a part of the supercell containing the simulation.</p>
+<p>The subcells are used in partitioning of the simulation space in subvolumes.
+This divisioning of the simulation cell is needed for quickly finding the
+neighbors of atoms (see also <a class="reference internal" href="fastneighborlist class.html#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">pysic.FastNeighborList</span></tt></a>).
+The fast neighbor search is based on dividing the system, locating the subcell
+in which each atom is located, and then searching for neighbors for each atom
+by only checking the adjacent subcells. For small subvolumes (short cutoffs)
+this method is much faster than a brute force algorithm that checks all atom
+pairs. It also scales <span class="math">\(\mathcal{O}(n)\)</span>.</p>
+<p>Contained data:</p>
+<dl class="docutils">
+<dt>neighbors: integer    <em>size(3, -1:1, -1:1, -1:1)</em></dt>
+<dd>indices of the 3 x 3 x 3 neighboring subcells (note that the neighboring subcell 0,0,0 is the cell itself)</dd>
+<dt>vector_lengths: double precision    <em>size(3)</em></dt>
+<dd>lengths of the vectors spanning the subcell</dd>
+<dt>offsets: integer    <em>size(3, -1:1, -1:1, -1:1)</em></dt>
+<dd>integer offsets of the neighboring subcells - if a neighboring subcell is beyond a periodic border, the offset records the fact</dd>
+<dt>max_atoms: integer    <em>scalar</em></dt>
+<dd>the maximum number of atoms the cell can contain in the currently allocated memory space</dd>
+<dt>vectors: double precision    <em>size(3, 3)</em></dt>
+<dd>the vectors spanning the subcell</dd>
+<dt>atoms: integer  <em>pointer</em>  <em>size(:)</em></dt>
+<dd>indices of the atoms in this subcell</dd>
+<dt>n_atoms: integer    <em>scalar</em></dt>
+<dd>the number of atoms contained by the subcell</dd>
+<dt>indices: integer    <em>size(3)</em></dt>
+<dd>integer coordinates of the subcell in the subcell divisioning of the supercell</dd>
+<dt>include: logical    <em>size(-1:1, -1:1, -1:1)</em></dt>
+<dd>A logical array noting if the neighboring subcells should be included in the neighbor search. Usually all neighbors are included, but in a non-periodic system, there is only a limited number of cells and once the system border is reached, this tag will be set to <tt class="docutils literal"><span class="pre">.false.</span></tt> to notify that there is no neighbor to be found.</dd>
+</dl>
+</dd></dl>
+
+<dl class="data">
+<dt id="supercell">
+<tt class="descname">supercell</tt><a class="headerlink" href="#supercell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Supercell containing the simulation.</p>
+<p>The supercell is spanned by three vectors <span class="math">\(\mathbf{v}_1,\mathbf{v}_2,\mathbf{v}_3\)</span> stored as a
+<span class="math">\(3 \times 3\)</span> matrix in format</p>
+<div class="math">
+\[\begin{split}\mathbf{M} = \left[
+\begin{array}{ccc}
+v_{1,x} &amp; v_{1,y} &amp; v_{1,z} \\
+v_{2,x} &amp; v_{2,y} &amp; v_{2,z} \\
+v_{3,x} &amp; v_{3,y} &amp; v_{3,z}
+\end{array}
+\right].\end{split}\]</div>
+<p>Also the inverse cell matrix is kept for transformations between the absolute and fractional coordinates.</p>
+<p>Contained data:</p>
+<dl class="docutils">
+<dt>vector_lengths: double precision    <em>size(3)</em></dt>
+<dd>the lengths of the cell spanning vectors (stored to avoid calculating the vector norms over and over)</dd>
+<dt>max_subcell_atom_count: integer    <em>scalar</em></dt>
+<dd>the maximum number of atoms any of the subcells has</dd>
+<dt>n_splits: integer    <em>size(3)</em></dt>
+<dd>the number of subcells there are in the subdivisioning of the cell, in the directions of the spanning vectors</dd>
+<dt>inverse_cell: double precision    <em>size(3, 3)</em></dt>
+<dd>the inverse of the cell matrix <span class="math">\(\mathbf{M}^{-1}\)</span></dd>
+<dt>subcells: type(subcell)  <em>pointer</em>  <em>size(:, :, :)</em></dt>
+<dd>an array of <a class="reference internal" href="#subcell" title="subcell"><tt class="xref py py-data docutils literal"><span class="pre">subcell</span></tt></a> subvolumes which partition the supercell</dd>
+<dt>vectors: double precision    <em>size(3, 3)</em></dt>
+<dd>vectors spanning the supercell containing the system as a matrix <span class="math">\(\mathbf{M}\)</span></dd>
+<dt>volume: double precision    <em>scalar</em></dt>
+<dd>volume of the cell</dd>
+<dt>periodic: logical    <em>size(3)</em></dt>
+<dd>logical switch determining if periodic boundary conditions are applied in the directions of the three cell spanning vectors</dd>
+<dt>reciprocal_cell: double precision    <em>size(3, 3)</em></dt>
+<dd>the reciprocal cell as a matrix, <span class="math">\(\mathbf{M}_R = 2 \pi( \mathbf{M}^{-1} )^T\)</span>. That is, if <span class="math">\(\mathbf{b}_i\)</span> are the reciprocal lattice vectors and <span class="math">\(\mathbf{a}_j\)</span> the real space lattice vectors, then <span class="math">\(\mathbf{b}_i \mathbf{a}_j = 2 \pi \delta_{ij}\)</span>.</dd>
+</dl>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="full-documentation-of-subroutines-in-geometry">
+<h2>Full documentation of subroutines in geometry<a class="headerlink" href="#full-documentation-of-subroutines-in-geometry" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="absolute_coordinates">
+<tt class="descname">absolute_coordinates</tt><big>(</big><em>relative</em>, <em>cell</em>, <em>position</em><big>)</big><a class="headerlink" href="#absolute_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms from fractional to absolute coordinates.</p>
+<p>Absolute coordinates are the coordinates in the normal
+<span class="math">\(xyz\)</span> base,</p>
+<div class="math">
+\[\mathbf{r} = x\mathbf{i} + y\mathbf{j} + z\mathbf{k}.\]</div>
+<p>Fractional coordiantes are the coordiantes in the base
+spanned by the vectors defining the supercell,
+<span class="math">\(\mathbf{v}_1\)</span>, <span class="math">\(\mathbf{v}_2\)</span>, <span class="math">\(\mathbf{v}_3\)</span>,</p>
+<div class="math">
+\[\mathbf{r} = \tilde{x}\mathbf{v}_1 + \tilde{y}\mathbf{v}_2 + \tilde{z}\mathbf{v}_3.\]</div>
+<p>Notably, for positions inside the supercell, the fractional
+coordinates fall between 0 and 1.</p>
+<p>Transformation between the two bases is given by the cell
+matrix</p>
+<div class="math">
+\[\begin{split}\left[
+\begin{array}{c}
+x \\
+y \\
+z
+\end{array} \right] = \mathbf{M}
+\left[
+\begin{array}{c}
+\tilde{x} \\
+\tilde{y} \\
+\tilde{z}
+\end{array} \right]\end{split}\]</div>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>relative: double precision  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>the fractional coordinates</dd>
+<dt>cell: type(supercell)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the supercell</dd>
+<dt><strong>position</strong>: double precision  <strong>intent(out)</strong>    <em>size(3)</em></dt>
+<dd>the absolute coordinates</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="assign_bond_order_factor_indices">
+<tt class="descname">assign_bond_order_factor_indices</tt><big>(</big><em>n_bonds</em>, <em>atom_in</em>, <em>indices</em><big>)</big><a class="headerlink" href="#assign_bond_order_factor_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the indices of bond order factors affecting an atom.</p>
+<p>In bond order factor evaluation, it is important to loop
+over bond parameters quickly. As the evaluation of factors
+goes over atoms, atom pairs etc., it is useful to first
+filter the parameters by the first atom participating
+in the factor. Therefore, the atoms can be given
+a list of bond order parameters for which they are a suitable target
+as a &#8216;first participant&#8217; (in a triplet A-B-C, A is the
+first participant).</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_bonds: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of bond order factors</dd>
+<dt><strong>atom_in</strong>: type(atom)  <strong>intent(inout)</strong>    <em>scalar</em></dt>
+<dd>the atom for which the bond order factors are assigned</dd>
+<dt>indices: integer  <em>intent(in)</em>    <em>size(n_bonds)</em></dt>
+<dd>the indices of the bond order factors</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="assign_neighbor_list">
+<tt class="descname">assign_neighbor_list</tt><big>(</big><em>n_nbs</em>, <em>nbor_list</em>, <em>neighbors</em>, <em>offsets</em><big>)</big><a class="headerlink" href="#assign_neighbor_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a neighbor list for one atom.</p>
+<p>The neighbor list will contain an array of the indices
+of the neighboring atoms as well as periodicity offsets,
+as explained in <a class="reference internal" href="#neighbor_list" title="neighbor_list"><tt class="xref py py-data docutils literal"><span class="pre">neighbor_list</span></tt></a></p>
+<p>The routine takes the neighbor_list object to be created
+as an argument. If the list is empty, it is initialized.
+If the list already contains information, the list is emptied and
+refilled. If the previous list has room to contain the new list
+(as in, it has enough allocated memory), no memory reallocation
+is done (since it will be slow if done repeatedly). Only if the
+new list is too long to fit in the reserved memory, the pointers
+are deallocated and reallocated.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_nbs: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of neighbors</dd>
+<dt><strong>nbor_list</strong>: type(neighbor_list)  <strong>intent(inout)</strong>    <em>scalar</em></dt>
+<dd>The list of neighbors to be created.</dd>
+<dt>neighbors: integer  <em>intent(in)</em>    <em>size(n_nbs)</em></dt>
+<dd>array containing the indices of the neighboring atoms</dd>
+<dt>offsets: integer  <em>intent(in)</em>    <em>size(3, n_nbs)</em></dt>
+<dd>periodicity offsets</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="assign_potential_indices">
+<tt class="descname">assign_potential_indices</tt><big>(</big><em>n_pots</em>, <em>atom_in</em>, <em>indices</em><big>)</big><a class="headerlink" href="#assign_potential_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Save the indices of potentials affecting an atom.</p>
+<p>In force and energy evaluation, it is important to loop
+over potentials quickly. As the evaluation of energies
+goes over atoms, atom pairs etc., it is useful to first
+filter the potentials by the first atom participating
+in the interaction. Therefore, the atoms can be given
+a list of potentials for which they are a suitable target
+as a &#8216;first participant&#8217; (in a triplet A-B-C, A is the
+first participant).</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_pots: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of potentials</dd>
+<dt><strong>atom_in</strong>: type(atom)  <strong>intent(inout)</strong>    <em>scalar</em></dt>
+<dd>the atom for which the potentials are assigned</dd>
+<dt>indices: integer  <em>intent(in)</em>    <em>size(n_pots)</em></dt>
+<dd>the indices of the potentials</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="divide_cell">
+<tt class="descname">divide_cell</tt><big>(</big><em>cell</em>, <em>splits</em><big>)</big><a class="headerlink" href="#divide_cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Split the cell in subcells according to the given number of divisions.</p>
+<p>The argument &#8216;splits&#8217; should be a list of three integers determining how many
+times the cell is split. For instance, if splits = [3,3,5], the cell is divided in
+3*3*5 = 45 subcells: 3 cells along the first two cell vectors and 5 along the third.</p>
+<p>The Cell itself is not changed, but an array &#8216;subcells&#8217; is created, containing
+the subcells which are Cell instances themselves. These cells will contain additional
+data arrays &#8216;neighbors&#8217; and &#8216;offsets&#8217;. These are 3-dimensional arrays with each dimension
+running from -1 to 1. The neighbors array contains references to the neighboring subcell
+Cell instances.
+The offsets contain coordinate offsets with respect to the periodic boundaries. In other words,
+if a subcell is at the border of the original Cell, it will have neighbors at the other side
+of the cell due to periodic boundary conditions. But from the point of view of the subcell,
+the neighboring cell is not on the other side of the master cell, but a periodic image of that
+cell. Therefore, any coordinates in the the subcell to which the neighbors array refers to must
+in fact be shifted by a vector of the master cell. The offsets list contains the multipliers
+for the cell vectors to make these shifts.</p>
+<p>Example in 2D for simplicity: <tt class="docutils literal"><span class="pre">split</span> <span class="pre">=</span> <span class="pre">[3,4]</span></tt> creates subcells:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">)</span>
+<span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+<span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+<span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="docutils">
+<dt>subcell (0,3) will have the neighbors::</dt>
+<dd>(2,0) (0,0) (1,0)
+(2,3) (0,3) (1,3)
+(2,2) (0,2) (1,2)</dd>
+<dt>and offsets::</dt>
+<dd>[-1,1] [0,1] [0,1]
+[-1,0] [0,0] [0,0]
+[-1,0] [0,0] [0,0]</dd>
+</dl>
+<p>Note that the central &#8216;neighbor&#8217; is the cell itself.</p>
+<p>If a boundary is not periodic, extra subcells with indices 0 and split+1
+are created to pad the simulation cell. These will contain the atoms that
+are outside the simulation cell.</p>
+<p>Parameters:</p>
+<p><strong>cell</strong>: type(supercell)  <strong>intent(inout)</strong>    <em>scalar</em></p>
+<p>splits: integer  <em>intent(in)</em>    <em>size(3)</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="expand_subcell_atom_capacity">
+<tt class="descname">expand_subcell_atom_capacity</tt><big>(</big><em>atoms_list</em>, <em>old_size</em>, <em>new_size</em><big>)</big><a class="headerlink" href="#expand_subcell_atom_capacity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>atoms_list: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></p>
+<p>old_size: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>new_size: integer  <em>intent(in)</em>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="find_subcell_for_atom">
+<tt class="descname">find_subcell_for_atom</tt><big>(</big><em>cell</em>, <em>at</em><big>)</big><a class="headerlink" href="#find_subcell_for_atom" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p><strong>cell</strong>: type(supercell)  <strong>intent(inout)</strong>    <em>scalar</em></p>
+<p><strong>at</strong>: type(atom)  <strong>intent(inout)</strong>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="generate_atoms">
+<tt class="descname">generate_atoms</tt><big>(</big><em>n_atoms</em>, <em>masses</em>, <em>charges</em>, <em>positions</em>, <em>momenta</em>, <em>tags</em>, <em>elements</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#generate_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates atoms to construct the system to be simulated.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>masses: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>array of masses for the atoms</dd>
+<dt>charges: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>array of charges for the atoms</dd>
+<dt>positions: double precision  <em>intent(in)</em>    <em>size(3, n_atoms)</em></dt>
+<dd>array of coordinates for the atoms</dd>
+<dt>momenta: double precision  <em>intent(in)</em>    <em>size(3, n_atoms)</em></dt>
+<dd>array of momenta for the atoms</dd>
+<dt>tags: integer  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>array of integer tags for the atoms</dd>
+<dt>elements: character(len=label_length)  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>array of chemical symbols for the atoms</dd>
+<dt>atoms: type(atom)  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></dt>
+<dd>array of the atom objects created</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="generate_supercell">
+<tt class="descname">generate_supercell</tt><big>(</big><em>vectors</em>, <em>inverse</em>, <em>periodicity</em>, <em>cell</em><big>)</big><a class="headerlink" href="#generate_supercell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the supercell containing the simulation geometry.</p>
+<p>The supercell is spanned by three vectors <span class="math">\(\mathbf{v}_1,\mathbf{v}_2,\mathbf{v}_3\)</span> stored as a
+<span class="math">\(3 \times 3\)</span> matrix in format</p>
+<div class="math">
+\[\begin{split}\mathbf{M} = \left[
+\begin{array}{ccc}
+v_{1,x} &amp; v_{1,y} &amp; v_{1,z} \\
+v_{2,x} &amp; v_{2,y} &amp; v_{2,z} \\
+v_{3,x} &amp; v_{3,y} &amp; v_{3,z}
+\end{array}
+\right].\end{split}\]</div>
+<p>Also the inverse cell matrix <span class="math">\(\mathbf{M}^{-1}\)</span> must be given
+for transformations between the absolute and fractional coordinates.
+However, it is not checked that the given matrix and inverse truly
+fulfill <span class="math">\(\mathbf{M}^{-1}\mathbf{M} = \mathbf{I}\)</span> - it is the
+responsibility of the caller to give the true inverse.</p>
+<p>Also the periodicity of the system in the directions of the
+cell vectors need to be given.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>vectors: double precision  <em>intent(in)</em>    <em>size(3, 3)</em></dt>
+<dd>the cell spanning matrix <span class="math">\(\mathbf{M}\)</span></dd>
+<dt>inverse: double precision  <em>intent(in)</em>    <em>size(3, 3)</em></dt>
+<dd>the inverse cell <span class="math">\(\mathbf{M}\)</span></dd>
+<dt>periodicity: logical  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>logical switch, true if the boundaries are periodic</dd>
+<dt><strong>cell</strong>: type(supercell)  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the created cell object</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="get_optimal_splitting">
+<tt class="descname">get_optimal_splitting</tt><big>(</big><em>cell</em>, <em>max_cut</em>, <em>splits</em><big>)</big><a class="headerlink" href="#get_optimal_splitting" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>cell: type(supercell)  <em>intent(in)</em>    <em>scalar</em></p>
+<p>max_cut: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+<p><strong>splits</strong>: integer  <strong>intent(out)</strong>    <em>size(3)</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="relative_coordinates">
+<tt class="descname">relative_coordinates</tt><big>(</big><em>position</em>, <em>cell</em>, <em>relative</em><big>)</big><a class="headerlink" href="#relative_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transforms from absolute to fractional coordinates.</p>
+<p>Absolute coordinates are the coordinates in the normal
+<span class="math">\(xyz\)</span> base,</p>
+<div class="math">
+\[\mathbf{r} = x\mathbf{i} + y\mathbf{j} + z\mathbf{k}.\]</div>
+<p>Fractional coordiantes are the coordiantes in the base
+spanned by the vectors defining the supercell,
+<span class="math">\(\mathbf{v}_1\)</span>, <span class="math">\(\mathbf{v}_2\)</span>, <span class="math">\(\mathbf{v}_3\)</span>,</p>
+<div class="math">
+\[\mathbf{r} = \tilde{x}\mathbf{v}_1 + \tilde{y}\mathbf{v}_2 + \tilde{z}\mathbf{v}_3.\]</div>
+<p>Notably, for positions inside the supercell, the fractional
+coordinates fall between 0 and 1.</p>
+<p>Transformation between the two bases is given by the inverse cell
+matrix</p>
+<div class="math">
+\[\begin{split}\left[
+\begin{array}{c}
+\tilde{x} \\
+\tilde{y} \\
+\tilde{z}
+\end{array} \right] = \mathbf{M}^{-1}
+\left[
+\begin{array}{c}
+x \\
+y \\
+z
+\end{array} \right]\end{split}\]</div>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>position: double precision  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>the absolute coordinates</dd>
+<dt>cell: type(supercell)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the supercell</dd>
+<dt><strong>relative</strong>: double precision  <strong>intent(out)</strong>    <em>size(3)</em></dt>
+<dd>the fractional coordinates</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="separation_vector">
+<tt class="descname">separation_vector</tt><big>(</big><em>r1</em>, <em>r2</em>, <em>offset</em>, <em>cell</em>, <em>separation</em><big>)</big><a class="headerlink" href="#separation_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the minimum separation vector between two atoms, <span class="math">\(\mathbf{r}_2-\mathbf{r}_1\)</span>, including possible periodicity.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>r1: double precision  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>coordiantes of atom 1, <span class="math">\(\mathbf{r}_1\)</span></dd>
+<dt>r2: double precision  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>coordinates of atom 1, <span class="math">\(\mathbf{r}_2\)</span></dd>
+<dt>offset: integer  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>periodicity offset (see <a class="reference internal" href="#neighbor_list" title="neighbor_list"><tt class="xref py py-data docutils literal"><span class="pre">neighbor_list</span></tt></a>)</dd>
+<dt>cell: type(supercell)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>supercell spanning the system</dd>
+<dt><strong>separation</strong>: double precision  <strong>intent(out)</strong>    <em>size(3)</em></dt>
+<dd>the calculated separation vector, <span class="math">\(\mathbf{r}_2-\mathbf{r}_1\)</span></dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="update_atomic_charges">
+<tt class="descname">update_atomic_charges</tt><big>(</big><em>n_atoms</em>, <em>charges</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#update_atomic_charges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the charges of the given atoms.
+Other properties are not altered.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>charges: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>new charges for the atoms</dd>
+<dt>atoms: type(atom)  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></dt>
+<dd>the atoms to be edited</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="update_atomic_positions">
+<tt class="descname">update_atomic_positions</tt><big>(</big><em>n_atoms</em>, <em>positions</em>, <em>momenta</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#update_atomic_positions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the positions and momenta of the given atoms.
+Other properties are not altered.</p>
+<p>This is meant to be used
+during dynamic simulations or geometry optimization
+where the atoms are only moved around, not changed in other ways.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>positions: double precision  <em>intent(in)</em>    <em>size(3, n_atoms)</em></dt>
+<dd>new coordinates for the atoms</dd>
+<dt>momenta: double precision  <em>intent(in)</em>    <em>size(3, n_atoms)</em></dt>
+<dd>new momenta for the atoms</dd>
+<dt>atoms: type(atom)  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></dt>
+<dd>the atoms to be edited</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="wrapped_coordinates">
+<tt class="descname">wrapped_coordinates</tt><big>(</big><em>position</em>, <em>cell</em>, <em>wrapped</em>, <em>offset</em><big>)</big><a class="headerlink" href="#wrapped_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Wraps a general coordinate inside the supercell if the system is periodic.</p>
+<p>In a periodic system, every particle has periodic images at intervals
+defined by the cell vectors <span class="math">\(\mathbf{v}_1,\mathbf{v}_2,\mathbf{v}_3\)</span>.
+That is, for a particle at <span class="math">\(\mathbf{r}\)</span>, there are periodic
+images at</p>
+<div class="math">
+\[\mathbf{R} = \mathbf{r} + a_1 \mathbf{v}_1 + a_2 \mathbf{v}_2 + a_3 \mathbf{v}_3\]</div>
+<p>for all <span class="math">\(a_1, a_2, a_3 \in \mathbf{Z}\)</span>.
+These are equivalent positions in the sense that if a particle is
+situated at any of one of them, the set of images is the same.
+Exactly one of the images is inside the cell - this routine gives
+the coordinates of that particular image.</p>
+<p>If the system is periodic in only some directions, the wrapping is
+done only along those directions.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>position: double precision  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>the absolute coordinates</dd>
+<dt>cell: type(supercell)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the supercell</dd>
+<dt><strong>wrapped</strong>: double precision  <strong>intent(out)</strong>    <em>size(3)</em></dt>
+<dd>the wrapped absolute coordinates</dd>
+<dt><strong>offset</strong>: integer  <strong>intent(out)</strong>    <em>size(3)</em>  <em>optional</em></dt>
+<dd>wrapping offset, i.e., the number of times the cell vectors are added to the absolute coordinates in order to obtain the wrapped coordinates</dd>
+</dl>
+</dd></dl>
+
+</div></blockquote>
+</div>
+<div class="section" id="full-documentation-of-functions-in-geometry">
+<h2>Full documentation of functions in geometry<a class="headerlink" href="#full-documentation-of-functions-in-geometry" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><dl class="function">
+<dt id="pick">
+<tt class="descname">pick</tt><big>(</big><em>index1</em>, <em>index2</em>, <em>offset</em><big>)</big><a class="headerlink" href="#pick" title="Permalink to this definition">¶</a></dt>
+<dd><p>A utility function for sorting the atoms.</p>
+<p>The function return <tt class="docutils literal"><span class="pre">true</span></tt> if <tt class="docutils literal"><span class="pre">index1</span> <span class="pre">&lt;</span> <span class="pre">index2</span></tt> and <tt class="docutils literal"><span class="pre">false</span></tt> otherwise.
+If <tt class="docutils literal"><span class="pre">index1</span> <span class="pre">==</span> <span class="pre">index2</span></tt>, the comparison is made through the separation vector.
+The vector is examined element at a time, and if a positive number is found,
+<tt class="docutils literal"><span class="pre">true</span></tt> is returned, if a negative one, <tt class="docutils literal"><span class="pre">false</span></tt>. For values of zero, the next
+element is examined.</p>
+<p>The purpose for this function is to sort the atoms to prevent double counting when summing
+over pairs. In principle, a sum over pairs <span class="math">\((i,j)\)</span> can be done with
+<span class="math">\(\frac{1}{2} \sum_{i \ne j}\)</span>, but this leads to evaluation of all elements twice
+(both <span class="math">\((i,j)\)</span> and <span class="math">\((j,i)\)</span> are considered separately).
+It is more efficient to evaluate <span class="math">\(\sum_{i &lt; j}\)</span>, where only one of <span class="math">\((i,j)\)</span> and <span class="math">\((j,i)\)</span>
+fullfill the condition.</p>
+<p>A special case arises if interactions are so long ranged that an atom can see its own periodic
+images. Then, one will need to sum terms for atom pairs where both atoms have the same index
+<span class="math">\(\sum_\mathrm{images} \sum_{i,j}\)</span> if they are in different periodic copies of the actual
+simulation cell. In order to still pick only one of the pairs <span class="math">\((i,i')\)</span> and <span class="math">\((i',i)\)</span>,
+we compare the offset vectors. If atom <span class="math">\(i'\)</span> is in the neighboring cell of <span class="math">\(i\)</span> in the
+first cell vector direction, it has an offset of <span class="math">\([1,0,0]\)</span> and vice versa <span class="math">\(i\)</span> has
+an offset of <span class="math">\([-1,0,0]\)</span> from <span class="math">\(i'\)</span>. Instead of the index, the sorting <span class="math">\(i' &lt; i\)</span>
+is then done by comparing these offset vectors, element by element.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index1: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of first atom</dd>
+<dt>index2: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of second atom</dd>
+<dt>offset: integer  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>pbc offset vector from atom1 to atom2</dd>
+</dl>
+</dd></dl>
+
+</div></blockquote>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="Utility_f90.html" title="utility (Utility.f90)"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="Potentials_f90.html" title="potentials (Potentials.f90)"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="pysic_fortran.html" >Pysic Fortran module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

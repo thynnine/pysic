@@ -1,0 +1,268 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Examples &mdash; Pysic 0.4.2 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.2 documentation" href="index.html" />
+    <link rel="next" title="Structure and syntax of Pysic" href="syntax_forewords.html" />
+    <link rel="prev" title="Running Pysic" href="running.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="syntax_forewords.html" title="Structure and syntax of Pysic"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="running.html" title="Running Pysic"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Examples</a><ul>
+<li><a class="reference internal" href="#first-steps-with-python">First steps with Python</a></li>
+<li><a class="reference internal" href="#importing-pysic-to-python">Importing Pysic to Python</a></li>
+<li><a class="reference internal" href="#minimal-example-of-running-pysic">Minimal example of running Pysic</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#screencasts">Screencasts</a><ul>
+<li><a class="reference internal" href="#pysic-basics">Pysic basics</a></li>
+<li><a class="reference internal" href="#pysic-in-a-script">Pysic in a script</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="running.html"
+                        title="previous chapter">Running Pysic</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="syntax_forewords.html"
+                        title="next chapter">Structure and syntax of Pysic</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/run_examples.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="examples">
+<span id="id1"></span><h1>Examples<a class="headerlink" href="#examples" title="Permalink to this headline">¶</a></h1>
+<p>Next, we go through some basic examples on how to use Pysic, starting from launching Python, finishing with relatively advanced scripting techniques.</p>
+<div class="section" id="first-steps-with-python">
+<h2>First steps with Python<a class="headerlink" href="#first-steps-with-python" title="Permalink to this headline">¶</a></h2>
+<p>Once you have installed Python - chances are it is already preinstalled in your system - you can launch the Python interpreter with the command <tt class="docutils literal"><span class="pre">python</span></tt> on the command line:</p>
+<div class="highlight-python"><pre>&gt; python
+Python 2.7.2 (#1, Feb 28 2010, 00:02:06)
+Type "help", "copyright", "credits" or "license" for more information.
+&gt;&gt;&gt;</pre>
+</div>
+<p>This will start up Python in interactive mode and you can start writing commands. For instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">a</span> <span class="o">=</span> <span class="mi">1</span><span class="o">+</span><span class="mi">1</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">a</span>
+<span class="go">2</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">b</span> <span class="o">=</span> <span class="s">&#39;hello&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span> <span class="o">=</span> <span class="n">b</span> <span class="o">+</span> <span class="s">&#39; world!&#39;</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">c</span>
+<span class="go">&#39;hello world!&#39;</span>
+</pre></div>
+</div>
+<p>Another way to run Python is by feeding a source file to the interpreter. Say you have the file <tt class="docutils literal"><span class="pre">first_step.py</span></tt> containing:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">left_first</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="k">if</span> <span class="n">left_first</span><span class="p">:</span>
+   <span class="k">print</span> <span class="s">&quot;Left, right, left!&quot;</span>
+<span class="k">else</span><span class="p">:</span>
+   <span class="k">print</span> <span class="s">&quot;Right, left, right!&quot;</span>
+</pre></div>
+</div>
+<p>This can be run with either:</p>
+<div class="highlight-python"><pre>&gt; python first_step.py
+Right, left, right!</pre>
+</div>
+<p>or simply:</p>
+<div class="highlight-python"><pre>&gt; ./first_step.py
+Right, left, right!</pre>
+</div>
+<p>assuming you have execution permissions for the script.
+You can also pass command line arguments to a Python script when launching one.</p>
+<p>That&#8217;s it, basically!
+In the following examples it is shown how Pysic is set up within Python
+and how simulations can be run.
+However, as Python is a powerful language, you will certainly get the most
+out of Pysic by learning some of the basic features of Python.
+Taking a look at the official <a class="reference external" href="http://docs.python.org/tutorial/index.html">Python tutorial</a> is a good place to start.</p>
+</div>
+<div class="section" id="importing-pysic-to-python">
+<h2>Importing Pysic to Python<a class="headerlink" href="#importing-pysic-to-python" title="Permalink to this headline">¶</a></h2>
+<p>Modules are accessed in Python by importing them with the <tt class="docutils literal"><span class="pre">import</span></tt> command. To get access to Pysic, simply write:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pysic</span>
+</pre></div>
+</div>
+<p>Then, you can access all the functionality in the module <a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pysic_calculator</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pysic</span><span class="o">.</span><span class="n">get_names_of_parameters</span><span class="p">(</span><span class="s">&#39;LJ&#39;</span><span class="p">)</span>
+<span class="go">[&#39;epsilon&#39;, &#39;sigma&#39;]</span>
+</pre></div>
+</div>
+<p>The Fortran interface module is imported with <a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a> as <tt class="docutils literal"><span class="pre">pysic.pf.pysic_interface</span></tt>, but it is strongly recommended you do not touch the Fortran core directly.</p>
+<p>The utility module <a class="reference internal" href="pysic_utility.html#module-pysic_utility" title="pysic_utility"><tt class="xref py py-mod docutils literal"><span class="pre">pysic_utility</span></tt></a> is also imported as <tt class="docutils literal"><span class="pre">pysic.pu</span></tt>, but it is also convenient to import it separately:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pysic_utility</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pysic_utility</span><span class="o">.</span><span class="n">plot_energy_on_plane</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">system</span><span class="p">,[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]],[</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>A shorthand can be introduced through the <tt class="docutils literal"><span class="pre">as</span></tt> keyword:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pysic_utility</span> <span class="kn">as</span> <span class="nn">pu</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pu</span><span class="o">.</span><span class="n">plot_energy_on_plane</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">system</span><span class="p">,[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]],[</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Altogether, when the module <a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a> is imported, it imports the following non-standard modules:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pysic_fortran</span> <span class="kn">as</span> <span class="nn">pf</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pysic_utility</span> <span class="kn">as</span> <span class="nn">pu</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ase.calculators.neighborlist</span> <span class="kn">as</span> <span class="nn">nbl</span>
+</pre></div>
+</div>
+<p>and defines the functions and classes as documented in the syntax description of <a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a>. In addition, the <a class="reference internal" href="PyInterface_f90.html#start_potentials" title="start_potentials"><tt class="xref py py-func docutils literal"><span class="pre">start_potentials()</span></tt></a> and <a class="reference internal" href="PyInterface_f90.html#start_bond_order_factors" title="start_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">start_bond_order_factors()</span></tt></a> routines of the Fortran core are automatically invoked in order to initialize the descriptors in the core (see <a class="reference internal" href="Potentials_f90.html#potentials"><em>potentials (Potentials.f90)</em></a>). In an MPI environment, the MPI initialization routines <a class="reference internal" href="PyInterface_f90.html#start_mpi" title="start_mpi"><tt class="xref py py-func docutils literal"><span class="pre">start_mpi()</span></tt></a> are also called from the Fortran core. Finally, the random number generator is initialized in the Fortran core by <a class="reference internal" href="PyInterface_f90.html#start_rng" title="start_rng"><tt class="xref py py-func docutils literal"><span class="pre">start_rng()</span></tt></a>.</p>
+</div>
+<div class="section" id="minimal-example-of-running-pysic">
+<h2>Minimal example of running Pysic<a class="headerlink" href="#minimal-example-of-running-pysic" title="Permalink to this headline">¶</a></h2>
+<p>Here is an example of setting up a Pysic calculator for <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">Atoms</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pysic</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">system</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s">&#39;He2&#39;</span><span class="p">,</span> <span class="p">[[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calc</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">physics</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;LJ&#39;</span><span class="p">,</span> <span class="n">cutoff</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">physics</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">([</span><span class="s">&#39;He&#39;</span><span class="p">,</span> <span class="s">&#39;He&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">physics</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;epsilon&#39;</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">physics</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;sigma&#39;</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">calc</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">physics</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The example above creates a system of two helium atoms interacting via a Lennard-Jones
+potential</p>
+<div class="math">
+\[V(r) = \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r} \right)^{6} \right]\]\[\varepsilon = 0.1\]\[\sigma = 2.5\]</div>
+<p>In the code above, <tt class="docutils literal"><span class="pre">system</span></tt> is an <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/">ASE Atoms</a> object containing the structure of the system to be calculated -
+two He atoms in this case. The object <tt class="docutils literal"><span class="pre">calc</span></tt> is an instance of <a class="reference internal" href="pysic_class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html">ASE calculator</a> class
+defined by Pysic. The interactions governing the system are defined by the <tt class="docutils literal"><span class="pre">physics</span></tt> object, which is an instance of the
+<a class="reference internal" href="potential_class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> class of Pysic.</p>
+<p>Now, the potential energy of the system and the forces acting on the atoms can be calculated with:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+<span class="go">-0.022274132189576905</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()</span>
+<span class="go">array([[ 0.        ,  0.        ,  0.02211693],</span>
+<span class="go">       [ 0.        ,  0.        , -0.02211693]])</span>
+</pre></div>
+</div>
+<p>These commands are addressed to the <tt class="docutils literal"><span class="pre">system</span></tt> object, but under the hood <tt class="docutils literal"><span class="pre">system</span></tt> asks <tt class="docutils literal"><span class="pre">calc</span></tt>, i.e., Pysic,
+to do the actual calculations. In order to evaluate the requested quantities,
+Pysic needs the parameters contained in <tt class="docutils literal"><span class="pre">physics</span></tt>.</p>
+<p>A more compact way to create the calculator would be:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">physics</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;LJ&#39;</span><span class="p">,</span>
+<span class="gp">... </span>                          <span class="n">cutoff</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
+<span class="gp">... </span>                          <span class="n">symbols</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;He&#39;</span><span class="p">,</span><span class="s">&#39;He&#39;</span><span class="p">],</span>
+<span class="gp">... </span>                          <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">(</span><span class="n">system</span><span class="p">,</span> <span class="n">physics</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Setting up more complicated interactions works similarly, as is shown in later examples.</p>
+</div>
+</div>
+<div class="section" id="screencasts">
+<span id="id2"></span><h1>Screencasts<a class="headerlink" href="#screencasts" title="Permalink to this headline">¶</a></h1>
+<p>We have also prepared screencasts demonstrating the use of Pysic.</p>
+<div class="section" id="pysic-basics">
+<h2>Pysic basics<a class="headerlink" href="#pysic-basics" title="Permalink to this headline">¶</a></h2>
+<p>This is a demonstration of a very simple simulation setup while running Pysic in an interactive Python session.</p>
+<iframe width="853" height="480" src="http://www.youtube-nocookie.com/embed/f3VKiclBvQY?rel=0" frameborder="0" allowfullscreen></iframe><p><a class="reference external" href="http://www.youtube.com/watch?v=f3VKiclBvQY">YouTube link</a></p>
+</div>
+<div class="section" id="pysic-in-a-script">
+<h2>Pysic in a script<a class="headerlink" href="#pysic-in-a-script" title="Permalink to this headline">¶</a></h2>
+<p>This is a demonstration of running Pysic with a script, including an MPI parallel run.</p>
+<iframe width="853" height="480" src="http://www.youtube-nocookie.com/embed/cz9sL5Zh1xg?rel=0" frameborder="0" allowfullscreen></iframe><p><a class="reference external" href="http://www.youtube.com/watch?v=cz9sL5Zh1xg">YouTube link (high definition)</a></p>
+<span class="target" id="syntax"></span></div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="syntax_forewords.html" title="Structure and syntax of Pysic"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="running.html" title="Running Pysic"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.2 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>
