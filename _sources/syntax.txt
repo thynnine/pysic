@@ -22,7 +22,7 @@ The graph below show the main dependancies between the Python and Fortran classe
 
 |diagram|
 
-.. |diagram| image:: ../../Graphics/mordred/pysic/pysic_diagram.pdf
+.. |diagram| image:: ../../../Graphics/mordred/pysic/pysic_diagram.pdf
              :alt: class and module graph
              :height: 400
 

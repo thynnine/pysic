@@ -66,7 +66,7 @@ simple first step instructions and :ref:`run examples` are also given in this do
 .. _Python: http://www.python.org
 .. _Python documentation: http://docs.python.org/
 .. _tutorials: http://docs.python.org/tutorial/index.html
-.. |!| image:: ../../Graphics/mordred/pysic/exclamation.png
+.. |!| image:: ../../../Graphics/mordred/pysic/exclamation.png
        :alt: < ! >
        :height: 32
 

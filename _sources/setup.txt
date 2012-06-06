@@ -14,9 +14,10 @@ Getting Pysic
 =============
 
 Pysic is currently in development and not yet properly tested.
-Nonetheless, the source code is available through `Gitorious`_ if you wish to
+Nonetheless, the source code is available through `github`_ if you wish to
 play with it. However, the code is provided with no warranty or support.
 
+.. _github: https://github.com/thynnine/pysic/
 .. _Gitorious: https://gitorious.org/pysic/pysic
 
 .. file:compiling
@@ -85,7 +86,7 @@ Below is a list of tools one may find useful or even necessary when using Pysic:
 - `Python tutorial`_: The official tutorials for Python
 - `F2py`_: Fortran to Python interface generator
 - `F2py manual`_: The (old) official F2py manual
-- `Gitorious`_: Version control and repository storing Pysic
+- `github`_: Version control and repository storing Pysic
 - `ASE`_: Atomistic Simulation Environment (ASE)
 - `ASE tutorials`_: The official ASE tutorials
 - `NumPy`_: Numerical Python
@@ -96,6 +97,7 @@ Below is a list of tools one may find useful or even necessary when using Pysic:
 .. _Python: http://www.python.org/
 .. _Python documentation: http://docs.python.org/
 .. _Python tutorial: http://docs.python.org/tutorial/index.html
+.. _github: https://github.com/thynnine/pysic/
 .. _Gitorious: https://gitorious.org/pysic/pysic
 .. _F2py: http://www.scipy.org/F2py
 .. _F2py manual: http://cens.ioc.ee/projects/f2py2e/usersguide/
