@@ -34,4 +34,5 @@ Other planned features
 - Analysis tools for atomic structures
 - Analysis tools for potential parameterisation and training
 
+You may also look at the `issue tracker <https://github.com/thynnine/pysic/issues>`_ which includes planned features.
 
