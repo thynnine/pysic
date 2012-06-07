@@ -120,7 +120,7 @@ The graph below show the main dependancies between the Python and Fortran classe
  Classes
  -------
 
- - :class:`pysic.Pysic`
+ - :class:`pysic.calculator.Pysic`
  - :class:`pysic.Potential`
  - :class:`pysic.CoulombSummation`
  - :class:`pysic.Coordinator`

@@ -158,19 +158,8 @@ Taking a look at the official <a class="reference external" href="http://docs.py
 </pre></div>
 </div>
 <p>The Fortran interface module is imported with <a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a> as <tt class="docutils literal"><span class="pre">pysic.pf.pysic_interface</span></tt>, but it is strongly recommended you do not touch the Fortran core directly.</p>
-<p>The utility module <a class="reference internal" href="pysic_utility.html#module-pysic_utility" title="pysic_utility"><tt class="xref py py-mod docutils literal"><span class="pre">pysic_utility</span></tt></a> is also imported as <tt class="docutils literal"><span class="pre">pysic.pu</span></tt>, but it is also convenient to import it separately:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pysic_utility</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pysic_utility</span><span class="o">.</span><span class="n">plot_energy_on_plane</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">system</span><span class="p">,[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]],[</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">])</span>
-</pre></div>
-</div>
-<p>A shorthand can be introduced through the <tt class="docutils literal"><span class="pre">as</span></tt> keyword:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pysic_utility</span> <span class="kn">as</span> <span class="nn">pu</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">pu</span><span class="o">.</span><span class="n">plot_energy_on_plane</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">system</span><span class="p">,[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">]],[</span><span class="mi">10</span><span class="p">,</span><span class="mi">10</span><span class="p">])</span>
-</pre></div>
-</div>
 <p>Altogether, when the module <a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a> is imported, it imports the following non-standard modules:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pysic_fortran</span> <span class="kn">as</span> <span class="nn">pf</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pysic_utility</span> <span class="kn">as</span> <span class="nn">pu</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pysic.pysic_fortran</span> <span class="kn">as</span> <span class="nn">pf</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">ase.calculators.neighborlist</span> <span class="kn">as</span> <span class="nn">nbl</span>
 </pre></div>
@@ -197,7 +186,7 @@ potential</p>
 <div class="math">
 \[V(r) = \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r} \right)^{6} \right]\]\[\varepsilon = 0.1\]\[\sigma = 2.5\]</div>
 <p>In the code above, <tt class="docutils literal"><span class="pre">system</span></tt> is an <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/">ASE Atoms</a> object containing the structure of the system to be calculated -
-two He atoms in this case. The object <tt class="docutils literal"><span class="pre">calc</span></tt> is an instance of <a class="reference internal" href="pysic class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html">ASE calculator</a> class
+two He atoms in this case. The object <tt class="docutils literal"><span class="pre">calc</span></tt> is an instance of <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html">ASE calculator</a> class
 defined by Pysic. The interactions governing the system are defined by the <tt class="docutils literal"><span class="pre">physics</span></tt> object, which is an instance of the
 <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> class of Pysic.</p>
 <p>Now, the potential energy of the system and the forces acting on the atoms can be calculated with:</p>

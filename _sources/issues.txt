@@ -26,7 +26,7 @@ Fixed bugs
 
 - Index error in FastNeighborList offsets (:class:`pysic.FastNeighborList`). Also, the offsets passed to Python were in Fortran array order, i.e., transposed. (29.5.2012, 0.4.2)
 
-- Issue with bond order cutoff overwriting longer potential cutoffs: When neighbors are determined, a list of maximum cutoffs (cutoff for each atom) are needed (:meth:`pysic.Pysic.get_individual_cutoffs`). In the determination, the cutoffs of potentials and bond order factors, as well as the Ewald real space cutoff are considered. There was an issue where the bond order factor if present was always used as the maximum even if the other were longer. (24.5.2012, 0.4.2)
+- Issue with bond order cutoff overwriting longer potential cutoffs: When neighbors are determined, a list of maximum cutoffs (cutoff for each atom) are needed (:meth:`pysic.calculator.Pysic.get_individual_cutoffs`). In the determination, the cutoffs of potentials and bond order factors, as well as the Ewald real space cutoff are considered. There was an issue where the bond order factor if present was always used as the maximum even if the other were longer. (24.5.2012, 0.4.2)
 
 - Index error in the 3-body evaluation loop leading to wrong forces. (24.5.2012, 0.4.2)
 

@@ -5,12 +5,24 @@
 
 
 
-====================
-Pysic Utility module
-====================
+=====================
+Pysic Utility modules
+=====================
 
-A module for providing utility tools and parameters.
+Modules for providing utility tools and parameters.
 
-.. automodule:: pysic_utility
+Plot
+----
+.. automodule:: pysic.utility.plot
+   :members:
+
+Convenience
+-----------
+.. automodule:: pysic.utility.convenience
+   :members:
+
+Geometry
+--------
+.. automodule:: pysic.utility.geometry
    :members:
 

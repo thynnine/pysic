@@ -1,0 +1,613 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.utility.plot &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="../../../index.html" />
+    <link rel="up" title="pysic" href="../../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.utility.plot</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;error importing matplotlib - the plotting tools are not available&quot;</span>
+
+<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">sqrt</span><span class="p">,</span> <span class="n">pi</span><span class="p">,</span> <span class="n">sin</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">exp</span><span class="p">,</span> <span class="n">fabs</span><span class="p">,</span> <span class="n">floor</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+
+
+<div class="viewcode-block" id="plot_energy_on_line"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.plot.plot_energy_on_line">[docs]</a><span class="k">def</span> <span class="nf">plot_energy_on_line</span><span class="p">(</span><span class="n">index</span><span class="p">,</span><span class="n">system</span><span class="p">,</span><span class="n">direction</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">steps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">end</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">lims</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e10</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Plots the energy of the system as a function of the position of a single particle.</span>
+
+<span class="sd">    The method probes the system by moving a single particle on a line</span>
+<span class="sd">    and recording the energy. A plot is drawn. Also a tuple containing arrays of</span>
+<span class="sd">    the distance traveled and the recorded energies is returned.</span>
+
+<span class="sd">    After the operation is complete, the initial structure is restored.</span>
+
+<span class="sd">    .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    </span>
+<span class="sd">    index: integer</span>
+<span class="sd">        index of the particle to be moved</span>
+<span class="sd">    system: `ASE Atoms`_ object</span>
+<span class="sd">        the structure to be explored</span>
+<span class="sd">    direction: double 3-vector</span>
+<span class="sd">        the direction where the atom is moved</span>
+<span class="sd">    length: double</span>
+<span class="sd">        the distance moved</span>
+<span class="sd">    steps: integer</span>
+<span class="sd">        number of points (taken uniformly on the movement path) for measuring the energy</span>
+<span class="sd">    start: double 3-vector (array or list)</span>
+<span class="sd">        starting point for the trajectory - if not specified, the position of the particle in &#39;system&#39; is used</span>
+<span class="sd">    end: double 3-vector (array or list)</span>
+<span class="sd">        end point for the trajectory - alternative for direction and length (will override them)</span>
+<span class="sd">    lims: double 2-vector (array or list)</span>
+<span class="sd">        lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">orig_pos</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="p">[</span> <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="p">]</span>
+    <span class="k">if</span> <span class="n">end</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">direction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">end</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">direction</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;Either specify direction and length or an end point.&quot;</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="n">length</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">direction</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span> <span class="p">)</span>
+        
+    <span class="n">dire</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>
+    <span class="n">unit</span> <span class="o">=</span> <span class="n">dire</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">dire</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dire</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">unit</span> <span class="o">*</span> <span class="p">(</span><span class="n">length</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="n">length</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">xval</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">dx</span>
+        <span class="n">new_pos</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">delta</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">xval</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+        <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="n">lims</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">lims</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">get_calculator</span><span class="p">()</span><span class="o">.</span><span class="n">update_core_coordinates</span><span class="p">()</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="plot_abs_force_on_line"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.plot.plot_abs_force_on_line">[docs]</a><span class="k">def</span> <span class="nf">plot_abs_force_on_line</span><span class="p">(</span><span class="n">index</span><span class="p">,</span><span class="n">system</span><span class="p">,</span><span class="n">direction</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">steps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">end</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">lims</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e10</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Plots the absolute value of the force on a particle as a function of the position.</span>
+
+<span class="sd">    The method probes the system by moving a single particle on a line</span>
+<span class="sd">    and recording the force. A plot is drawn. Also a tuple containing arrays of</span>
+<span class="sd">    the distance traveled and the recorded forces is returned.</span>
+
+<span class="sd">    After the operation is complete, the initial structure is restored.</span>
+
+<span class="sd">    .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    </span>
+<span class="sd">    index: integer</span>
+<span class="sd">        index of the particle to be moved</span>
+<span class="sd">    system: `ASE Atoms`_ object</span>
+<span class="sd">        the structure to be explored</span>
+<span class="sd">    direction: double 3-vector</span>
+<span class="sd">        the direction where the atom is moved</span>
+<span class="sd">    length: double</span>
+<span class="sd">        the distance moved</span>
+<span class="sd">    steps: integer</span>
+<span class="sd">        number of points (taken uniformly on the movement path) for measuring the force</span>
+<span class="sd">    start: double 3-vector (array or list)</span>
+<span class="sd">        starting point for the trajectory - if not specified, the position of the particle in &#39;system&#39; is used</span>
+<span class="sd">    end: double 3-vector (array or list)</span>
+<span class="sd">        end point for the trajectory - alternative for direction and length (will override them)</span>
+<span class="sd">    lims: double 2-vector (array or list)</span>
+<span class="sd">        lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">orig_pos</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="p">[</span> <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="p">]</span>
+    <span class="k">if</span> <span class="n">end</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">direction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">end</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">direction</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;Either specify direction and length or an end point.&quot;</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="n">length</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">direction</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span> <span class="p">)</span>
+        
+    <span class="n">dire</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>
+    <span class="n">unit</span> <span class="o">=</span> <span class="n">dire</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">dire</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dire</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">unit</span> <span class="o">*</span> <span class="p">(</span><span class="n">length</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="n">length</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">xval</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">dx</span>
+        <span class="n">new_pos</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">delta</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">xval</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">value</span><span class="p">)),</span><span class="n">lims</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">lims</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">get_calculator</span><span class="p">()</span><span class="o">.</span><span class="n">update_core_coordinates</span><span class="p">()</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="plot_tangent_force_on_line"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.plot.plot_tangent_force_on_line">[docs]</a><span class="k">def</span> <span class="nf">plot_tangent_force_on_line</span><span class="p">(</span><span class="n">index</span><span class="p">,</span><span class="n">system</span><span class="p">,</span><span class="n">direction</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">length</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">steps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">end</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">lims</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e10</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Plots the tangential force on a particle as a function of the position.</span>
+
+<span class="sd">    The method probes the system by moving a single particle on a line</span>
+<span class="sd">    and recording the force tangent. A plot is drawn. Also a tuple containing arrays of</span>
+<span class="sd">    the distance traveled and the recorded forces is returned.</span>
+
+<span class="sd">    After the operation is complete, the initial structure is restored.</span>
+
+<span class="sd">    .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    </span>
+<span class="sd">    index: integer</span>
+<span class="sd">        index of the particle to be moved</span>
+<span class="sd">    system: `ASE Atoms`_ object</span>
+<span class="sd">        the structure to be explored</span>
+<span class="sd">    direction: double 3-vector</span>
+<span class="sd">        the direction where the atom is moved</span>
+<span class="sd">    length: double</span>
+<span class="sd">        the distance moved</span>
+<span class="sd">    steps: integer</span>
+<span class="sd">        number of points (taken uniformly on the movement path) for measuring the energy</span>
+<span class="sd">    start: double 3-vector (array or list)</span>
+<span class="sd">        starting point for the trajectory - if not specified, the position of the particle in &#39;system&#39; is used</span>
+<span class="sd">    end: double 3-vector (array or list)</span>
+<span class="sd">        end point for the trajectory - alternative for direction and length (will override them)</span>
+<span class="sd">    lims: double 2-vector (array or list)</span>
+<span class="sd">        lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">orig_pos</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="p">[</span> <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="p">]</span>
+    <span class="k">if</span> <span class="n">end</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">direction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">end</span><span class="p">)</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">start</span><span class="p">)</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">direction</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span> <span class="p">)</span>
+    <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">print</span> <span class="s">&quot;Either specify direction and length or an end point.&quot;</span>
+        <span class="k">return</span>
+    <span class="k">if</span> <span class="n">length</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">length</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">direction</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span> <span class="p">)</span>
+        
+    <span class="n">dire</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">direction</span><span class="p">)</span>
+    <span class="n">unit</span> <span class="o">=</span> <span class="n">dire</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">dire</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dire</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">delta</span> <span class="o">=</span> <span class="n">unit</span> <span class="o">*</span> <span class="p">(</span><span class="n">length</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="n">length</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">xval</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">dx</span>
+        <span class="n">new_pos</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">delta</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">xval</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">y</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">unit</span><span class="p">),</span><span class="n">lims</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">lims</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">get_calculator</span><span class="p">()</span><span class="o">.</span><span class="n">update_core_coordinates</span><span class="p">()</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="plot_energy_on_plane"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.plot.plot_energy_on_plane">[docs]</a><span class="k">def</span> <span class="nf">plot_energy_on_plane</span><span class="p">(</span><span class="n">index</span><span class="p">,</span><span class="n">system</span><span class="p">,</span><span class="n">directions</span><span class="p">,</span><span class="n">lengths</span><span class="p">,</span><span class="n">steps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">lims</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e10</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Plots the energy of the system as a function of the position of a particle.</span>
+
+<span class="sd">    The method probes the system by moving a single particle on a plane</span>
+<span class="sd">    and recording the energy. A contour plot is drawn. Also a tuple containing arrays of</span>
+<span class="sd">    the distances traveled on the plane and the recorded energies is returned.</span>
+
+<span class="sd">    After the operation is complete, the initial structure is restored.</span>
+
+<span class="sd">    .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    </span>
+<span class="sd">    index: integer</span>
+<span class="sd">        index of the particle to be moved</span>
+<span class="sd">    system: `ASE Atoms`_ object</span>
+<span class="sd">        the structure to be explored</span>
+<span class="sd">    directions: double 2x3-matrix</span>
+<span class="sd">        The directions where the atom is moved - i.e., the vectors defining the plane. If the second vector is not perpendicular to the first, the normal component is automatically used instead.</span>
+<span class="sd">    lengths: double 2-vector</span>
+<span class="sd">        the distances moved in the given directions</span>
+<span class="sd">    steps: integer</span>
+<span class="sd">        number of points (taken uniformly on the movement plane) for measuring the energy</span>
+<span class="sd">    start: double 3-vector (array or list)</span>
+<span class="sd">        starting point for the trajectory, i.e., a corner for the plane to be probed - if not specified, the position of the particle in &#39;system&#39; is used</span>
+<span class="sd">    lims: double 2-vector (array or list)</span>
+<span class="sd">        lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">orig_pos</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="p">[</span> <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="p">]</span>
+    <span class="n">dir1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">directions</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">dir2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">directions</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">dir2</span> <span class="o">=</span> <span class="n">dir2</span> <span class="o">-</span> <span class="n">dir2</span> <span class="o">*</span> <span class="n">dir2</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">dir1</span> <span class="p">)</span> <span class="c"># take the perpendicular component</span>
+    <span class="n">unit1</span> <span class="o">=</span> <span class="n">dir1</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">dir1</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dir1</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">unit2</span> <span class="o">=</span> <span class="n">dir2</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">dir2</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dir2</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">unit_perp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="p">[[</span><span class="n">unit1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">unit1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                           <span class="p">[</span><span class="n">unit1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">unit1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
+                           <span class="p">[</span><span class="n">unit1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">unit1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">0</span><span class="p">]]]</span> <span class="p">)</span>
+    <span class="n">delta1</span> <span class="o">=</span> <span class="n">unit1</span> <span class="o">*</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">delta2</span> <span class="o">=</span> <span class="n">unit2</span> <span class="o">*</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">xval</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">dx</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">xval</span>       
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">yval</span> <span class="o">=</span> <span class="n">j</span><span class="o">*</span><span class="n">dx</span>
+            <span class="n">y</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">yval</span>
+            <span class="n">new_pos</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">delta1</span> <span class="o">+</span> <span class="n">j</span> <span class="o">*</span> <span class="n">delta2</span>
+            <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+            <span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">value</span><span class="p">,</span><span class="n">lims</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">lims</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">get_calculator</span><span class="p">()</span><span class="o">.</span><span class="n">update_core_coordinates</span><span class="p">()</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">contourf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="plot_abs_force_on_plane"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.plot.plot_abs_force_on_plane">[docs]</a><span class="k">def</span> <span class="nf">plot_abs_force_on_plane</span><span class="p">(</span><span class="n">index</span><span class="p">,</span><span class="n">system</span><span class="p">,</span><span class="n">directions</span><span class="p">,</span><span class="n">lengths</span><span class="p">,</span><span class="n">steps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">lims</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e10</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Plots the absolute value of force on a particle as a function of the position.</span>
+
+<span class="sd">    The method probes the system by moving a single particle on a plane</span>
+<span class="sd">    and recording the force. A contour plot is drawn. Also a tuple containing arrays of</span>
+<span class="sd">    the distances traveled on the plane and the recorded forces is returned.</span>
+
+<span class="sd">    After the operation is complete, the initial structure is restored.</span>
+
+<span class="sd">    .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    </span>
+<span class="sd">    index: integer</span>
+<span class="sd">        index of the particle to be moved</span>
+<span class="sd">    system: `ASE Atoms`_ object</span>
+<span class="sd">        the structure to be explored</span>
+<span class="sd">    directions: double 2x3-matrix</span>
+<span class="sd">        The directions where the atom is moved - i.e., the vectors defining the plane. If the second vector is not perpendicular to the first, the normal component is automatically used instead.</span>
+<span class="sd">    lengths: double 2-vector</span>
+<span class="sd">        the distances moved in the given directions</span>
+<span class="sd">    steps: integer</span>
+<span class="sd">        number of points (taken uniformly on the movement plane) for measuring the force</span>
+<span class="sd">    start: double 3-vector (array or list)</span>
+<span class="sd">        starting point for the trajectory, i.e., a corner for the plane to be probed - if not specified, the position of the particle in &#39;system&#39; is used</span>
+<span class="sd">    lims: double 2-vector (array or list)</span>
+<span class="sd">        lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">orig_pos</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="p">[</span> <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="p">]</span>
+    <span class="n">dir1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">directions</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">dir2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">directions</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">dir2</span> <span class="o">=</span> <span class="n">dir2</span> <span class="o">-</span> <span class="n">dir2</span> <span class="o">*</span> <span class="n">dir2</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">dir1</span> <span class="p">)</span> <span class="c"># take the perpendicular component</span>
+    <span class="n">unit1</span> <span class="o">=</span> <span class="n">dir1</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">dir1</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dir1</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">unit2</span> <span class="o">=</span> <span class="n">dir2</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">dir2</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dir2</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">unit_perp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="p">[[</span><span class="n">unit1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">unit1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                           <span class="p">[</span><span class="n">unit1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">unit1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
+                           <span class="p">[</span><span class="n">unit1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">unit1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">0</span><span class="p">]]]</span> <span class="p">)</span>
+    <span class="n">delta1</span> <span class="o">=</span> <span class="n">unit1</span> <span class="o">*</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">delta2</span> <span class="o">=</span> <span class="n">unit2</span> <span class="o">*</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">xval</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">dx</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">xval</span>       
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">yval</span> <span class="o">=</span> <span class="n">j</span><span class="o">*</span><span class="n">dx</span>
+            <span class="n">y</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">yval</span>
+            <span class="n">new_pos</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">delta1</span> <span class="o">+</span> <span class="n">j</span> <span class="o">*</span> <span class="n">delta2</span>
+            <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+            <span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">value</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="p">),</span><span class="n">lims</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">lims</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">get_calculator</span><span class="p">()</span><span class="o">.</span><span class="n">update_core_coordinates</span><span class="p">()</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">contourf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="plot_tangent_force_on_plane"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.plot.plot_tangent_force_on_plane">[docs]</a><span class="k">def</span> <span class="nf">plot_tangent_force_on_plane</span><span class="p">(</span><span class="n">index</span><span class="p">,</span><span class="n">system</span><span class="p">,</span><span class="n">directions</span><span class="p">,</span><span class="n">lengths</span><span class="p">,</span><span class="n">steps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">lims</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e10</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Plots the absolute value of the tangent component of force on a particle as a function of the position.</span>
+
+<span class="sd">    The method probes the system by moving a single particle on a plane</span>
+<span class="sd">    and recording the force. The force is projected on the same plane, and the absolute</span>
+<span class="sd">    value of the projection is calculated.</span>
+<span class="sd">    A contour plot is drawn. Also a tuple containing arrays of</span>
+<span class="sd">    the distances traveled on the plane and the recorded forces is returned.</span>
+
+<span class="sd">    After the operation is complete, the initial structure is restored.</span>
+
+<span class="sd">    .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    </span>
+<span class="sd">    index: integer</span>
+<span class="sd">        index of the particle to be moved</span>
+<span class="sd">    system: `ASE Atoms`_ object</span>
+<span class="sd">        the structure to be explored</span>
+<span class="sd">    directions: double 2x3-matrix</span>
+<span class="sd">        The directions where the atom is moved - i.e., the vectors defining the plane. If the second vector is not perpendicular to the first, the normal component is automatically used instead.</span>
+<span class="sd">    lengths: double 2-vector</span>
+<span class="sd">        the distances moved in the given directions</span>
+<span class="sd">    steps: integer</span>
+<span class="sd">        number of points (taken uniformly on the movement plane) for measuring the force</span>
+<span class="sd">    start: double 3-vector (array or list)</span>
+<span class="sd">        starting point for the trajectory, i.e., a corner for the plane to be probed - if not specified, the position of the particle in &#39;system&#39; is used</span>
+<span class="sd">    lims: double 2-vector (array or list)</span>
+<span class="sd">        lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">orig_pos</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="p">[</span> <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="p">]</span>
+    <span class="n">dir1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">directions</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">dir2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">directions</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">dir2</span> <span class="o">=</span> <span class="n">dir2</span> <span class="o">-</span> <span class="n">dir2</span> <span class="o">*</span> <span class="n">dir2</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">dir1</span> <span class="p">)</span> <span class="c"># take the perpendicular component</span>
+    <span class="n">unit1</span> <span class="o">=</span> <span class="n">dir1</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">dir1</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dir1</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">unit2</span> <span class="o">=</span> <span class="n">dir2</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">dir2</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dir2</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">unit_perp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="p">[[</span><span class="n">unit1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">unit1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                           <span class="p">[</span><span class="n">unit1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">unit1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
+                           <span class="p">[</span><span class="n">unit1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">unit1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">0</span><span class="p">]]]</span> <span class="p">)</span>
+    <span class="n">delta1</span> <span class="o">=</span> <span class="n">unit1</span> <span class="o">*</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">delta2</span> <span class="o">=</span> <span class="n">unit2</span> <span class="o">*</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">xval</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">dx</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">xval</span>       
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">yval</span> <span class="o">=</span> <span class="n">j</span><span class="o">*</span><span class="n">dx</span>
+            <span class="n">y</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">yval</span>
+            <span class="n">new_pos</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">delta1</span> <span class="o">+</span> <span class="n">j</span> <span class="o">*</span> <span class="n">delta2</span>
+            <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+            <span class="n">tangent</span> <span class="o">=</span> <span class="n">value</span> <span class="o">-</span> <span class="n">value</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">unit_perp</span><span class="p">)</span>
+            <span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">sqrt</span><span class="p">(</span> <span class="n">tangent</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">tangent</span><span class="p">)</span> <span class="p">),</span><span class="n">lims</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">lims</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">get_calculator</span><span class="p">()</span><span class="o">.</span><span class="n">update_core_coordinates</span><span class="p">()</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">contourf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
+
+
+</div>
+<div class="viewcode-block" id="plot_force_component_on_plane"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.plot.plot_force_component_on_plane">[docs]</a><span class="k">def</span> <span class="nf">plot_force_component_on_plane</span><span class="p">(</span><span class="n">index</span><span class="p">,</span><span class="n">system</span><span class="p">,</span><span class="n">directions</span><span class="p">,</span><span class="n">lengths</span><span class="p">,</span><span class="n">component</span><span class="p">,</span><span class="n">steps</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span><span class="n">start</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">lims</span><span class="o">=</span><span class="p">[</span><span class="o">-</span><span class="mf">1e10</span><span class="p">,</span><span class="mf">1e10</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;Plots the projected component of force on a particle as a function of the position.</span>
+
+<span class="sd">    The method probes the system by moving a single particle on a plane</span>
+<span class="sd">    and recording the force. The component of the force projected on a</span>
+<span class="sd">    given vector is recorded.</span>
+<span class="sd">    A contour plot is drawn. Also a tuple containing arrays of</span>
+<span class="sd">    the distances traveled on the plane and the recorded forces is returned.</span>
+
+<span class="sd">    After the operation is complete, the initial structure is restored.</span>
+
+<span class="sd">    .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    </span>
+<span class="sd">    index: integer</span>
+<span class="sd">        index of the particle to be moved</span>
+<span class="sd">    system: `ASE Atoms`_ object</span>
+<span class="sd">        the structure to be explored</span>
+<span class="sd">    directions: double 2x3-matrix</span>
+<span class="sd">        The directions where the atom is moved - i.e., the vectors defining the plane. If the second vector is not perpendicular to the first, the normal component is automatically used instead.</span>
+<span class="sd">    lengths: double 2-vector</span>
+<span class="sd">        the distances moved in the given directions</span>
+<span class="sd">    component: double 3-vector</span>
+<span class="sd">        the direction on which the force is projected - e.g., if component is [1,0,0], the x-component is recorded</span>
+<span class="sd">    steps: integer</span>
+<span class="sd">        number of points (taken uniformly on the movement plane) for measuring the force</span>
+<span class="sd">    start: double 3-vector (array or list)</span>
+<span class="sd">        starting point for the trajectory, i.e., a corner for the plane to be probed - if not specified, the position of the particle in &#39;system&#39; is used</span>
+<span class="sd">    lims: double 2-vector (array or list)</span>
+<span class="sd">        lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span><span class="o">*</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+
+    <span class="n">orig_pos</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="p">[</span> <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span><span class="p">,</span>
+                  <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="p">]</span>
+    <span class="n">dir1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">directions</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">dir2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">directions</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">dir2</span> <span class="o">=</span> <span class="n">dir2</span> <span class="o">-</span> <span class="n">dir2</span> <span class="o">*</span> <span class="n">dir2</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">dir1</span> <span class="p">)</span> <span class="c"># take the perpendicular component</span>
+    <span class="n">unit1</span> <span class="o">=</span> <span class="n">dir1</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">dir1</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dir1</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">unit2</span> <span class="o">=</span> <span class="n">dir2</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">dir2</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">dir2</span><span class="p">)</span> <span class="p">)</span>
+    <span class="n">unit_perp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="p">[[</span><span class="n">unit1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">unit1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+                           <span class="p">[</span><span class="n">unit1</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">unit1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">2</span><span class="p">]],</span>
+                           <span class="p">[</span><span class="n">unit1</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">unit1</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">*</span><span class="n">unit2</span><span class="p">[</span><span class="mi">0</span><span class="p">]]]</span> <span class="p">)</span>
+    <span class="n">delta1</span> <span class="o">=</span> <span class="n">unit1</span> <span class="o">*</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">delta2</span> <span class="o">=</span> <span class="n">unit2</span> <span class="o">*</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mf">0.0</span><span class="p">)</span><span class="o">/</span><span class="n">steps</span>
+    <span class="n">component</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">component</span><span class="p">)</span>
+    <span class="n">unit_comp</span> <span class="o">=</span> <span class="n">component</span> <span class="o">/</span> <span class="n">sqrt</span><span class="p">(</span> <span class="n">component</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">component</span><span class="p">)</span> <span class="p">)</span>
+    
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">xval</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">dx</span>
+        <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">xval</span>       
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">steps</span><span class="o">+</span><span class="mi">1</span><span class="p">):</span>
+            <span class="n">yval</span> <span class="o">=</span> <span class="n">j</span><span class="o">*</span><span class="n">dx</span>
+            <span class="n">y</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">yval</span>
+            <span class="n">new_pos</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">i</span> <span class="o">*</span> <span class="n">delta1</span> <span class="o">+</span> <span class="n">j</span> <span class="o">*</span> <span class="n">delta2</span>
+            <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">new_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()[</span><span class="n">index</span><span class="p">]</span>
+            <span class="n">z</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">component</span><span class="p">),</span><span class="n">lims</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span><span class="n">lims</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">system</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="n">orig_pos</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">system</span><span class="o">.</span><span class="n">get_calculator</span><span class="p">()</span><span class="o">.</span><span class="n">update_core_coordinates</span><span class="p">()</span>
+
+    <span class="n">plt</span><span class="o">.</span><span class="n">contourf</span><span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span><span class="n">y</span><span class="p">,</span><span class="n">z</span><span class="p">)</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -15,9 +15,9 @@ Pysic module
 
 
 
-Pysic is an object based calculator for atomistic many-body interactions. It is controlled via several classes: :class:`~pysic.Pysic`, which defines a calculator 
+Pysic is an object based calculator for atomistic many-body interactions. It is controlled via several classes: :class:`~pysic.calculator.Pysic`, which defines a calculator 
 for the `ASE`_ simulation environment [#]_, :class:`~pysic.Potential`, which defines
-potentials to be used by :class:`~pysic.Pysic` for calculating atomic interactions,
+potentials to be used by :class:`~pysic.calculator.Pysic` for calculating atomic interactions,
 :class:`~pysic.Coordinator` which can be used for modifying potentials with
 bond order factors, and :class:`~pysic.BondOrderParameters` which are used as a
 container of parameters for the :class:`~pysic.Coordinator`.

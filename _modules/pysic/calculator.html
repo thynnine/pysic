@@ -1,0 +1,1433 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.calculator &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="../../index.html" />
+    <link rel="up" title="pysic" href="../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.calculator</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;The main module of Pysic.</span>
+<span class="sd">    </span>
+<span class="sd">This module defines the user interface in Pysic for setting up potentials</span>
+<span class="sd">and calculators.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">pysic.core</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">pysic.utility.error</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">pysic.interactions.local</span> <span class="kn">import</span> <span class="n">Potential</span>
+<span class="kn">from</span> <span class="nn">pysic.interactions.bondorder</span> <span class="kn">import</span> <span class="n">Coordinator</span><span class="p">,</span> <span class="n">BondOrderParameters</span>
+<span class="kn">from</span> <span class="nn">pysic.interactions.coulomb</span> <span class="kn">import</span> <span class="n">CoulombSummation</span>
+<span class="kn">from</span> <span class="nn">pysic.charges.relaxation</span> <span class="kn">import</span> <span class="n">ChargeRelaxation</span>
+
+<span class="kn">import</span> <span class="nn">pysic.pysic_fortran</span> <span class="kn">as</span> <span class="nn">pf</span>
+<span class="kn">import</span> <span class="nn">ase.calculators.neighborlist</span> <span class="kn">as</span> <span class="nn">nbl</span>
+<span class="kn">import</span> <span class="nn">pysic.utility.f2py</span> <span class="kn">as</span> <span class="nn">pu</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">ase.calculators.neighborlist</span> <span class="kn">as</span> <span class="nn">nbl</span>
+<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">permutations</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+
+
+<span class="n">neighbor_marginal</span> <span class="o">=</span> <span class="mf">0.5</span>
+<span class="sd">&quot;&quot;&quot;Default skin width for the neighbor list&quot;&quot;&quot;</span>
+
+<span class="k">class</span> <span class="nc">FastNeighborList</span><span class="p">(</span><span class="n">nbl</span><span class="o">.</span><span class="n">NeighborList</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;ASE has a neighbor list class built in, but its implementation is</span>
+<span class="sd">        currently inefficient, and building of the list is an :math:`O(n^2)`</span>
+<span class="sd">        operation. This neighbor list class overrides the </span>
+<span class="sd">        :meth:`~pysic_utility.FastNeighborList.build` method with</span>
+<span class="sd">        an :math:`O(n)` time routine. The fast routine is based on a</span>
+<span class="sd">        spatial partitioning algorithm.</span>
+<span class="sd">        </span>
+<span class="sd">        The way cutoffs are handled is also somewhat different to the original</span>
+<span class="sd">        ASE list. In ASE, the distances for two atoms are compared against</span>
+<span class="sd">        the sum of the individual cutoffs + neighbor list skin. This list, however,</span>
+<span class="sd">        searches for the neighbors of each atom at a distance of the cutoff of the</span>
+<span class="sd">        given atom only, plus skin.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cutoffs</span><span class="p">,</span> <span class="n">skin</span><span class="o">=</span><span class="n">neighbor_marginal</span><span class="p">):</span>
+        <span class="n">nbl</span><span class="o">.</span><span class="n">NeighborList</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> 
+                              <span class="n">cutoffs</span><span class="o">=</span><span class="n">cutoffs</span><span class="p">,</span> 
+                              <span class="n">skin</span><span class="o">=</span><span class="n">skin</span><span class="p">,</span> 
+                              <span class="nb">sorted</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> 
+                              <span class="n">self_interaction</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+                              <span class="n">bothways</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>    
+    
+    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">atoms</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Builds the neighbor list.</span>
+<span class="sd">            </span>
+<span class="sd">            The routine requires that the given atomic structure matches</span>
+<span class="sd">            the one in the core. This is because the method invokes the</span>
+<span class="sd">            Fortran core to do the neighbor search.</span>
+<span class="sd">            The method overrides the similar</span>
+<span class="sd">            method in the original ASE neighborlist class, which directly operates</span>
+<span class="sd">            on the given structure, so this method also takes the atomic structure </span>
+<span class="sd">            as an argument. However, in order to keep the core modification routines in</span>
+<span class="sd">            the :class:`~pysic.Pysic` class, this method does not change the core</span>
+<span class="sd">            structure. It does raise an error if the structures do not match, though.</span>
+<span class="sd">            </span>
+<span class="sd">            The neighbor search is done via the :meth:`generate_neighbor_lists` routine.</span>
+<span class="sd">            The routine builds the neighbor list in the core, after which the list is</span>
+<span class="sd">            fed back to the :class:`~pysic.FastNeighborList` object by looping over all</span>
+<span class="sd">            atoms and saving the lists of neighbors and offsets.</span>
+
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            atoms: ASE Atoms object</span>
+<span class="sd">                the structure for which the neighbors are searched</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">atoms_ready</span><span class="p">(</span><span class="n">atoms</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">MissingAtomsError</span><span class="p">(</span><span class="s">&quot;Neighbor list building: Atoms in the core do not match.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">get_atoms</span><span class="p">()</span> <span class="o">!=</span> <span class="n">atoms</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MissingAtomsError</span><span class="p">(</span><span class="s">&quot;Neighbor list building: Atoms in the core do not match.&quot;</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">positions</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pbc</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_pbc</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()</span>
+        
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">generate_neighbor_lists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoffs</span><span class="p">)</span>
+                
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighbors</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">))]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">displacements</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="nb">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">))]</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)):</span>
+            <span class="n">n_nbs</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_neighbors_of_atom</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n_nbs</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neighbors</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">displacements</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_neighbor_list_of_atom</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">n_nbs</span><span class="p">)</span>
+                <span class="c"># the offsets are in Fortran array format, so they need to be transposed</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">displacements</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">displacements</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+    
+        <span class="bp">self</span><span class="o">.</span><span class="n">nupdates</span> <span class="o">+=</span> <span class="mi">1</span>
+        
+
+
+
+<div class="viewcode-block" id="Pysic"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic">[docs]</a><span class="k">class</span> <span class="nc">Pysic</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A calculator class providing the necessary methods for interfacing with `ASE`_.</span>
+
+<span class="sd">    Pysic is a calculator for evaluating energies and forces for given atomic structures</span>
+<span class="sd">    according to the given :class:`~pysic.Potential` set. Neither the geometry nor the</span>
+<span class="sd">    potentials have to be specified upon creating the calculator, as they can be specified</span>
+<span class="sd">    or changed later. They are necessary for actual calculation, of course.</span>
+
+<span class="sd">    Simulation geometries must be defined as `ASE Atoms`_. This object contains both the</span>
+<span class="sd">    atomistic coordinates and supercell parameters.</span>
+
+<span class="sd">    Potentials must be defined as a list of :class:`~pysic.Potential` objects. </span>
+<span class="sd">    The total potential of the system is then the sum of the individual potentials.</span>
+<span class="sd">    </span>
+<span class="sd">    .. _ASE: https://wiki.fysik.dtu.dk/ase/</span>
+<span class="sd">    .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    atoms: `ASE Atoms`_ object</span>
+<span class="sd">        an Atoms object containing the full simulation geometry</span>
+<span class="sd">    potentials: list of :class:`~pysic.Potential` objects</span>
+<span class="sd">        list of potentials for describing interactions</span>
+<span class="sd">    force_initialization: boolean</span>
+<span class="sd">        If true, calculations always fully initialize the Fortran core.</span>
+<span class="sd">        If false, the Pysic tries to evaluate what needs updating by</span>
+<span class="sd">        consulting the :data:`~pysic.Pysic.core` instance of :class:`~pysic.CoreMirror`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">core</span> <span class="o">=</span> <span class="n">CoreMirror</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;An object storing the data passed to the core.</span>
+
+<span class="sd">    Whenever a :class:`~pysic.Pysic` calculator alters the Fortran core,</span>
+<span class="sd">    it should also modify the :data:`~pysic.Pysic.core` object so that</span>
+<span class="sd">    it is always a valid representation of the actual core.</span>
+<span class="sd">    Then, whenever :class:`~pysic.Pysic` needs to check if the</span>
+<span class="sd">    representation in the core is up to date, it only needs to compare</span>
+<span class="sd">    against :data:`~pysic.Pysic.core` instead of accessing the</span>
+<span class="sd">    Fortran core itself.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">atoms</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">potentials</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">charge_relaxation</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">coulomb</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">full_initialization</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_ready</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">saved_cutoffs</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">structure</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_relaxation</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_potentials</span><span class="p">(</span><span class="n">potentials</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_charge_relaxation</span><span class="p">(</span><span class="n">charge_relaxation</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_coulomb_summation</span><span class="p">(</span><span class="n">coulomb</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">forces</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stress</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">electronegativities</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">force_core_initialization</span> <span class="o">=</span> <span class="n">full_initialization</span>
+
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">structure</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_charges</span><span class="p">()</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_charges</span><span class="p">()):</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">potentials</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+            
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Pysic(atoms={atoms},potentials={pots},full_initialization={init})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">atoms</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">),</span>
+                                                                                          <span class="n">pots</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">),</span>
+                                                                                          <span class="n">init</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">force_core_initialization</span><span class="p">))</span>
+
+
+<div class="viewcode-block" id="Pysic.core_initialization_is_forced"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.core_initialization_is_forced">[docs]</a>    <span class="k">def</span> <span class="nf">core_initialization_is_forced</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns true if the core is always fully initialized, false otherwise.&quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">force_core_initialization</span>
+
+</div>
+<div class="viewcode-block" id="Pysic.force_core_initialization"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.force_core_initialization">[docs]</a>    <span class="k">def</span> <span class="nf">force_core_initialization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">new_mode</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the core initialization mode.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        new_mode: logical</span>
+<span class="sd">            true if full initialization is required, false if not</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">force_core_initialization</span> <span class="o">=</span> <span class="n">new_mode</span>
+
+    </div>
+<div class="viewcode-block" id="Pysic.calculation_required"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.calculation_required">[docs]</a>    <span class="k">def</span> <span class="nf">calculation_required</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> 
+                             <span class="n">quantities</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;forces&#39;</span><span class="p">,</span><span class="s">&#39;energy&#39;</span><span class="p">,</span><span class="s">&#39;stress&#39;</span><span class="p">,</span><span class="s">&#39;electronegativities&#39;</span><span class="p">]):</span>
+        <span class="sd">&quot;&quot;&quot;Check if a calculation is required.</span>
+<span class="sd">        </span>
+<span class="sd">        When forces or energy are calculated, the calculator saves the</span>
+<span class="sd">        result in case it is needed several times. This method tells</span>
+<span class="sd">        if a wanted quantity is not yet calculated for the current</span>
+<span class="sd">        structure and needs to be calculated explicitly. If a list of</span>
+<span class="sd">        several quantities is given, the method returns true if any one of</span>
+<span class="sd">        them needs to be calculated.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        atoms: `ASE Atoms`_ object</span>
+<span class="sd">            ignored at the moment</span>
+<span class="sd">        quantities: list of strings</span>
+<span class="sd">            list of keywords &#39;energy&#39;, &#39;forces&#39;, &#39;stress&#39;, &#39;electronegativities&#39;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">do_it</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">quantities</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+            <span class="n">list_of_quantities</span> <span class="o">=</span> <span class="n">quantities</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">list_of_quantities</span> <span class="o">=</span> <span class="p">[</span> <span class="n">quantities</span> <span class="p">]</span>
+        
+        <span class="k">for</span> <span class="n">mark</span> <span class="ow">in</span> <span class="n">list_of_quantities</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">mark</span> <span class="o">==</span> <span class="s">&#39;energy&#39;</span><span class="p">:</span>
+                <span class="n">do_it</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">mark</span> <span class="o">==</span> <span class="s">&#39;forces&#39;</span><span class="p">:</span>
+                <span class="n">do_it</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forces</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">mark</span> <span class="o">==</span> <span class="s">&#39;electronegativities&#39;</span><span class="p">:</span>
+                <span class="n">do_it</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">electronegativities</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">mark</span> <span class="o">==</span> <span class="s">&#39;stress&#39;</span><span class="p">:</span>
+                <span class="n">do_it</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">stress</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">do_it</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">False</span><span class="p">)</span>
+        
+        <span class="c"># If the core does not match the Pysic calculator,</span>
+        <span class="c"># we may have changed the system or potentials</span>
+        <span class="c"># associated with the calculator without telling it.</span>
+        <span class="c"># In that case the quantities need to be recalculated.</span>
+        <span class="c"># It is of course possible that we have several Pysics</span>
+        <span class="c"># changing the core which would lead to unnecessary</span>
+        <span class="c"># recalculations.</span>
+        <span class="k">if</span><span class="p">(</span><span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">atoms_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">)):</span>
+            <span class="c">#print &quot;atoms&quot;</span>
+            <span class="n">do_it</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">if</span><span class="p">(</span><span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">charges_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">)):</span>
+            <span class="c">#print &quot;charges&quot;</span>
+            <span class="n">do_it</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">if</span><span class="p">(</span><span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">cell_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">)):</span>
+            <span class="c">#print &quot;cell&quot;</span>
+            <span class="n">do_it</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="k">if</span><span class="p">(</span><span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">potentials_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">)):</span>
+            <span class="c">#print &quot;potentials&quot;</span>
+            <span class="n">do_it</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+            
+        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">do_it</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Pysic.get_atoms"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_atoms">[docs]</a>    <span class="k">def</span> <span class="nf">get_atoms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the `ASE Atoms`_ object assigned to the calculator.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span>
+
+</div>
+<div class="viewcode-block" id="Pysic.get_neighbor_lists"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_neighbor_lists">[docs]</a>    <span class="k">def</span> <span class="nf">get_neighbor_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the :class:`~pysic.FastNeighborList` or `ASE NeighborList`_ </span>
+<span class="sd">        object assigned to the calculator.</span>
+
+<span class="sd">        The neighbor lists are generated according to the given `ASE Atoms`_ object</span>
+<span class="sd">        and the :class:`~pysic.Potential` objects of the calculator. Note that the lists</span>
+<span class="sd">        are created when the core is set or if the method </span>
+<span class="sd">        :meth:`~pysic.Pysic.create_neighbor_lists` is called.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span>
+
+</div>
+<div class="viewcode-block" id="Pysic.get_potentials"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_potentials">[docs]</a>    <span class="k">def</span> <span class="nf">get_potentials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the list of potentials assigned to the calculator.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span>
+
+    
+    </div>
+<div class="viewcode-block" id="Pysic.get_electronegativities"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_electronegativities">[docs]</a>    <span class="k">def</span> <span class="nf">get_electronegativities</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the electronegativities of atoms.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculation_required</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span><span class="s">&#39;electronegativities&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">calculate_electronegativities</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">electronegativities</span>
+    
+</div>
+<div class="viewcode-block" id="Pysic.get_electronegativity_differences"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_electronegativity_differences">[docs]</a>    <span class="k">def</span> <span class="nf">get_electronegativity_differences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the electronegativity differences of atoms from the average of the entire system.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">enegs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_electronegativities</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+        <span class="n">average_eneg</span> <span class="o">=</span> <span class="n">enegs</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">enegs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">enegs</span> <span class="o">-</span> <span class="n">average_eneg</span>
+
+    </div>
+<div class="viewcode-block" id="Pysic.get_forces"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_forces">[docs]</a>    <span class="k">def</span> <span class="nf">get_forces</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the forces.</span>
+
+<span class="sd">        If the atoms parameter is given, it will be used for updating the</span>
+<span class="sd">        structure assigned to the calculator prior to calculating the forces.</span>
+<span class="sd">        Otherwise the structure already associated with the calculator is used.</span>
+
+<span class="sd">        The calculator checks if the forces have been calculated already</span>
+<span class="sd">        via :meth:`~pysic.Pysic.calculation_required`. If the structure</span>
+<span class="sd">        has changed, the forces are calculated using :meth:`~pysic.Pysic.calculate_forces`</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: `ASE atoms`_ object</span>
+<span class="sd">            the structure for which the forces are determined</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculation_required</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span><span class="s">&#39;forces&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">calculate_forces</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">forces</span>
+
+</div>
+<div class="viewcode-block" id="Pysic.get_potential_energy"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_potential_energy">[docs]</a>    <span class="k">def</span> <span class="nf">get_potential_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">force_consistent</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the potential energy.</span>
+
+<span class="sd">        If the atoms parameter is given, it will be used for updating the</span>
+<span class="sd">        structure assigned to the calculator prior to calculating the energy.</span>
+<span class="sd">        Otherwise the structure already associated with the calculator is used.</span>
+
+<span class="sd">        The calculator checks if the energy has been calculated already</span>
+<span class="sd">        via :meth:`~pysic.Pysic.calculation_required`. If the structure</span>
+<span class="sd">        has changed, the energy is calculated using :meth:`~pysic.Pysic.calculate_energy`</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: `ASE atoms`_ object</span>
+<span class="sd">            the structure for which the energy is determined</span>
+<span class="sd">        force_consistent: logical</span>
+<span class="sd">            ignored at the moment</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculation_required</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span><span class="s">&#39;energy&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">calculate_energy</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">energy</span>
+
+</div>
+<div class="viewcode-block" id="Pysic.get_stress"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_stress">[docs]</a>    <span class="k">def</span> <span class="nf">get_stress</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the stress tensor in the format </span>
+<span class="sd">        :math:`[\sigma_{xx},\sigma_{yy},\sigma_{zz},\sigma_{yz},\sigma_{xz},\sigma_{xy}]`</span>
+
+<span class="sd">        If the atoms parameter is given, it will be used for updating the</span>
+<span class="sd">        structure assigned to the calculator prior to calculating the stress.</span>
+<span class="sd">        Otherwise the structure already associated with the calculator is used.</span>
+
+<span class="sd">        The calculator checks if the stress has been calculated already</span>
+<span class="sd">        via :meth:`~pysic.Pysic.calculation_required`. If the structure</span>
+<span class="sd">        has changed, the stress is calculated using :meth:`~pysic.Pysic.calculate_stress`</span>
+
+<span class="sd">        Stress (potential part) and force are evaluated in tandem. </span>
+<span class="sd">        Therefore, invoking the evaluation of</span>
+<span class="sd">        one automatically leads to the evaluation of the other. Thus, if you have just</span>
+<span class="sd">        evaluated the forces, the stress will already be known.</span>
+<span class="sd">    </span>
+<span class="sd">        This is because the</span>
+<span class="sd">        stress tensor is formally defined as</span>
+<span class="sd">            </span>
+<span class="sd">        .. math::</span>
+<span class="sd">        </span>
+<span class="sd">            \\sigma_{AB} = -\\frac{1}{V} \\sum_i \\left[ m_i (v_i)_A (v_i)_B + (r_i)_A (f_i)_B \\right],</span>
+<span class="sd">        </span>
+<span class="sd">            </span>
+<span class="sd">        where :math:`m`, :math:`v`, :math:`r`, and :math:`f` are mass, velocity,</span>
+<span class="sd">        position and force of atom :math:`i`, and :math:`A`, :math:`B` denote the</span>
+<span class="sd">        cartesian coordinates :math:`x,y,z`. </span>
+<span class="sd">        (The minus sign is there just to be consistent with the NPT routines in `ASE`_.) </span>
+<span class="sd">        However, if periodic boundaries are used,</span>
+<span class="sd">        the absolute coordinates cannot be used (there would be discontinuities at the</span>
+<span class="sd">        boundaries of the simulation cell). Instead, the potential energy terms </span>
+<span class="sd">        :math:`(r_i)_A (f_i)_B` must be evaluated locally for pair, triplet, and many</span>
+<span class="sd">        body forces using the relative coordinates of the particles involved in the</span>
+<span class="sd">        local interactions. These coordinates are only available during the actual force</span>
+<span class="sd">        evaluation when the local interactions are looped over. Thus, calculating the stress</span>
+<span class="sd">        requires doing the full force evaluation cycle. On the other hand, calculating the</span>
+<span class="sd">        stress is not a great effort compared to the force evaluation, so it is convenient</span>
+<span class="sd">        to evaluate the stress always when the forces are evaluated.</span>
+<span class="sd">                        </span>
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: `ASE atoms`_ object</span>
+<span class="sd">            the structure for which the stress is determined</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculation_required</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span><span class="s">&#39;stress&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">calculate_stress</span><span class="p">()</span>
+        
+        <span class="c"># self.stress contains the potential contribution to the stress tensor</span>
+        <span class="c"># but we add the kinetic contribution on the fly</span>
+        <span class="n">momenta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_momenta</span><span class="p">()</span>
+        <span class="n">masses</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_masses</span><span class="p">()</span>
+        <span class="n">velocities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">divide</span><span class="p">(</span> <span class="n">momenta</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">masses</span><span class="p">,</span><span class="n">masses</span><span class="p">,</span><span class="n">masses</span><span class="p">])</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span> <span class="p">)</span>
+
+        <span class="n">kinetic_stress</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">]</span><span class="o">*</span><span class="mi">6</span><span class="p">)</span>
+        
+        <span class="c"># s_xx, s_yy, s_zz, s_yz, s_xz, s_xy</span>
+        <span class="n">kinetic_stress</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">momenta</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">velocities</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">kinetic_stress</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">momenta</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">velocities</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">kinetic_stress</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">momenta</span><span class="p">[:,</span><span class="mi">2</span><span class="p">],</span> <span class="n">velocities</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">kinetic_stress</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">momenta</span><span class="p">[:,</span><span class="mi">1</span><span class="p">],</span> <span class="n">velocities</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">kinetic_stress</span><span class="p">[</span><span class="mi">4</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">momenta</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">velocities</span><span class="p">[:,</span><span class="mi">2</span><span class="p">]</span> <span class="p">)</span>
+        <span class="n">kinetic_stress</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">momenta</span><span class="p">[:,</span><span class="mi">0</span><span class="p">],</span> <span class="n">velocities</span><span class="p">[:,</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span>
+                
+        <span class="c"># ASE NPT simulator wants the pressure with an inversed sign</span>
+        <span class="k">return</span> <span class="o">-</span><span class="p">(</span> <span class="n">kinetic_stress</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">stress</span> <span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_volume</span><span class="p">()</span>
+
+    </div>
+<div class="viewcode-block" id="Pysic.set_atoms"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.set_atoms">[docs]</a>    <span class="k">def</span> <span class="nf">set_atoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Assigns the calculator with the given structure.</span>
+<span class="sd">            </span>
+<span class="sd">        This method is always called when any method is given the</span>
+<span class="sd">        atomic structure as an argument. If the argument is missing</span>
+<span class="sd">        or None, nothing is done. Otherwise a copy of the given structure</span>
+<span class="sd">        is saved (according to the instructions in </span>
+<span class="sd">        `ASE API &lt;https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#calculator-interface&gt;`_.)</span>
+<span class="sd">            </span>
+<span class="sd">        If a structure is already in memory and it is different to the given</span>
+<span class="sd">        one (as compared with ``__ne__``), it is noted that all quantities</span>
+<span class="sd">        are unknown for the new system. If the structure is the same as the</span>
+<span class="sd">        one already known, nothing is done.</span>
+<span class="sd">        This is because if one wants to</span>
+<span class="sd">        access the energy of forces of the same system repeatedly, it is unnecessary</span>
+<span class="sd">        to always calculate them from scratch. Therefore the calculator saves</span>
+<span class="sd">        the computed values along with a flag stating that the values have been</span>
+<span class="sd">        computed.</span>
+<span class="sd">            </span>
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: `ASE atoms`_ object</span>
+<span class="sd">            the structure to be calculated</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">atoms</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span> <span class="o">!=</span> <span class="n">atoms</span> <span class="ow">or</span>
+               <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_charges</span><span class="p">()</span> <span class="o">!=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_charges</span><span class="p">())</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">forces</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">stress</span> <span class="o">=</span> <span class="bp">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">electronegativities</span> <span class="o">=</span> <span class="bp">None</span>
+                
+
+                <span class="c"># NB: this avoids updating the potential lists every time an atom moves</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">if</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">()</span> <span class="o">!=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">())</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+                        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">potential_lists_ready</span> <span class="o">=</span> <span class="bp">False</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_waiting</span> <span class="o">=</span> <span class="bp">False</span>
+
+                    <span class="k">if</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_tags</span><span class="p">()</span> <span class="o">!=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_tags</span><span class="p">())</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+                        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">potential_lists_ready</span> <span class="o">=</span> <span class="bp">False</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_waiting</span> <span class="o">=</span> <span class="bp">False</span>                
+
+                    <span class="k">if</span><span class="p">(</span><span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">potentials_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">)):</span>
+                        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">potential_lists_ready</span> <span class="o">=</span> <span class="bp">False</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_waiting</span> <span class="o">=</span> <span class="bp">False</span>
+
+                <span class="k">except</span><span class="p">:</span>
+                    <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">potential_lists_ready</span> <span class="o">=</span> <span class="bp">False</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_waiting</span> <span class="o">=</span> <span class="bp">False</span>
+            
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">structure</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="Pysic.set_potentials"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.set_potentials">[docs]</a>    <span class="k">def</span> <span class="nf">set_potentials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">potentials</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Assign a list of potentials to the calculator.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        potentials: list of :class:`~pysic.Potential` objects</span>
+<span class="sd">            a list of potentials to describe interactinos</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">potentials</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">forces</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stress</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">electronegativities</span> <span class="o">=</span> <span class="bp">None</span>
+            
+            <span class="n">new_cutoffs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_individual_cutoffs</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_waiting</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_expanded</span><span class="p">(</span><span class="n">new_cutoffs</span><span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">potentials</span><span class="p">,</span><span class="nb">list</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">=</span> <span class="n">potentials</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">=</span> <span class="p">[</span><span class="n">potentials</span><span class="p">]</span>
+    
+    </div>
+<div class="viewcode-block" id="Pysic.add_potential"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.add_potential">[docs]</a>    <span class="k">def</span> <span class="nf">add_potential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">potential</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a potential to the list of potentials.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        potential: :class:`~pysic.Potential` object</span>
+<span class="sd">            a new potential to describe interactions</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">potential</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forces</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stress</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">electronegativities</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="n">new_cutoffs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_individual_cutoffs</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_waiting</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_expanded</span><span class="p">(</span><span class="n">new_cutoffs</span><span class="p">)</span>
+        
+    </div>
+<div class="viewcode-block" id="Pysic.set_coulomb_summation"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.set_coulomb_summation">[docs]</a>    <span class="k">def</span> <span class="nf">set_coulomb_summation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">coulomb</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the Coulomb summation algorithm for the calculator.</span>
+<span class="sd">            </span>
+<span class="sd">            If a Coulomb summation algorithm is set, the Coulomb interactions</span>
+<span class="sd">            between all charged atoms are evaluated automatically during</span>
+<span class="sd">            energy and force evaluation. If not, the charges do not directly</span>
+<span class="sd">            interact.</span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            coulomb: :class:`~pysic.CoulombSummation`</span>
+<span class="sd">                the Coulomb summation algorithm</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span> <span class="o">=</span> <span class="n">coulomb</span>
+        <span class="n">new_cutoffs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_individual_cutoffs</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_waiting</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_expanded</span><span class="p">(</span><span class="n">new_cutoffs</span><span class="p">)</span>
+    
+</div>
+<div class="viewcode-block" id="Pysic.get_coulomb_summation"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_coulomb_summation">[docs]</a>    <span class="k">def</span> <span class="nf">get_coulomb_summation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the Coulomb summation algorithm of this calculator.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span>
+    
+    </div>
+<div class="viewcode-block" id="Pysic.set_charge_relaxation"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.set_charge_relaxation">[docs]</a>    <span class="k">def</span> <span class="nf">set_charge_relaxation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">charge_relaxation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Add a charge relaxation algorithm to the calculator.</span>
+<span class="sd">            </span>
+<span class="sd">            If a charge relaxation scheme has been added to the :class:`~pysic.Pysic`</span>
+<span class="sd">            calculator, it will be automatically asked to do the charge relaxation </span>
+<span class="sd">            before the calculation of energies or forces via </span>
+<span class="sd">            :meth:`~pysic.ChargeRelaxation.charge_relaxation`.</span>
+<span class="sd">            </span>
+<span class="sd">            It is also possible to pass the :class:`~pysic.Pysic` calculator to the </span>
+<span class="sd">            :class:`~pysic.ChargeRelaxation` algorithm without creating the opposite</span>
+<span class="sd">            link using :meth:`~pysic.ChargeRelaxation.set_calculator`. </span>
+<span class="sd">            In that case, the calculator does not automatically relax the charges, but</span>
+<span class="sd">            the user can manually trigger the relaxation with </span>
+<span class="sd">            :meth:`~pysic.ChargeRelaxation.charge_relaxation`.</span>
+<span class="sd">            </span>
+<span class="sd">            If you wish to remove automatic charge relaxation, just call this method</span>
+<span class="sd">            again with None as argument.</span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            charge_relaxation: :class:`~pysic.ChargeRelaxation` object</span>
+<span class="sd">                the charge relaxation algorithm</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">charge_relaxation</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">reciprocal</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_relaxation</span> <span class="o">=</span> <span class="n">charge_relaxation</span>
+
+                </div>
+<div class="viewcode-block" id="Pysic.get_charge_relaxation"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_charge_relaxation">[docs]</a>    <span class="k">def</span> <span class="nf">get_charge_relaxation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the :class:`~pysic.ChargeRelaxation` object connected to the calculator.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_relaxation</span>
+    
+    </div>
+<div class="viewcode-block" id="Pysic.create_neighbor_lists"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.create_neighbor_lists">[docs]</a>    <span class="k">def</span> <span class="nf">create_neighbor_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoffs</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">marginal</span><span class="o">=</span><span class="n">neighbor_marginal</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes the neighbor lists.</span>
+
+<span class="sd">        In order to do calculations at reasonable speed, the calculator needs </span>
+<span class="sd">        a list of neighbors for each atom. For this purpose, the `ASE NeighborList`_</span>
+<span class="sd">        are used. This method initializes these lists according to the given</span>
+<span class="sd">        cutoffs.</span>
+
+<span class="sd">        .. _ASE NeighborList: https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        cutoffs: list of doubles</span>
+<span class="sd">            a list containing the cutoff distance for each atom</span>
+<span class="sd">        marginal: double</span>
+<span class="sd">            the skin width of the neighbor list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">fastlist</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="n">cutoffs</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">cutoffs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_individual_cutoffs</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="n">max_cut</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">)</span>
+        
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="n">vec</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">other_vec1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()[(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">%</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">other_vec2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()[(</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">)</span><span class="o">%</span><span class="mi">3</span><span class="p">]</span>
+            <span class="n">normal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span><span class="n">other_vec1</span><span class="p">,</span><span class="n">other_vec2</span><span class="p">)</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">fabs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">vec</span><span class="p">,</span><span class="n">normal</span><span class="p">))</span><span class="o">/</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">normal</span><span class="p">,</span><span class="n">normal</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">length</span> <span class="o">&lt;</span> <span class="n">max_cut</span><span class="p">:</span>
+                <span class="n">fastlist</span> <span class="o">=</span> <span class="bp">False</span>
+                
+        <span class="k">if</span> <span class="n">fastlist</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">FastNeighborList</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">,</span><span class="n">skin</span><span class="o">=</span><span class="n">marginal</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="n">fastlist</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">fastlist</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span> <span class="o">=</span> <span class="n">nbl</span><span class="o">.</span><span class="n">NeighborList</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">,</span><span class="n">skin</span><span class="o">=</span><span class="n">marginal</span><span class="p">,</span><span class="nb">sorted</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">self_interaction</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span><span class="n">bothways</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_waiting</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_cutoffs</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Pysic.get_individual_cutoffs"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_individual_cutoffs">[docs]</a>    <span class="k">def</span> <span class="nf">get_individual_cutoffs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">scaler</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a list of maximum cutoffs for all atoms.</span>
+
+<span class="sd">        For each atom, the interaction with the longest cutoff is found and</span>
+<span class="sd">        the associated maximum cutoffs are returned as a list. In case the a list</span>
+<span class="sd">        of scaled values are required, the scaler can be adjusted. E.g., scaler = 0.5</span>
+<span class="sd">        will return the cutoffs halved.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        scaler: double</span>
+<span class="sd">            a number for scaling all values in the generated list</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span><span class="o">*</span><span class="p">[</span><span class="mf">0.0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span><span class="o">*</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span><span class="o">.</span><span class="n">get_realspace_cutoff</span><span class="p">()]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">cuts</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c"># loop over all atoms, with symbol, tags, index containing the corresponding</span>
+            <span class="c"># info for a single atom at a time</span>
+            <span class="k">for</span> <span class="n">symbol</span><span class="p">,</span> <span class="n">tags</span><span class="p">,</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_chemical_symbols</span><span class="p">(),</span>
+                                           <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_tags</span><span class="p">(),</span>
+                                           <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">())):</span>
+            
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">max_cut</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">max_cut</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span><span class="o">.</span><span class="n">get_realspace_cutoff</span><span class="p">()</span>
+                
+                <span class="k">for</span> <span class="n">potential</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">:</span>
+                    <span class="n">active_potential</span> <span class="o">=</span> <span class="bp">False</span>
+                    
+                    <span class="k">if</span> <span class="n">potential</span><span class="o">.</span><span class="n">get_different_symbols</span><span class="p">()</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">potential</span><span class="o">.</span><span class="n">get_different_tags</span><span class="p">()</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">potential</span><span class="o">.</span><span class="n">get_different_indices</span><span class="p">()</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">active_potential</span> <span class="o">=</span> <span class="bp">True</span>
+                    
+                    <span class="k">if</span> <span class="n">active_potential</span> <span class="ow">and</span> <span class="n">potential</span><span class="o">.</span><span class="n">get_cutoff</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">max_cut</span><span class="p">:</span>
+                        <span class="n">max_cut</span> <span class="o">=</span> <span class="n">potential</span><span class="o">.</span><span class="n">get_cutoff</span><span class="p">()</span>
+
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">bond</span> <span class="ow">in</span> <span class="n">potential</span><span class="o">.</span><span class="n">get_coordinator</span><span class="p">()</span><span class="o">.</span><span class="n">get_bond_order_parameters</span><span class="p">():</span>
+                            <span class="n">active_bond</span> <span class="o">=</span> <span class="bp">False</span>
+                            <span class="k">if</span> <span class="n">bond</span><span class="o">.</span><span class="n">get_different_symbols</span><span class="p">()</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">symbol</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                                <span class="n">active_bond</span> <span class="o">=</span> <span class="bp">True</span>
+                                
+                            <span class="k">if</span> <span class="n">active_bond</span><span class="p">:</span>
+                                <span class="k">if</span> <span class="n">bond</span><span class="o">.</span><span class="n">get_cutoff</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">max_cut</span><span class="p">:</span>
+                                    <span class="n">max_cut</span> <span class="o">=</span> <span class="n">bond</span><span class="o">.</span><span class="n">get_cutoff</span><span class="p">()</span>
+                    <span class="k">except</span><span class="p">:</span>
+                        <span class="k">pass</span>
+
+                <span class="n">cuts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">max_cut</span><span class="o">*</span><span class="n">scaler</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">cuts</span>
+
+</div>
+<div class="viewcode-block" id="Pysic.calculate_electronegativities"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.calculate_electronegativities">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_electronegativities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates electronegativities.</span>
+<span class="sd">            </span>
+<span class="sd">        Calls the Fortran core to calculate forces for the currently assigned structure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+        <span class="n">n_atoms</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">electronegativities</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">calculate_electronegativities</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        
+    </div>
+<div class="viewcode-block" id="Pysic.calculate_forces"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.calculate_forces">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_forces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates forces (and the potential part of the stress tensor).</span>
+
+<span class="sd">        Calls the Fortran core to calculate forces for the currently assigned structure.</span>
+<span class="sd">            </span>
+<span class="sd">        If a link exists to a :class:`~pysic.ChargeRelaxation`, it is first made to</span>
+<span class="sd">        relax the atomic charges before the forces are calculated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_relaxation</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">charge_relaxation</span><span class="o">.</span><span class="n">charge_relaxation</span><span class="p">()</span>
+        <span class="n">n_atoms</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forces</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stress</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">calculate_forces</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">)</span><span class="c">#.transpose()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forces</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        
+</div>
+<div class="viewcode-block" id="Pysic.calculate_energy"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.calculate_energy">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the potential energy.</span>
+
+<span class="sd">        Calls the Fortran core to calculate the potential energy for the currently assigned structure.</span>
+<span class="sd"> </span>
+<span class="sd">        If a link exists to a :class:`~pysic.ChargeRelaxation`, it is first made to</span>
+<span class="sd">        relax the atomic charges before the forces are calculated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_relaxation</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">charge_relaxation</span><span class="o">.</span><span class="n">charge_relaxation</span><span class="p">()</span>
+        <span class="n">n_atoms</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">calculate_energy</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Pysic.calculate_stress"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.calculate_stress">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_stress</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the potential part of the stress tensor (and forces).</span>
+
+<span class="sd">        Calls the Fortran core to calculate the stress tensor for the currently assigned structure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_relaxation</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">charge_relaxation</span><span class="o">.</span><span class="n">charge_relaxation</span><span class="p">()</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+        <span class="n">n_atoms</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forces</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stress</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">calculate_forces</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forces</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="Pysic.set_core"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.set_core">[docs]</a>    <span class="k">def</span> <span class="nf">set_core</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets up the Fortran core for calculation.</span>
+
+<span class="sd">        If the core is not initialized, if the number of atoms has changed, or</span>
+<span class="sd">        if full initialization is forced, the core is initialized from scratch.</span>
+<span class="sd">        Otherwise, only the atomic coordinates and momenta are updated.</span>
+<span class="sd">        Potentials, neighbor lists etc. are also updated if they have been edited.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        
+        <span class="n">do_full_init</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">force_core_initialization</span><span class="p">:</span>
+            <span class="n">do_full_init</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">mpi_ready</span><span class="p">:</span>
+            <span class="n">do_full_init</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">elif</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">get_atoms</span><span class="p">()</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">do_full_init</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span> <span class="o">!=</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">():</span>
+            <span class="n">do_full_init</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span> <span class="o">!=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">():</span>
+            <span class="n">do_full_init</span> <span class="o">=</span> <span class="bp">True</span>
+            
+                        
+        <span class="k">if</span> <span class="n">do_full_init</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize_fortran_core</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">cell_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_core_supercell</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">atoms_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_core_coordinates</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">charges_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_core_charges</span><span class="p">()</span>
+                    
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">potentials_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_core_potentials</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">coulomb_summation_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">update_core_coulomb</span><span class="p">()</span>
+            
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">potential_lists_ready</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_core_potential_lists</span><span class="p">()</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_waiting</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">create_neighbor_lists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_individual_cutoffs</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">neighbor_lists_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_core_neighbor_lists</span><span class="p">()</span>
+                
+</div>
+<div class="viewcode-block" id="Pysic.update_core_potential_lists"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.update_core_potential_lists">[docs]</a>    <span class="k">def</span> <span class="nf">update_core_potential_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initializes the potential lists.</span>
+
+<span class="sd">        Since one often runs :class:`~pysic.Pysic` with a set of potentials,</span>
+<span class="sd">        the core pre-analyzes which potentials affect each atom and saves a list</span>
+<span class="sd">        of such potentials for every particle. This method asks the core to</span>
+<span class="sd">        generate these lists.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">atoms_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">MissingAtomsError</span><span class="p">(</span><span class="s">&quot;Creating potential lists before updating atoms in core.&quot;</span><span class="p">)</span>
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">create_potential_list</span><span class="p">()</span>
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">create_bond_order_factor_list</span><span class="p">()</span>
+        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">potential_lists_ready</span> <span class="o">=</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="Pysic.update_core_potentials"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.update_core_potentials">[docs]</a>    <span class="k">def</span> <span class="nf">update_core_potentials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Generates potentials for the Fortran core.&quot;&quot;&quot;</span>
+                
+        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">potential_lists_ready</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">allocate_potentials</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">allocate_bond_order_factors</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">allocate_potentials</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">allocate_bond_order_factors</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="k">return</span>
+        
+        <span class="n">n_pots</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">coord_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">pot_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c"># count the number of separate potentials</span>
+        <span class="k">for</span> <span class="n">pot</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">:</span>
+
+            <span class="c"># grab the coordinators associated with the potentials</span>
+            <span class="n">coord</span> <span class="o">=</span> <span class="n">pot</span><span class="o">.</span><span class="n">get_coordinator</span><span class="p">()</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">coord</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="n">coord_list</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">coord</span><span class="p">,</span><span class="n">pot_index</span><span class="p">])</span>
+            <span class="n">pot_index</span> <span class="o">+=</span> <span class="mi">1</span>
+            
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">alltargets</span> <span class="o">=</span> <span class="n">pot</span><span class="o">.</span><span class="n">get_symbols</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">targets</span> <span class="ow">in</span> <span class="n">alltargets</span><span class="p">:</span>
+                    <span class="n">perms</span> <span class="o">=</span> <span class="n">permutations</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+                    <span class="n">different</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">perms</span><span class="p">)</span>
+                    <span class="n">n_pots</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">different</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">alltargets</span> <span class="o">=</span> <span class="n">pot</span><span class="o">.</span><span class="n">get_tags</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">targets</span> <span class="ow">in</span> <span class="n">alltargets</span><span class="p">:</span>
+                    <span class="n">perms</span> <span class="o">=</span> <span class="n">permutations</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+                    <span class="n">different</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">perms</span><span class="p">)</span>
+                    <span class="n">n_pots</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">different</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">alltargets</span> <span class="o">=</span> <span class="n">pot</span><span class="o">.</span><span class="n">get_indices</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">targets</span> <span class="ow">in</span> <span class="n">alltargets</span><span class="p">:</span>
+                    <span class="n">perms</span> <span class="o">=</span> <span class="n">permutations</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+                    <span class="n">different</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">perms</span><span class="p">)</span>
+                    <span class="n">n_pots</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">different</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">allocate_potentials</span><span class="p">(</span><span class="n">n_pots</span><span class="p">)</span>
+
+        <span class="n">pot_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">pot</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">:</span>
+            
+            <span class="n">group_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+            <span class="k">if</span> <span class="n">pot</span><span class="o">.</span><span class="n">get_coordinator</span><span class="p">()</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">group_index</span> <span class="o">=</span> <span class="n">pot_index</span>
+                <span class="n">pot</span><span class="o">.</span><span class="n">get_coordinator</span><span class="p">()</span><span class="o">.</span><span class="n">set_group_index</span><span class="p">(</span><span class="n">pot_index</span><span class="p">)</span>
+            <span class="n">pot_index</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">n_targ</span> <span class="o">=</span> <span class="n">pot</span><span class="o">.</span><span class="n">get_number_of_targets</span><span class="p">()</span>
+            <span class="n">no_symbs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">n_targ</span><span class="o">*</span><span class="p">[</span><span class="n">pu</span><span class="o">.</span><span class="n">str2ints</span><span class="p">(</span><span class="s">&#39;xx&#39;</span><span class="p">,</span><span class="mi">2</span><span class="p">)]</span> <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+            <span class="n">no_tags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">n_targ</span><span class="o">*</span><span class="p">[</span><span class="o">-</span><span class="mi">9</span><span class="p">]</span> <span class="p">)</span>
+            <span class="n">no_inds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">n_targ</span><span class="o">*</span><span class="p">[</span><span class="o">-</span><span class="mi">9</span><span class="p">]</span> <span class="p">)</span>
+
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">alltargets</span> <span class="o">=</span> <span class="n">pot</span><span class="o">.</span><span class="n">get_symbols</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">targets</span> <span class="ow">in</span> <span class="n">alltargets</span><span class="p">:</span>
+                    <span class="n">int_orig_symbs</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">orig_symbs</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
+                        <span class="n">int_orig_symbs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">pu</span><span class="o">.</span><span class="n">str2ints</span><span class="p">(</span><span class="n">orig_symbs</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+
+                    <span class="n">perms</span> <span class="o">=</span> <span class="n">permutations</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+                    <span class="n">different</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">perms</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">symbs</span> <span class="ow">in</span> <span class="n">different</span><span class="p">:</span>
+                        <span class="n">int_symbs</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">symbs</span><span class="p">:</span>
+                            <span class="n">int_symbs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">pu</span><span class="o">.</span><span class="n">str2ints</span><span class="p">(</span><span class="n">label</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+
+                        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">pot</span><span class="o">.</span><span class="n">get_potential_type</span><span class="p">(),</span>
+                                                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">pot</span><span class="o">.</span><span class="n">get_parameter_values</span><span class="p">()</span> <span class="p">),</span>
+                                                         <span class="n">pot</span><span class="o">.</span><span class="n">get_cutoff</span><span class="p">(),</span>
+                                                         <span class="n">pot</span><span class="o">.</span><span class="n">get_soft_cutoff</span><span class="p">(),</span>
+                                                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">int_symbs</span> <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span>
+                                                         <span class="n">no_tags</span><span class="p">,</span>
+                                                         <span class="n">no_inds</span><span class="p">,</span>
+                                                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">int_orig_symbs</span> <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span>
+                                                         <span class="n">no_tags</span><span class="p">,</span>
+                                                         <span class="n">no_inds</span><span class="p">,</span>
+                                                         <span class="n">group_index</span> <span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">alltargets</span> <span class="o">=</span> <span class="n">pot</span><span class="o">.</span><span class="n">get_tags</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">targets</span> <span class="ow">in</span> <span class="n">alltargets</span><span class="p">:</span>
+                    <span class="n">orig_tags</span> <span class="o">=</span> <span class="n">targets</span>
+                    <span class="n">perms</span> <span class="o">=</span> <span class="n">permutations</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+                    <span class="n">different</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">perms</span><span class="p">)</span>
+
+                    <span class="k">for</span> <span class="n">tags</span> <span class="ow">in</span> <span class="n">different</span><span class="p">:</span>
+                        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">pot</span><span class="o">.</span><span class="n">get_potential_type</span><span class="p">(),</span>
+                                                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">pot</span><span class="o">.</span><span class="n">get_parameter_values</span><span class="p">()</span> <span class="p">),</span>
+                                                         <span class="n">pot</span><span class="o">.</span><span class="n">get_cutoff</span><span class="p">(),</span>
+                                                         <span class="n">pot</span><span class="o">.</span><span class="n">get_soft_cutoff</span><span class="p">(),</span>
+                                                         <span class="n">no_symbs</span><span class="p">,</span>
+                                                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">tags</span> <span class="p">),</span>
+                                                         <span class="n">no_inds</span><span class="p">,</span>
+                                                         <span class="n">no_symbs</span><span class="p">,</span>
+                                                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">orig_tags</span><span class="p">),</span>
+                                                         <span class="n">no_inds</span><span class="p">,</span>
+                                                         <span class="n">group_index</span> <span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">alltargets</span> <span class="o">=</span> <span class="n">pot</span><span class="o">.</span><span class="n">get_indices</span><span class="p">()</span>                
+                <span class="k">for</span> <span class="n">targets</span> <span class="ow">in</span> <span class="n">alltargets</span><span class="p">:</span>
+                    <span class="n">orig_inds</span> <span class="o">=</span> <span class="n">targets</span>
+                    <span class="n">perms</span> <span class="o">=</span> <span class="n">permutations</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+                    <span class="n">different</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">perms</span><span class="p">)</span>
+
+                    <span class="k">for</span> <span class="n">inds</span> <span class="ow">in</span> <span class="n">different</span><span class="p">:</span>
+                        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">pot</span><span class="o">.</span><span class="n">get_potential_type</span><span class="p">(),</span>
+                                                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">pot</span><span class="o">.</span><span class="n">get_parameter_values</span><span class="p">()</span> <span class="p">),</span>
+                                                         <span class="n">pot</span><span class="o">.</span><span class="n">get_cutoff</span><span class="p">(),</span>
+                                                         <span class="n">pot</span><span class="o">.</span><span class="n">get_soft_cutoff</span><span class="p">(),</span>
+                                                         <span class="n">no_symbs</span><span class="p">,</span>
+                                                         <span class="n">no_tags</span><span class="p">,</span>
+                                                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">inds</span> <span class="p">),</span>
+                                                         <span class="n">no_symbs</span><span class="p">,</span>
+                                                         <span class="n">no_tags</span><span class="p">,</span>
+                                                         <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">orig_inds</span><span class="p">),</span>
+                                                         <span class="n">group_index</span> <span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="n">n_bonds</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">coord_list</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">allbonds</span> <span class="o">=</span> <span class="n">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_bond_order_parameters</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">bond</span> <span class="ow">in</span> <span class="n">allbonds</span><span class="p">:</span>
+                    <span class="n">alltargets</span> <span class="o">=</span> <span class="n">bond</span><span class="o">.</span><span class="n">get_symbols</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">targets</span> <span class="ow">in</span> <span class="n">alltargets</span><span class="p">:</span>
+                        <span class="n">perms</span> <span class="o">=</span> <span class="n">permutations</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+                        <span class="n">different</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">perms</span><span class="p">)</span>
+                        <span class="n">n_bonds</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">different</span><span class="p">)</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">allocate_bond_order_factors</span><span class="p">(</span><span class="n">n_bonds</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">coord_list</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">allbonds</span> <span class="o">=</span> <span class="n">coord</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_bond_order_parameters</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">bond</span> <span class="ow">in</span> <span class="n">allbonds</span><span class="p">:</span>
+                    <span class="n">alltargets</span> <span class="o">=</span> <span class="n">bond</span><span class="o">.</span><span class="n">get_symbols</span><span class="p">()</span>
+                    <span class="k">for</span> <span class="n">targets</span> <span class="ow">in</span> <span class="n">alltargets</span><span class="p">:</span>
+
+                        <span class="n">int_orig_symbs</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="k">for</span> <span class="n">orig_symbs</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
+                            <span class="n">int_orig_symbs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">pu</span><span class="o">.</span><span class="n">str2ints</span><span class="p">(</span><span class="n">orig_symbs</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+                        
+                        <span class="n">perms</span> <span class="o">=</span> <span class="n">permutations</span><span class="p">(</span><span class="n">targets</span><span class="p">)</span>
+                        <span class="n">different</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">perms</span><span class="p">)</span>
+
+                        <span class="k">for</span> <span class="n">symbs</span> <span class="ow">in</span> <span class="n">different</span><span class="p">:</span>
+                            <span class="n">int_symbs</span> <span class="o">=</span> <span class="p">[]</span>
+                            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">symbs</span><span class="p">:</span>
+                                <span class="n">int_symbs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span> <span class="n">pu</span><span class="o">.</span><span class="n">str2ints</span><span class="p">(</span><span class="n">label</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span> <span class="p">)</span>
+
+                            <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">add_bond_order_factor</span><span class="p">(</span><span class="n">bond</span><span class="o">.</span><span class="n">get_bond_order_type</span><span class="p">(),</span>
+                                                                   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">bond</span><span class="o">.</span><span class="n">get_parameters_as_list</span><span class="p">()</span> <span class="p">),</span>
+                                                                   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">bond</span><span class="o">.</span><span class="n">get_number_of_parameters</span><span class="p">()</span> <span class="p">),</span>
+                                                                   <span class="n">bond</span><span class="o">.</span><span class="n">get_cutoff</span><span class="p">(),</span>
+                                                                   <span class="n">bond</span><span class="o">.</span><span class="n">get_soft_cutoff</span><span class="p">(),</span>
+                                                                   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">int_symbs</span> <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span>
+                                                                   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">int_orig_symbs</span> <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">(),</span>
+                                                                   <span class="n">coord</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+
+
+        <span class="n">n_atoms</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span>
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">allocate_bond_order_storage</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">,</span>
+                                                       <span class="n">pot_index</span><span class="p">,</span>
+                                                       <span class="nb">len</span><span class="p">(</span><span class="n">coord_list</span><span class="p">))</span>
+
+        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">set_potentials</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">)</span>
+
+            </div>
+<div class="viewcode-block" id="Pysic.update_core_coulomb"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.update_core_coulomb">[docs]</a>    <span class="k">def</span> <span class="nf">update_core_coulomb</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the Coulomb summation parameters in the Fortran core.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="n">CoulombSummation</span><span class="o">.</span><span class="n">summation_modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="c"># ewald summation</span>
+                <span class="n">rcut</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;real_cutoff&#39;</span><span class="p">]</span>
+                <span class="n">kcut</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;k_cutoff&#39;</span><span class="p">]</span>
+                <span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;sigma&#39;</span><span class="p">]</span>
+                <span class="n">epsilon</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;epsilon&#39;</span><span class="p">]</span>
+                
+                <span class="n">scales</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span><span class="o">.</span><span class="n">get_scaling_factors</span><span class="p">()</span>
+                
+                <span class="c"># calculate the truncation limits for the k-space sum</span>
+                <span class="n">reci_cell</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_reciprocal_cell</span><span class="p">()</span>
+                <span class="n">volume</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span> <span class="n">reci_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span> <span class="n">reci_cell</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reci_cell</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="p">)</span> <span class="p">)</span>
+                <span class="n">k1</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">kcut</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span> <span class="n">reci_cell</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reci_cell</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="p">)</span> <span class="p">)</span> <span class="o">/</span> <span class="n">volume</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="p">)</span>
+                <span class="n">k2</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">kcut</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span> <span class="n">reci_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reci_cell</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="p">)</span> <span class="p">)</span> <span class="o">/</span> <span class="n">volume</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="p">)</span>
+                <span class="n">k3</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span> <span class="n">kcut</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span> <span class="n">np</span><span class="o">.</span><span class="n">cross</span><span class="p">(</span> <span class="n">reci_cell</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">reci_cell</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="p">)</span> <span class="p">)</span> <span class="o">/</span> <span class="n">volume</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">scales</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">scales</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">]</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span>
+                <span class="k">elif</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">scales</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()):</span>
+                    <span class="k">raise</span> <span class="n">InvalidParametersError</span><span class="p">(</span><span class="s">&quot;Length of the scaling factor vector does not match the number of atoms.&quot;</span><span class="p">)</span>
+                
+                <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">set_ewald_parameters</span><span class="p">(</span><span class="n">rcut</span><span class="p">,</span>
+                                                        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">k1</span><span class="p">,</span><span class="n">k2</span><span class="p">,</span><span class="n">k3</span><span class="p">]),</span>
+                                                        <span class="n">sigma</span><span class="p">,</span>
+                                                        <span class="n">epsilon</span><span class="p">,</span>
+                                                        <span class="n">scales</span><span class="p">)</span>
+
+                <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">set_coulomb</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span><span class="p">)</span>
+        
+    </div>
+<div class="viewcode-block" id="Pysic.update_core_coordinates"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.update_core_coordinates">[docs]</a>    <span class="k">def</span> <span class="nf">update_core_coordinates</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the positions and momenta of atoms in the Fortran core.</span>
+
+<span class="sd">        The core must be initialized and the number of atoms must match.</span>
+<span class="sd">        Upon the update, it is automatically checked if the neighbor lists</span>
+<span class="sd">        should be updated as well.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span> <span class="o">!=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">LockedCoreError</span><span class="p">(</span><span class="s">&quot;The number of atoms does not match.&quot;</span><span class="p">)</span>
+        
+        <span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()</span> <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="n">momenta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_momenta</span><span class="p">()</span> <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">forces</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stress</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">electronegativities</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">update_atom_coordinates</span><span class="p">(</span><span class="n">positions</span><span class="p">,</span><span class="n">momenta</span><span class="p">)</span>
+
+        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">set_atomic_positions</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span>
+        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">set_atomic_momenta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_waiting</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_neighbor_lists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_individual_cutoffs</span><span class="p">(</span><span class="mf">1.0</span><span class="p">))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_core_neighbor_lists</span><span class="p">()</span>
+
+                    
+</div>
+<div class="viewcode-block" id="Pysic.update_core_charges"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.update_core_charges">[docs]</a>    <span class="k">def</span> <span class="nf">update_core_charges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates atomic charges in the core.&quot;&quot;&quot;</span>
+        
+        <span class="n">charges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_charges</span><span class="p">()</span> <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">forces</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stress</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">electronegativities</span> <span class="o">=</span> <span class="bp">None</span>
+        
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">update_atom_charges</span><span class="p">(</span><span class="n">charges</span><span class="p">)</span>
+        
+        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">set_charges</span><span class="p">(</span><span class="n">charges</span><span class="p">)</span>
+            
+            </div>
+<div class="viewcode-block" id="Pysic.update_core_supercell"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.update_core_supercell">[docs]</a>    <span class="k">def</span> <span class="nf">update_core_supercell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the supercell in the Fortran core.&quot;&quot;&quot;</span>
+        <span class="n">vectors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()</span> <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="n">inverse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()</span> <span class="p">))</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="n">periodicity</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_pbc</span><span class="p">()</span> <span class="p">)</span>
+        
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">create_cell</span><span class="p">(</span><span class="n">vectors</span><span class="p">,</span><span class="n">inverse</span><span class="p">,</span><span class="n">periodicity</span><span class="p">)</span>
+        
+        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">set_cell</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span>
+        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">set_neighbor_lists</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+            
+</div>
+<div class="viewcode-block" id="Pysic.update_core_neighbor_lists"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.update_core_neighbor_lists">[docs]</a>    <span class="k">def</span> <span class="nf">update_core_neighbor_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the neighbor lists in the Fortran core.</span>
+
+<span class="sd">         If uninitialized, the lists are created first via :meth:`~pysic.Pysic.create_neighbor_lists`.</span>
+<span class="sd">         &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">atoms_ready</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">MissingAtomsError</span><span class="p">(</span><span class="s">&quot;Creating neighbor lists before updating atoms in the core.&quot;</span><span class="p">)</span>
+        <span class="n">cutoffs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_individual_cutoffs</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_waiting</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">create_neighbor_lists</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_cutoffs</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists_waiting</span> <span class="o">=</span> <span class="bp">True</span>
+    
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span>
+    
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">,</span><span class="n">FastNeighborList</span><span class="p">):</span>
+            <span class="c"># if we used the fast list, the core is already updated</span>
+            <span class="k">pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># if we have used the ASE list, it must be passed on to the core</span>
+            <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()):</span>
+                <span class="p">[</span><span class="n">nbors</span><span class="p">,</span><span class="n">offs</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="o">.</span><span class="n">get_neighbors</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>                
+                <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">create_neighbor_list</span><span class="p">(</span><span class="n">index</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nbors</span><span class="p">),</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">offs</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">())</span>
+
+        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">set_neighbor_lists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">neighbor_list</span><span class="p">)</span>
+        
+</div>
+<div class="viewcode-block" id="Pysic.initialize_fortran_core"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.initialize_fortran_core">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_fortran_core</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Fully initializes the Fortran core, creating the atoms, supercell, potentials, and neighbor lists.&quot;&quot;&quot;</span>
+        
+        <span class="n">masses</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_masses</span><span class="p">()</span> <span class="p">)</span>
+        <span class="n">charges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_charges</span><span class="p">()</span> <span class="p">)</span>
+        <span class="n">positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()</span> <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="n">momenta</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_momenta</span><span class="p">()</span> <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="n">tags</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_tags</span><span class="p">()</span> <span class="p">)</span>
+        <span class="n">elements</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_chemical_symbols</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="p">)):</span>
+            <span class="n">elements</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">pu</span><span class="o">.</span><span class="n">str2ints</span><span class="p">(</span><span class="n">elements</span><span class="p">[</span><span class="n">index</span><span class="p">],</span><span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">elements</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="n">elements</span> <span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+        <span class="c">#self.create_neighbor_lists(self.get_individual_cutoffs(1.0))</span>
+        <span class="c">#self.neighbor_lists_waiting = True</span>
+
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">create_atoms</span><span class="p">(</span><span class="n">masses</span><span class="p">,</span><span class="n">charges</span><span class="p">,</span><span class="n">positions</span><span class="p">,</span><span class="n">momenta</span><span class="p">,</span><span class="n">tags</span><span class="p">,</span><span class="n">elements</span><span class="p">)</span>
+        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span>
+
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">distribute_mpi</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">())</span>
+        <span class="n">Pysic</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">mpi_ready</span> <span class="o">=</span> <span class="bp">True</span>
+                
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_core_supercell</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_core_potentials</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_core_neighbor_lists</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_core_potential_lists</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_core_coulomb</span><span class="p">()</span>
+
+
+</div>
+<div class="viewcode-block" id="Pysic.get_numerical_energy_gradient"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_numerical_energy_gradient">[docs]</a>    <span class="k">def</span> <span class="nf">get_numerical_energy_gradient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom_index</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span> <span class="n">atoms</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Numerically calculates the negative gradient of energy with respect to moving a single particle.</span>
+
+<span class="sd">        This is for debugging the forces.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span><span class="p">(</span><span class="n">atoms</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="n">system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span>
+            <span class="n">orig_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">system</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">orig_system</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">==</span> <span class="bp">None</span>
+        <span class="n">energy_xp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">atom_index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">shift</span>
+        <span class="n">energy_xp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">atom_index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">-=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span>
+        <span class="n">energy_xm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">atom_index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">shift</span>
+
+        <span class="n">system</span><span class="p">[</span><span class="n">atom_index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">shift</span>
+        <span class="n">energy_yp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">atom_index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">-=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span>
+        <span class="n">energy_ym</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">atom_index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">shift</span>
+
+        <span class="n">system</span><span class="p">[</span><span class="n">atom_index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="n">shift</span>
+        <span class="n">energy_zp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">atom_index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">-=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span>
+        <span class="n">energy_zm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">atom_index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="n">shift</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">==</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">(</span><span class="n">orig_system</span><span class="p">)</span>
+        
+        <span class="k">return</span> <span class="p">[</span> <span class="o">-</span><span class="p">(</span><span class="n">energy_xp</span><span class="o">-</span><span class="n">energy_xm</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span><span class="p">),</span>
+                 <span class="o">-</span><span class="p">(</span><span class="n">energy_yp</span><span class="o">-</span><span class="n">energy_ym</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span><span class="p">),</span>
+                 <span class="o">-</span><span class="p">(</span><span class="n">energy_zp</span><span class="o">-</span><span class="n">energy_zm</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span><span class="p">)</span> <span class="p">]</span>
+
+
+            </div>
+<div class="viewcode-block" id="Pysic.set_cutoffs"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.set_cutoffs">[docs]</a>    <span class="k">def</span> <span class="nf">set_cutoffs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cutoffs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copy and save the list of individual cutoff radii.</span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            cutoffs: list of doubles</span>
+<span class="sd">            new cutoffs</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">saved_cutoffs</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">)</span>
+            
+            </div>
+<div class="viewcode-block" id="Pysic.neighbor_lists_expanded"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.neighbor_lists_expanded">[docs]</a>    <span class="k">def</span> <span class="nf">neighbor_lists_expanded</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cutoffs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Check if the cutoffs have been expanded.</span>
+<span class="sd">                    </span>
+<span class="sd">        If the cutoffs have been made longer than before,</span>
+<span class="sd">        the neighbor lists have to be recalculated.</span>
+<span class="sd">        This method checks the individual cutoffs of all atoms</span>
+<span class="sd">        to check if the cutoffs have changed.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        cutoffs: list of doubles</span>
+<span class="sd">            new cutoffs</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">saved_cutoffs</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="n">cutoffs</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">True</span>
+                                
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_cutoffs</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cutoffs</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">for</span> <span class="n">old_cut</span><span class="p">,</span> <span class="n">new_cut</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">saved_cutoffs</span><span class="p">,</span> <span class="n">cutoffs</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">old_cut</span> <span class="o">&lt;</span> <span class="n">new_cut</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">True</span>
+                
+        <span class="k">return</span> <span class="bp">False</span>
+
+            
+
+</div>
+<div class="viewcode-block" id="Pysic.get_numerical_bond_order_gradient"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_numerical_bond_order_gradient">[docs]</a>    <span class="k">def</span> <span class="nf">get_numerical_bond_order_gradient</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinator</span><span class="p">,</span> <span class="n">atom_index</span><span class="p">,</span> <span class="n">moved_index</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">atoms</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Numerically calculates the gradient of a bond order factor with respect to moving a single particle.</span>
+
+<span class="sd">        This is for debugging the bond orders.&quot;&quot;&quot;</span>
+
+        <span class="k">if</span><span class="p">(</span><span class="n">atoms</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="n">system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">orig_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">system</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">orig_system</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">==</span> <span class="bp">None</span>
+        <span class="n">crd</span> <span class="o">=</span> <span class="n">coordinator</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">moved_index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">shift</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+        <span class="n">crd</span><span class="o">.</span><span class="n">calculate_bond_order_factors</span><span class="p">()</span>
+        <span class="n">bond_xp</span> <span class="o">=</span> <span class="n">crd</span><span class="o">.</span><span class="n">get_bond_order_factors</span><span class="p">()[</span><span class="n">atom_index</span><span class="p">]</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">moved_index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">-=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+        <span class="n">crd</span><span class="o">.</span><span class="n">calculate_bond_order_factors</span><span class="p">()</span>
+        <span class="n">bond_xm</span> <span class="o">=</span> <span class="n">crd</span><span class="o">.</span><span class="n">get_bond_order_factors</span><span class="p">()[</span><span class="n">atom_index</span><span class="p">]</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">moved_index</span><span class="p">]</span><span class="o">.</span><span class="n">x</span> <span class="o">+=</span> <span class="n">shift</span>        
+
+        <span class="n">system</span><span class="p">[</span><span class="n">moved_index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">shift</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+        <span class="n">crd</span><span class="o">.</span><span class="n">calculate_bond_order_factors</span><span class="p">()</span>
+        <span class="n">bond_yp</span> <span class="o">=</span> <span class="n">crd</span><span class="o">.</span><span class="n">get_bond_order_factors</span><span class="p">()[</span><span class="n">atom_index</span><span class="p">]</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">moved_index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">-=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+        <span class="n">crd</span><span class="o">.</span><span class="n">calculate_bond_order_factors</span><span class="p">()</span>
+        <span class="n">bond_ym</span> <span class="o">=</span> <span class="n">crd</span><span class="o">.</span><span class="n">get_bond_order_factors</span><span class="p">()[</span><span class="n">atom_index</span><span class="p">]</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">moved_index</span><span class="p">]</span><span class="o">.</span><span class="n">y</span> <span class="o">+=</span> <span class="n">shift</span>
+
+        <span class="n">system</span><span class="p">[</span><span class="n">moved_index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="n">shift</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+        <span class="n">crd</span><span class="o">.</span><span class="n">calculate_bond_order_factors</span><span class="p">()</span>
+        <span class="n">bond_zp</span> <span class="o">=</span> <span class="n">crd</span><span class="o">.</span><span class="n">get_bond_order_factors</span><span class="p">()[</span><span class="n">atom_index</span><span class="p">]</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">moved_index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">-=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+        <span class="n">crd</span><span class="o">.</span><span class="n">calculate_bond_order_factors</span><span class="p">()</span>
+        <span class="n">bond_zm</span> <span class="o">=</span> <span class="n">crd</span><span class="o">.</span><span class="n">get_bond_order_factors</span><span class="p">()[</span><span class="n">atom_index</span><span class="p">]</span>
+        <span class="n">system</span><span class="p">[</span><span class="n">moved_index</span><span class="p">]</span><span class="o">.</span><span class="n">z</span> <span class="o">+=</span> <span class="n">shift</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">==</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">orig_system</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+
+        
+        <span class="k">return</span> <span class="p">[</span> <span class="p">(</span><span class="n">bond_xp</span><span class="o">-</span><span class="n">bond_xm</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span><span class="p">),</span>
+                 <span class="p">(</span><span class="n">bond_yp</span><span class="o">-</span><span class="n">bond_ym</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span><span class="p">),</span>
+                 <span class="p">(</span><span class="n">bond_zp</span><span class="o">-</span><span class="n">bond_zm</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span><span class="p">)</span> <span class="p">]</span>
+
+
+
+    </div>
+<div class="viewcode-block" id="Pysic.get_numerical_electronegativity"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic.get_numerical_electronegativity">[docs]</a>    <span class="k">def</span> <span class="nf">get_numerical_electronegativity</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atom_index</span><span class="p">,</span> <span class="n">shift</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">atoms</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Numerically calculates the derivative of energy with respect to charging a single particle.</span>
+<span class="sd">            </span>
+<span class="sd">            This is for debugging the electronegativities.&quot;&quot;&quot;</span>
+        
+        <span class="k">if</span><span class="p">(</span><span class="n">atoms</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="n">system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">orig_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">system</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="n">orig_system</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        
+        <span class="n">charges</span> <span class="o">=</span> <span class="n">system</span><span class="o">.</span><span class="n">get_charges</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">==</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+        <span class="n">charges</span><span class="p">[</span><span class="n">atom_index</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">1.0</span><span class="o">*</span><span class="n">shift</span>
+        <span class="n">system</span><span class="o">.</span><span class="n">set_charges</span><span class="p">(</span><span class="n">charges</span><span class="p">)</span>
+        <span class="n">energy_p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+        <span class="n">charges</span><span class="p">[</span><span class="n">atom_index</span><span class="p">]</span> <span class="o">-=</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span>
+        <span class="n">system</span><span class="o">.</span><span class="n">set_charges</span><span class="p">(</span><span class="n">charges</span><span class="p">)</span>
+        <span class="n">energy_m</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+        <span class="n">charges</span><span class="p">[</span><span class="n">atom_index</span><span class="p">]</span> <span class="o">+=</span> <span class="mf">1.0</span><span class="o">*</span><span class="n">shift</span>
+        <span class="n">system</span><span class="o">.</span><span class="n">set_charges</span><span class="p">(</span><span class="n">charges</span><span class="p">)</span>
+        
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">energy</span> <span class="o">==</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">orig_system</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+        
+        <span class="k">return</span> <span class="p">(</span><span class="n">energy_m</span><span class="o">-</span><span class="n">energy_p</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="n">shift</span><span class="p">)</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

@@ -110,7 +110,7 @@ implementing an efficient numeric core written in Fortran. The immediate aim
 of the Pysic project is to implement advanced variable charge potentials.</p>
 <p>Pysic is designed to interface with the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a> simulation environment.</p>
 <p>The code is developed as part of the <a class="reference external" href="http://webhotel2.tut.fi/fys/mordred/">Mordred</a> project.</p>
-<p>Pysic is an open source code with emphasis on making the program simple to learn and control as well as the source code readable, extendable and conforming to good programming standards. The source code is freely available at the <a class="reference external" href="https://github.com/thynnine/pysic/">github</a> repository.</p>
+<p>Pysic is an open source code with emphasis on making the program simple to learn and control as well as the source code readable, extendable and conforming to good programming standards. The source code is freely available at the <a class="reference external" href="https://github.com/thynnine/pysic/">github</a> repository. <strong>Note the relocation since June 2012.</strong></p>
 <p>Pysic is in development. Simulations can be run with it, but many parts
 of the program are not yet fully tested and so bugs must be expected.
 Similarly, also this documentation is being constantly updated.</p>
@@ -131,8 +131,16 @@ Similarly, also this documentation is being constantly updated.</p>
 <h2>Getting Pysic<a class="headerlink" href="#getting-pysic" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="setup.html">Getting Pysic</a></li>
-<li class="toctree-l1"><a class="reference internal" href="setup.html#compiling-pysic">Compiling Pysic</a></li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html">Getting Pysic</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#contents-of-the-pysic-repository">Contents of the Pysic repository</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="setup.html#compiling-pysic">Compiling Pysic</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#requirements">Requirements</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#quick-compilation">Quick compilation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="setup.html#compilation-under-the-hood">Compilation under the hood</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="setup.html#external-resources">External resources</a></li>
 </ul>
 </div>
@@ -191,7 +199,12 @@ Similarly, also this documentation is being constantly updated.</p>
 <li class="toctree-l2"><a class="reference internal" href="pysic.html#functions-of-the-pysic-module">Functions of the pysic module</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="pysic_utility.html">Pysic Utility module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pysic_utility.html">Pysic Utility modules</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pysic_utility.html#module-pysic.utility.plot">Plot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pysic_utility.html#module-pysic.utility.convenience">Convenience</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pysic_utility.html#module-pysic.utility.geometry">Geometry</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="pysic_fortran.html">Pysic Fortran module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="pysic_fortran.html#modules-of-the-fortran-core-of-pysic">Modules of the Fortran core of Pysic</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="PyInterface_f90.html">pysic_interface (PyInterface.f90)</a></li>

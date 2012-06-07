@@ -87,21 +87,9 @@ Then, you can access all the functionality in the module :mod:`pysic`::
 
 The Fortran interface module is imported with :mod:`pysic` as ``pysic.pf.pysic_interface``, but it is strongly recommended you do not touch the Fortran core directly.
 
-The utility module :mod:`pysic_utility` is also imported as ``pysic.pu``, but it is also convenient to import it separately::
-
-  >>> import pysic_utility
-  >>> pysic_utility.plot_energy_on_plane(0,system,[[1,0,0],[0,1,0]],[10,10])
-
-A shorthand can be introduced through the ``as`` keyword::
-
-  >>> import pysic_utility as pu
-  >>> pu.plot_energy_on_plane(0,system,[[1,0,0],[0,1,0]],[10,10])
-
-
 Altogether, when the module :mod:`pysic` is imported, it imports the following non-standard modules::
 
-  >>> import pysic_fortran as pf
-  >>> import pysic_utility as pu
+  >>> import pysic.pysic_fortran as pf
   >>> import numpy as np
   >>> import ase.calculators.neighborlist as nbl
 
@@ -144,7 +132,7 @@ potential
    \sigma = 2.5
 
 In the code above, ``system`` is an `ASE Atoms`_ object containing the structure of the system to be calculated -
-two He atoms in this case. The object ``calc`` is an instance of :class:`~pysic.Pysic`, the `ASE calculator`_ class
+two He atoms in this case. The object ``calc`` is an instance of :class:`~pysic.calculator.Pysic`, the `ASE calculator`_ class
 defined by Pysic. The interactions governing the system are defined by the ``physics`` object, which is an instance of the
 :class:`~pysic.Potential` class of Pysic.
 

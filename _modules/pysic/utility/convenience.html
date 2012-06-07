@@ -1,0 +1,213 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.utility.convenience &mdash; Pysic 0.4.3 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4.3',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.3 documentation" href="../../../index.html" />
+    <link rel="up" title="pysic" href="../../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.utility.convenience</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+
+<div class="viewcode-block" id="expand_symbols_table"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.convenience.expand_symbols_table">[docs]</a><span class="k">def</span> <span class="nf">expand_symbols_table</span><span class="p">(</span><span class="n">symbol_list</span><span class="p">,</span><span class="nb">type</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a table of symbols for a BondOrderParameters object.</span>
+<span class="sd">            </span>
+<span class="sd">            The syntax for defining the targets of bond order factors is precise</span>
+<span class="sd">            but somewhat cumbersome due to the large number of permutations one gets</span>
+<span class="sd">            when the number of bodies increases. Oftentimes one does not need such</span>
+<span class="sd">            fine control over all the parameters since many of them have the same</span>
+<span class="sd">            numerical values. Therefore it is convenient to be able to define</span>
+<span class="sd">            the targets in a more compact way.</span>
+<span class="sd">            </span>
+<span class="sd">            This method generates the detailed target tables from compact syntax.</span>
+<span class="sd">            By default, the method takes a list of list and multiplies each list</span>
+<span class="sd">            with the others (note the call for a static method)::</span>
+<span class="sd">            </span>
+<span class="sd">             &gt;&gt;&gt; pysic.BondOrderParameters.expand_symbols_table([  &#39;Si&#39;,</span>
+<span class="sd">             ...                                                  [&#39;O&#39;, &#39;C&#39;],</span>
+<span class="sd">             ...                                                  [&#39;H&#39;, &#39;O&#39;] ])</span>
+<span class="sd">             [[&#39;Si&#39;, &#39;O&#39;, &#39;H&#39;],</span>
+<span class="sd">              [&#39;Si&#39;, &#39;C&#39;, &#39;H&#39;],</span>
+<span class="sd">              [&#39;Si&#39;, &#39;O&#39;, &#39;O&#39;],</span>
+<span class="sd">              [&#39;Si&#39;, &#39;C&#39;, &#39;O&#39;]]</span>
+<span class="sd">            </span>
+<span class="sd">            Other custom types of formatting can be defined with the type parameter.</span>
+<span class="sd">            </span>
+<span class="sd">            For type &#39;triplet&#39;, the target list is created for triplets A-B-C from an input list of the form::</span>
+<span class="sd">            </span>
+<span class="sd">             [&#39;A&#39;, &#39;B&#39;, &#39;C&#39;]</span>
+<span class="sd">            </span>
+<span class="sd">            Remember that in the symbol table accepted by the BondOrderParameters, one needs to define</span>
+<span class="sd">            the B-A and B-C bonds separately and so B appears as the first symbol in the output and the other</span>
+<span class="sd">            two appear as second and third (both cases)::</span>
+<span class="sd">            </span>
+<span class="sd">             [[&#39;B&#39;, &#39;A&#39;, &#39;C&#39;],</span>
+<span class="sd">              [&#39;B&#39;, &#39;C&#39;, &#39;A&#39;]]</span>
+<span class="sd">            </span>
+<span class="sd">            However, for an A-B-A triplet, the A-B bond should only be defined once to prevent double counting.</span>
+<span class="sd">            Like the default function, also here several triplets can be defined at once::</span>
+<span class="sd">            </span>
+<span class="sd">             &gt;&gt;&gt; pysic.BondOrderParameters.expand_symbols_table([ [&#39;H&#39;, &#39;O&#39;],</span>
+<span class="sd">             ...                                                   &#39;Si&#39;,</span>
+<span class="sd">             ...                                                  [&#39;O&#39;, &#39;C&#39;] ],</span>
+<span class="sd">             ...                                                type=&#39;triplet&#39;)</span>
+<span class="sd">             [[&#39;Si&#39;, &#39;H&#39;, &#39;O&#39;],</span>
+<span class="sd">              [&#39;Si&#39;, &#39;O&#39;, &#39;H&#39;],</span>
+<span class="sd">              [&#39;Si&#39;, &#39;H&#39;, &#39;C&#39;],</span>
+<span class="sd">              [&#39;Si&#39;, &#39;C&#39;, &#39;H&#39;],</span>
+<span class="sd">              [&#39;Si&#39;, &#39;O&#39;, &#39;O&#39;],</span>
+<span class="sd">              [&#39;Si&#39;, &#39;O&#39;, &#39;C&#39;],</span>
+<span class="sd">              [&#39;Si&#39;, &#39;C&#39;, &#39;O&#39;]]</span>
+<span class="sd">            </span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            symbol_list: list of strings</span>
+<span class="sd">            list to be expanded to a table</span>
+<span class="sd">            type: string</span>
+<span class="sd">            specifies a custom way of generating the table</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">symbol_list</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">symbol_list</span><span class="p">]</span>
+    <span class="n">n_slots</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">symbol_list</span><span class="p">)</span>
+    <span class="n">n_subslots</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">sub</span> <span class="ow">in</span> <span class="n">symbol_list</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
+            <span class="n">n_subslots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sub</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n_subslots</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        
+    <span class="n">table</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span><span class="p">(</span><span class="nb">type</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+        <span class="n">slot_indices</span> <span class="o">=</span> <span class="n">n_slots</span><span class="o">*</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">while</span> <span class="p">(</span><span class="n">slot_indices</span><span class="p">[</span><span class="n">n_slots</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">n_subslots</span><span class="p">[</span><span class="n">n_slots</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="n">row</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_slots</span><span class="p">):</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">symbol_list</span><span class="p">[</span><span class="n">i</span><span class="p">],</span><span class="nb">list</span><span class="p">):</span>
+                    <span class="n">symb</span> <span class="o">=</span> <span class="n">symbol_list</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">slot_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">symb</span> <span class="o">=</span> <span class="n">symbol_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">row</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">symb</span><span class="p">)</span>
+            <span class="n">table</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+            <span class="n">slot_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_slots</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">slot_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">n_subslots</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                    <span class="k">if</span><span class="p">(</span><span class="n">i</span> <span class="o">&lt;</span> <span class="n">n_slots</span><span class="o">-</span><span class="mi">1</span><span class="p">):</span>
+                        <span class="n">slot_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="n">slot_indices</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">pass</span>
+    <span class="k">elif</span><span class="p">(</span><span class="nb">type</span> <span class="o">==</span> <span class="s">&#39;triplet&#39;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">n_slots</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_subslots</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_subslots</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_subslots</span><span class="p">[</span><span class="mi">2</span><span class="p">]):</span>
+                    
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">symbol_list</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span><span class="nb">list</span><span class="p">):</span>
+                        <span class="n">symb1</span> <span class="o">=</span> <span class="n">symbol_list</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">symb1</span> <span class="o">=</span> <span class="n">symbol_list</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">symbol_list</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span><span class="nb">list</span><span class="p">):</span>
+                        <span class="n">symb0</span> <span class="o">=</span> <span class="n">symbol_list</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">symb0</span> <span class="o">=</span> <span class="n">symbol_list</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">symbol_list</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span><span class="nb">list</span><span class="p">):</span>
+                        <span class="n">symb2</span> <span class="o">=</span> <span class="n">symbol_list</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">k</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">symb2</span> <span class="o">=</span> <span class="n">symbol_list</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                        
+                    <span class="n">table</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">symb1</span><span class="p">,</span><span class="n">symb0</span><span class="p">,</span><span class="n">symb2</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="n">symb0</span> <span class="o">!=</span> <span class="n">symb2</span><span class="p">:</span>
+                        <span class="n">table</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">symb1</span><span class="p">,</span><span class="n">symb2</span><span class="p">,</span><span class="n">symb0</span><span class="p">])</span>
+        
+        
+    <span class="k">return</span> <span class="n">table</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

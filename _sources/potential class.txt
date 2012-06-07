@@ -14,7 +14,7 @@
 Potential class
 ============================
 
-This class defines an atomistic potential to be used by :class:`~pysic.Pysic`.
+This class defines an atomistic potential to be used by :class:`~pysic.calculator.Pysic`.
 An interaction between two or more particles can be defined and the 
 targets of the interaction can be specified by chemical symbol, tag, or index. 
 The available types of potentials are always inquired from the

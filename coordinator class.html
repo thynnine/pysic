@@ -110,7 +110,7 @@ needed for bond order or Tersoff-like potentials. Here, bond order refers
 roughly to the number of neighbors of an atom, however, the bond order factors may
 depend also on the atomic distances, angles and other local geometric factors.</p>
 <p>To use a <a class="reference internal" href="#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a>, one must pass it first to a <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> object,
-which is further given to a <a class="reference internal" href="pysic class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator. Then, one can use the
+which is further given to a <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator. Then, one can use the
 calculator to calculate forces or just the bond order factors. When a <a class="reference internal" href="#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a>
 is added to a <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>, the potential is multiplied by the bond order factors
 as defined by the Coordinator.</p>
@@ -241,7 +241,7 @@ the type of functionality.</p>
 <h2>Full documentation of the Coordinator class<a class="headerlink" href="#full-documentation-of-the-coordinator-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pysic.Coordinator">
-<em class="property">class </em><tt class="descclassname">pysic.</tt><tt class="descname">Coordinator</tt><big>(</big><em>bond_order_parameters=None</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Coordinator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Coordinator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pysic.</tt><tt class="descname">Coordinator</tt><big>(</big><em>bond_order_parameters=None</em><big>)</big><a class="headerlink" href="#pysic.Coordinator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for representing a calculator for atomic coordination numbers and bond order factors.</p>
 <p>Pysic can utilise &#8216;Tersoff-like&#8217; potentials which are locally scaled according to
 bond order factors, related to the number of neighbors of each atom.
@@ -262,7 +262,7 @@ standalone objects as well. They always operate on the geometry currently alloca
 </dl>
 <dl class="method">
 <dt id="pysic.Coordinator.add_bond_order_parameters">
-<tt class="descname">add_bond_order_parameters</tt><big>(</big><em>params</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Coordinator.add_bond_order_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Coordinator.add_bond_order_parameters" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">add_bond_order_parameters</tt><big>(</big><em>params</em><big>)</big><a class="headerlink" href="#pysic.Coordinator.add_bond_order_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds the given parameters to this Coordinator.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -273,7 +273,7 @@ standalone objects as well. They always operate on the geometry currently alloca
 
 <dl class="method">
 <dt id="pysic.Coordinator.calculate_bond_order_factors">
-<tt class="descname">calculate_bond_order_factors</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Coordinator.calculate_bond_order_factors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Coordinator.calculate_bond_order_factors" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">calculate_bond_order_factors</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Coordinator.calculate_bond_order_factors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Recalculates the bond order factors for all atoms and stores them.</p>
 <p>Similarly to coordination numbers (<tt class="xref py py-meth docutils literal"><span class="pre">calculate_coordination()</span></tt>),
 this method only calculates the factors and stores them but does not return them.</p>
@@ -281,7 +281,7 @@ this method only calculates the factors and stores them but does not return them
 
 <dl class="method">
 <dt id="pysic.Coordinator.get_bond_order_factors">
-<tt class="descname">get_bond_order_factors</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Coordinator.get_bond_order_factors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Coordinator.get_bond_order_factors" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_bond_order_factors</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Coordinator.get_bond_order_factors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns an array containing the bond order factors of all atoms.</p>
 <p>This method does not calculate the bond order factors but returns the
 precalculated array.</p>
@@ -289,7 +289,7 @@ precalculated array.</p>
 
 <dl class="method">
 <dt id="pysic.Coordinator.get_bond_order_gradients">
-<tt class="descname">get_bond_order_gradients</tt><big>(</big><em>atom_index</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Coordinator.get_bond_order_gradients"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Coordinator.get_bond_order_gradients" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_bond_order_gradients</tt><big>(</big><em>atom_index</em><big>)</big><a class="headerlink" href="#pysic.Coordinator.get_bond_order_gradients" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns an array containing the gradients of bond order factors of all atoms with respect to moving one atom.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -300,7 +300,7 @@ precalculated array.</p>
 
 <dl class="method">
 <dt id="pysic.Coordinator.get_bond_order_gradients_of_factor">
-<tt class="descname">get_bond_order_gradients_of_factor</tt><big>(</big><em>atom_index</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Coordinator.get_bond_order_gradients_of_factor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Coordinator.get_bond_order_gradients_of_factor" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_bond_order_gradients_of_factor</tt><big>(</big><em>atom_index</em><big>)</big><a class="headerlink" href="#pysic.Coordinator.get_bond_order_gradients_of_factor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns an array containing the gradients of the bond order factor of one atom with respect to moving any atom.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -311,19 +311,19 @@ precalculated array.</p>
 
 <dl class="method">
 <dt id="pysic.Coordinator.get_bond_order_parameters">
-<tt class="descname">get_bond_order_parameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Coordinator.get_bond_order_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Coordinator.get_bond_order_parameters" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_bond_order_parameters</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Coordinator.get_bond_order_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the bond order parameters of this Coordinator.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pysic.Coordinator.get_group_index">
-<tt class="descname">get_group_index</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#Coordinator.get_group_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Coordinator.get_group_index" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_group_index</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Coordinator.get_group_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the group index of the Coordinator.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pysic.Coordinator.set_bond_order_parameters">
-<tt class="descname">set_bond_order_parameters</tt><big>(</big><em>params</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Coordinator.set_bond_order_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Coordinator.set_bond_order_parameters" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_bond_order_parameters</tt><big>(</big><em>params</em><big>)</big><a class="headerlink" href="#pysic.Coordinator.set_bond_order_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assigns new bond order parameters to this Coordinator.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -334,7 +334,7 @@ precalculated array.</p>
 
 <dl class="method">
 <dt id="pysic.Coordinator.set_group_index">
-<tt class="descname">set_group_index</tt><big>(</big><em>index</em><big>)</big><a class="reference internal" href="_modules/pysic.html#Coordinator.set_group_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.Coordinator.set_group_index" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_group_index</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#pysic.Coordinator.set_group_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets an index for the coordinator object.</p>
 <p>In the fortran core, bond order parameters are calculated by
 bond order parameters. Since a coordinator contains many, they are grouped

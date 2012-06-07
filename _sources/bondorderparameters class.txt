@@ -161,7 +161,7 @@ or alternatively in pieces by a series of commands::
    >>> bonds.set_parameter_value('h', h)
 
 To be used in calculations, this is then passed on to a :class:`~pysic.Coordinator`, 
-:class:`~pysic.Potential`, and :class:`~pysic.Pysic` with::
+:class:`~pysic.Potential`, and :class:`~pysic.calculator.Pysic` with::
 
     >>> crd = pysic.Coordinator( bonds )
     >>> pot = pysic.Potential( ... , coordinator=crd )
@@ -255,10 +255,10 @@ In principle, one can attach a different set of parameters to each of these.
 Often though the parameters are mostly the same,
 and writing these kinds of lists for all possible combinations is cumbersome. 
 To help in generating the tables, the utility method 
-:meth:`~pysic_utility.expand_symbols_table` can be used.
+:meth:`~pysic.utility.convenience.expand_symbols_table` can be used.
 For instance, the full list of triplets above can be created with::
 
-   >>> pysic_utility.expand_symbols_table([['C', 'O', 'H'], 
+   >>> pysic.utility.convenience.expand_symbols_table([['C', 'O', 'H'], 
    ...                                     ['C', 'O', 'H'], 
    ...                                     ['C', 'O', 'H']])
 

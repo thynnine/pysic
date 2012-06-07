@@ -27,7 +27,7 @@ roughly to the number of neighbors of an atom, however, the bond order factors m
 depend also on the atomic distances, angles and other local geometric factors.
 
 To use a :class:`~pysic.Coordinator`, one must pass it first to a :class:`~pysic.Potential` object,
-which is further given to a :class:`~pysic.Pysic` calculator. Then, one can use the
+which is further given to a :class:`~pysic.calculator.Pysic` calculator. Then, one can use the
 calculator to calculate forces or just the bond order factors. When a :class:`~pysic.Coordinator`
 is added to a :class:`~pysic.Potential`, the potential is multiplied by the bond order factors
 as defined by the Coordinator.

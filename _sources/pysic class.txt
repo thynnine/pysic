@@ -78,70 +78,70 @@ the calculator with one or several :class:`~pysic.Potential` objects.
 List of methods
 ---------------
   
-Below is a list of methods in :class:`~pysic.Pysic`, grouped according to
+Below is a list of methods in :class:`~pysic.calculator.Pysic`, grouped according to
 the type of functionality.
   
 Structure handling
 __________________
   
-- :meth:`~pysic.Pysic.create_neighbor_lists` (meant for internal use)
-- :meth:`~pysic.Pysic.get_atoms`
-- :meth:`~pysic.Pysic.get_neighbor_lists`
-- :meth:`~pysic.Pysic.neighbor_lists_expanded` (meant for internal use)
-- :meth:`~pysic.Pysic.set_atoms`
+- :meth:`~pysic.calculator.Pysic.create_neighbor_lists` (meant for internal use)
+- :meth:`~pysic.calculator.Pysic.get_atoms`
+- :meth:`~pysic.calculator.Pysic.get_neighbor_lists`
+- :meth:`~pysic.calculator.Pysic.neighbor_lists_expanded` (meant for internal use)
+- :meth:`~pysic.calculator.Pysic.set_atoms`
   
 Potential handling
 __________________
   
-- :meth:`~pysic.Pysic.add_potential`
-- :meth:`~pysic.Pysic.get_individual_cutoffs`
-- :meth:`~pysic.Pysic.get_potentials`
-- :meth:`~pysic.Pysic.set_potentials`
+- :meth:`~pysic.calculator.Pysic.add_potential`
+- :meth:`~pysic.calculator.Pysic.get_individual_cutoffs`
+- :meth:`~pysic.calculator.Pysic.get_potentials`
+- :meth:`~pysic.calculator.Pysic.set_potentials`
 
 Coulomb handling
 ________________
 
-- :meth:`~pysic.Pysic.get_coulomb_summation`
-- :meth:`~pysic.Pysic.set_coulomb_summation`
+- :meth:`~pysic.calculator.Pysic.get_coulomb_summation`
+- :meth:`~pysic.calculator.Pysic.set_coulomb_summation`
 
 Charge relaxation handling
 __________________________
 
-- :meth:`~pysic.Pysic.get_charge_relaxation`
-- :meth:`~pysic.Pysic.set_charge_relaxation`  
+- :meth:`~pysic.calculator.Pysic.get_charge_relaxation`
+- :meth:`~pysic.calculator.Pysic.set_charge_relaxation`  
 
 Calculations
 ____________
   
-- :meth:`~pysic.Pysic.calculate_electronegativities` (meant for internal use)
-- :meth:`~pysic.Pysic.calculate_energy` (meant for internal use)
-- :meth:`~pysic.Pysic.calculate_forces` (meant for internal use)
-- :meth:`~pysic.Pysic.calculate_stress` (meant for internal use)
-- :meth:`~pysic.Pysic.calculation_required` (meant for internal use)
-- :meth:`~pysic.Pysic.get_electronegativities`
-- :meth:`~pysic.Pysic.get_electronegativity_differences`
-- :meth:`~pysic.Pysic.get_forces`
-- :meth:`~pysic.Pysic.get_numerical_bond_order_gradient` (for testing)
-- :meth:`~pysic.Pysic.get_numerical_energy_gradient` (for testing)
-- :meth:`~pysic.Pysic.get_numerical_electronegativity` (for testing)
-- :meth:`~pysic.Pysic.get_potential_energy`
-- :meth:`~pysic.Pysic.get_stress`
+- :meth:`~pysic.calculator.Pysic.calculate_electronegativities` (meant for internal use)
+- :meth:`~pysic.calculator.Pysic.calculate_energy` (meant for internal use)
+- :meth:`~pysic.calculator.Pysic.calculate_forces` (meant for internal use)
+- :meth:`~pysic.calculator.Pysic.calculate_stress` (meant for internal use)
+- :meth:`~pysic.calculator.Pysic.calculation_required` (meant for internal use)
+- :meth:`~pysic.calculator.Pysic.get_electronegativities`
+- :meth:`~pysic.calculator.Pysic.get_electronegativity_differences`
+- :meth:`~pysic.calculator.Pysic.get_forces`
+- :meth:`~pysic.calculator.Pysic.get_numerical_bond_order_gradient` (for testing)
+- :meth:`~pysic.calculator.Pysic.get_numerical_energy_gradient` (for testing)
+- :meth:`~pysic.calculator.Pysic.get_numerical_electronegativity` (for testing)
+- :meth:`~pysic.calculator.Pysic.get_potential_energy`
+- :meth:`~pysic.calculator.Pysic.get_stress`
 
   
 Core
 ____
   
-- :data:`~pysic.Pysic.core`
-- :meth:`~pysic.Pysic.core_initialization_is_forced`
-- :meth:`~pysic.Pysic.force_core_initialization`
-- :meth:`~pysic.Pysic.initialize_fortran_core`
-- :meth:`~pysic.Pysic.set_core`
-- :meth:`~pysic.Pysic.update_core_charges` (meant for internal use)
-- :meth:`~pysic.Pysic.update_core_coordinates` (meant for internal use)
-- :meth:`~pysic.Pysic.update_core_coulomb` (meant for internal use)
-- :meth:`~pysic.Pysic.update_core_neighbor_lists` (meant for internal use)
-- :meth:`~pysic.Pysic.update_core_potential_lists` (meant for internal use)
-- :meth:`~pysic.Pysic.update_core_supercell` (meant for internal use)
+- :data:`~pysic.calculator.Pysic.core`
+- :meth:`~pysic.calculator.Pysic.core_initialization_is_forced`
+- :meth:`~pysic.calculator.Pysic.force_core_initialization`
+- :meth:`~pysic.calculator.Pysic.initialize_fortran_core`
+- :meth:`~pysic.calculator.Pysic.set_core`
+- :meth:`~pysic.calculator.Pysic.update_core_charges` (meant for internal use)
+- :meth:`~pysic.calculator.Pysic.update_core_coordinates` (meant for internal use)
+- :meth:`~pysic.calculator.Pysic.update_core_coulomb` (meant for internal use)
+- :meth:`~pysic.calculator.Pysic.update_core_neighbor_lists` (meant for internal use)
+- :meth:`~pysic.calculator.Pysic.update_core_potential_lists` (meant for internal use)
+- :meth:`~pysic.calculator.Pysic.update_core_supercell` (meant for internal use)
 
 
 
@@ -149,7 +149,7 @@ ____
 Full documentation of the Pysic class
 -------------------------------------
 
-.. currentmodule:: pysic
+.. currentmodule:: pysic.calculator
 .. autoclass:: Pysic
    :members:
    :undoc-members:

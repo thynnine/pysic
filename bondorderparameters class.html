@@ -139,10 +139,7 @@ by defining a proximity function which is 1 for small separations and
 0 for large distances.</p>
 <div class="math">
 \[\begin{split}f(r) = \begin{cases} 1, &amp; r &lt; r_\mathrm{soft} \\ \frac{1}{2}\left(1+\cos \pi\frac{r-r_\mathrm{soft}}{r_\mathrm{hard}-r_\mathrm{soft}}\right), &amp; r_\mathrm{soft} &lt; r &lt; r_\mathrm{hard} \\ 0, &amp; r &gt; r_\mathrm{hard} \end{cases}.\end{split}\]</div>
-<p>[<a class="reference external" href="./plot_directive/inline/1cd7aa1eaf.hires.png">hires.png</a>, <a class="reference external" href="./plot_directive/inline/1cd7aa1eaf.pdf">pdf</a>]</p>
-<div class="figure">
-<img alt="_images/1cd7aa1eaf.png" src="_images/1cd7aa1eaf.png" />
-</div>
+[<a class="reference external" href="./plot_directive/inline/1cd7aa1eaf.py">source code</a>]<p>Exception occurred rendering plot.</p>
 <p>Since bond order factors such as
 atomic coordination need not decay as a function of distance, one must always
 define a margin for continuous cutoff in bond order factors.</p>
@@ -197,7 +194,7 @@ Such a bond order factor could be created with the following command:</p>
 </pre></div>
 </div>
 <p>To be used in calculations, this is then passed on to a <a class="reference internal" href="coordinator class.html#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a>,
-<a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>, and <a class="reference internal" href="pysic class.html#pysic.Pysic" title="pysic.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> with:</p>
+<a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>, and <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> with:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crd</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Coordinator</span><span class="p">(</span> <span class="n">bonds</span> <span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">pot</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span> <span class="o">...</span> <span class="p">,</span> <span class="n">coordinator</span><span class="o">=</span><span class="n">crd</span> <span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cal</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">(</span> <span class="n">potentials</span><span class="o">=</span><span class="n">pot</span> <span class="p">)</span>
@@ -286,9 +283,9 @@ h_\mathrm{Si-Si} = \mathtt{h\_sisi}\end{split}\]</div>
 Often though the parameters are mostly the same,
 and writing these kinds of lists for all possible combinations is cumbersome.
 To help in generating the tables, the utility method
-<a class="reference internal" href="pysic_utility.html#pysic_utility.expand_symbols_table" title="pysic_utility.expand_symbols_table"><tt class="xref py py-meth docutils literal"><span class="pre">expand_symbols_table()</span></tt></a> can be used.
+<a class="reference internal" href="pysic_utility.html#pysic.utility.convenience.expand_symbols_table" title="pysic.utility.convenience.expand_symbols_table"><tt class="xref py py-meth docutils literal"><span class="pre">expand_symbols_table()</span></tt></a> can be used.
 For instance, the full list of triplets above can be created with:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pysic_utility</span><span class="o">.</span><span class="n">expand_symbols_table</span><span class="p">([[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pysic</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">convenience</span><span class="o">.</span><span class="n">expand_symbols_table</span><span class="p">([[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>
 <span class="gp">... </span>                                    <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">],</span>
 <span class="gp">... </span>                                    <span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;H&#39;</span><span class="p">]])</span>
 </pre></div>
@@ -416,7 +413,7 @@ the type of functionality.</p>
 <h2>Full documentation of the BondOrderParameters class<a class="headerlink" href="#full-documentation-of-the-bondorderparameters-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pysic.BondOrderParameters">
-<em class="property">class </em><tt class="descclassname">pysic.</tt><tt class="descname">BondOrderParameters</tt><big>(</big><em>bond_order_type</em>, <em>cutoff=0.0</em>, <em>cutoff_margin=0.0</em>, <em>parameters=None</em>, <em>symbols=None</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pysic.</tt><tt class="descname">BondOrderParameters</tt><big>(</big><em>bond_order_type</em>, <em>cutoff=0.0</em>, <em>cutoff_margin=0.0</em>, <em>parameters=None</em>, <em>symbols=None</em><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for representing a collection of parameters for bond order calculations.</p>
 <p>Calculating bond order factors using Tersoff-like methods defined in
 <a class="reference internal" href="coordinator class.html#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> requires several parameters per element and
@@ -444,7 +441,7 @@ Any atom farther than this will not contribute to the neighbor count.</dd>
 </dl>
 <dl class="method">
 <dt id="pysic.BondOrderParameters.accepts_parameters">
-<tt class="descname">accepts_parameters</tt><big>(</big><em>params</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.accepts_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.accepts_parameters" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">accepts_parameters</tt><big>(</big><em>params</em><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.accepts_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Test if the given parameters array has the correct dimensions.</p>
 <p>A bond order parameter can contain separate parameters for single,
 pair etc. elements and each class can have a different number of
@@ -459,7 +456,7 @@ dimensions.</p>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.accepts_target_list">
-<tt class="descname">accepts_target_list</tt><big>(</big><em>targets</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.accepts_target_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.accepts_target_list" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">accepts_target_list</tt><big>(</big><em>targets</em><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.accepts_target_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tests whether a list is suitable as a list of targets, i.e., element symbols
 and returns True or False accordingly.</p>
 <p>A list of targets should be of the format:</p>
@@ -477,7 +474,7 @@ and returns True or False accordingly.</p>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.add_symbols">
-<tt class="descname">add_symbols</tt><big>(</big><em>symbols</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.add_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.add_symbols" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">add_symbols</tt><big>(</big><em>symbols</em><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.add_symbols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds the given symbols to the list of symbols.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -488,49 +485,49 @@ and returns True or False accordingly.</p>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.get_bond_order_type">
-<tt class="descname">get_bond_order_type</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_bond_order_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_bond_order_type" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_bond_order_type</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.get_bond_order_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the keyword specifying the type of the bond order factor.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.get_cutoff">
-<tt class="descname">get_cutoff</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_cutoff" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_cutoff</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.get_cutoff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the cutoff.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.get_cutoff_margin">
-<tt class="descname">get_cutoff_margin</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_cutoff_margin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_cutoff_margin" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_cutoff_margin</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.get_cutoff_margin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the margin for a smooth cutoff.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.get_different_symbols">
-<tt class="descname">get_different_symbols</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_different_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_different_symbols" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_different_symbols</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.get_different_symbols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list containing each symbol the potential affects once.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.get_number_of_parameters">
-<tt class="descname">get_number_of_parameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_number_of_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_number_of_parameters" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_number_of_parameters</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.get_number_of_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the number of parameters the bond order parameter object contains.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.get_number_of_targets">
-<tt class="descname">get_number_of_targets</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_number_of_targets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_number_of_targets" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_number_of_targets</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.get_number_of_targets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the (maximum) number of targets the bond order factor affects.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.get_parameter_names">
-<tt class="descname">get_parameter_names</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_parameter_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_parameter_names" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_parameter_names</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.get_parameter_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of the names of the parameters of the potential.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.get_parameter_value">
-<tt class="descname">get_parameter_value</tt><big>(</big><em>param_name</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_parameter_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_parameter_value" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_parameter_value</tt><big>(</big><em>param_name</em><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.get_parameter_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the value of the given parameter.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -541,13 +538,13 @@ and returns True or False accordingly.</p>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.get_parameter_values">
-<tt class="descname">get_parameter_values</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_parameter_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_parameter_values" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_parameter_values</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.get_parameter_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list containing the current parameter values of the potential.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.get_parameters_as_list">
-<tt class="descname">get_parameters_as_list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_parameters_as_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_parameters_as_list" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_parameters_as_list</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.get_parameters_as_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the parameters of the bond order factor as a single list.</p>
 <p>The generated list first contains the single element parameters, then
 pair parameters, etc.</p>
@@ -555,19 +552,19 @@ pair parameters, etc.</p>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.get_soft_cutoff">
-<tt class="descname">get_soft_cutoff</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_soft_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_soft_cutoff" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_soft_cutoff</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.get_soft_cutoff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the lower limit for a smooth cutoff.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.get_symbols">
-<tt class="descname">get_symbols</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.get_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.get_symbols" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_symbols</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.get_symbols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the symbols the bond parameters affect.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.set_cutoff">
-<tt class="descname">set_cutoff</tt><big>(</big><em>cutoff</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_cutoff" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_cutoff</tt><big>(</big><em>cutoff</em><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.set_cutoff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the cutoff to a given value.</p>
 <p>This method affects the hard cutoff.</p>
 <p>Parameters:</p>
@@ -579,7 +576,7 @@ pair parameters, etc.</p>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.set_cutoff_margin">
-<tt class="descname">set_cutoff_margin</tt><big>(</big><em>margin</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_cutoff_margin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_cutoff_margin" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_cutoff_margin</tt><big>(</big><em>margin</em><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.set_cutoff_margin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the margin for smooth cutoff to a given value.</p>
 <p>This method defines the decay interval <span class="math">\(r_\mathrm{hard}-r_\mathrm{soft}\)</span>.
 Note that if the soft cutoff value is made smaller than 0 or larger than the
@@ -593,7 +590,7 @@ hard cutoff value an <a class="reference internal" href="pysic.html#pysic.Invali
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.set_parameter_value">
-<tt class="descname">set_parameter_value</tt><big>(</big><em>parameter_name</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_parameter_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_parameter_value" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_parameter_value</tt><big>(</big><em>parameter_name</em>, <em>value</em><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.set_parameter_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets a given parameter to the desired value.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -606,7 +603,7 @@ hard cutoff value an <a class="reference internal" href="pysic.html#pysic.Invali
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.set_parameter_values">
-<tt class="descname">set_parameter_values</tt><big>(</big><em>values</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_parameter_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_parameter_values" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_parameter_values</tt><big>(</big><em>values</em><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.set_parameter_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the numeric values of all parameters.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -617,7 +614,7 @@ hard cutoff value an <a class="reference internal" href="pysic.html#pysic.Invali
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.set_parameters">
-<tt class="descname">set_parameters</tt><big>(</big><em>params</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_parameters" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_parameters</tt><big>(</big><em>params</em><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.set_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the numeric values of all parameters.</p>
 <p>Equivalent to <a class="reference internal" href="#pysic.BondOrderParameters.set_parameter_values" title="pysic.BondOrderParameters.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a>.</p>
 <p>Parameters:</p>
@@ -629,7 +626,7 @@ hard cutoff value an <a class="reference internal" href="pysic.html#pysic.Invali
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.set_soft_cutoff">
-<tt class="descname">set_soft_cutoff</tt><big>(</big><em>cutoff</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_soft_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_soft_cutoff" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_soft_cutoff</tt><big>(</big><em>cutoff</em><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.set_soft_cutoff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the soft cutoff to a given value.</p>
 <p>Note that actually the cutoff margin is recorded, so changing the
 hard cutoff (see <a class="reference internal" href="#pysic.BondOrderParameters.set_cutoff" title="pysic.BondOrderParameters.set_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff()</span></tt></a>) will also affect the
@@ -643,7 +640,7 @@ soft cutoff.</p>
 
 <dl class="method">
 <dt id="pysic.BondOrderParameters.set_symbols">
-<tt class="descname">set_symbols</tt><big>(</big><em>symbols</em><big>)</big><a class="reference internal" href="_modules/pysic.html#BondOrderParameters.set_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.BondOrderParameters.set_symbols" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">set_symbols</tt><big>(</big><em>symbols</em><big>)</big><a class="headerlink" href="#pysic.BondOrderParameters.set_symbols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the list of symbols to equal the given list.</p>
 <p>Parameters:</p>
 <dl class="docutils">

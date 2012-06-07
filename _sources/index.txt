@@ -28,7 +28,7 @@ The code is developed as part of the `Mordred`_ project.
 
 .. _Mordred: http://webhotel2.tut.fi/fys/mordred/
 
-Pysic is an open source code with emphasis on making the program simple to learn and control as well as the source code readable, extendable and conforming to good programming standards. The source code is freely available at the `github`_ repository.
+Pysic is an open source code with emphasis on making the program simple to learn and control as well as the source code readable, extendable and conforming to good programming standards. The source code is freely available at the `github`_ repository. **Note the relocation since June 2012.**
 
 .. _github: https://github.com/thynnine/pysic/
 .. _Gitorious: https://gitorious.org/pysic/
