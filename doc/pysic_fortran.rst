@@ -29,10 +29,10 @@ compiled with a Fortran compiler to .mod Fortran modules.
 The module is naturally accessible from within Python, 
 but usually there should be no need to directly invoke its functions as :mod:`~pysic` 
 defines a more refined interface to the Fortran core, mainly through the
-class :class:`~pysic.Pysic`. It is assumed that the arguments passed to the functions
+class :class:`~pysic.calculator.Pysic`. It is assumed that the arguments passed to the functions
 have proper data types and array dimensions, and that they are called in such an
 order that the necessary memory allocations have been done within Fortran before data
-structures are accessed. Methods in :class:`~pysic.Pysic` do this automatically and are 
+structures are accessed. Methods in :class:`~pysic.calculator.Pysic` do this automatically and are 
 thus much safer to use than directly calling the functions in this module. The Fortran routines are documented here mostly for development purposes.
 
 .. _f2py: http://www.scipy.org/F2py

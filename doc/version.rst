@@ -12,7 +12,8 @@ This is a list of the main updates in the different versions of Pysic.
 Version 0.4.3
 -------------
 
-- Added calculation of the stress tensor with the method :meth:`pysic.Pysic.get_stress`.
+- Major restructuring of the Python source code
+- Added calculation of the stress tensor with the method :meth:`pysic.calculator.Pysic.get_stress`.
 - Bug fix: Fixed an issue with core initialization where changing the size of the supercell would lead to a conflict in neighbor list updating (the list update was tried before the cell update but failed due to the cell having been changed).
 - Bug fix: Fixed an issue with the parallel neighbor list building algorithm which did not properly broadcast the calculated lists to all cpus.
 
@@ -69,13 +70,13 @@ Version 0.1
 - Python interface
 
   * :mod:`pysic`
-  * :class:`pysic.Pysic`
+  * :class:`pysic.calculator.Pysic`
   * :class:`pysic.Potential`
-  * :mod:`pysic_utility`
+  * ``pysic_utility``
 
 - Framework for handling pair- and three-body potentials
 - ASE compatibility
 
-  * :meth:`pysic.Pysic.get_forces`
-  * :meth:`pysic.Pysic.get_potential_energy`
+  * :meth:`pysic.calculator.Pysic.get_forces`
+  * :meth:`pysic.calculator.Pysic.get_potential_energy`
 

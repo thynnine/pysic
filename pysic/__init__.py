@@ -1,6 +1,6 @@
 #! /usr/bin/env python
 
-from pysic.calculator import Pysic
+from pysic.calculator import Pysic, FastNeighborList
 from pysic.core import *
 from pysic.utility.error import *
 from pysic.interactions.local import Potential

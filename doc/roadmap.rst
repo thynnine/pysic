@@ -31,5 +31,8 @@ Other planned features
 - Option for other long range interaction summation algorithms
 - Convenience tools for generating parameters for Ewald summation
 - Convenience tools for generating chemical symbol lists for Potentials
+- Analysis tools for atomic structures
+- Analysis tools for potential parameterisation and training
 
+You may also look at the `issue tracker <https://github.com/thynnine/pysic/issues>`_ which includes planned features.
 

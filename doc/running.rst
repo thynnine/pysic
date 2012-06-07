@@ -66,7 +66,7 @@ simple first step instructions and :ref:`run examples` are also given in this do
 .. _Python: http://www.python.org
 .. _Python documentation: http://docs.python.org/
 .. _tutorials: http://docs.python.org/tutorial/index.html
-.. |!| image:: ../../Graphics/mordred/pysic/exclamation.png
+.. |!| image:: ../../../Graphics/mordred/pysic/exclamation.png
        :alt: < ! >
        :height: 32
 
@@ -129,6 +129,6 @@ In the object oriented approach, one defines a data structure (called a *class* 
 
 The above example also demonstrates *methods* - object specific functions allowing one to essentially give orders to objects. Objects and methods make it easy to write code that is simple to read and understand, since we humans intuitively see the world as objects, not as arrays of data. Another great benefit of the object based model is that when an object is modified, the changes automatically propagate everywhere where that object is referred.
 
-The classes and their methods defined in Pysic are documented in detail in :ref:`syntax forewords`, and their basic use is shown in the collection of provided :ref:`run examples`. The central class in Pysic is :class:`~pysic.Pysic`, which is an energy and force calculator for `ASE`_. The interactions according to which the energies are calculated are constructed through the class :class:`~pysic.Potential`. Utilizing these classes is necessary to run meaningful calculations, though also other classes are defined for special purposes.
+The classes and their methods defined in Pysic are documented in detail in :ref:`syntax forewords`, and their basic use is shown in the collection of provided :ref:`run examples`. The central class in Pysic is :class:`~pysic.calculator.Pysic`, which is an energy and force calculator for `ASE`_. The interactions according to which the energies are calculated are constructed through the class :class:`~pysic.Potential`. Utilizing these classes is necessary to run meaningful calculations, though also other classes are defined for special purposes.
 
 

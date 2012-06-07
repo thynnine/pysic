@@ -1,0 +1,42 @@
+.. file:issues
+
+.. _issues:
+
+
+
+Development
+===========
+
+Currently, the main developer and maintainer of the code is `Teemu Hynninen <http://butler.cc.tut.fi/~hynnine5/personal/>`_ (`Tampere University of Technology <http://www.tut.fi>`_ and `Aalto University, Helsinki <http://www.aalto.fi>`_).
+
+Please notify me of any bugs you find by mailing to teemu.hynninen tut.fi or contact me on Twitter, `@thynnine <https://twitter.com/#!/thynnine>`_. 
+There is also an `issue tracker <https://github.com/thynnine/pysic/issues>`_ set up at github, where intended features and bugs are listed.
+
+
+Fixed bugs
+----------
+
+- Very serious MPI bug in the :meth:`~pysic.FastNeighborList.build` method of :class:`pysic.FastNeighborList`: The final lists were not broadcast correctly to all cpus leading to some cpus not having the full neighbor lists. Due to the way interactions are evaluated, this usually allowed the simulations to start normally, but at some point the error would manifest as incorrectly calculated forces. Moreover, the errorneous behavior was not reproducible due to the way the result of the incorrect MPI broadcast depended on the relative speed of the cpus during list building. (4.6.2012, 0.4.3)
+
+- MPI bug in Ewald energy and electronegativity calculation (:class:`pysic.CoulombSummation`): Some energy components were evaluated on all cpus and summed together. (3.6.2012, 0.4.3)
+
+- Core update issue: Changing the size of the supercell lead to conflict in neighbor list update in :class:`pysic.FastNeighborList` since the list update was tried before the cell was updated in the core. This was no problem for the ASE neighbor list, but the new list building method requires that the Fortran core matches the atomic system in Python. (31.5.2012)
+
+- Performance issue in Ewald force calculation (:class:`pysic.CoulombSummation`, :meth:`calculate_ewald_forces`): The force calculation routine saved in memory a huge array of structure factor gradients which were only used once and not calculated in parallel. This was a huge waste of memory and a performance bottleneck. (30.5.2012, 0.4.2)
+
+- Index error in FastNeighborList offsets (:class:`pysic.FastNeighborList`). Also, the offsets passed to Python were in Fortran array order, i.e., transposed. (29.5.2012, 0.4.2)
+
+- Issue with bond order cutoff overwriting longer potential cutoffs: When neighbors are determined, a list of maximum cutoffs (cutoff for each atom) are needed (:meth:`pysic.calculator.Pysic.get_individual_cutoffs`). In the determination, the cutoffs of potentials and bond order factors, as well as the Ewald real space cutoff are considered. There was an issue where the bond order factor if present was always used as the maximum even if the other were longer. (24.5.2012, 0.4.2)
+
+- Index error in the 3-body evaluation loop leading to wrong forces. (24.5.2012, 0.4.2)
+
+- Issues with how wrapping was done in the FastNeighborList search (:class:`pysic.FastNeighborList`): The neighbor finding used only wrapped atomic coordinates to locate neighbors. This could lead to atoms crossing a periodic boundary and thus abruptly changing their wrapped position which was not seen by the neighbor offset until the list was refreshed. Changed this so that the list works in terms of absolute coordinate offsets, which do not change discontinuously. This is how the ASE list also works, and the proper way to handle the periodicity in the neighbor list. (18.05.2012, 0.4.2)
+
+- Errorneous values for the Tersoff bond order factor for specific parameter values (:class:`pysic.Potential`, :ref:`tersoff bond order factor`): There were special cases of parameters that allowed for :math:`0^0` (or ``0**0``) and similar ill-defined expressions in the differentiation of the bond order factor, even if the gradient did exist. Added handling for some such cases. Note though that there are still parameter values that must not be used. For instance, if :math:`\eta < 0`, if the sum of local bond terms is zero, one ends up evaluating :math:`\frac{1}{0}`, which is not defined either. (18.05.2012, 0.4.2)
+
+
+Known issues
+------------
+
+
+
