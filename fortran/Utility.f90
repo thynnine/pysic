@@ -376,5 +376,62 @@ contains
 
   end subroutine pad_string
 
+  ! Reads a 2D real array from a file
+  !
+  ! *filename the name of the file to be read
+  ! *table the read array
+  ! *success logical tag showing if the operation was successful
+  subroutine read_table(filename,table,success)
+    implicit none
+    character(len=*), intent(in) :: filename
+    double precision, pointer :: table(:,:)
+    logical, intent(out) :: success
+    integer :: i, n_lines, stat, ioindex
+    logical :: cont
+    double precision :: v, d
+
+    cont = .true.
+    n_lines = 0
+    success = .false.
+
+    ioindex = 51593
+    open(ioindex,file=filename,status='old')
+
+    do while(cont)
+       read(ioindex,*,IOSTAT=stat) v
+       if(stat == 0)then
+          n_lines = n_lines + 1
+       else
+          cont = .false.
+       end if
+    end do
+
+    allocate(table(n_lines,2))
+   
+    close(ioindex)
+    open(ioindex,file=filename,status='old')
+    
+    ! read values
+    do i = 1, n_lines
+       read(ioindex,*,IOSTAT=stat) v, d
+       if(stat /= 0)then
+          return
+       end if
+       table(i,1) = v
+       table(i,2) = d
+    end do
+
+    close(ioindex)
+
+!!$    table(:,2) = 0.d0
+!!$    do i = 2, n_lines-1
+!!$       table(i,2) = 0.5d0 * (table(i+1,1) - table(i-1,1) )
+!!$    end do
+
+    success = .true.
+
+  end subroutine read_table
+
+
 
 end module utility

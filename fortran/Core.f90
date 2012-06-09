@@ -318,6 +318,7 @@ contains
           deallocate(interactions(i)%original_tags)
           deallocate(interactions(i)%original_indices)
           deallocate(interactions(i)%derived_parameters)  
+          deallocate(interactions(i)%table)
        end do
     end if
     if(potentials_allocated)then

@@ -23,7 +23,7 @@ SERIAL_SUFFIX = _serial
 # source files, do not edit
 FORTRAN_FILES = pysic_fortran.pyf Mersenne.F90 MPI.F90 Quaternions.F90 Utility.F90 Geometry.F90 Potentials.F90 Core.F90 PyInterface.F90
 
-.PHONY: help clean debug noopt serial parallel
+.PHONY: help clean test debug noopt serial parallel
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -34,13 +34,34 @@ help:
 	@echo "  serial    compile serial version"
 	@echo "  parallel  compile parallel version"
 
-clean:
-	-rm -rf $(BUILDDIR)/*
-	-rm -rf $(TMPDIR)/*
-	rmdir $(BUILDDIR)
+test:
+	mkdir $(TMPDIR)	
+	cp ./fortran/MPI.f90 $(TMPDIR)/MPI.F90
+	cp ./fortran/Quaternions.f90 $(TMPDIR)/Quaternions.F90
+	cp ./fortran/Utility.f90 $(TMPDIR)/Utility.F90
+	cp ./fortran/Potentials.f90 $(TMPDIR)/Potentials.F90
+	cp ./fortran/Core.f90 $(TMPDIR)/Core.F90
+	cp ./fortran/Geometry.f90 $(TMPDIR)/Geometry.F90
+	cp ./fortran/PyInterface.f90 $(TMPDIR)/PyInterface.F90
+	cp ./fortran/Mersenne.F90 $(TMPDIR)/Mersenne.F90
+
+	cd $(TMPDIR); f2py -m pysic_fortran -h pysic_fortran.pyf PyInterface.F90; \
+	f2py -c --noopt --fcompiler=$(FORTRAN) --f90exec=$(FORTRAN) $(FORTRAN_FILES)
+	rm $(TMPDIR)/*
 	rmdir $(TMPDIR)
 
+	@echo
+	@echo "Test build finished."
+
+
+clean:
+	-rm -rf $(TMPDIR)/*
+	rmdir $(TMPDIR)
+	-rm -rf $(BUILDDIR)/*
+	rmdir $(BUILDDIR)
+
 debug:
+	mkdir $(BUILDDIR)
 	mkdir $(BUILDDIR)/pysic$(DEBUG_SUFFIX)
 	cp -r ./pysic/* $(BUILDDIR)/pysic$(DEBUG_SUFFIX)
 
@@ -64,6 +85,7 @@ debug:
 	@echo "Build finished. The module pysic$(DEBUG_SUFFIX) is in the directory $(BUILDDIR)."
 
 noopt:
+	mkdir $(BUILDDIR)
 	mkdir $(BUILDDIR)/pysic$(NOOPT_SUFFIX)
 	cp -r ./pysic/* $(BUILDDIR)/pysic$(NOOPT_SUFFIX)
 
@@ -87,6 +109,7 @@ noopt:
 	@echo "Build finished. The module pysic$(NOOPT_SUFFIX) is in the directory $(BUILDDIR)."
 
 serial:
+	mkdir $(BUILDDIR)
 	mkdir $(BUILDDIR)/pysic$(SERIAL_SUFFIX)
 	cp -r ./pysic/* $(BUILDDIR)/pysic$(SERIAL_SUFFIX)
 

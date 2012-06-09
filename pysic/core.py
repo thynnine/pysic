@@ -531,9 +531,7 @@ class CoreMirror:
         self.cutoffs = None
         self.potential_lists_ready = False
         self.bond_order_factor_lists_ready = False
-        self.mpi_ready = False
-        print pf.pysic_interface
-        
+        self.mpi_ready = False        
 
     def __repr__(self):
         return "CoreMirror()"

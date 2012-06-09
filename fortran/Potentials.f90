@@ -120,12 +120,14 @@ module potentials
   ! *param_note_length maximum length allowed for the descriptions of parameters
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
-       n_potential_types = 9, &
+       n_potential_types = 10, &
        n_bond_order_types = 6, &
        n_max_params = 12, &
        pot_note_length = 500, &
        param_note_length = 100
 
+  character(len=6), parameter :: table_prefix = "table_"
+  character(len=4), parameter :: table_suffix = ".txt"
 
   !*********************************!
   ! EDIT WHEN ADDING NEW POTENTIALS !
@@ -157,7 +159,8 @@ module potentials
        mono_none_index = 6, &
        pair_buck_index = 7, &
        quad_dihedral_index = 8, &
-       pair_power_index = 9
+       pair_power_index = 9, &
+       pair_table_index = 10
 
 
   !***********************************!
@@ -209,8 +212,8 @@ module potentials
      character(len=param_note_length), pointer :: parameter_notes(:)
   end type potential_descriptor
 
-  ! Description of a type of a potential.
-  ! The type contains the name and description of the potential
+  ! Description of a type of a bond order factor.
+  ! The type contains the name and description of the bond order factor
   ! and the parameters it contains.
   ! The descriptors contain the information that the inquiry methods in
   ! the python interface fetch.
@@ -262,9 +265,10 @@ module potentials
   ! *filter_tags a logical switch specifying whether the potential targets atoms based on the atom tags
   ! *filter_indices a logical switch specifying whether the potential targets atoms based on the atom indices
   ! *smoothened logical switch specifying if a smooth cutoff is applied to the potential
+  ! *table array for storing tabulated values
   type potential
      integer :: type_index, pot_index
-     double precision, pointer :: parameters(:), derived_parameters(:)
+     double precision, pointer :: parameters(:), derived_parameters(:), table(:,:)
      double precision :: cutoff, soft_cutoff
      character(len=2), pointer :: apply_elements(:) ! label_length
      integer, pointer :: apply_tags(:), apply_indices(:)
@@ -464,6 +468,7 @@ contains
     bond_descriptors_created = .false.
 
   end subroutine clear_bond_order_factor_characterizers
+
 
 
 
@@ -2002,6 +2007,8 @@ contains
     ! **** Power law potential ****
     call create_potential_characterizer_power(pair_power_index)
 
+    ! **** Tabulated potential ****
+    call create_potential_characterizer_table(pair_table_index)
 
     descriptors_created = .true.
 
@@ -2043,7 +2050,8 @@ contains
     integer, intent(in) :: orig_tags(n_targets), orig_indices(n_targets)
     type(potential), intent(out) :: new_potential
     type(potential_descriptor) :: descriptor
-    logical :: smoothen
+    character(len=14) :: tablefile
+    logical :: smoothen, success
 
     call get_descriptor(pot_name, descriptor)
 
@@ -2122,6 +2130,17 @@ contains
     case default
        nullify(new_potential%derived_parameters)
        allocate(new_potential%derived_parameters(0))
+    end select
+
+    ! read a table of values for the tabulated potential
+    select case (new_potential%type_index)
+    case(pair_table_index) ! bond bending
+       nullify(new_potential%table)
+       write(tablefile,'(A6,I4.4,A4)') table_prefix, int(parameters(1)), table_suffix
+       call read_table(tablefile,new_potential%table,success)
+    case default
+       nullify(new_potential%table)
+       allocate(new_potential%table(0,0))
     end select
 
   end subroutine create_potential
@@ -2244,6 +2263,8 @@ contains
        call evaluate_force_dihedral(separations(1:3,1:3),distances(1:3),interaction,force(1:3,1:4),atoms(1:4))
     case (pair_power_index) ! power law potential
        call evaluate_force_power(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
+    case (pair_table_index) ! tabulated potential
+       call evaluate_force_table(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
     end select
 
   end subroutine evaluate_forces
@@ -2305,6 +2326,8 @@ contains
        call evaluate_energy_dihedral(separations(1:3,1:3),distances(1:3),interaction,energy,atoms(1:4))
     case(pair_power_index) ! power law potential
        call evaluate_energy_power(separations(1:3,1),distances(1),interaction,energy)
+    case(pair_table_index) ! tabulated potential
+       call evaluate_energy_table(separations(1:3,1),distances(1),interaction,energy)
     end select
 
   end subroutine evaluate_energy
@@ -3483,6 +3506,252 @@ contains
     end if
 
   end subroutine evaluate_energy_buckingham
+
+
+
+
+
+
+
+  !*****************!
+  ! Power potential !
+  !*****************!
+
+  ! Power law characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_power(index)
+    implicit none
+    integer, intent(in) :: index
+
+    ! Record type index
+    potential_descriptors(index)%type_index = index
+
+    ! Record the name of the potential.
+    ! This is a keyword used for accessing the type of potential
+    ! in pysic, also in the python interface.
+    call pad_string('power', pot_name_length,potential_descriptors(index)%name)
+
+    ! Record the number of parameters
+    potential_descriptors(index)%n_parameters = 3
+
+    ! Record the number of targets (i.e., is the potential 1-body, 2-body etc.)
+    potential_descriptors(index)%n_targets = 2
+
+    ! Allocate space for storing the parameter names and descriptions.
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+
+    ! Record parameter names and descriptions.
+    ! Names are keywords with which one can intuitively 
+    ! and easily access the parameters in the python
+    ! interface.
+    ! Descriptions are short descriptions of the
+    ! physical or mathematical meaning of the parameters.
+    ! They can be viewed from the python interface to
+    ! remind the user how to parameterize the potential.
+    call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('a', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('atomic distance or lattice constant', &
+         param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('n', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('exponent', &
+         param_note_length,potential_descriptors(index)%parameter_notes(3))
+
+    ! Record a description of the entire potential.
+    ! This description can also be viewed in the python
+    ! interface as a reminder of the properties of the
+    ! potential.
+    ! The description should contain the mathematical
+    ! formulation of the potential as well as a short
+    ! verbal description.
+    call pad_string('A standard Lennard-Jones potential: V(r) = epsilon * ( a/r )^n ', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_power
+
+
+  ! Power force
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  subroutine evaluate_force_power(separations,distances,interaction,force)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,2)
+    double precision :: r1, ratio, n
+
+    r1 = distances(1)
+    n = interaction%parameters(3)
+    ratio = interaction%parameters(2) / r1
+    force(1:3,1) = interaction%parameters(1) * ( -n * ratio**n ) * separations(1:3,1) / (r1*r1)
+    force(1:3,2) = -force(1:3,1)
+ 
+  end subroutine evaluate_force_power
+
+
+  ! Power energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  subroutine evaluate_energy_power(separations,distances,interaction,energy)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    double precision :: r1, r6, ratio
+
+    r1 = distances(1)
+    ratio = interaction%parameters(2) / r1
+    energy = interaction%parameters(1) * ratio**interaction%parameters(3)
+    
+  end subroutine evaluate_energy_power
+
+
+
+
+
+
+  !*********************!
+  ! Tabulated potential !
+  !*********************!
+
+  ! Tabulated characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_table(index)
+    implicit none
+    integer, intent(in) :: index
+
+    ! Record type index
+    potential_descriptors(index)%type_index = index
+
+    ! Record the name of the potential.
+    ! This is a keyword used for accessing the type of potential
+    ! in pysic, also in the python interface.
+    call pad_string('tabulated', pot_name_length,potential_descriptors(index)%name)
+
+    ! Record the number of parameters
+    potential_descriptors(index)%n_parameters = 2
+
+    ! Record the number of targets (i.e., is the potential 1-body, 2-body etc.)
+    potential_descriptors(index)%n_targets = 2
+
+    ! Allocate space for storing the parameter names and descriptions.
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+
+    ! Record parameter names and descriptions.
+    ! Names are keywords with which one can intuitively 
+    ! and easily access the parameters in the python
+    ! interface.
+    ! Descriptions are short descriptions of the
+    ! physical or mathematical meaning of the parameters.
+    ! They can be viewed from the python interface to
+    ! remind the user how to parameterize the potential.
+    call pad_string('id', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('file identifier', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('range', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('r for the last tabulated V(r)', param_note_length,potential_descriptors(index)%parameter_notes(2))
+
+    ! Record a description of the entire potential.
+    ! This description can also be viewed in the python
+    ! interface as a reminder of the properties of the
+    ! potential.
+    ! The description should contain the mathematical
+    ! formulation of the potential as well as a short
+    ! verbal description.
+    call pad_string('Tabulated potential V(r) with values read from file table_xxxx.txt '//&
+         'where xxxx is the id in four digits', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_table
+
+
+  ! Tabulated force
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  subroutine evaluate_force_table(separations,distances,interaction,force)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,2)
+    double precision :: r1, max_r, dr, t, t2
+    integer :: lower_index, n_values
+    
+    force = 0.d0
+
+    n_values = size(interaction%table(:,1))
+    max_r = interaction%parameters(2)
+    dr = max_r / (n_values-1)
+    
+    r1 = distances(1)
+    if(r1 >= max_r)then
+       return ! force is 0 beyond the range of the tabulation
+    else 
+       lower_index = floor(r1/dr)+1
+       t = r1/dr-(lower_index-1)
+    end if
+    t2 = t*t
+
+    force(1:3,1) = ( interaction%table(lower_index,1)/dr * 6*(t2 - t) + &
+         interaction%table(lower_index,2) * (3*t2 - 4*t + 1) + &
+         interaction%table(lower_index+1,1)/dr * 6*(t - t2) + &
+         interaction%table(lower_index+1,2) * (3*t2 - 2*t) ) / r1 * &
+         separations(1:3,1)
+    force(1:3,2) = -force(1:3,1)
+ 
+  end subroutine evaluate_force_table
+
+
+  ! Tabulated energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  subroutine evaluate_energy_table(separations,distances,interaction,energy)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    double precision :: r1, max_r, dr, t, t2, t3
+    integer :: lower_index, n_values
+    
+    energy = 0.d0
+
+    n_values = size(interaction%table(:,1))
+    max_r = interaction%parameters(2)
+    dr = max_r / (n_values-1)
+    
+    r1 = distances(1)
+    if(r1 >= max_r)then
+       energy = interaction%table(n_values,1) ! energy is constant beyond the range of tabulation
+       return
+    else 
+       lower_index = floor(r1/dr)+1
+       t = r1/dr-(lower_index-1)
+    end if
+    t2 = t*t
+    t3 = t2*t
+
+    energy = ( interaction%table(lower_index,1) * (2*t3 - 3*t2 + 1) + &
+         interaction%table(lower_index,2)*dr * (t3 - 2*t2 + t) + &
+         interaction%table(lower_index+1,1) * (3*t2 - 2*t3) + &
+         interaction%table(lower_index+1,2)*dr * (t3 - t2) )
+    
+  end subroutine evaluate_energy_table
 
 
 
@@ -4862,107 +5131,6 @@ contains
 
 
 
-
-  !*****************!
-  ! Power potential !
-  !*****************!
-
-  ! Power law characterizer initialization
-  !
-  ! *index index of the potential
-  subroutine create_potential_characterizer_power(index)
-    implicit none
-    integer, intent(in) :: index
-
-    ! Record type index
-    potential_descriptors(index)%type_index = index
-
-    ! Record the name of the potential.
-    ! This is a keyword used for accessing the type of potential
-    ! in pysic, also in the python interface.
-    call pad_string('power', pot_name_length,potential_descriptors(index)%name)
-
-    ! Record the number of parameters
-    potential_descriptors(index)%n_parameters = 3
-
-    ! Record the number of targets (i.e., is the potential 1-body, 2-body etc.)
-    potential_descriptors(index)%n_targets = 2
-
-    ! Allocate space for storing the parameter names and descriptions.
-    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
-    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
-
-    ! Record parameter names and descriptions.
-    ! Names are keywords with which one can intuitively 
-    ! and easily access the parameters in the python
-    ! interface.
-    ! Descriptions are short descriptions of the
-    ! physical or mathematical meaning of the parameters.
-    ! They can be viewed from the python interface to
-    ! remind the user how to parameterize the potential.
-    call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
-    call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
-    call pad_string('a', param_name_length,potential_descriptors(index)%parameter_names(2))
-    call pad_string('atomic distance or lattice constant', &
-         param_note_length,potential_descriptors(index)%parameter_notes(2))
-    call pad_string('n', param_name_length,potential_descriptors(index)%parameter_names(3))
-    call pad_string('exponent', &
-         param_note_length,potential_descriptors(index)%parameter_notes(3))
-
-    ! Record a description of the entire potential.
-    ! This description can also be viewed in the python
-    ! interface as a reminder of the properties of the
-    ! potential.
-    ! The description should contain the mathematical
-    ! formulation of the potential as well as a short
-    ! verbal description.
-    call pad_string('A standard Lennard-Jones potential: V(r) = epsilon * ( a/r )^n ', &
-         pot_note_length,potential_descriptors(index)%description)
-
-  end subroutine create_potential_characterizer_power
-
-
-  ! Power force
-  !
-  ! *n_targets number of targets
-  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
-  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
-  ! *interaction a :data:`potential` containing the parameters
-  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
-  subroutine evaluate_force_power(separations,distances,interaction,force)
-    implicit none
-    double precision, intent(in) :: separations(3,1), distances(1)
-    type(potential), intent(in) :: interaction
-    double precision, intent(out) :: force(3,2)
-    double precision :: r1, ratio, n
-
-    r1 = distances(1)
-    n = interaction%parameters(3)
-    ratio = interaction%parameters(2) / r1
-    force(1:3,1) = interaction%parameters(1) * ( -n * ratio**n ) * separations(1:3,1) / (r1*r1)
-    force(1:3,2) = -force(1:3,1)
- 
-  end subroutine evaluate_force_power
-
-
-  ! Power energy
-  !  
-  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
-  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
-  ! *interaction a :data:`bond_order_parameters` containing the parameters
-  ! *energy the calculated energy :math:`v_{ijk}`
-  subroutine evaluate_energy_power(separations,distances,interaction,energy)
-    implicit none
-    double precision, intent(in) :: separations(3,1), distances(1)
-    type(potential), intent(in) :: interaction
-    double precision, intent(out) :: energy
-    double precision :: r1, r6, ratio
-
-    r1 = distances(1)
-    ratio = interaction%parameters(2) / r1
-    energy = interaction%parameters(1) * ratio**interaction%parameters(3)
-    
-  end subroutine evaluate_energy_power
 
 
 
