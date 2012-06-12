@@ -507,6 +507,7 @@ contains
   ! *atom_index index of the atom whose bond order factor is differentiated
   ! *slot_index index denoting the position of the atom in an interacting group (such as A-B-C triplet)
   ! *bond_order_gradients the calculated gradients of the bond order factor
+  ! *bond_order_virial the components of the virial due to the bond order factors
   subroutine core_get_bond_order_gradients(n_atoms,group_index,atom_index,slot_index,&
        bond_order_gradients,bond_order_virial)
     implicit none
@@ -739,9 +740,10 @@ contains
   ! *orig_tags original tags specifying the atoms the interaction acts on
   ! *orig_indices original indices specifying the atoms the interaction acts on
   ! *pot_index index of the potential
-  !
+  ! *success logical tag specifying if creation of the potential succeeded
   subroutine core_add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
-       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index)
+       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,&
+success)
     implicit none
     integer, intent(in) :: n_targets, n_params, pot_index
     character(len=*), intent(in) :: pot_name
@@ -751,15 +753,18 @@ contains
     integer, intent(in) :: tags(n_targets), indices(n_targets)
     character(len=label_length), intent(in) :: orig_elements(n_targets)
     integer, intent(in) :: orig_tags(n_targets), orig_indices(n_targets)
+    logical, intent(out) :: success
     type(potential) :: new_interaction
 
-    n_interactions = n_interactions + 1
     call create_potential(n_targets,n_params,&
          pot_name,parameters,cutoff,smooth_cut,&
          elements,tags,indices,&
          orig_elements,orig_tags,orig_indices,pot_index,&
-         new_interaction) ! in Potentials.f90
-    interactions(n_interactions) = new_interaction
+         new_interaction,success) ! in Potentials.f90
+    if(success)then
+       n_interactions = n_interactions + 1
+       interactions(n_interactions) = new_interaction
+    end if
 
   end subroutine core_add_potential
 
@@ -799,9 +804,9 @@ contains
   ! *elements atomic symbols specifying the elements the interaction acts on
   ! *orig_elements original atomic symbols specifying the elements the interaction acts on
   ! *group_index index denoting the potential to which the factor is connected
-  !
+  ! *success logical tag specifying if creation of the factor succeeded
   subroutine core_add_bond_order_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
-       cutoff,smooth_cut,elements,orig_elements,group_index)
+       cutoff,smooth_cut,elements,orig_elements,group_index,success)
     implicit none
     integer, intent(in) :: n_targets, n_params, n_split, group_index
     integer, intent(in) :: param_split(n_split)
@@ -810,13 +815,14 @@ contains
     double precision, intent(in) :: cutoff, smooth_cut
     character(len=label_length), intent(in) :: elements(n_targets)
     character(len=label_length), intent(in) :: orig_elements(n_targets)
+    logical, intent(out) :: success
     type(bond_order_parameters) :: new_bond_factor
 
     n_bond_factors = n_bond_factors + 1
     call create_bond_order_factor(n_targets,n_params,n_split,&
          bond_name,parameters,param_split,cutoff,smooth_cut,&
          elements,orig_elements,group_index,&
-         new_bond_factor)
+         new_bond_factor,success)
     bond_factors(n_bond_factors) = new_bond_factor
 
   end subroutine core_add_bond_order_factor
@@ -938,6 +944,7 @@ contains
   ! *atom_index index of the atom with respect to which the factors are differentiated (:math:`\alpha`), or the atoms whose factor is differentiated (:math:`i`) if for_factor is .true.
   ! *raw_sums precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
   ! *total_gradient the calculated bond order gradients :math:`\nabla_\alpha b_i`
+  ! *total_virial the components of the virial due to the bond order gradients
   ! *for_factor a switch for requesting the gradients for a given :math:`i` instead of a given :math:`\alpha`
   subroutine core_calculate_bond_order_gradients(n_atoms,group_index,&
        atom_index,raw_sums,total_gradient,total_virial,for_factor)
@@ -1434,6 +1441,7 @@ contains
   ! *atom_index index of the atom whose factor is differentiated (:math:`i`)
   ! *raw_sums precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
   ! *total_gradient the calculated bond order gradients :math:`\nabla_\alpha b_i`
+  ! *total_virial the components of the virial due to the bond order gradient
   subroutine core_calculate_bond_order_gradients_of_factor(n_atoms,group_index,&
        atom_index,raw_sums,total_gradient,total_virial)
     implicit none
@@ -2101,6 +2109,8 @@ contains
   ! *raw_sum precalculated bond order sum for the given atom, :math:`\sum_j c_{ij}`, in the above example
   ! *raw_gradients precalculated gradients of bond order sums, :math:`\nabla_\alpha \sum_j c_{ij}`, in the above example
   ! *total_bond_gradients the calculated bond order gradients :math:`\nabla_\alpha b_i`
+  ! *raw_virial the precalculated virial due to the bond order gradient
+  ! *total_virial the scaled  virial due to the bond order gradient
   ! *mpi_split A switch for enabling MPI parallelization. By default the routine is sequential since the calculation may be called from within an already parallelized routine.
   subroutine core_post_process_bond_order_gradients_of_factor(n_atoms,group_index,atom_index,raw_sum,&
        raw_gradients,total_bond_gradients,raw_virial,total_virial,mpi_split)

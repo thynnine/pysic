@@ -849,7 +849,8 @@ class Pysic:
                     different = set(perms)
                     n_pots += len(different)
             except:
-                pass
+                if not pot.get_symbols() is None:
+                    raise InvalidPotentialError("Invalid potential symbols: "+str(pot.get_symbols()))
             try:
                 alltargets = pot.get_tags()
                 for targets in alltargets:
@@ -857,7 +858,8 @@ class Pysic:
                     different = set(perms)
                     n_pots += len(different)
             except:
-                pass
+                if not pot.get_tags() is None:
+                    raise InvalidPotentialError("Invalid potential tags: "+str(pot.get_tags()))
             try:
                 alltargets = pot.get_indices()
                 for targets in alltargets:
@@ -865,8 +867,9 @@ class Pysic:
                     different = set(perms)
                     n_pots += len(different)
             except:
-                pass
-
+                if not pot.get_indices() is None:
+                    raise InvalidPotentialError("Invalid potential indices: "+str(pot.get_indices()))
+                
         pf.pysic_interface.allocate_potentials(n_pots)
 
         pot_index = 0
@@ -897,7 +900,7 @@ class Pysic:
                         for label in symbs:
                             int_symbs.append( pu.str2ints(label,2) )
 
-                        pf.pysic_interface.add_potential(pot.get_potential_type(),
+                        success = pf.pysic_interface.add_potential(pot.get_potential_type(),
                                                          np.array( pot.get_parameter_values() ),
                                                          pot.get_cutoff(),
                                                          pot.get_soft_cutoff(),
@@ -908,8 +911,11 @@ class Pysic:
                                                          no_tags,
                                                          no_inds,
                                                          group_index )
+                        if not success:
+                            raise InvalidPotentialError("")
             except:
-                pass
+                if not pot.get_symbols() is None:
+                    raise InvalidPotentialError("Failed to create a potential in the core: "+str(pot))
             try:
                 alltargets = pot.get_tags()
                 for targets in alltargets:
@@ -918,7 +924,7 @@ class Pysic:
                     different = set(perms)
 
                     for tags in different:
-                        pf.pysic_interface.add_potential(pot.get_potential_type(),
+                        success = pf.pysic_interface.add_potential(pot.get_potential_type(),
                                                          np.array( pot.get_parameter_values() ),
                                                          pot.get_cutoff(),
                                                          pot.get_soft_cutoff(),
@@ -929,8 +935,11 @@ class Pysic:
                                                          np.array(orig_tags),
                                                          no_inds,
                                                          group_index )
+                        if not success:
+                            raise InvalidPotentialError("")
             except:
-                pass
+                if not pot.get_tags() is None:
+                    raise InvalidPotentialError("Failed to create a potential in the core: "+str(pot))
             try:
                 alltargets = pot.get_indices()                
                 for targets in alltargets:
@@ -939,7 +948,7 @@ class Pysic:
                     different = set(perms)
 
                     for inds in different:
-                        pf.pysic_interface.add_potential(pot.get_potential_type(),
+                        success = pf.pysic_interface.add_potential(pot.get_potential_type(),
                                                          np.array( pot.get_parameter_values() ),
                                                          pot.get_cutoff(),
                                                          pot.get_soft_cutoff(),
@@ -950,8 +959,11 @@ class Pysic:
                                                          no_tags,
                                                          np.array(orig_inds),
                                                          group_index )
+                        if not success:
+                            raise InvalidPotentialError("")
             except:
-                pass
+                if not pot.get_indices() is None:
+                    raise InvalidPotentialError("Failed to create a potential in the core: "+str(pot))
 
         n_bonds = 0
         for coord in coord_list:
@@ -964,7 +976,7 @@ class Pysic:
                         different = set(perms)
                         n_bonds += len(different)
             except:
-                pass
+                raise InvalidParametersError("Invalid bond order parameter indices: "+str(bond.get_symbols()))
 
         pf.pysic_interface.allocate_bond_order_factors(n_bonds)
 
@@ -987,7 +999,7 @@ class Pysic:
                             for label in symbs:
                                 int_symbs.append( pu.str2ints(label,2) )
 
-                            pf.pysic_interface.add_bond_order_factor(bond.get_bond_order_type(),
+                            success = pf.pysic_interface.add_bond_order_factor(bond.get_bond_order_type(),
                                                                    np.array( bond.get_parameters_as_list() ),
                                                                    np.array( bond.get_number_of_parameters() ),
                                                                    bond.get_cutoff(),
@@ -995,9 +1007,12 @@ class Pysic:
                                                                    np.array( int_symbs ).transpose(),
                                                                    np.array( int_orig_symbs ).transpose(),
                                                                    coord[1])
+                            if not success:
+                                raise InvalidParametersError("")
+
 
             except:
-                pass
+                raise InvalidParametersError("Failed to create a bond order factor in the core: "+str(bond))
 
 
         n_atoms = pf.pysic_interface.get_number_of_atoms()

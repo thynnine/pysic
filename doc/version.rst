@@ -13,7 +13,9 @@ Version 0.4.3
 -------------
 
 - Major restructuring of the Python source code
+- Provided a Makefile for compiling
 - Added calculation of the stress tensor with the method :meth:`pysic.calculator.Pysic.get_stress`.
+- Added the :ref:`tabulated potential`
 - Bug fix: Fixed an issue with core initialization where changing the size of the supercell would lead to a conflict in neighbor list updating (the list update was tried before the cell update but failed due to the cell having been changed).
 - Bug fix: Fixed an issue with the parallel neighbor list building algorithm which did not properly broadcast the calculated lists to all cpus.
 

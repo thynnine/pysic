@@ -320,7 +320,7 @@ Full documentation of subroutines in pysic_core
         
         
             
-  .. function:: core_add_bond_order_factor(n_targets, n_params, n_split, bond_name, parameters, param_split, cutoff, smooth_cut, elements, orig_elements, group_index)
+  .. function:: core_add_bond_order_factor(n_targets, n_params, n_split, bond_name, parameters, param_split, cutoff, smooth_cut, elements, orig_elements, group_index, success)
 
     Creates one additional bond_order_factor in the core.
     The routine assumes that adequate memory has been
@@ -368,8 +368,10 @@ Full documentation of subroutines in pysic_core
         original atomic symbols specifying the elements the interaction acts on
     group_index: integer  *intent(in)*    *scalar*  
         index denoting the potential to which the factor is connected
+    **success**: logical  **intent(out)**    *scalar*  
+        logical tag specifying if creation of the factor succeeded
             
-  .. function:: core_add_potential(n_targets, n_params, pot_name, parameters, cutoff, smooth_cut, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index)
+  .. function:: core_add_potential(n_targets, n_params, pot_name, parameters, cutoff, smooth_cut, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index, success)
 
     Creates one additional potential in the core.
     The routine assumes that adequate memory has been
@@ -421,6 +423,8 @@ Full documentation of subroutines in pysic_core
         original indices specifying the atoms the interaction acts on
     pot_index: integer  *intent(in)*    *scalar*  
         index of the potential
+    **success**: logical  **intent(out)**    *scalar*  
+        logical tag specifying if creation of the potential succeeded
             
   .. function:: core_allocate_bond_order_factors(n_bond_factors)
 
@@ -562,7 +566,7 @@ Full documentation of subroutines in pysic_core
     **total_gradient**: double precision  **intent(out)**    *size(3, n_atoms)*  
         the calculated bond order gradients :math:`\nabla_\alpha b_i`
     **total_virial**: double precision  **intent(out)**    *size(6)*  
-        
+        the components of the virial due to the bond order gradients
     for_factor: logical  *intent(in)*    *scalar*  *optional*
         a switch for requesting the gradients for a given :math:`i` instead of a given :math:`\alpha`
             
@@ -602,7 +606,7 @@ Full documentation of subroutines in pysic_core
     **total_gradient**: double precision  **intent(out)**    *size(3, n_atoms)*  
         the calculated bond order gradients :math:`\nabla_\alpha b_i`
     **total_virial**: double precision  **intent(out)**    *size(6)*  
-        
+        the components of the virial due to the bond order gradient
             
   .. function:: core_calculate_electronegativities(n_atoms, total_enegs)
 
@@ -1045,7 +1049,7 @@ Full documentation of subroutines in pysic_core
     **bond_order_gradients**: double precision  **intent(out)**    *size(3, n_atoms)*  
         the calculated gradients of the bond order factor
     **bond_order_virial**: double precision  **intent(out)**    *size(6)*  
-        
+        the components of the virial due to the bond order factors
             
   .. function:: core_get_bond_order_sums(n_atoms, group_index, bond_order_sums)
 
@@ -1269,9 +1273,9 @@ Full documentation of subroutines in pysic_core
     **total_bond_gradients**: double precision  **intent(out)**    *size(3, n_atoms)*  
         the calculated bond order gradients :math:`\nabla_\alpha b_i`
     raw_virial: double precision  *intent(in)*    *size(6)*  
-        
+        the precalculated virial due to the bond order gradient
     **total_virial**: double precision  **intent(out)**    *size(6)*  
-        
+        the scaled  virial due to the bond order gradient
     mpi_split: logical  *intent(in)*    *scalar*  *optional*
         A switch for enabling MPI parallelization. By default the routine is sequential since the calculation may be called from within an already parallelized routine.
             

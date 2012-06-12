@@ -132,6 +132,7 @@ must be updated accordingly.
     - :data:`pair_lj_index`
     - :data:`pair_power_index`
     - :data:`pair_spring_index`
+    - :data:`pair_table_index`
     - :data:`param_name_length`
     - :data:`param_note_length`
     - :data:`pot_name_length`
@@ -140,6 +141,10 @@ must be updated accordingly.
     - :data:`power_index`
     - :data:`quad_dihedral_index`
     - :data:`sqrt_scale_index`
+    - :data:`table_bond_index`
+    - :data:`table_prefix`
+    - :data:`table_scale_index`
+    - :data:`table_suffix`
     - :data:`tersoff_index`
     - :data:`tri_bend_index`
     - :data:`triplet_index`
@@ -169,6 +174,8 @@ must be updated accordingly.
     - :func:`create_bond_order_factor_characterizer_power`
     - :func:`create_bond_order_factor_characterizer_scaler_1`
     - :func:`create_bond_order_factor_characterizer_scaler_sqrt`
+    - :func:`create_bond_order_factor_characterizer_scaler_table`
+    - :func:`create_bond_order_factor_characterizer_table`
     - :func:`create_bond_order_factor_characterizer_tersoff`
     - :func:`create_bond_order_factor_characterizer_triplet`
     - :func:`create_potential`
@@ -181,14 +188,17 @@ must be updated accordingly.
     - :func:`create_potential_characterizer_dihedral`
     - :func:`create_potential_characterizer_power`
     - :func:`create_potential_characterizer_spring`
+    - :func:`create_potential_characterizer_table`
     - :func:`evaluate_bond_order_factor`
     - :func:`evaluate_bond_order_factor_coordination`
     - :func:`evaluate_bond_order_factor_power`
+    - :func:`evaluate_bond_order_factor_table`
     - :func:`evaluate_bond_order_factor_tersoff`
     - :func:`evaluate_bond_order_factor_triplet`
     - :func:`evaluate_bond_order_gradient`
     - :func:`evaluate_bond_order_gradient_coordination`
     - :func:`evaluate_bond_order_gradient_power`
+    - :func:`evaluate_bond_order_gradient_table`
     - :func:`evaluate_bond_order_gradient_tersoff`
     - :func:`evaluate_bond_order_gradient_triplet`
     - :func:`evaluate_electronegativity`
@@ -203,6 +213,7 @@ must be updated accordingly.
     - :func:`evaluate_energy_dihedral`
     - :func:`evaluate_energy_power`
     - :func:`evaluate_energy_spring`
+    - :func:`evaluate_energy_table`
     - :func:`evaluate_force_LJ`
     - :func:`evaluate_force_bond_bending`
     - :func:`evaluate_force_buckingham`
@@ -212,6 +223,7 @@ must be updated accordingly.
     - :func:`evaluate_force_dihedral`
     - :func:`evaluate_force_power`
     - :func:`evaluate_force_spring`
+    - :func:`evaluate_force_table`
     - :func:`evaluate_forces`
     - :func:`get_bond_descriptor`
     - :func:`get_description_of_bond_order_factor`
@@ -242,10 +254,12 @@ must be updated accordingly.
     - :func:`post_process_bond_order_factor`
     - :func:`post_process_bond_order_factor_scaler_1`
     - :func:`post_process_bond_order_factor_scaler_sqrt`
+    - :func:`post_process_bond_order_factor_scaler_table`
     - :func:`post_process_bond_order_factor_tersoff`
     - :func:`post_process_bond_order_gradient`
     - :func:`post_process_bond_order_gradient_scaler_1`
     - :func:`post_process_bond_order_gradient_scaler_sqrt`
+    - :func:`post_process_bond_order_gradient_scaler_table`
     - :func:`post_process_bond_order_gradient_tersoff`
     - :func:`potential_affects_atom`
     - :func:`smoothening_derivative`
@@ -277,7 +291,7 @@ Full documentation of global variables in potentials
 
     *initial value* = 3
     
-    internal index for the coordination scaling potential
+    internal index for the coordination scaling function
     
   .. data:: coordination_index
 
@@ -315,7 +329,7 @@ Full documentation of global variables in potentials
 
     integer    *scalar*  *parameter*  
 
-    *initial value* = 6
+    *initial value* = 8
     
     number of different types of bond order factors known
     
@@ -331,7 +345,7 @@ Full documentation of global variables in potentials
 
     integer    *scalar*  *parameter*  
 
-    *initial value* = 9
+    *initial value* = 10
     
     number of different types of potentials known
     
@@ -382,6 +396,14 @@ Full documentation of global variables in potentials
     *initial value* = 2
     
     internal index for the spring potential
+    
+  .. data:: pair_table_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 10
+    
+    internal index for the tabulated potential
     
   .. data:: param_name_length
 
@@ -443,7 +465,39 @@ Full documentation of global variables in potentials
 
     *initial value* = 6
     
-    internal index for the square root scaling potential
+    internal index for the square root scaling function
+    
+  .. data:: table_bond_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 7
+    
+    internal index for the tabulated bond order factor
+    
+  .. data:: table_prefix
+
+    character(len=6)    *scalar*  *parameter*  
+
+    *initial value* = "table_"
+    
+    prefix for filenames for storing tables
+    
+  .. data:: table_scale_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 8
+    
+    internal index for the tabulated scaling function
+    
+  .. data:: table_suffix
+
+    character(len=4)    *scalar*  *parameter*  
+
+    *initial value* = ".txt"
+    
+    
     
   .. data:: tersoff_index
 
@@ -476,8 +530,8 @@ Full documentation of custom types in potentials
         
   .. data:: bond_order_descriptor
 
-    Description of a type of a potential.
-    The type contains the name and description of the potential
+    Description of a type of a bond order factor.
+    The type contains the name and description of the bond order factor
     and the parameters it contains.
     The descriptors contain the information that the inquiry methods in
     the python interface fetch.
@@ -518,16 +572,18 @@ Full documentation of custom types in potentials
         The hard cutoff for the bond order factor. If the atoms are farther away from each other than this, they do not contribute to the total bond order factor does not affect them.
     includes_post_processing: logical    *scalar*
         a logical switch specifying if there is a scaling function :math:`s_i` attached to the factor
-    group_index: integer    *scalar*
-        The internal index of the *potential* the bond order factor is modifying.
-    parameters: double precision  *pointer*  *size(:, :)*
-        numerical values for parameters
     soft_cutoff: double precision    *scalar*
         The soft cutoff for the bond order factor. If this is smaller than the hard cutoff, the bond contribution is scaled to zero continuously when the interatomic distances grow from the soft to the hard cutoff.
+    parameters: double precision  *pointer*  *size(:, :)*
+        numerical values for parameters
+    group_index: integer    *scalar*
+        The internal index of the *potential* the bond order factor is modifying.
     type_index: integer    *scalar*
         The internal index of the bond order factor *type*. This is used for recognizing the factor. Note that the bond order parameters instance does not have a name. If the name is needed, it can be obtained from the :data:`bond_order_descriptor` of the correct index.
     n_params: integer  *pointer*  *size(:)*
         array containing the numbers of parameters for different number of targets (1-body parameters, 2-body parameters, etc.)
+    table: double precision  *pointer*  *size(:, :)*
+        array for storing tabulated values
     original_elements: character(len=2)  *pointer*  *size(:)*
         The list of elements (atomic symbols) of the original :class:`~pysic.BondOrderParameters` in the Python interface from which this factor was created. Whereas the apply_elements lists are used for finding all pairs and triplets of atoms which could contribute to the bond order factor, the original_elements lists specify the roles of atoms in the factor.
     derived_parameters: double precision  *pointer*  *size(:, :)*
@@ -571,6 +627,8 @@ Full documentation of custom types in potentials
         The internal index of the potential *type*. This is used for recognizing the potential. Note that the potential instance does not have a name. If the name is needed, it can be obtained from the :data:`potential_descriptor` of the correct index.
     original_tags: integer  *pointer*  *size(:)*
         The list of atom tags of the original :class:`~pysic.Potential` in the Python interface from which this potential was created. Whereas the apply_* lists are used for finding all pairs and triplets of atoms for which the potential could act on, the original_* lists specify the roles of atoms in the interaction.
+    table: double precision  *pointer*  *size(:, :)*
+        array for storing tabulated values
     original_elements: character(len=2)  *pointer*  *size(:)*
         The list of elements (atomic symbols) of the original :class:`~pysic.Potential` in the Python interface from which this potential was created. Whereas the apply_* lists are used for finding all pairs and triplets of atoms for which the potential could act on, the original_* lists specify the roles of atoms in the interaction.
     derived_parameters: double precision  *pointer*  *size(:)*
@@ -889,7 +947,7 @@ Full documentation of subroutines in potentials
     Deallocates all memory associated with potential characterizes.
 
             
-  .. function:: create_bond_order_factor(n_targets, n_params, n_split, bond_name, parameters, param_split, cutoff, soft_cutoff, elements, orig_elements, group_index, new_bond)
+  .. function:: create_bond_order_factor(n_targets, n_params, n_split, bond_name, parameters, param_split, cutoff, soft_cutoff, elements, orig_elements, group_index, new_bond, success)
 
     Returns a :data:`bond_order_parameters`.
     
@@ -923,6 +981,8 @@ Full documentation of subroutines in potentials
         The internal index of the *potential* the bond order factor is modifying.
     **new_bond**: type(bond_order_parameters)  **intent(out)**    *scalar*  
         the created :data:`bond_order_parameters`
+    **success**: logical  **intent(out)**    *scalar*  
+        logical tag specifying if creation of the factor succeeded
             
   .. function:: create_bond_order_factor_characterizer_coordination(index)
 
@@ -964,6 +1024,26 @@ Full documentation of subroutines in potentials
     index: integer  *intent(in)*    *scalar*  
         index of the bond order factor
             
+  .. function:: create_bond_order_factor_characterizer_scaler_table(index)
+
+    Square root scaler characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the bond order factor
+            
+  .. function:: create_bond_order_factor_characterizer_table(index)
+
+    Tabulated characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the bond order factor
+            
   .. function:: create_bond_order_factor_characterizer_tersoff(index)
 
     Tersoff characterizer initialization
@@ -984,7 +1064,7 @@ Full documentation of subroutines in potentials
     index: integer  *intent(in)*    *scalar*  
         index of the bond order factor
             
-  .. function:: create_potential(n_targets, n_params, pot_name, parameters, cutoff, soft_cutoff, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index, new_potential)
+  .. function:: create_potential(n_targets, n_params, pot_name, parameters, cutoff, soft_cutoff, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index, new_potential, success)
 
     Returns a :data:`potential`.
     
@@ -1022,6 +1102,8 @@ Full documentation of subroutines in potentials
         the internal index of the potential
     **new_potential**: type(potential)  **intent(out)**    *scalar*  
         the created :data:`potential`
+    **success**: logical  **intent(out)**    *scalar*  
+        logical tag specifying if creation of the potential succeeded
             
   .. function:: create_potential_characterizer_LJ(index)
 
@@ -1113,6 +1195,16 @@ Full documentation of subroutines in potentials
     index: integer  *intent(in)*    *scalar*  
         index of the potential
             
+  .. function:: create_potential_characterizer_table(index)
+
+    Tabulated characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
   .. function:: evaluate_bond_order_factor(n_targets, separations, distances, bond_params, factor, atoms)
 
     Returns a bond order factor term.
@@ -1162,6 +1254,22 @@ Full documentation of subroutines in potentials
   .. function:: evaluate_bond_order_factor_power(separations, distances, bond_params, factor)
 
     Power bond order factor
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    bond_params: type(bond_order_parameters)  *intent(in)*    *size(1)*  
+        a :data:`bond_order_parameters` containing the parameters
+    **factor**: double precision  **intent(out)**    *size(2)*  
+        the calculated bond order term :math:`c`
+            
+  .. function:: evaluate_bond_order_factor_table(separations, distances, bond_params, factor)
+
+    Tabulated bond order factor
     
 
     Parameters:
@@ -1263,6 +1371,22 @@ Full documentation of subroutines in potentials
   .. function:: evaluate_bond_order_gradient_power(separations, distances, bond_params, gradient)
 
     Power bond order factor gradient
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    bond_params: type(bond_order_parameters)  *intent(in)*    *size(1)*  
+        a :data:`bond_order_parameters` containing the parameters
+    **gradient**: double precision  **intent(out)**    *size(3, 2, 2)*  
+        the calculated bond order term :math:`c`
+            
+  .. function:: evaluate_bond_order_gradient_table(separations, distances, bond_params, gradient)
+
+    Tabulated bond order factor gradient
     
 
     Parameters:
@@ -1536,6 +1660,22 @@ Full documentation of subroutines in potentials
     **energy**: double precision  **intent(out)**    *scalar*  
         the calculated energy :math:`v_{ijk}`
             
+  .. function:: evaluate_energy_table(separations, distances, interaction, energy)
+
+    Tabulated energy
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+            
   .. function:: evaluate_force_LJ(separations, distances, interaction, force)
 
     LJ force
@@ -1665,6 +1805,22 @@ Full documentation of subroutines in potentials
   .. function:: evaluate_force_spring(separations, distances, interaction, force)
 
     spring force
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **force**: double precision  **intent(out)**    *size(3, 2)*  
+        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+            
+  .. function:: evaluate_force_table(separations, distances, interaction, force)
+
+    Tabulated force
     
 
     Parameters:
@@ -2098,6 +2254,20 @@ Full documentation of subroutines in potentials
     **factor_out**: double precision  **intent(out)**    *scalar*  
         the calculated bond order factor :math:`b_i`
             
+  .. function:: post_process_bond_order_factor_scaler_table(raw_sum, bond_params, factor_out)
+
+    Tabulated scaler post process factor
+    
+
+    Parameters:
+
+    raw_sum: double precision  *intent(in)*    *scalar*  
+        the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+    bond_params: type(bond_order_parameters)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` specifying the parameters
+    **factor_out**: double precision  **intent(out)**    *scalar*  
+        the calculated bond order factor :math:`b_i`
+            
   .. function:: post_process_bond_order_factor_tersoff(raw_sum, bond_params, factor_out)
 
     Tersoff post process factor
@@ -2169,6 +2339,22 @@ Full documentation of subroutines in potentials
   .. function:: post_process_bond_order_gradient_scaler_sqrt(raw_sum, raw_gradient, bond_params, factor_out)
 
     Square root scaler post process gradient
+    
+
+    Parameters:
+
+    raw_sum: double precision  *intent(in)*    *scalar*  
+        the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+    raw_gradient: double precision  *intent(in)*    *size(3)*  
+        the precalculated bond order gradient sum, :math:`\nabla_\alpha \sum_j c_ij` in the above example
+    bond_params: type(bond_order_parameters)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` specifying the parameters
+    **factor_out**: double precision  **intent(out)**    *size(3)*  
+        the calculated bond order factor :math:`b_i`
+            
+  .. function:: post_process_bond_order_gradient_scaler_table(raw_sum, raw_gradient, bond_params, factor_out)
+
+    Tabulated scaler post process gradient
     
 
     Parameters:

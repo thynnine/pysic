@@ -425,9 +425,10 @@ contains
   ! *orig_tags original tags specifying the atoms the interaction acts on
   ! *orig_indices original indices specifying the atoms the interaction acts on
   ! *pot_index index of the potential
-  !
+  ! *success logical tag specifying if creation of the potential succeeded
   subroutine add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
-       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index)
+       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,&
+       success)
     implicit none
     integer, intent(in) :: n_targets, n_params,pot_index
     character(len=*), intent(in) :: pot_name
@@ -438,8 +439,10 @@ contains
     integer, intent(in) :: orig_elements(2,n_targets) ! label_length
     integer, intent(in) :: orig_tags(n_targets), orig_indices(n_targets)
     character(len=2) :: elements_str(n_targets), orig_elements_str(n_targets) ! label_length
+    logical, intent(out) :: success
     integer :: i
 
+    success = .false.
     ! translates the integer-formatted labels to characters
     do i = 1, n_targets
        call int2str(2,elements(:,i),elements_str(i)) ! in Utility.f90
@@ -447,7 +450,7 @@ contains
     end do
     ! indices +1 because fortran starts indexing from 1
     call core_add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
-         elements_str,tags,indices+1,orig_elements_str,orig_tags,orig_indices+1,pot_index) ! in Core.f90
+         elements_str,tags,indices+1,orig_elements_str,orig_tags,orig_indices+1,pot_index,success) ! in Core.f90
 
   end subroutine add_potential
 
@@ -469,9 +472,9 @@ contains
   ! *elements atomic symbols specifying the elements the interaction acts on
   ! *orig_elements original atomic symbols specifying the elements the interaction acts on
   ! *group_index index denoting the potential to which the factor is connected
-  !
+  ! *success logical tag specifying if creation of the factor succeeded
   subroutine add_bond_order_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
-       cutoff,smooth_cut,elements,orig_elements,group_index)
+       cutoff,smooth_cut,elements,orig_elements,group_index,success)
     implicit none
     integer, intent(in) :: n_targets, n_params, n_split
     integer, intent(in) :: param_split(n_split), group_index
@@ -480,6 +483,7 @@ contains
     double precision, intent(in) :: cutoff, smooth_cut
     integer, intent(in) :: elements(2,n_targets) ! label_length
     integer, intent(in) :: orig_elements(2,n_targets) ! label_length
+    logical, intent(out) :: success
     character(len=2) :: elements_str(n_targets), orig_elements_str(n_targets) ! label_length
     integer :: i
 
@@ -489,7 +493,7 @@ contains
        call int2str(2,orig_elements(:,i),orig_elements_str(i)) ! in Utility.f90
     end do
     call core_add_bond_order_factor(n_targets,n_params,n_split,bond_name,parameters,param_split,&
-         cutoff,smooth_cut,elements_str,orig_elements_str,group_index) ! in Core.f90
+         cutoff,smooth_cut,elements_str,orig_elements_str,group_index,success) ! in Core.f90
 
   end subroutine add_bond_order_factor
 
