@@ -25,6 +25,7 @@ not physically relevant functionality.
         
     - :func:`int2str`
     - :func:`pad_string`
+    - :func:`read_table`
     - :func:`str2int`
 
 
@@ -95,6 +96,20 @@ Full documentation of subroutines in utility
         the required string length
     **str_out**: character(len=str_length)  **intent(out)**    *scalar*  
         the padded string
+            
+  .. function:: read_table(filename, table, success)
+
+    Reads a 2D real array from a file
+    
+
+    Parameters:
+
+    filename: character(len=*)  *intent(in)*    *scalar*  
+        the name of the file to be read
+    table: double precision  *intent()*  *pointer*  *size(:, :)*  
+        the read array
+    **success**: logical  **intent(out)**    *scalar*  
+        logical tag showing if the operation was successful
             
   .. function:: str2int(length, string, ints)
 

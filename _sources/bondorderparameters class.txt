@@ -116,7 +116,7 @@ could accept for instance the following lists of symbols, respectively::
       >>> three_body_targets = [['Si', 'O', 'H']]
 
 As a rule of thumb, if an n-body bond order factor incorporates parameters for m bodies 
-(m <= n), then these parameters are targeted at the first m symbols of the target list.
+(:math:`m \le n`), then these parameters are targeted at the first m symbols of the target list.
 For instance, if a 3-body factor has the targets of the above example (three_body_targets)
 and it contains 1- and 2-body parameters, then the 1-body parameters are targeted at Si atoms
 and the 2-body parameters at Si-O bonds.
@@ -136,7 +136,7 @@ As an example, the Tersoff bond order factor
 
     g_{ijk} = 1 + \frac{c_{ij}^2}{d_{ij}^2} - \frac{c_{ij}^2}{d_{ij}^2 + (h_{ij} - \cos \theta_{ijk})^2}
 
-is a three-body factor (it includes terms depending on atom triplets i, j, k) and therefore requires a set of three
+is a three-body factor (it includes terms depending on atom triplets :matH:`(i, j, k)`) and therefore requires a set of three
 elements as its target. It incorporates three single body and four two body parameters.
 Such a bond order factor could be created with the following command::
 
@@ -167,8 +167,8 @@ To be used in calculations, this is then passed on to a :class:`~pysic.Coordinat
     >>> pot = pysic.Potential( ... , coordinator=crd )
     >>> cal = pysic.Pysic( potentials=pot )
 
-The above example creates a bond order factor which is applied to all Si triplets (symbols=[['Si','Si','Si']]). The command also assigns 1-body parameters beta, eta, and mu, and 2-body parameters 
-a, c, d, and h. If there are other elements in the system besides silicon, they will be completely ignored: The bond order factors are calculated as if the other elements do not exist. If one wishes to include, say, Si-O bonds in the bond order factor calculation, the list of symbols needs to be expanded by::
+The above example creates a bond order factor which is applied to all Si triplets (symbols=[['Si','Si','Si']]). The command also assigns 1-body parameters :math:`\beta`, :math:`\eta`, and :math:`\mu`, and 2-body parameters 
+:math:`a`, :math:`c`, :math:`d`, and :math:`h`. If there are other elements in the system besides silicon, they will be completely ignored: The bond order factors are calculated as if the other elements do not exist. If one wishes to include, say, Si-O bonds in the bond order factor calculation, the list of symbols needs to be expanded by::
 
    >>> bonds.add_symbols([['Si', 'Si', 'O'],
    ...			  ['Si', 'O', 'Si'],
@@ -177,7 +177,7 @@ a, c, d, and h. If there are other elements in the system besides silicon, they 
    [['Si', 'Si', 'Si'], ['Si', 'Si', 'O'], ['Si', 'O', 'Si'], ['Si', 'O', 'O']]
 
 The format of the symbol list is as follows. In each triplet, the first symbol determines the element on which the factor is calculated. Since above the first symbol of each triplet is 'Si', the factor
-will only be applied on Si atoms. The other symbols define the other elements in the triplets which are taken in to account. The second and third symbols are not, however, symmetric. As the bond order factor is defined using 2-body parameters (a_ij etc.), the first two symbols determine the elements of those two atoms (atoms i and j). The third symbol determines the element of the third atom (atom k) of the triplet. I.e., in the example above, Si-O bond parameters are included with::
+will only be applied on Si atoms. The other symbols define the other elements in the triplets which are taken in to account. The second and third symbols are not, however, symmetric. As the bond order factor is defined using 2-body parameters (:math:`a_ij` etc.), the first two symbols determine the elements of those two atoms (atoms :math:`i` and :math:`j`). The third symbol determines the element of the third atom (atom k) of the triplet. I.e., in the example above, Si-O bond parameters are included with::
 
    >>> [['Si', 'O', 'Si'], ['Si', 'O', 'O']]
 
@@ -276,8 +276,10 @@ Below is a list of bond order factors currently implemented.
 
 - :ref:`coordination scaling function`
 - :ref:`square root scaling function`
+- :ref:`tabulated scaling function`
 - :ref:`coordination bond order factor`
 - :ref:`power decay bond order factor`
+- :ref:`tabulated bond order factor`
 - :ref:`tersoff bond order factor`
 
 
@@ -333,6 +335,31 @@ Keywords::
     >>> names_of_parameters('sqrt_scale')
     [['epsilon']]
 
+.. file:tabulated scaling function
+
+.. _tabulated scaling function:
+
+
+
+
+
+Tabulated scaling function
+_____________________________
+
+1-body bond order factor of the type
+
+.. math::
+
+   b_i(\Sigma_i) = s_i(\Sigma_i),
+
+where :math:`s_i(\Sigma)` is a tabulated function. The tabulation works similarly to the :ref:`tabulated potential`.
+
+Keywords::
+
+    >>> names_of_parameters('table_scale')
+    [[id, range, scale]]
+
+
 .. file:coordination bond order factor
 
 .. _coordination bond order factor:
@@ -383,6 +410,33 @@ Keywords::
 
     >>> names_of_parameters('power_bond')
     [[], [epsilon, a, n]]
+
+.. file:tabulated bond order factor
+
+.. _tabulated bond order factor:
+
+
+
+
+
+Tabulated bond order factor
+_____________________________
+
+2-body bond order factor of the type
+
+.. math::
+
+   b_i = \sum_{j \ne i} f(r_{ij}) t(r_{ij}),
+
+where :math:`t(r)` is a tabulated function. The tabulation works similarly to the :ref:`tabulated potential`.
+
+Similarly, to tabulate bond scaling, use the :ref:`tabulated scaling function`.
+
+Keywords::
+
+    >>> names_of_parameters('table_bond')
+    [[], [id, range, scale]]
+
 
 .. file:tersoff bond order factor
 

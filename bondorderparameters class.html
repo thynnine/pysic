@@ -61,8 +61,10 @@
 <li><a class="reference internal" href="#list-of-currently-available-bond-order-factors">List of currently available bond order factors</a><ul>
 <li><a class="reference internal" href="#coordination-scaling-function">Coordination scaling function</a></li>
 <li><a class="reference internal" href="#square-root-scaling-function">Square root scaling function</a></li>
+<li><a class="reference internal" href="#tabulated-scaling-function">Tabulated scaling function</a></li>
 <li><a class="reference internal" href="#coordination-bond-order-factor">Coordination bond order factor</a></li>
 <li><a class="reference internal" href="#power-decay-bond-order-factor">Power decay bond order factor</a></li>
+<li><a class="reference internal" href="#tabulated-bond-order-factor">Tabulated bond order factor</a></li>
 <li><a class="reference internal" href="#tersoff-bond-order-factor">Tersoff bond order factor</a></li>
 </ul>
 </li>
@@ -139,7 +141,10 @@ by defining a proximity function which is 1 for small separations and
 0 for large distances.</p>
 <div class="math">
 \[\begin{split}f(r) = \begin{cases} 1, &amp; r &lt; r_\mathrm{soft} \\ \frac{1}{2}\left(1+\cos \pi\frac{r-r_\mathrm{soft}}{r_\mathrm{hard}-r_\mathrm{soft}}\right), &amp; r_\mathrm{soft} &lt; r &lt; r_\mathrm{hard} \\ 0, &amp; r &gt; r_\mathrm{hard} \end{cases}.\end{split}\]</div>
-[<a class="reference external" href="./plot_directive/inline/1cd7aa1eaf.py">source code</a>]<p>Exception occurred rendering plot.</p>
+<p>[<a class="reference external" href="./plot_directive/inline/1cd7aa1eaf.hires.png">hires.png</a>, <a class="reference external" href="./plot_directive/inline/1cd7aa1eaf.pdf">pdf</a>]</p>
+<div class="figure">
+<img alt="_images/1cd7aa1eaf.png" src="_images/1cd7aa1eaf.png" />
+</div>
 <p>Since bond order factors such as
 atomic coordination need not decay as a function of distance, one must always
 define a margin for continuous cutoff in bond order factors.</p>
@@ -158,7 +163,7 @@ could accept for instance the following lists of symbols, respectively:</p>
 </pre></div>
 </div>
 <p>As a rule of thumb, if an n-body bond order factor incorporates parameters for m bodies
-(m &lt;= n), then these parameters are targeted at the first m symbols of the target list.
+(<span class="math">\(m \le n\)</span>), then these parameters are targeted at the first m symbols of the target list.
 For instance, if a 3-body factor has the targets of the above example (three_body_targets)
 and it contains 1- and 2-body parameters, then the 1-body parameters are targeted at Si atoms
 and the 2-body parameters at Si-O bonds.</p>
@@ -169,7 +174,7 @@ and the 2-body parameters at Si-O bonds.</p>
 \[\xi_{ijk} = f(r_{ij}) f(r_{ik}) \exp\left[a_{ij}^{\mu_i} (r_{ij} - r_{ik})^{\mu_i} \right]\]</div>
 <div class="math">
 \[g_{ijk} = 1 + \frac{c_{ij}^2}{d_{ij}^2} - \frac{c_{ij}^2}{d_{ij}^2 + (h_{ij} - \cos \theta_{ijk})^2}\]</div>
-<p>is a three-body factor (it includes terms depending on atom triplets i, j, k) and therefore requires a set of three
+<p>is a three-body factor (it includes terms depending on atom triplets <span class="math">\((i, j, k)\)</span>) and therefore requires a set of three
 elements as its target. It incorporates three single body and four two body parameters.
 Such a bond order factor could be created with the following command:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;tersoff&#39;</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">3.2</span><span class="p">,</span> <span class="n">cutoff_margin</span><span class="o">=</span><span class="mf">0.4</span><span class="p">,</span>
@@ -200,8 +205,8 @@ Such a bond order factor could be created with the following command:</p>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">cal</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">(</span> <span class="n">potentials</span><span class="o">=</span><span class="n">pot</span> <span class="p">)</span>
 </pre></div>
 </div>
-<p>The above example creates a bond order factor which is applied to all Si triplets (symbols=[[&#8216;Si&#8217;,&#8217;Si&#8217;,&#8217;Si&#8217;]]). The command also assigns 1-body parameters beta, eta, and mu, and 2-body parameters
-a, c, d, and h. If there are other elements in the system besides silicon, they will be completely ignored: The bond order factors are calculated as if the other elements do not exist. If one wishes to include, say, Si-O bonds in the bond order factor calculation, the list of symbols needs to be expanded by:</p>
+<p>The above example creates a bond order factor which is applied to all Si triplets (symbols=[[&#8216;Si&#8217;,&#8217;Si&#8217;,&#8217;Si&#8217;]]). The command also assigns 1-body parameters <span class="math">\(\beta\)</span>, <span class="math">\(\eta\)</span>, and <span class="math">\(\mu\)</span>, and 2-body parameters
+<span class="math">\(a\)</span>, <span class="math">\(c\)</span>, <span class="math">\(d\)</span>, and <span class="math">\(h\)</span>. If there are other elements in the system besides silicon, they will be completely ignored: The bond order factors are calculated as if the other elements do not exist. If one wishes to include, say, Si-O bonds in the bond order factor calculation, the list of symbols needs to be expanded by:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">bonds</span><span class="o">.</span><span class="n">add_symbols</span><span class="p">([[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">],</span>
 <span class="gp">... </span>                   <span class="p">[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">],</span>
 <span class="gp">... </span>                   <span class="p">[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">]])</span>
@@ -210,7 +215,7 @@ a, c, d, and h. If there are other elements in the system besides silicon, they 
 </pre></div>
 </div>
 <p>The format of the symbol list is as follows. In each triplet, the first symbol determines the element on which the factor is calculated. Since above the first symbol of each triplet is &#8216;Si&#8217;, the factor
-will only be applied on Si atoms. The other symbols define the other elements in the triplets which are taken in to account. The second and third symbols are not, however, symmetric. As the bond order factor is defined using 2-body parameters (a_ij etc.), the first two symbols determine the elements of those two atoms (atoms i and j). The third symbol determines the element of the third atom (atom k) of the triplet. I.e., in the example above, Si-O bond parameters are included with:</p>
+will only be applied on Si atoms. The other symbols define the other elements in the triplets which are taken in to account. The second and third symbols are not, however, symmetric. As the bond order factor is defined using 2-body parameters (<span class="math">\(a_ij\)</span> etc.), the first two symbols determine the elements of those two atoms (atoms <span class="math">\(i\)</span> and <span class="math">\(j\)</span>). The third symbol determines the element of the third atom (atom k) of the triplet. I.e., in the example above, Si-O bond parameters are included with:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="p">[[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;Si&#39;</span><span class="p">],</span> <span class="p">[</span><span class="s">&#39;Si&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">]]</span>
 </pre></div>
 </div>
@@ -297,8 +302,10 @@ For instance, the full list of triplets above can be created with:</p>
 <ul class="simple">
 <li><a class="reference internal" href="#coordination-scaling-function"><em>Coordination scaling function</em></a></li>
 <li><a class="reference internal" href="#square-root-scaling-function"><em>Square root scaling function</em></a></li>
+<li><a class="reference internal" href="#tabulated-scaling-function"><em>Tabulated scaling function</em></a></li>
 <li><a class="reference internal" href="#coordination-bond-order-factor"><em>Coordination bond order factor</em></a></li>
 <li><a class="reference internal" href="#power-decay-bond-order-factor"><em>Power decay bond order factor</em></a></li>
+<li><a class="reference internal" href="#tabulated-bond-order-factor"><em>Tabulated bond order factor</em></a></li>
 <li><a class="reference internal" href="#tersoff-bond-order-factor"><em>Tersoff bond order factor</em></a></li>
 </ul>
 <div class="section" id="coordination-scaling-function">
@@ -328,8 +335,20 @@ bond order factor when mixed. Especially, it is zero if not paired with other bo
 </pre></div>
 </div>
 </div>
+<div class="section" id="tabulated-scaling-function">
+<span id="id5"></span><h3>Tabulated scaling function<a class="headerlink" href="#tabulated-scaling-function" title="Permalink to this headline">¶</a></h3>
+<p>1-body bond order factor of the type</p>
+<div class="math">
+\[b_i(\Sigma_i) = s_i(\Sigma_i),\]</div>
+<p>where <span class="math">\(s_i(\Sigma)\)</span> is a tabulated function. The tabulation works similarly to the <a class="reference internal" href="potential class.html#tabulated-potential"><em>Tabulated potential</em></a>.</p>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;table_scale&#39;</span><span class="p">)</span>
+<span class="go">[[id, range, scale]]</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="coordination-bond-order-factor">
-<span id="id5"></span><h3>Coordination bond order factor<a class="headerlink" href="#coordination-bond-order-factor" title="Permalink to this headline">¶</a></h3>
+<span id="id6"></span><h3>Coordination bond order factor<a class="headerlink" href="#coordination-bond-order-factor" title="Permalink to this headline">¶</a></h3>
 <p>2-body bond order factor defined as</p>
 <div class="math">
 \[b_i = \sum_{j \ne i} f(r_{ij}).\]</div>
@@ -342,7 +361,7 @@ This is a parameterless (besides cutoffs) 2-body bond order factor.</p>
 </div>
 </div>
 <div class="section" id="power-decay-bond-order-factor">
-<span id="id6"></span><h3>Power decay bond order factor<a class="headerlink" href="#power-decay-bond-order-factor" title="Permalink to this headline">¶</a></h3>
+<span id="id7"></span><h3>Power decay bond order factor<a class="headerlink" href="#power-decay-bond-order-factor" title="Permalink to this headline">¶</a></h3>
 <p>2-body bond order factor defined as</p>
 <div class="math">
 \[b_i = \sum_{j \ne i} f(r_{ij}) \varepsilon_{ij} (\frac{a_{ij}}{r_{ij}})^{n_{ij}}.\]</div>
@@ -354,8 +373,21 @@ interatomic distance according to a power law. In form, it is similar to the <a 
 </pre></div>
 </div>
 </div>
+<div class="section" id="tabulated-bond-order-factor">
+<span id="id8"></span><h3>Tabulated bond order factor<a class="headerlink" href="#tabulated-bond-order-factor" title="Permalink to this headline">¶</a></h3>
+<p>2-body bond order factor of the type</p>
+<div class="math">
+\[b_i = \sum_{j \ne i} f(r_{ij}) t(r_{ij}),\]</div>
+<p>where <span class="math">\(t(r)\)</span> is a tabulated function. The tabulation works similarly to the <a class="reference internal" href="potential class.html#tabulated-potential"><em>Tabulated potential</em></a>.</p>
+<p>Similarly, to tabulate bond scaling, use the <a class="reference internal" href="#tabulated-scaling-function"><em>Tabulated scaling function</em></a>.</p>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;table_bond&#39;</span><span class="p">)</span>
+<span class="go">[[], [id, range, scale]]</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="tersoff-bond-order-factor">
-<span id="id7"></span><h3>Tersoff bond order factor<a class="headerlink" href="#tersoff-bond-order-factor" title="Permalink to this headline">¶</a></h3>
+<span id="id9"></span><h3>Tersoff bond order factor<a class="headerlink" href="#tersoff-bond-order-factor" title="Permalink to this headline">¶</a></h3>
 <p>3-body bond order factor defined as</p>
 <div class="math">
 \[b_i = \left[ 1 + \left( \beta_i \sum_{j \ne i} \sum_{k \ne i,j} \xi_{ijk} g_{ijk}  \right)^{\eta_i} \right]^{-\frac{1}{2 \eta_i}}\]</div>

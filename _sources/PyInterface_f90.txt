@@ -116,7 +116,7 @@ Full documentation of subroutines in pysic_interface
         
         
             
-  .. function:: add_bond_order_factor(n_targets, n_params, n_split, bond_name, parameters, param_split, cutoff, smooth_cut, elements, orig_elements, group_index)
+  .. function:: add_bond_order_factor(n_targets, n_params, n_split, bond_name, parameters, param_split, cutoff, smooth_cut, elements, orig_elements, group_index, success)
 
     Creates a bond order factor in the core.
     The memory must have been allocated first using allocate_potentials.
@@ -148,8 +148,10 @@ Full documentation of subroutines in pysic_interface
         original atomic symbols specifying the elements the interaction acts on
     group_index: integer  *intent(in)*    *scalar*  
         index denoting the potential to which the factor is connected
+    **success**: logical  **intent(out)**    *scalar*  
+        logical tag specifying if creation of the factor succeeded
             
-  .. function:: add_potential(n_targets, n_params, pot_name, parameters, cutoff, smooth_cut, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index)
+  .. function:: add_potential(n_targets, n_params, pot_name, parameters, cutoff, smooth_cut, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index, success)
 
     Creates a potential in the core.
     The memory must have been allocated first using allocate_potentials.
@@ -185,6 +187,8 @@ Full documentation of subroutines in pysic_interface
         original indices specifying the atoms the interaction acts on
     pot_index: integer  *intent(in)*    *scalar*  
         index of the potential
+    **success**: logical  **intent(out)**    *scalar*  
+        logical tag specifying if creation of the potential succeeded
             
   .. function:: allocate_bond_order_factors(n_bonds)
 

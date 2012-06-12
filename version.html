@@ -104,7 +104,9 @@
 <h2>Version 0.4.3<a class="headerlink" href="#version-0-4-3" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Major restructuring of the Python source code</li>
+<li>Provided a Makefile for compiling</li>
 <li>Added calculation of the stress tensor with the method <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.get_stress" title="pysic.calculator.Pysic.get_stress"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.calculator.Pysic.get_stress()</span></tt></a>.</li>
+<li>Added the <a class="reference internal" href="potential class.html#tabulated-potential"><em>Tabulated potential</em></a></li>
 <li>Bug fix: Fixed an issue with core initialization where changing the size of the supercell would lead to a conflict in neighbor list updating (the list update was tried before the cell update but failed due to the cell having been changed).</li>
 <li>Bug fix: Fixed an issue with the parallel neighbor list building algorithm which did not properly broadcast the calculated lists to all cpus.</li>
 </ul>

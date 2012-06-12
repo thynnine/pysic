@@ -120,6 +120,7 @@ Below is a list of potentials currently implemented.
 - :ref:`Lennard-Jones potential`
 - :ref:`Buckingham potential`
 - :ref:`charge exponential potential`
+- :ref:`tabulated potential`
 - :ref:`bond bending potential`
 - :ref:`dihedral angle potential`
 
@@ -507,6 +508,110 @@ Fortran routines:
 - :meth:`evaluate_energy_charge_exp`
 - :meth:`evaluate_force_charge_exp`
 - :meth:`evaluate_electronegativity_charge_exp`
+
+.. file:tabulated potential
+
+.. _tabulated potential:
+
+
+
+
+Tabulated potential
+_____________________
+
+2-body interaction of the type :math:`V(r)` defined with a tabulated list of values. 
+
+The values of the potential are read from text files of the format::
+
+  V(0)     V'(0)*R
+  V(dr)    V'(dr)*R
+  V(2*dr)  V'(2*dr)*R
+  ...      ...
+  V(R)     V'(R)*R
+
+where ``V`` and ``V'`` are the numberic values of the potential and its derivative (:math:`V(r)` and :math:`V'(r)`), respectively, for the given values of atomic separation :math:`r`. The grid is assumed to be uniform and starting from 0, so that the values of :math:`r` are :math:`0, \mathrm{d}r, 2\mathrm{d}r, \ldots, R`, where :math:`R` is the range of the tabulation and :math:`\mathrm{d}r = R/(n-1)` where :math:`n` is the number of value pairs (lines) in the table. Note that the first and last derivatives are forced to be zero regardless of what is given in the table (:math:`V'(0) = V'(R) = 0`).
+
+For each interval :math:`[r_i,r_{i+1}]` the value of the potential is calculated using third degree spline (cspline) interpolation
+
+.. math::
+
+  r \in & [r_i,r_{i+1}]: \\
+  t(r) = & \frac{r-r_i}{r_{i+1}-r_i} \\
+  V(r) = & V(r_i) h_{00}(t) + V'(r_i) (r_{i+1}-r_i) h_{10}(t) + \\
+         & V(r_{i+1}) h_{01}(t) + V'(r_{i+1}) (r_{i+1}-r_i) h_{11}(t) \\
+  h_{00}(t) = & 2t^3-3t^2+1 \\
+  h_{10}(t) = & t^3-2t^2+t \\
+  h_{01}(t) = & -2t^3+3t^2 \\
+  h_{11}(t) = & t^3-t^2 
+
+The range of the tabulation :math:`R` is given as a parameter when creating the potential. The tabulated values should be given in a text file with the name ``table_xxxx.txt``, where ``xxxx`` is an identification integer with leading zeros (e.g., ``table_0001.txt``). The id is also given as a parameter when defining the potential. 
+
+The tabulation range :math:`R` is not the same as a cutoff. It merely defines the value of :math:`r` for the last given value in the table. If the cutoff is longer than that, then :math:`V(r) = V(R)` for all :math:`r > R`. If the cutoff is shorter than the range, then as for all potentials, :math:`V(r) = 0` for all :math:`r > r_{\mathrm{cut}}`. A smooth cutoff (see :ref:`potential cutoffs`) can also be applied on top of the tabulation. The reason for this formalism is that once you have tabulated your potential, you may change the cutoff and smoothening marginal without having to retabulate the potential. 
+
+You can also scale the potential in :math:`r`-axis just by changing the range :math:`R`, which is the reason why the table needs to include the derivatives multiplied by :math:`R`: Say you tabulate a potential for a given :math:`R`, obtaining values :math:`V(r), V'(r)R`. If you scale the :math:`r`-axis of the potential by a factor :math:`\rho`, :math:`R^* = \rho R`, you obtain a new potential :math:`U(r)`. This new potential is a scaling of the original potential :math:`U(r) = V(r/\rho), U'(r) = V'(r/\rho)/\rho`. The tabulated :math:`r` values are scaled so that the :math:`i`\ th value becomes :math:`r^*_i = \rho r_i`, and so the expected tabulated values are for the potential :math:`U(r_i^*) = V(r_i^*/\rho) = V(r_i)` and for the derivative :math:`U'(r^*_i)R^* = V'(r^*_i/\rho)R^*/\rho = V'(r_i)R`. That is, the tabulated values are invariant under the scaling of :math:`R`.
+
+Finally, another parameter is available for scaling the energy scale :math:`V(r) \to \varepsilon V(r)`.
+
+The file containing the tabulated values is directly read in by the Fortran core, and it is not allowed to contain anything besides two equally long columns of real numbers separated by white spaces.
+
+Keywords::
+
+    >>> names_of_parameters('tabulated')
+    ['id', 'range', 'scale']
+
+.. only:: html
+
+The example plot below shows the resulting potentials for table::
+
+  1.0  0.0
+  0.5  0.0
+  0.0  0.0
+
+as well as similar tables with the second number on the second row replaced by -1.0 or -2.0 with range :math:`R=2.0` (i.e., the midpoint gets derivative values of 0.0, -0.5, or -1.0).
+
+
+ .. plot::
+   
+   import matplotlib.pyplot as plt
+   from math import exp
+   x = []; y = []; y2 = []; y3 = []
+   xp = [0,1,2]
+   yp = [1,0.5,0]
+   start = 0.0
+   end = 2.0
+   steps = 100
+   dx = (end-start)/steps
+   for i in range(steps+1):
+       xval = start + i*dx
+       x.append( xval )
+       if xval < 1.0:
+           t = xval
+           y.append( 1.0 * (2*t**3-3*t**2+1) + 0.5 * (-2*t**3+3*t**2))
+           y2.append( 1.0 * (2*t**3-3*t**2+1) - 0.5 * (t**3-t**2) + 0.5 * (-2*t**3+3*t**2) )
+           y3.append( 1.0 * (2*t**3-3*t**2+1) - 1.0 * (t**3-t**2) + 0.5 * (-2*t**3+3*t**2) )
+       else:
+           t = xval-1.0
+           y.append( 0.5 * (2*t**3-3*t**2+1) )
+           y2.append( 0.5 * (2*t**3-3*t**2+1) - 0.5 * (t**3-2*t**2+t) )
+           y3.append( 0.5 * (2*t**3-3*t**2+1) - 1.0 * (t**3-2*t**2+t) )
+   plt.plot(x,y)
+   plt.plot(x,y2)
+   plt.plot(x,y3)
+   plt.plot(xp,yp,'o')
+   plt.title(r'Tabulated potential $R=2.0$')
+   plt.xlim(0.0,2.0)
+   plt.ylim(-0.1,1.1)
+   plt.xlabel('$r$')
+   plt.ylabel('$V$')
+   plt.show()
+
+
+Fortran routines:
+
+- :meth:`create_potential_characterizer_table`
+- :meth:`evaluate_energy_table`
+- :meth:`evaluate_force_table`
+
 
 .. file:bond bending potential
 

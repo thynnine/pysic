@@ -112,6 +112,7 @@ not physically relevant functionality.</p>
 <ul class="simple">
 <li><a class="reference internal" href="#int2str" title="int2str"><tt class="xref py py-func docutils literal"><span class="pre">int2str()</span></tt></a></li>
 <li><a class="reference internal" href="#pad_string" title="pad_string"><tt class="xref py py-func docutils literal"><span class="pre">pad_string()</span></tt></a></li>
+<li><a class="reference internal" href="#read_table" title="read_table"><tt class="xref py py-func docutils literal"><span class="pre">read_table()</span></tt></a></li>
 <li><a class="reference internal" href="#str2int" title="str2int"><tt class="xref py py-func docutils literal"><span class="pre">str2int()</span></tt></a></li>
 </ul>
 </div>
@@ -178,6 +179,21 @@ Fortran may be forced to a certain length.</p>
 <dd>the required string length</dd>
 <dt><strong>str_out</strong>: character(len=str_length)  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>the padded string</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="read_table">
+<tt class="descname">read_table</tt><big>(</big><em>filename</em>, <em>table</em>, <em>success</em><big>)</big><a class="headerlink" href="#read_table" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reads a 2D real array from a file</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>filename: character(len=*)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the name of the file to be read</dd>
+<dt>table: double precision  <em>intent()</em>  <em>pointer</em>  <em>size(:, :)</em></dt>
+<dd>the read array</dd>
+<dt><strong>success</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>logical tag showing if the operation was successful</dd>
 </dl>
 </dd></dl>
 

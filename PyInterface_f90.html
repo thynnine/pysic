@@ -199,7 +199,7 @@ to, if the routine is just a redirect of the call.</p>
 <blockquote>
 <div><dl class="function">
 <dt id="add_bond_order_factor">
-<tt class="descname">add_bond_order_factor</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>n_split</em>, <em>bond_name</em>, <em>parameters</em>, <em>param_split</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>orig_elements</em>, <em>group_index</em><big>)</big><a class="headerlink" href="#add_bond_order_factor" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">add_bond_order_factor</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>n_split</em>, <em>bond_name</em>, <em>parameters</em>, <em>param_split</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>orig_elements</em>, <em>group_index</em>, <em>success</em><big>)</big><a class="headerlink" href="#add_bond_order_factor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a bond order factor in the core.
 The memory must have been allocated first using allocate_potentials.</p>
 <p>Calls <a class="reference internal" href="Core_f90.html#core_add_bond_order_factor" title="core_add_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">core_add_bond_order_factor()</span></tt></a></p>
@@ -227,12 +227,14 @@ The memory must have been allocated first using allocate_potentials.</p>
 <dd>original atomic symbols specifying the elements the interaction acts on</dd>
 <dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>index denoting the potential to which the factor is connected</dd>
+<dt><strong>success</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>logical tag specifying if creation of the factor succeeded</dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="add_potential">
-<tt class="descname">add_potential</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>pot_name</em>, <em>parameters</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>tags</em>, <em>indices</em>, <em>orig_elements</em>, <em>orig_tags</em>, <em>orig_indices</em>, <em>pot_index</em><big>)</big><a class="headerlink" href="#add_potential" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">add_potential</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>pot_name</em>, <em>parameters</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>tags</em>, <em>indices</em>, <em>orig_elements</em>, <em>orig_tags</em>, <em>orig_indices</em>, <em>pot_index</em>, <em>success</em><big>)</big><a class="headerlink" href="#add_potential" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a potential in the core.
 The memory must have been allocated first using allocate_potentials.</p>
 <p>Calls <a class="reference internal" href="Core_f90.html#core_add_potential" title="core_add_potential"><tt class="xref py py-func docutils literal"><span class="pre">core_add_potential()</span></tt></a></p>
@@ -264,6 +266,8 @@ The memory must have been allocated first using allocate_potentials.</p>
 <dd>original indices specifying the atoms the interaction acts on</dd>
 <dt>pot_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>index of the potential</dd>
+<dt><strong>success</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>logical tag specifying if creation of the potential succeeded</dd>
 </dl>
 </dd></dl>
 

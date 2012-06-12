@@ -411,7 +411,7 @@ to Python are simply calling routines here.</p>
 <blockquote>
 <div><dl class="function">
 <dt id="core_add_bond_order_factor">
-<tt class="descname">core_add_bond_order_factor</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>n_split</em>, <em>bond_name</em>, <em>parameters</em>, <em>param_split</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>orig_elements</em>, <em>group_index</em><big>)</big><a class="headerlink" href="#core_add_bond_order_factor" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">core_add_bond_order_factor</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>n_split</em>, <em>bond_name</em>, <em>parameters</em>, <em>param_split</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>orig_elements</em>, <em>group_index</em>, <em>success</em><big>)</big><a class="headerlink" href="#core_add_bond_order_factor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates one additional bond_order_factor in the core.
 The routine assumes that adequate memory has been
 allocated already using core_allocate_bond_order_factors.</p>
@@ -454,12 +454,14 @@ to be given in the &#8216;orig_elements&#8217; lists.</p>
 <dd>original atomic symbols specifying the elements the interaction acts on</dd>
 <dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>index denoting the potential to which the factor is connected</dd>
+<dt><strong>success</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>logical tag specifying if creation of the factor succeeded</dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="core_add_potential">
-<tt class="descname">core_add_potential</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>pot_name</em>, <em>parameters</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>tags</em>, <em>indices</em>, <em>orig_elements</em>, <em>orig_tags</em>, <em>orig_indices</em>, <em>pot_index</em><big>)</big><a class="headerlink" href="#core_add_potential" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">core_add_potential</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>pot_name</em>, <em>parameters</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>tags</em>, <em>indices</em>, <em>orig_elements</em>, <em>orig_tags</em>, <em>orig_indices</em>, <em>pot_index</em>, <em>success</em><big>)</big><a class="headerlink" href="#core_add_potential" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates one additional potential in the core.
 The routine assumes that adequate memory has been
 allocated already using core_allocate_potentials.</p>
@@ -506,6 +508,8 @@ to be given in the &#8216;orig_*&#8217; lists.</p>
 <dd>original indices specifying the atoms the interaction acts on</dd>
 <dt>pot_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>index of the potential</dd>
+<dt><strong>success</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>logical tag specifying if creation of the potential succeeded</dd>
 </dl>
 </dd></dl>
 
@@ -629,9 +633,8 @@ atom are calculated with respect to moving all atoms.</p>
 <dd>precalculated bond order sums, <span class="math">\(\sum_j c_{ij}\)</span>, in the above example.</dd>
 <dt><strong>total_gradient</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
 <dd>the calculated bond order gradients <span class="math">\(\nabla_\alpha b_i\)</span></dd>
-</dl>
-<p><strong>total_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></p>
-<dl class="docutils">
+<dt><strong>total_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></dt>
+<dd>the components of the virial due to the bond order gradients</dd>
 <dt>for_factor: logical  <em>intent(in)</em>    <em>scalar</em>  <em>optional</em></dt>
 <dd>a switch for requesting the gradients for a given <span class="math">\(i\)</span> instead of a given <span class="math">\(\alpha\)</span></dd>
 </dl>
@@ -663,8 +666,9 @@ atom <span class="math">\(i\)</span> are calculated with respect to moving all a
 <dd>precalculated bond order sums, <span class="math">\(\sum_j c_{ij}\)</span>, in the above example.</dd>
 <dt><strong>total_gradient</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
 <dd>the calculated bond order gradients <span class="math">\(\nabla_\alpha b_i\)</span></dd>
+<dt><strong>total_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></dt>
+<dd>the components of the virial due to the bond order gradient</dd>
 </dl>
-<p><strong>total_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></p>
 </dd></dl>
 
 <dl class="function">
@@ -1052,8 +1056,9 @@ and C slot 3). This is only used for storing the values.</p>
 <dd>index denoting the position of the atom in an interacting group (such as A-B-C triplet)</dd>
 <dt><strong>bond_order_gradients</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
 <dd>the calculated gradients of the bond order factor</dd>
+<dt><strong>bond_order_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></dt>
+<dd>the components of the virial due to the bond order factors</dd>
 </dl>
-<p><strong>bond_order_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></p>
 </dd></dl>
 
 <dl class="function">
@@ -1255,10 +1260,10 @@ bond factor is of a pair or many body type.</p>
 <dd>precalculated gradients of bond order sums, <span class="math">\(\nabla_\alpha \sum_j c_{ij}\)</span>, in the above example</dd>
 <dt><strong>total_bond_gradients</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
 <dd>the calculated bond order gradients <span class="math">\(\nabla_\alpha b_i\)</span></dd>
-</dl>
-<p>raw_virial: double precision  <em>intent(in)</em>    <em>size(6)</em></p>
-<p><strong>total_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></p>
-<dl class="docutils">
+<dt>raw_virial: double precision  <em>intent(in)</em>    <em>size(6)</em></dt>
+<dd>the precalculated virial due to the bond order gradient</dd>
+<dt><strong>total_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></dt>
+<dd>the scaled  virial due to the bond order gradient</dd>
 <dt>mpi_split: logical  <em>intent(in)</em>    <em>scalar</em>  <em>optional</em></dt>
 <dd>A switch for enabling MPI parallelization. By default the routine is sequential since the calculation may be called from within an already parallelized routine.</dd>
 </dl>
