@@ -5248,8 +5248,13 @@ contains
 
     factor_out = 0.d0
 
+    if(raw_sum <= 0.d0)then
+       factor_out = 0.d0
+       return
+    end if
+
     n_values = size(bond_params%table(:,1))
-    max_r = bond_params%parameters(2,2)
+    max_r = bond_params%parameters(2,1)
     dr = max_r / (n_values-1)
     
     r1 = raw_sum
@@ -5294,7 +5299,7 @@ contains
     factor_out = 0.d0
 
     n_values = size(bond_params%table(:,1))
-    max_r = bond_params%parameters(2,2)
+    max_r = bond_params%parameters(2,1)
     dr = max_r / (n_values-1)
     
     r1 = raw_sum
@@ -5306,7 +5311,7 @@ contains
     end if
     t2 = t*t
 
-    factor_out = bond_params%parameters(3,2) * &
+    factor_out = bond_params%parameters(3,1) * &
          ( bond_params%table(lower_index,1)/dr * 6*(t2 - t) + &
          bond_params%table(lower_index,2)/max_r * (3*t2 - 4*t + 1) + &
          bond_params%table(lower_index+1,1)/dr * 6*(t - t2) + &
