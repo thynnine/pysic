@@ -3014,7 +3014,7 @@ success)
                 bo_factors = 1.d0
              end if
 
-             ! Add the force due to potential gradient
+             ! Add the electronegativity due to potential gradient
              enegs(index1) = enegs(index1) + tmp_enegs(1)*bo_factors(index1)
 
           end select
