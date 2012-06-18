@@ -774,13 +774,12 @@ class Pysic:
         if do_full_init:
             self.initialize_fortran_core()
         else:
-            
             if not Pysic.core.cell_ready(self.structure):
                 self.update_core_supercell()
             
             if not Pysic.core.atoms_ready(self.structure):
                 self.update_core_coordinates()
-
+            
             if not Pysic.core.charges_ready(self.structure):
                 self.update_core_charges()
                     
@@ -884,21 +883,15 @@ class Pysic:
             master_potentials.extend([pots.get_potentials()[0]]*\
                                      len(pots.get_potentials()))
     
-        print "\n", elemental_potentials
-        print "\n", is_multiplier
-        print "\n", master_potentials
-
         pot_index = 0
         for pot, mul, mpot in zip(elemental_potentials,is_multiplier, master_potentials):
     
-            print "\n", pot, "\n", mul, "\n", mpot
-            print "\n\n"
-            
             group_index = -1
             if mpot.get_coordinator() != None:
                 group_index = pot_index
                 mpot.get_coordinator().set_group_index(pot_index)
-            pot_index += 1
+            if not mul:
+                pot_index += 1
 
             n_targ = mpot.get_number_of_targets()
             no_symbs = np.array( n_targ*[pu.str2ints('xx',2)] ).transpose()
@@ -1380,8 +1373,7 @@ class Pysic:
         energy_m = self.get_potential_energy(system)
         charges[atom_index] += 1.0*shift
         system.set_charges(charges)
-        
-        
+                
         self.energy == None
         self.set_atoms(orig_system)
         self.set_core()

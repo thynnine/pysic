@@ -30,7 +30,7 @@ module pysic_core
   type(bond_order_parameters), pointer :: bond_factors(:)
   ! *n_interactions number of potentials
   ! *n_bond_order_factors number of bond order factors
-  ! *n_multi number of temporary multiplication potentials
+  ! *n_multi number of temporary product potentials
   integer :: n_interactions = 0, n_bond_factors = 0, n_multi = 0
   ! logical tags monitoring the allocation and deallocation
   ! of the corresponding pointers
@@ -2987,7 +2987,7 @@ contains
              end if
 
              ! evaluate the 1-body energy involving atom1
-             call evaluate_energy(1,dummy_sep,dummy_dist,&
+             call evaluate_energy(1,interaction%n_product,dummy_sep,dummy_dist,&
                   interaction,tmp_energy,atoms(index1:index1)) ! in Potentials.f90
              energy = energy + tmp_energy*bo_factors(index1)
 
@@ -2998,7 +2998,7 @@ contains
              !**********************!
 
              ! evaluate the 1-body energy involving atom1
-             call evaluate_forces(1,dummy_sep,dummy_dist,&
+             call evaluate_forces(1,interaction%n_product,dummy_sep,dummy_dist,&
                   interaction,tmp_forces(1:3,1),atoms(index1:index1)) ! in Potentials.f90
 
              ! If there is a bond order factor associated with the potential,
@@ -3022,7 +3022,7 @@ contains
 
                 ! Add the bond order gradient terms involving the atom1 self energy for all atoms.
                 ! That is, add the (\nabla_a b_i) v_i term with the given i (atom1) for all a.
-                call evaluate_energy(1,dummy_sep,dummy_dist,interaction,&
+                call evaluate_energy(1,interaction%n_product,dummy_sep,dummy_dist,interaction,&
                      tmp_energy,atoms(index1:index1))  ! in Potentials.f90
                 forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) - &
                      tmp_energy*bo_gradients(1:3,1:n_atoms,1)
@@ -3044,7 +3044,7 @@ contains
              !**********************************!
 
              ! evaluate the 1-body energy involving atom1
-             call evaluate_electronegativity(1,dummy_sep,dummy_dist,&
+             call evaluate_electronegativity(1,interaction%n_product,dummy_sep,dummy_dist,&
                   interaction,tmp_enegs(1),atoms(index1:index1)) ! in Potentials.f90
 
              ! If there is a bond order factor associated with the potential,
@@ -3151,7 +3151,7 @@ contains
                 end if
 
                 ! evaluate the 2-body energy involving atom1-atom2 interaction
-                call evaluate_energy(2,separations(1:3,1),distances(1),&
+                call evaluate_energy(2,interaction%n_product,separations(1:3,1),distances(1),&
                      interaction,tmp_energy,atom_doublet)  ! in Potentials.f90
 
                 ! add the term: b_ij v_ij f(rij)
@@ -3169,7 +3169,7 @@ contains
                 ! since we are mulplying the potential.
                 if((interaction%pot_index > -1) .or. &
                      interaction%smoothened)then
-                   call evaluate_energy(2,separations(1:3,1),distances(1),&
+                   call evaluate_energy(2,interaction%n_product,separations(1:3,1),distances(1),&
                         interaction,tmp_energy,atom_doublet) ! in Potentials.f90
                 else
                    tmp_energy = 0.d0
@@ -3245,7 +3245,7 @@ contains
                 end if
 
                 ! evaluate the 2-body force involving atom1-atom2 interaction
-                call evaluate_forces(2,separations(1:3,1),distances(1),&
+                call evaluate_forces(2,interaction%n_product,separations(1:3,1),distances(1),&
                      interaction,tmp_forces(1:3,1:2),atom_doublet) ! in Potentials.f90
 
                 ! force on atom 1:                 
@@ -3302,7 +3302,7 @@ contains
                 end if
 
                 ! evaluate the 2-body e-neg involving atom1-atom2 interaction
-                call evaluate_electronegativity(2,separations(1:3,1),distances(1),&
+                call evaluate_electronegativity(2,interaction%n_product,separations(1:3,1),distances(1),&
                      interaction,tmp_enegs(1:2),atom_doublet) ! in Potentials.f90
 
                 ! e-neg on atom 1:
@@ -3422,7 +3422,7 @@ contains
                    end if
 
                    ! evaluate the 3-body energy involving atom2-atom1-atom3 interaction
-                   call evaluate_energy(3,separations(1:3,1:2),distances(1:2),&
+                   call evaluate_energy(3,interaction%n_product,separations(1:3,1:2),distances(1:2),&
                         interaction,tmp_energy,atom_triplet)
 
                    ! add the term: b_ijk v_ijk f(r_ij) f(r_ik)
@@ -3441,7 +3441,7 @@ contains
                    ! since we are mulplying the potential.
                    if((interaction%pot_index > -1) .or. &
                         interaction%smoothened)then
-                      call evaluate_energy(3,separations(1:3,1:2),distances(1:2),&
+                      call evaluate_energy(3,interaction%n_product,separations(1:3,1:2),distances(1:2),&
                            interaction,tmp_energy,atom_triplet) ! in Potentials.f90
                    else
                       tmp_energy = 0.d0
@@ -3536,7 +3536,7 @@ contains
                    end if
 
                    ! evaluate the 3-body force
-                   call evaluate_forces(3,separations(1:3,1:2),distances(1:2),interaction,&
+                   call evaluate_forces(3,interaction%n_product,separations(1:3,1:2),distances(1:2),interaction,&
                         tmp_forces(1:3,1:3),atom_triplet) ! in Potentials.f90
 
 
@@ -3617,7 +3617,8 @@ contains
                    end if
 
                    ! evaluate the 3-body e-neg involving atom2-atom1-atom3 interaction
-                   call evaluate_electronegativity(3,separations(1:3,1:2),distances(1:2),interaction,&
+                   call evaluate_electronegativity(3,interaction%n_product,separations(1:3,1:2),&
+                        distances(1:2),interaction,&
                         tmp_enegs(1:3),atom_triplet) ! in Potentials.f90
 
                    ! e-neg on atom 1:
@@ -3758,7 +3759,7 @@ contains
                       end if
 
                       ! evaluate the 4-body energy
-                      call evaluate_energy(4,separations(1:3,1:3),distances(1:3),&
+                      call evaluate_energy(4,interaction%n_product,separations(1:3,1:3),distances(1:3),&
                            interaction,tmp_energy,atom_quadruplet)
 
                       ! add the term: b_ijkl v_ijkl f(r_ij) f(r_jk) f(r_lk)
@@ -3776,7 +3777,7 @@ contains
                       ! since we are mulplying the potential.
                       if((interaction%pot_index > -1) .or. &
                            interaction%smoothened)then
-                         call evaluate_energy(4,separations(1:3,1:3),distances(1:3),&
+                         call evaluate_energy(4,interaction%n_product,separations(1:3,1:3),distances(1:3),&
                               interaction,tmp_energy,atom_quadruplet) ! in Potentials.f90
                       else
                          tmp_energy = 0.d0
@@ -3891,7 +3892,7 @@ contains
 
 
                       ! evaluate the 4-body force
-                      call evaluate_forces(4,separations(1:3,1:3),distances(1:3),interaction,&
+                      call evaluate_forces(4,interaction%n_product,separations(1:3,1:3),distances(1:3),interaction,&
                            tmp_forces(1:3,1:4),atom_quadruplet) ! in Potentials.f90
 
                       ! force on atom 1:
@@ -3995,7 +3996,8 @@ contains
                       end if
 
                       ! evaluate the 4-body e-neg
-                      call evaluate_electronegativity(4,separations(1:3,1:3),distances(1:3),interaction,&
+                      call evaluate_electronegativity(4,interaction%n_product,separations(1:3,1:3),&
+                           distances(1:3),interaction,&
                            tmp_enegs(1:4),atom_quadruplet) ! in Potentials.f90
 
 

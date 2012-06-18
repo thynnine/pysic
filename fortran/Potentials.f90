@@ -274,9 +274,10 @@ module potentials
   ! *filter_indices a logical switch specifying whether the potential targets atoms based on the atom indices
   ! *smoothened logical switch specifying if a smooth cutoff is applied to the potential
   ! *table array for storing tabulated values
+  ! *n_product number of multipliers for a product potential
   ! *multipliers additional potentials with the same targets and cutoff, for potential multiplication
   type potential
-     integer :: type_index, pot_index
+     integer :: type_index, pot_index, n_product
      double precision, pointer :: parameters(:), derived_parameters(:), table(:,:)
      double precision :: cutoff, soft_cutoff
      character(len=2), pointer :: apply_elements(:) ! label_length
@@ -2134,6 +2135,7 @@ contains
 
     nullify(new_potential%multipliers)
     allocate(new_potential%multipliers(n_multi))
+    new_potential%n_product = n_multi+1
     do i = 1, n_multi
        new_potential%multipliers(i) = multipliers(i)
     end do
@@ -2207,7 +2209,68 @@ contains
   ! *interaction a :data:`potential` containing the parameters
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
   ! *eneg the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
-  subroutine evaluate_electronegativity(n_targets,separations,distances,interaction,eneg,atoms)
+  subroutine evaluate_electronegativity(n_targets,n_product,separations,distances,interaction,eneg,atoms)
+    implicit none
+    integer, intent(in) :: n_targets, n_product
+    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: eneg(n_targets)
+    type(atom), intent(in) :: atoms(n_targets)
+    double precision :: multi_energy(n_product), multi_eneg(n_targets,n_product), energy
+    integer :: i
+
+
+    if(n_product > 1)then
+       call evaluate_energy_component(n_targets,separations,distances,interaction,&
+            multi_energy(1),atoms)
+       call evaluate_electronegativity_component(n_targets,separations,distances,interaction,&
+            multi_eneg(1:n_targets,1),atoms)
+       
+       do i = 1, n_product-1
+          call evaluate_energy_component(n_targets,separations,distances,interaction%multipliers(i),&
+               multi_energy(i+1),atoms)       
+          call evaluate_electronegativity_component(n_targets,separations,distances,interaction%multipliers(i),&
+               multi_eneg(1:n_targets,i+1),atoms)
+       end do
+
+       eneg = 0.d0
+       energy = 1.d0
+       do i = 1, n_product
+          energy = energy * multi_energy(i)          
+       end do
+
+       do i = 1, n_product
+          eneg(1:n_targets) = eneg(1:n_targets) + &
+               energy / multi_energy(i) * multi_eneg(1:n_targets,i)
+       end do
+
+    else
+       call evaluate_electronegativity_component(n_targets,separations,distances,interaction,&
+            eneg,atoms)       
+    end if
+
+  end subroutine evaluate_electronegativity
+
+  ! If a potential, say, :math:`U_{ijk}` depends on the charges of atoms :math:`q_i` 
+  ! it will not only create a force,
+  ! but also a difference in chemical potential :math:`\mu_i` for the atomic partial charges.
+  ! Similarly to :func:`evaluate_forces`, this function evaluates the chemical
+  ! 'force' on the atomic charges
+  !
+  ! .. math::
+  !
+  !    \chi_{\alpha,ijk} = -\mu_{\alpha,ijk} = -\frac{\partial U_{ijk}}{\partial q_\alpha}
+  !
+  ! To be consist the forces returned by :func:`evaluate_electronegativity` must be
+  ! derivatives of the energies returned by :func:`evaluate_energy`.
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *eneg the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+  subroutine evaluate_electronegativity_component(n_targets,separations,distances,interaction,eneg,atoms)
     implicit none
     integer, intent(in) :: n_targets
     double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
@@ -2231,7 +2294,7 @@ contains
        call evaluate_electronegativity_charge_self(interaction,eneg(1),atoms(1))
     end select
 
-  end subroutine evaluate_electronegativity
+  end subroutine evaluate_electronegativity_component
 
 
 
@@ -2256,7 +2319,68 @@ contains
   ! *interaction a :data:`potential` containing the parameters
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
   ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
-  subroutine evaluate_forces(n_targets,separations,distances,interaction,force,atoms)
+  subroutine evaluate_forces(n_targets,n_product,separations,distances,interaction,force,atoms)
+    implicit none
+    integer, intent(in) :: n_targets, n_product
+    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,n_targets)
+    type(atom), intent(in) :: atoms(n_targets)
+    double precision :: multi_energy(n_product), multi_force(3,n_targets,n_product), energy
+    integer :: i
+
+    if(n_product > 1)then
+       call evaluate_energy_component(n_targets,separations,distances,interaction,&
+            multi_energy(1),atoms)
+       call evaluate_force_component(n_targets,separations,distances,interaction,&
+            multi_force(1:3,1:n_targets,1),atoms)
+       
+       do i = 1, n_product-1
+          call evaluate_energy_component(n_targets,separations,distances,interaction%multipliers(i),&
+               multi_energy(i+1),atoms)       
+          call evaluate_force_component(n_targets,separations,distances,interaction%multipliers(i),&
+               multi_force(1:3,1:n_targets,i+1),atoms)
+       end do
+
+       force = 0.d0
+       energy = 1.d0
+       do i = 1, n_product
+          energy = energy * multi_energy(i)          
+       end do
+
+       do i = 1, n_product
+          force(1:3,1:n_targets) = force(1:3,1:n_targets) + &
+               energy / multi_energy(i) * multi_force(1:3,1:n_targets,i)
+       end do
+
+    else
+       call evaluate_force_component(n_targets,separations,distances,interaction,&
+            force,atoms)       
+    end if
+
+  end subroutine evaluate_forces
+
+
+  ! Evaluates the forces due to an interaction between the given
+  ! atoms. In other words, if the total force on atom :math:`\alpha` is
+  !
+  ! .. math::
+  !
+  !    \mathbf{F}_\alpha = \sum_{ijk} -\nabla_\alpha v_{ijk} = \sum \mathbf{f}_{\alpha,ijk},
+  !
+  ! this routine evaluates :math:`\mathbf{f}_{\alpha,ijk}` for :math:`\alpha = (i,j,k)` for the given
+  ! atoms i, j, and k.
+  !
+  ! To be consist the forces returned by :func:`evaluate_forces` must be
+  ! gradients of the energies returned by :func:`evaluate_energy`.
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  subroutine evaluate_force_component(n_targets,separations,distances,interaction,force,atoms)
     implicit none
     integer, intent(in) :: n_targets
     double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
@@ -2296,9 +2420,55 @@ contains
        call evaluate_force_table(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
     end select
 
-  end subroutine evaluate_forces
+  end subroutine evaluate_force_component
 
   ! !!!: evaluate_energy
+
+  ! Evaluates the potential energy due to an interaction between the given
+  ! atoms. In other words, if the total potential energy is
+  !
+  ! .. math::
+  !
+  !    E = \sum_{ijk} v_{ijk}
+  !
+  ! this routine evaluates :math:`v_{ijk}` for the given
+  ! atoms i, j, and k.
+  ! 
+  ! To be consist the forces returned by :func:`evaluate_forces` must be
+  ! gradients of the energies returned by :func:`evaluate_energy`.
+  !
+  ! *n_targets number of targets
+  ! *n_product number of multipliers for a product potential
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *energy the calculated energy :math:`v_{ijk}`
+  subroutine evaluate_energy(n_targets,n_product,separations,distances,interaction,energy,atoms)
+    implicit none
+    integer, intent(in) :: n_targets, n_product
+    double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    type(atom), intent(in) :: atoms(n_targets)
+    double precision :: multi_energy(n_product)
+    integer :: i
+
+    call evaluate_energy_component(n_targets,separations,distances,interaction,&
+         multi_energy(1),atoms)
+
+    do i = 1, n_product-1
+       call evaluate_energy_component(n_targets,separations,distances,interaction%multipliers(i),&
+            multi_energy(i+1),atoms)       
+    end do
+
+    energy = 1.d0
+    do i = 1, n_product
+       energy = energy * multi_energy(i)
+    end do
+
+  end subroutine evaluate_energy
+
 
   ! Evaluates the potential energy due to an interaction between the given
   ! atoms. In other words, if the total potential energy is
@@ -2319,13 +2489,13 @@ contains
   ! *interaction a :data:`bond_order_parameters` containing the parameters
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
   ! *energy the calculated energy :math:`v_{ijk}`
-  subroutine evaluate_energy(n_targets,separations,distances,interaction,energy,atoms)
+  subroutine evaluate_energy_component(n_targets,separations,distances,interaction,energy,atoms)
     implicit none
     integer, intent(in) :: n_targets
     double precision, intent(in) :: separations(3,n_targets-1), distances(n_targets-1)
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: energy
-    type(atom), optional, intent(in) :: atoms(n_targets)
+    type(atom), intent(in) :: atoms(n_targets)
 
     energy = 0.d0
 
@@ -2361,7 +2531,7 @@ contains
        call evaluate_energy_charge_self(interaction,energy,atoms(1))
     end select
 
-  end subroutine evaluate_energy
+  end subroutine evaluate_energy_component
 
 
 

@@ -4,7 +4,7 @@ from pysic.core import *
 from pysic.utility.error import InvalidPotentialError
 
 
-class MultipliedPotential:
+class ProductPotential:
     """Class representing an interaction obtained by multiplying several :class:`~pysic.interactions.local.Potential` objects.
     """
 
@@ -81,7 +81,7 @@ class MultipliedPotential:
         return self.potentials[0].get_coordinator()
 
     def set_coordinator(self, coordinator):
-        self.potentials[0].set_coordinator()
+        self.potentials[0].set_coordinator(coordinator)
 
     def set_symbols(self, symbols):
         self.potentials[0].set_symbols(symbols)
