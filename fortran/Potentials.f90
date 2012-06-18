@@ -274,6 +274,7 @@ module potentials
   ! *filter_indices a logical switch specifying whether the potential targets atoms based on the atom indices
   ! *smoothened logical switch specifying if a smooth cutoff is applied to the potential
   ! *table array for storing tabulated values
+  ! *multipliers additional potentials with the same targets and cutoff, for potential multiplication
   type potential
      integer :: type_index, pot_index
      double precision, pointer :: parameters(:), derived_parameters(:), table(:,:)
@@ -283,6 +284,7 @@ module potentials
      character(len=2), pointer :: original_elements(:) ! label_length
      integer, pointer :: original_tags(:), original_indices(:)
      logical :: filter_elements, filter_tags, filter_indices, smoothened
+     type(potential), pointer :: multipliers(:)
   end type potential
 
   ! Defines a particular bond order factor.
@@ -2051,9 +2053,11 @@ contains
   ! *new_potential the created :data:`potential`
   ! *success logical tag specifying if creation of the potential succeeded
   subroutine create_potential(n_targets,n_params,pot_name,parameters,cutoff,soft_cutoff,&
-       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,new_potential,success)
+       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,&
+       n_multi,multipliers,&
+       new_potential,success)
     implicit none
-    integer, intent(in) :: n_targets, n_params, pot_index
+    integer, intent(in) :: n_targets, n_params, pot_index, n_multi
     character(len=*), intent(in) :: pot_name
     double precision, intent(in) :: parameters(n_params)
     double precision, intent(in) :: cutoff, soft_cutoff
@@ -2061,11 +2065,13 @@ contains
     integer, intent(in) :: tags(n_targets), indices(n_targets)
     character(len=2), intent(in) :: orig_elements(n_targets) ! label_length
     integer, intent(in) :: orig_tags(n_targets), orig_indices(n_targets)
+    type(potential), intent(in) :: multipliers(n_multi)
     type(potential), intent(out) :: new_potential
     logical, intent(out) :: success
     type(potential_descriptor) :: descriptor
     character(len=14) :: tablefile
     logical :: smoothen
+    integer :: i
 
     success = .false.
     call get_descriptor(pot_name, descriptor)
@@ -2126,6 +2132,11 @@ contains
 
     end if
 
+    nullify(new_potential%multipliers)
+    allocate(new_potential%multipliers(n_multi))
+    do i = 1, n_multi
+       new_potential%multipliers(i) = multipliers(i)
+    end do
 
     !*********************************!
     ! EDIT WHEN ADDING NEW POTENTIALS !
@@ -3586,7 +3597,7 @@ contains
     ! The description should contain the mathematical
     ! formulation of the potential as well as a short
     ! verbal description.
-    call pad_string('A standard Lennard-Jones potential: V(r) = epsilon * ( a/r )^n ', &
+    call pad_string('A power law decay potential: V(r) = epsilon * ( a/r )^n ', &
          pot_note_length,potential_descriptors(index)%description)
 
   end subroutine create_potential_characterizer_power

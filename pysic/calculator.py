@@ -872,29 +872,52 @@ class Pysic:
                 
         pf.pysic_interface.allocate_potentials(n_pots)
 
+        elemental_potentials = []
+        is_multiplier = []
+        master_potentials = []
+        for pots in self.potentials:
+            # reverse the lists so that the master potentials come last
+            for rpot in reversed(pots.get_potentials()):
+                elemental_potentials.append(rpot)
+            for rmul in reversed(pots.is_multiplier()):
+                is_multiplier.append(rmul)
+            master_potentials.extend([pots.get_potentials()[0]]*\
+                                     len(pots.get_potentials()))
+    
+        print "\n", elemental_potentials
+        print "\n", is_multiplier
+        print "\n", master_potentials
+
         pot_index = 0
-        for pot in self.potentials:
+        for pot, mul, mpot in zip(elemental_potentials,is_multiplier, master_potentials):
+    
+            print "\n", pot, "\n", mul, "\n", mpot
+            print "\n\n"
             
             group_index = -1
-            if pot.get_coordinator() != None:
+            if mpot.get_coordinator() != None:
                 group_index = pot_index
-                pot.get_coordinator().set_group_index(pot_index)
+                mpot.get_coordinator().set_group_index(pot_index)
             pot_index += 1
 
-            n_targ = pot.get_number_of_targets()
+            n_targ = mpot.get_number_of_targets()
             no_symbs = np.array( n_targ*[pu.str2ints('xx',2)] ).transpose()
             no_tags = np.array( n_targ*[-9] )
             no_inds = np.array( n_targ*[-9] )
 
             try:
-                alltargets = pot.get_symbols()
+                alltargets = mpot.get_symbols()
                 for targets in alltargets:
                     int_orig_symbs = []
                     for orig_symbs in targets:
                         int_orig_symbs.append( pu.str2ints(orig_symbs,2) )
 
-                    perms = permutations(targets)
-                    different = set(perms)
+                    if mul:
+                        different = [targets]
+                    else:
+                        perms = permutations(targets)
+                        different = set(perms)
+
                     for symbs in different:
                         int_symbs = []
                         for label in symbs:
@@ -902,68 +925,83 @@ class Pysic:
 
                         success = pf.pysic_interface.add_potential(pot.get_potential_type(),
                                                          np.array( pot.get_parameter_values() ),
-                                                         pot.get_cutoff(),
-                                                         pot.get_soft_cutoff(),
+                                                         mpot.get_cutoff(),
+                                                         mpot.get_soft_cutoff(),
                                                          np.array( int_symbs ).transpose(),
                                                          no_tags,
                                                          no_inds,
                                                          np.array( int_orig_symbs ).transpose(),
                                                          no_tags,
                                                          no_inds,
-                                                         group_index )
+                                                         group_index,
+                                                         mul )
                         if not success:
                             raise InvalidPotentialError("")
             except:
-                if not pot.get_symbols() is None:
-                    raise InvalidPotentialError("Failed to create a potential in the core: "+str(pot))
+                if not mpot.get_symbols() is None:
+                    raise InvalidPotentialError("Failed to create a potential in the core: "+str(mpot))
             try:
-                alltargets = pot.get_tags()
+                alltargets = mpot.get_tags()
                 for targets in alltargets:
                     orig_tags = targets
-                    perms = permutations(targets)
-                    different = set(perms)
+
+                    if mul:
+                        different = [targets]
+                    else:
+                        perms = permutations(targets)
+                        different = set(perms)
 
                     for tags in different:
                         success = pf.pysic_interface.add_potential(pot.get_potential_type(),
                                                          np.array( pot.get_parameter_values() ),
-                                                         pot.get_cutoff(),
-                                                         pot.get_soft_cutoff(),
+                                                         mpot.get_cutoff(),
+                                                         mpot.get_soft_cutoff(),
                                                          no_symbs,
                                                          np.array( tags ),
                                                          no_inds,
                                                          no_symbs,
                                                          np.array(orig_tags),
                                                          no_inds,
-                                                         group_index )
+                                                         group_index,
+                                                         mul)
                         if not success:
                             raise InvalidPotentialError("")
             except:
-                if not pot.get_tags() is None:
-                    raise InvalidPotentialError("Failed to create a potential in the core: "+str(pot))
+                if not mpot.get_tags() is None:
+                    raise InvalidPotentialError("Failed to create a potential in the core: "+str(mpot))
             try:
-                alltargets = pot.get_indices()                
+                alltargets = mpot.get_indices()                
                 for targets in alltargets:
                     orig_inds = targets
-                    perms = permutations(targets)
-                    different = set(perms)
+                        
+                    if mul:
+                        different = [targets]
+                    else:
+                        perms = permutations(targets)
+                        different = set(perms)
 
                     for inds in different:
                         success = pf.pysic_interface.add_potential(pot.get_potential_type(),
                                                          np.array( pot.get_parameter_values() ),
-                                                         pot.get_cutoff(),
-                                                         pot.get_soft_cutoff(),
+                                                         mpot.get_cutoff(),
+                                                         mpot.get_soft_cutoff(),
                                                          no_symbs,
                                                          no_tags,
                                                          np.array( inds ),
                                                          no_symbs,
                                                          no_tags,
                                                          np.array(orig_inds),
-                                                         group_index )
+                                                         group_index,
+                                                         mul )
                         if not success:
                             raise InvalidPotentialError("")
             except:
-                if not pot.get_indices() is None:
-                    raise InvalidPotentialError("Failed to create a potential in the core: "+str(pot))
+                if not mpot.get_indices() is None:
+                    raise InvalidPotentialError("Failed to create a potential in the core: "+str(mpot))
+                        
+                        
+            if not mul:
+                pf.pysic_interface.clear_potential_multipliers()
 
         n_bonds = 0
         for coord in coord_list:

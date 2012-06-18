@@ -24,11 +24,14 @@ module pysic_core
   type(supercell) :: cell
   ! *interactions an array of :data:`potential` objects representing the interactions
   type(potential), pointer :: interactions(:)
+  ! *multipliers a temporary array for storing multiplying potentials before associating them with a master potential
+  type(potential), allocatable :: multipliers(:)
   ! *bond_factors an array of :data:`bond_order_parameters` objects representing bond order factors modifying the potentials
   type(bond_order_parameters), pointer :: bond_factors(:)
   ! *n_interactions number of potentials
   ! *n_bond_order_factors number of bond order factors
-  integer :: n_interactions = 0, n_bond_factors = 0
+  ! *n_multi number of temporary multiplication potentials
+  integer :: n_interactions = 0, n_bond_factors = 0, n_multi = 0
   ! logical tags monitoring the allocation and deallocation
   ! of the corresponding pointers
   ! *atoms_created logical tag indicating if atom storing arrays have been created
@@ -306,7 +309,7 @@ contains
   ! Deallocates pointers for potentials
   subroutine core_clear_potentials()
     implicit none
-    integer :: i
+    integer :: i, j
 
     if(n_interactions > 0)then
        do i = 1, n_interactions
@@ -319,6 +322,7 @@ contains
           deallocate(interactions(i)%original_indices)
           deallocate(interactions(i)%derived_parameters)  
           deallocate(interactions(i)%table)
+          deallocate(interactions(i)%multipliers)
        end do
     end if
     if(potentials_allocated)then
@@ -329,6 +333,17 @@ contains
 
   end subroutine core_clear_potentials
   
+
+  subroutine core_clear_potential_multipliers()
+    implicit none
+
+    if(n_multi > 0)then
+       n_multi = 0
+       deallocate(multipliers)             
+    end if
+    
+  end subroutine core_clear_potential_multipliers
+
 
 ! !!!: core_clear_bond_order_factors
 
@@ -742,8 +757,8 @@ contains
   ! *pot_index index of the potential
   ! *success logical tag specifying if creation of the potential succeeded
   subroutine core_add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
-       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,&
-success)
+       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,is_multiplier,&
+       success)
     implicit none
     integer, intent(in) :: n_targets, n_params, pot_index
     character(len=*), intent(in) :: pot_name
@@ -753,17 +768,46 @@ success)
     integer, intent(in) :: tags(n_targets), indices(n_targets)
     character(len=label_length), intent(in) :: orig_elements(n_targets)
     integer, intent(in) :: orig_tags(n_targets), orig_indices(n_targets)
+    logical, intent(in) :: is_multiplier
     logical, intent(out) :: success
-    type(potential) :: new_interaction
+    type(potential) :: new_interaction, dummy_multiplier(0)
+    type(potential), allocatable :: old_multipliers(:)
+    integer :: i
 
-    call create_potential(n_targets,n_params,&
-         pot_name,parameters,cutoff,smooth_cut,&
-         elements,tags,indices,&
-         orig_elements,orig_tags,orig_indices,pot_index,&
-         new_interaction,success) ! in Potentials.f90
-    if(success)then
-       n_interactions = n_interactions + 1
-       interactions(n_interactions) = new_interaction
+    if(is_multiplier)then
+       call create_potential(n_targets,n_params,&
+            pot_name,parameters,cutoff,smooth_cut,&
+            elements,tags,indices,&
+            orig_elements,orig_tags,orig_indices,pot_index,&
+            0,dummy_multiplier,&
+            new_interaction,success) ! in Potentials.f90
+
+       if(success)then
+          if(n_multi > 0)then
+             allocate(old_multipliers(n_multi))
+             old_multipliers(1:n_multi) = multipliers(1:n_multi)
+             deallocate(multipliers)
+             allocate(multipliers(n_multi+1))
+             multipliers(1:n_multi) = old_multipliers(1:n_multi)
+             deallocate(old_multipliers)
+          else
+             allocate(multipliers(1))
+          end if
+          n_multi = n_multi + 1
+          multipliers(n_multi) = new_interaction
+       end if
+    else
+       call create_potential(n_targets,n_params,&
+            pot_name,parameters,cutoff,smooth_cut,&
+            elements,tags,indices,&
+            orig_elements,orig_tags,orig_indices,pot_index,&
+            n_multi,multipliers,&
+            new_interaction,success) ! in Potentials.f90
+
+       if(success)then
+          n_interactions = n_interactions + 1
+          interactions(n_interactions) = new_interaction
+       end if
     end if
 
   end subroutine core_add_potential
@@ -4132,26 +4176,31 @@ success)
   ! Prints some information on the potentials stored in the core in stdout.
   subroutine list_interactions()
     implicit none
-    integer :: i
+    integer :: i, j
     
     write(*,*) "interactions"
     do i = 1, n_interactions
        write(*,'(A,I5,F10.4)') "type, cutoff ", interactions(i)%type_index, interactions(i)%cutoff
        write(*,*) "params ", interactions(i)%parameters
        if(interactions(i)%filter_elements)then
-          write(*,*) "         symbols ",interactions(i)%apply_elements
-          write(*,*) "original symbols ",interactions(i)%original_elements
+          write(*,*) "         symbols ", interactions(i)%apply_elements
+          write(*,*) "original symbols ", interactions(i)%original_elements
        end if
        if(interactions(i)%filter_tags)then
           write(*,*) "         tags ", interactions(i)%apply_tags
-          write(*,*) "original tags ",interactions(i)%original_tags
+          write(*,*) "original tags ", interactions(i)%original_tags
        end if
        if(interactions(i)%filter_indices)then
           write(*,*) "         indices ", interactions(i)%apply_indices
-          write(*,*) "original indices ",interactions(i)%original_indices
+          write(*,*) "original indices ", interactions(i)%original_indices
        end if
        if(interactions(i)%pot_index >= 0)then
           write(*,*) "bond order index ", interactions(i)%pot_index
+       end if
+       if(size(interactions(i)%multipliers) > 0)then
+          do j = 1, size(interactions(i)%multipliers)
+             write(*,*) "      multiplier ", interactions(i)%multipliers(j)%type_index
+          end do
        end if
        write(*,*) ""
     end do

@@ -3,6 +3,121 @@
 from pysic.core import *
 from pysic.utility.error import InvalidPotentialError
 
+
+class MultipliedPotential:
+    """Class representing an interaction obtained by multiplying several :class:`~pysic.interactions.local.Potential` objects.
+    """
+
+    def __init__(self,potentials):
+        self.potentials = []
+        self.n_targets = None
+        for pot in potentials:
+            self.add_potential(pot)
+        
+
+    def __eq__(self,other):
+        try:
+            if self.n_targets != other.n_targets:
+                return False
+            if self.potentials != other.potentials:
+                return False
+        except:
+            return False
+        return True
+
+
+    def __ne__(self,other):
+        return not self.__eq__(other)
+    
+    
+    def set_potentials(self,potentials):
+        self.potentials = []
+        self.n_targets = None
+        for pot in potentials:
+            self.add_potential(pot)
+        
+    
+    def add_potential(self,potential):
+        if self.n_targets is None:
+            self.n_targets = potential.get_number_of_targets()
+        
+        elif self.n_targets != potential.get_number_of_targets():
+            raise InvalidPotentialError("You may only multiply potentials with the same number of targets.")
+
+        self.potentials.append(potential)
+
+
+    def get_symbols(self):
+        return self.potentials[0].get_symbols()
+
+    def get_tags(self):
+        return self.potentials[0].get_tags()
+
+    def get_indices(self):
+        return self.potentials[0].get_indices()
+
+    def get_different_symbols(self):
+        return self.potentials[0].get_different_symbols()
+
+    def get_different_tags(self):
+        return self.potentials[0].get_different_tags()
+
+    def get_different_indices(self):
+        return self.potentials[0].get_different_indices()
+
+    def get_cutoff(self):
+        return self.potentials[0].get_cutoff()
+
+    def get_cutoff_margin(self):
+        return self.potentials[0].get_cutoff_margin()
+
+    def get_soft_cutoff(self):
+        return self.potentials[0].get_soft_cutoff()
+
+    def get_number_of_targets(self):
+        return self.n_targets
+
+    def get_coordinator(self):
+        return self.potentials[0].get_coordinator()
+
+    def set_coordinator(self, coordinator):
+        self.potentials[0].set_coordinator()
+
+    def set_symbols(self, symbols):
+        self.potentials[0].set_symbols(symbols)
+
+    def set_tags(self, tags):
+        self.potentials[0].set_tags(tags)
+
+    def set_indices(self, indices):
+        self.potentials[0].set_indices(indices)
+
+    def add_symbols(self, symbols):
+        self.potentials[0].add_symbols(symbols)
+
+    def add_tags(self, tags):
+        self.potentials[0].add_tags(tags)
+    
+    def add_indices(self, indices):
+        self.potentials[0].add_indices(indices)
+
+    def set_cutoff(self, cutoff):
+        self.potentials[0].set_cutoff(cutoff)
+    
+    def set_cutoff_margin(self, cutoff_margin):
+        self.potentials[0].set_cutoff_margin(cutoff_margin)
+
+    def set_soft_cutoff(self, cutoff):
+        self.potentials[0].set_soft_cutoff(cutoff)
+
+    def get_potentials(self):
+        return self.potentials
+
+    def is_multiplier(self):
+        return [False] + [True] * (len(self.potentials)-1)
+
+
+
 class Potential:
     """Class for representing a potential.
 
@@ -456,6 +571,13 @@ class Potential:
         self.set_cutoff_margin(self.cutoff-cutoff)
 
 
+    def get_potentials(self):
+        return [self]
+    
+    def is_multiplier(self):
+        return [False]
+    
+    
     def describe(self):
         """Prints a short description of the potential using the method :meth:`~pysic.describe_potential`."""
         description_of_potential(self.potential_type,

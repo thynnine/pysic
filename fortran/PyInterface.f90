@@ -427,10 +427,10 @@ contains
   ! *pot_index index of the potential
   ! *success logical tag specifying if creation of the potential succeeded
   subroutine add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
-       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,&
+       elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,is_multiplier,&
        success)
     implicit none
-    integer, intent(in) :: n_targets, n_params,pot_index
+    integer, intent(in) :: n_targets, n_params, pot_index
     character(len=*), intent(in) :: pot_name
     double precision, intent(in) :: parameters(n_params)
     double precision, intent(in) :: cutoff, smooth_cut
@@ -438,6 +438,7 @@ contains
     integer, intent(in) :: tags(n_targets), indices(n_targets)
     integer, intent(in) :: orig_elements(2,n_targets) ! label_length
     integer, intent(in) :: orig_tags(n_targets), orig_indices(n_targets)
+    logical, intent(in) :: is_multiplier
     character(len=2) :: elements_str(n_targets), orig_elements_str(n_targets) ! label_length
     logical, intent(out) :: success
     integer :: i
@@ -450,7 +451,8 @@ contains
     end do
     ! indices +1 because fortran starts indexing from 1
     call core_add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
-         elements_str,tags,indices+1,orig_elements_str,orig_tags,orig_indices+1,pot_index,success) ! in Core.f90
+         elements_str,tags,indices+1,orig_elements_str,orig_tags,orig_indices+1,pot_index,&
+         is_multiplier,success) ! in Core.f90
 
   end subroutine add_potential
 
@@ -1070,5 +1072,14 @@ contains
     neighbors = neighbors-1
 
   end subroutine get_neighbor_list_of_atom
+
+
+  subroutine clear_potential_multipliers()
+    implicit none
+
+    call core_clear_potential_multipliers()
+
+  end subroutine clear_potential_multipliers
+
 
 end module pysic_interface
