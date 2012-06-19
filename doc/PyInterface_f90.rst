@@ -64,6 +64,7 @@ to, if the routine is just a redirect of the call.
     - :func:`calculate_electronegativities`
     - :func:`calculate_energy`
     - :func:`calculate_forces`
+    - :func:`clear_potential_multipliers`
     - :func:`create_atoms`
     - :func:`create_bond_order_factor_list`
     - :func:`create_cell`
@@ -151,7 +152,7 @@ Full documentation of subroutines in pysic_interface
     **success**: logical  **intent(out)**    *scalar*  
         logical tag specifying if creation of the factor succeeded
             
-  .. function:: add_potential(n_targets, n_params, pot_name, parameters, cutoff, smooth_cut, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index, success)
+  .. function:: add_potential(n_targets, n_params, pot_name, parameters, cutoff, smooth_cut, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index, is_multiplier, success)
 
     Creates a potential in the core.
     The memory must have been allocated first using allocate_potentials.
@@ -187,6 +188,8 @@ Full documentation of subroutines in pysic_interface
         original indices specifying the atoms the interaction acts on
     pot_index: integer  *intent(in)*    *scalar*  
         index of the potential
+    is_multiplier: logical  *intent(in)*    *scalar*  
+        logical tag defining if the potential is a multiplier for a product potential
     **success**: logical  **intent(out)**    *scalar*  
         logical tag specifying if creation of the potential succeeded
             
@@ -354,6 +357,11 @@ Full documentation of subroutines in pysic_interface
         array of forces on all atoms
     **stress**: double precision  **intent(out)**    *size(6)*  
         array containing the components of the stress tensor (in order :math:`xx,yy,zz,yz,xz,xy`)
+            
+  .. function:: clear_potential_multipliers()
+
+    Clears the temporary stored array of multiplier potentials
+
             
   .. function:: create_atoms(n_atoms, masses, charges, positions, momenta, tags, elements)
 
@@ -657,6 +665,7 @@ Full documentation of subroutines in pysic_interface
             
   .. function:: get_neighbor_list_of_atom(atom_index, n_neighbors, neighbors, offsets)
 
+    Returns the list of neighbors for an atom
 
     Parameters:
 
@@ -693,6 +702,7 @@ Full documentation of subroutines in pysic_interface
             
   .. function:: get_number_of_neighbors_of_atom(atom_index, n_neighbors)
 
+    Returns the number of neighbors for an atom
 
     Parameters:
 

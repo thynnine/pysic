@@ -46,13 +46,13 @@ Faster neighbor search
 
 There is a built in neighbor searching tool in ASE, `ASE NeighborList`_. It is, however, a pure Python implementation using a brute-force :math:`\mathcal{O}(n^2)` algorithm making it slow - even prohibitively slow - for large systems especially when periodic boundary conditions are used.
 
-To overcome this performance bottleneck, Pysic implements the :class:`~pysic.FastNeighborList` class. This class inherits other properties from the built-in ASE class except for the :meth:`~pysic.FastNeighborList.build` method, which is replaced by a faster algorithm. The fast neighbor search is implemented in Fortran and parallelized with MPI. The algorithm is based on a spatial divisioning, i.e.
+To overcome this performance bottleneck, Pysic implements the :class:`~pysic.calculator.FastNeighborList` class. This class inherits other properties from the built-in ASE class except for the :meth:`~pysic.calculator.FastNeighborList.build` method, which is replaced by a faster algorithm. The fast neighbor search is implemented in Fortran and parallelized with MPI. The algorithm is based on a spatial divisioning, i.e.
 
 - the simulation volume is divided in subvolumes
 - for each atom the subvolume where it is contained is found
 - for each atom, the neighbors are searched for only in the adjacent subvolumes
 
-For a fixed cutoff, the neighborhood searched for each atom is constant and thus this is an :math:`\mathcal{O}(n)` algorithm. [#]_ The method is also faster the shorter the cutoffs are. For short cutoffs (~ 5 Å), a 10000 atom periodic system is expected to be handled 100 or even 1000 fold faster with :class:`~pysic.FastNeighborList` than with the ASE method.
+For a fixed cutoff, the neighborhood searched for each atom is constant and thus this is an :math:`\mathcal{O}(n)` algorithm. [#]_ The method is also faster the shorter the cutoffs are. For short cutoffs (~ 5 Å), a 10000 atom periodic system is expected to be handled 100 or even 1000 fold faster with :class:`~pysic.calculator.FastNeighborList` than with the ASE method.
 
 .. [#] For very large systems the number of subdivisions is limited to conserve memory so the :math:`\mathcal{O}(n)` scaling is eventually lost. Say we divide the volume in a hundred subvolumes along each axis; we end up with a million subvolumes which is a lot!
 
@@ -66,7 +66,7 @@ For a fixed cutoff, the neighborhood searched for each atom is constant and thus
 Limitations in the implementation
 ---------------------------------
 
-Since the fast algorithm is implemented in Fortran, it operates on the structure allocated in the Fortran core. Therefore, even though the :meth:`~pysic.FastNeighborList.build` method takes an `ASE Atoms`_ object as an argument, it does not analyze the given structure. It does check against :class:`~pysic.CoreMirror` to see if the given structure matches the one in the core and raises an error if not, but accessing the core has to still be done through :class:`~pysic.calculator.Pysic`. When :class:`~pysic.calculator.Pysic` is run normally, this is automatically taken care of. As the implementation is MPI parallelized, it is also necessary that the MPI environment has been set up - especially the distribution of load (i.e. atoms) between processors must be done before the lists can be built.
+Since the fast algorithm is implemented in Fortran, it operates on the structure allocated in the Fortran core. Therefore, even though the :meth:`~pysic.calculator.FastNeighborList.build` method takes an `ASE Atoms`_ object as an argument, it does not analyze the given structure. It does check against :class:`~pysic.CoreMirror` to see if the given structure matches the one in the core and raises an error if not, but accessing the core has to still be done through :class:`~pysic.calculator.Pysic`. When :class:`~pysic.calculator.Pysic` is run normally, this is automatically taken care of. As the implementation is MPI parallelized, it is also necessary that the MPI environment has been set up - especially the distribution of load (i.e. atoms) between processors must be done before the lists can be built.
 
 Another more profound limitation in the current implementation of the algorithm is the fact that it limits the neighbor finding to neighboring subvolumes. Since the subvolumes are not allowed to be larger than the actual simulation volume, the cutoffs cannot be longer than the shortest perpendicular separation between facets of the subvolume. For rectangular cells, this is just the minimum of the lengths of the vectors spanning the cell, :math:`\mathbf{v}_{i,j,k}`. For inclined cell shapes, the perpendicular distance between cell facets, :math:`d`, is
 
@@ -102,12 +102,12 @@ Methods inherited from ASE NeighborList
 List of methods
 ---------------
 
-- :meth:`~pysic.FastNeighborList.build`
+- :meth:`~pysic.calculator.FastNeighborList.build`
 
 Full documentation of the FastNeighborList class
 ------------------------------------------------
 
-.. currentmodule:: pysic
+.. currentmodule:: pysic.calculator
 .. autoclass:: FastNeighborList
    :members:
    :undoc-members:

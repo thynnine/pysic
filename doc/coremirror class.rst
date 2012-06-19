@@ -4,15 +4,13 @@
 
 
 
-
-
-
 .. file:coremirror class - description
 
 .. _coremirror class - description:
 
 
 
+.. module:: pysic.core
 
 ================
 CoreMirror class
@@ -41,27 +39,27 @@ It is automatically handled through :class:`~pysic.calculator.Pysic`.
 List of Methods
 ---------------
 
-- :meth:`~pysic.CoreMirror.atoms_ready` (meant for internal use)
-- :meth:`~pysic.CoreMirror.cell_ready` (meant for internal use)
-- :meth:`~pysic.CoreMirror.charges_ready` (meant for internal use)
-- :meth:`~pysic.CoreMirror.coulomb_summation_ready` (meant for internal use)
-- :meth:`~pysic.CoreMirror.get_atoms` (meant for internal use)
-- :meth:`~pysic.CoreMirror.neighbor_lists_ready` (meant for internal use)
-- :meth:`~pysic.CoreMirror.potentials_ready` (meant for internal use)
-- :meth:`~pysic.CoreMirror.set_atomic_momenta` (meant for internal use)
-- :meth:`~pysic.CoreMirror.set_atomic_positions` (meant for internal use)
-- :meth:`~pysic.CoreMirror.set_atoms` (meant for internal use)
-- :meth:`~pysic.CoreMirror.set_cell` (meant for internal use)
-- :meth:`~pysic.CoreMirror.set_charges` (meant for internal use)
-- :meth:`~pysic.CoreMirror.set_coulomb` (meant for internal use)
-- :meth:`~pysic.CoreMirror.set_neighbor_lists` (meant for internal use)
-- :meth:`~pysic.CoreMirror.set_potentials` (meant for internal use)
-- :meth:`~pysic.CoreMirror.view_fortran` (for testing)
+- :meth:`~pysic.core.CoreMirror.atoms_ready` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.cell_ready` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.charges_ready` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.coulomb_summation_ready` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.get_atoms` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.neighbor_lists_ready` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.potentials_ready` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.set_atomic_momenta` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.set_atomic_positions` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.set_atoms` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.set_cell` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.set_charges` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.set_coulomb` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.set_neighbor_lists` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.set_potentials` (meant for internal use)
+- :meth:`~pysic.core.CoreMirror.view_fortran` (for testing)
 
 Full documentation of the CoreMirror class
 ------------------------------------------
 
-.. currentmodule:: pysic
+.. currentmodule:: pysic.core
 .. autoclass:: CoreMirror
    :members:
    :undoc-members:

@@ -67,7 +67,7 @@ def get_cpu_id():
 
 
 def list_potentials():
-    """Same as :meth:`~pysic.list_valid_potentials`
+    """Same as :meth:`~pysic.core.list_valid_potentials`
     """
     return list_valid_potentials()
 
@@ -88,7 +88,7 @@ def list_valid_potentials():
 
 
 def list_bond_order_factors():
-    """Same as :meth:`~pysic.list_valid_bond_order_factors`
+    """Same as :meth:`~pysic.core.list_valid_bond_order_factors`
     """
     return list_valid_bond_order_factors()
 
@@ -109,7 +109,7 @@ def list_valid_bond_order_factors():
 
 
 def is_potential(potential_name):
-    """Same as :meth:`~pysic.is_valid_potential`
+    """Same as :meth:`~pysic.core.is_valid_potential`
     
     Parameters:
     
@@ -130,7 +130,7 @@ def is_valid_potential(potential_name):
 
 
 def is_bond_order_factor(bond_order_name):
-    """Same as :meth:`~pysic.is_valid_bond_order_factor`
+    """Same as :meth:`~pysic.core.is_valid_bond_order_factor`
 
     Parameters:
 
@@ -151,7 +151,7 @@ def is_valid_bond_order_factor(bond_order_name):
 
 
 def is_charge_relaxation(relaxation_name):
-    """Same as :meth:`~pysic.is_valid_charge_relaxation`
+    """Same as :meth:`~pysic.core.is_valid_charge_relaxation`
         
         Parameters:
         
@@ -179,7 +179,7 @@ def is_valid_charge_relaxation(relaxation_name):
 
 
 def is_coulomb_summation(summation_name):
-    """Same as :meth:`~pysic.is_valid_coulomb_summation`
+    """Same as :meth:`~pysic.core.is_valid_coulomb_summation`
         
         Parameters:
         
@@ -501,7 +501,7 @@ class CoreMirror:
     Whenever data is being passed over to the core for calculation,
     it should also be saved in the CoreMirror. This makes the CoreMirror
     reflect the current status of the core. Then, when something needs to be
-    calculated, the :class:`~pysic.Pysic` calculator can simply check that
+    calculated, the :class:`~pysic.calculator.Pysic` calculator can simply check that
     it contains the same system as the CoreMirror to ensure that the
     core operates on the correct data.
 
@@ -612,15 +612,15 @@ class CoreMirror:
         self.structure.set_pbc(atoms.get_pbc())
         
     def set_potentials(self, potentials):
-        """Copies and stores :class:`~pysic.Potential` potentials.
+        """Copies and stores :class:`~pysic.interactions.local.Potential` potentials.
 
-        The :class:`~pysic.Potential` instances are copied as a whole,
-        so any possible :class:`~pysic.Coordinator` and
-        :class:`~pysic.BondOrderParameters` objects are also stored.
+        The :class:`~pysic.interactions.local.Potential` instances are copied as a whole,
+        so any possible :class:`~pysic.interactions.bondorder.Coordinator` and
+        :class:`~pysic.interactions.bondorder.BondOrderParameters` objects are also stored.
 
         Parameters:
 
-        atoms: list of :class:`~pysic.Potential` objects
+        atoms: list of :class:`~pysic.interactions.local.Potential` objects
             Potentials to be saved.
         """
         self.potentials = copy.deepcopy(potentials)
@@ -642,7 +642,7 @@ class CoreMirror:
         
         Parameters:
             
-        coulomb: :class:`~pysic.CoulombSummation`
+        coulomb: :class:`~pysic.interactions.coulomb.CoulombSummation`
             Coulomb summation algorithm to be saved            
             """
         self.coulomb = copy.deepcopy(coulomb)
@@ -716,7 +716,7 @@ class CoreMirror:
 
         Parameters:
 
-        atoms: list of :class:`~pysic.Potential` objects
+        atoms: list of :class:`~pysic.interactions.local.Potential` objects
             The potentials to be compared.
         """
         if self.potentials == None:
@@ -749,7 +749,7 @@ class CoreMirror:
             
             True is returned if the summation algorithms match, False otherwise.
             
-            Parameters: :class:`~pysic.CoulombSummation`
+            Parameters: :class:`~pysic.interactions.coulomb.CoulombSummation`
                 the summation algorithm to be compared
             """
         if self.coulomb == None:

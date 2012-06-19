@@ -17,7 +17,7 @@ BondOrderParameters class
 ============================
 
 This class defines a set of parameters for a bond order factor, to be used
-in conjunction with the :class:`~pysic.Coordinator` class. 
+in conjunction with the :class:`~pysic.interactions.bondorder.Coordinator` class. 
 
 Similarly to the potentials, the available types of bond order factors 
 are always inquired from the
@@ -52,7 +52,7 @@ and counting which ones are "close" to each others. Close naturally means
 closer than some predefined cutoff distance.
 However, in order to make the coordination a continuous and 
 differentiable function, a continuous cutoff has to be applied.
-This is done similarly to the smooth cutoffs used in :class:`~pysic.Potential`
+This is done similarly to the smooth cutoffs used in :class:`~pysic.interactions.local.Potential`
 by defining a proximity function which is 1 for small separations and
 0 for large distances.
 
@@ -104,7 +104,7 @@ define a margin for continuous cutoff in bond order factors.
 Defining parameters
 -------------------
 
-A :class:`~pysic.BondOrderParameters` instance defines the type of the bond order factor,
+A :class:`~pysic.interactions.bondorder.BondOrderParameters` instance defines the type of the bond order factor,
 the cutoffs, and parameters for one set of elements. The parameters are formally split
 according to the number of atoms they act on. So, an n-body factor can have parameters
 which are applied for 1-body, 2-body, etc. terms. Bond order factors are applied and 
@@ -160,8 +160,8 @@ or alternatively in pieces by a series of commands::
    >>> bonds.set_parameter_value('d', d)
    >>> bonds.set_parameter_value('h', h)
 
-To be used in calculations, this is then passed on to a :class:`~pysic.Coordinator`, 
-:class:`~pysic.Potential`, and :class:`~pysic.calculator.Pysic` with::
+To be used in calculations, this is then passed on to a :class:`~pysic.interactions.bondorder.Coordinator`, 
+:class:`~pysic.interactions.local.Potential`, and :class:`~pysic.calculator.Pysic` with::
 
     >>> crd = pysic.Coordinator( bonds )
     >>> pot = pysic.Potential( ... , coordinator=crd )
@@ -186,7 +186,7 @@ However, one should note especially that a triplet A-B-C is only taken in to acc
 
    >>> [['Si', 'Si', 'O']]
 
-Instead of giving a list of symbols to a single :class:`~pysic.BondOrderParameters`, one can define many instances with different symbols and different parameters, and feed a list of these to a :class:`~pysic.Coordinator` object.::
+Instead of giving a list of symbols to a single :class:`~pysic.interactions.bondorder.BondOrderParameters`, one can define many instances with different symbols and different parameters, and feed a list of these to a :class:`~pysic.interactions.bondorder.Coordinator` object.::
 
      >>> bond_siosi = pysic.BondOrderParameters('tersoff', cutoff=3.2, cutoff_margin=0.4,
      ...       	      			        symbols=[['Si', 'O', 'Si']],
@@ -219,7 +219,7 @@ The above example would assign the parameter values
 
 This gives the user the possibility to precisely control the parameters, including cutoffs, for different elements.
 
-Note that the beta, eta, and mu parameters are the same for both :class:`~pysic.BondOrderParameters` objects defined in the above example. They could be different in principle, but when the factors are calculated, the 1-body parameters are taken from the first object in the list of bonds (bond_list) for which the first element is of the correct type. Because of this, the 1-body parameters in bond_sisio are in fact ignored. This feature can be exploited for mixing different types of bond order factors, as explained below.
+Note that the beta, eta, and mu parameters are the same for both :class:`~pysic.interactions.bondorder.BondOrderParameters` objects defined in the above example. They could be different in principle, but when the factors are calculated, the 1-body parameters are taken from the first object in the list of bonds (bond_list) for which the first element is of the correct type. Because of this, the 1-body parameters in bond_sisio are in fact ignored. This feature can be exploited for mixing different types of bond order factors, as explained below.
 
 For three different elements, say C, O, and H, the possible triplets are::
 
@@ -481,45 +481,45 @@ Keywords::
 List of methods
 ---------------
 
-Below is a list of methods in :class:`~pysic.BondOrderParameters`, grouped according to
+Below is a list of methods in :class:`~pysic.interactions.bondorder.BondOrderParameters`, grouped according to
 the type of functionality.
 
 
 Parameter handling
 __________________
 
-- :meth:`~pysic.BondOrderParameters.accepts_parameters`
-- :meth:`~pysic.BondOrderParameters.get_bond_order_type`
-- :meth:`~pysic.BondOrderParameters.get_cutoff`
-- :meth:`~pysic.BondOrderParameters.get_cutoff_margin`
-- :meth:`~pysic.BondOrderParameters.get_number_of_parameters`
-- :meth:`~pysic.BondOrderParameters.get_parameter_names`
-- :meth:`~pysic.BondOrderParameters.get_parameter_value`
-- :meth:`~pysic.BondOrderParameters.get_parameter_values`
-- :meth:`~pysic.BondOrderParameters.get_parameters_as_list`
-- :meth:`~pysic.BondOrderParameters.get_soft_cutoff`
-- :meth:`~pysic.BondOrderParameters.set_cutoff`
-- :meth:`~pysic.BondOrderParameters.set_cutoff_margin`
-- :meth:`~pysic.BondOrderParameters.set_parameter_value`
-- :meth:`~pysic.BondOrderParameters.set_parameter_values`
-- :meth:`~pysic.BondOrderParameters.set_parameters`
-- :meth:`~pysic.BondOrderParameters.set_soft_cutoff`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.accepts_parameters`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.get_bond_order_type`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.get_cutoff`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.get_cutoff_margin`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.get_number_of_parameters`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.get_parameter_names`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.get_parameter_value`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.get_parameter_values`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.get_parameters_as_list`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.get_soft_cutoff`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.set_cutoff`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.set_cutoff_margin`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.set_parameter_value`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.set_parameter_values`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.set_parameters`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.set_soft_cutoff`
 
 Target handling
 _______________
 
-- :meth:`~pysic.BondOrderParameters.accepts_target_list`
-- :meth:`~pysic.BondOrderParameters.add_symbols`
-- :meth:`~pysic.BondOrderParameters.get_different_symbols`
-- :meth:`~pysic.BondOrderParameters.get_number_of_targets`
-- :meth:`~pysic.BondOrderParameters.get_symbols`
-- :meth:`~pysic.BondOrderParameters.set_symbols`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.accepts_target_list`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.add_symbols`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.get_different_symbols`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.get_number_of_targets`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.get_symbols`
+- :meth:`~pysic.interactions.bondorder.BondOrderParameters.set_symbols`
 
 
 Full documentation of the BondOrderParameters class
 ---------------------------------------------------
 
-.. currentmodule:: pysic
+.. currentmodule:: pysic.interactions.bondorder
 .. autoclass:: BondOrderParameters
    :members:
    :undoc-members:

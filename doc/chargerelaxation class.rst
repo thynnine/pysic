@@ -10,6 +10,9 @@
 
 
 
+.. module:: pysic.charges
+.. module:: pysic.charges.relaxation
+
 =======================
 ChargeRelaxation class
 =======================
@@ -32,11 +35,11 @@ Connecting the structure, calculator and relaxation algorithm
 -------------------------------------------------------------
 
 
-Special care must be taken when setting up links between the atomic structure (`ASE Atoms`_), the calculator (:class:`~pysic.calculator.Pysic`), and the charge relaxation algorithm (:class:`~pysic.ChargeRelaxation`). While some of the objects must know the others, in some cases the behavior of the simulator changes depending on whether or not they have access to the other objects.
+Special care must be taken when setting up links between the atomic structure (`ASE Atoms`_), the calculator (:class:`~pysic.calculator.Pysic`), and the charge relaxation algorithm (:class:`~pysic.charges.relaxation.ChargeRelaxation`). While some of the objects must know the others, in some cases the behavior of the simulator changes depending on whether or not they have access to the other objects.
 
 The atoms and the calculator are linked as required in the `ASE calculator interface`_: One can link the two by either the :meth:`~pysic.calculator.Pysic.set_atoms` method of :class:`~pysic.calculator.Pysic`, or the `set_calculator`_ method of `ASE Atoms`_. In either case, the atomic structure is given a link to the calculator, and a **copy** of the structure is stored in the calculator. This must be done in order to do any calculations on the system.
 
-Also the relaxation algorithm has to know the :class:`~pysic.calculator.Pysic` calculator, since the relaxation is done according to the :class:`~pysic.Potential` interactions stored in the calculator. The algorithm can be made to know the calculator via the :meth:`~pysic.ChargeRelaxation.set_calculator` method of :class:`~pysic.ChargeRelaxation`. By default, this does not make the calculator know the relaxation algorithm, however. Only if the optional argument ``reciprocal=True`` is given the backwards link is also made. :class:`~pysic.calculator.Pysic` can be made to know the relaxation algorithm also by calling the method :meth:`~pysic.calculator.Pysic.set_charge_relaxation`. Unlike the opposite case, by making the link from the calculator, the backwards link from the relaxation algorithm is always made automatically. In fact, even though linking an algorithm to a calculator does not automatically link the calculator to the algorithm, if a different calculator was linked to the algorithm, the link is automatically removed.
+Also the relaxation algorithm has to know the :class:`~pysic.calculator.Pysic` calculator, since the relaxation is done according to the :class:`~pysic.interactions.local.Potential` interactions stored in the calculator. The algorithm can be made to know the calculator via the :meth:`~pysic.ChargeRelaxation.set_calculator` method of :class:`~pysic.charges.relaxation.ChargeRelaxation`. By default, this does not make the calculator know the relaxation algorithm, however. Only if the optional argument ``reciprocal=True`` is given the backwards link is also made. :class:`~pysic.calculator.Pysic` can be made to know the relaxation algorithm also by calling the method :meth:`~pysic.calculator.Pysic.set_charge_relaxation`. Unlike the opposite case, by making the link from the calculator, the backwards link from the relaxation algorithm is always made automatically. In fact, even though linking an algorithm to a calculator does not automatically link the calculator to the algorithm, if a different calculator was linked to the algorithm, the link is automatically removed.
 
 This slightly complicated behavior is summarized as follows: The algorithm should always have a link to a calculator, but a calculator need not have a link to an algorithm. If a calculator does link to an algorithm, the algorithm must link back to the same calculator. Clearly one does not always want to perform charge relaxation on the system and so it makes sense that the calculator need not have a link to a charge relaxation algorithm. If such a link does exist, then the relaxation is *automatically* invoked prior to each energy and force evaluation. This is necessary in simulations such as molecular dynamics (MD). A charge relaxation can be linked to a calculator in order to do charge equilibration, but if one does not wish to trigger the charge relaxation automatically, then it is enough to just not let the calculator know the relaxation algorithm.
 
@@ -116,50 +119,50 @@ During simulation such as molecular dynamics or geometry optimization, charge eq
 List of methods
 ---------------
   
-Below is a list of methods in :class:`~pysic.ChargeRelaxation`, grouped according to
+Below is a list of methods in :class:`~pysic.charges.relaxation.ChargeRelaxation`, grouped according to
 the type of functionality.
   
 Initialization
 ______________
 
-- :meth:`~pysic.ChargeRelaxation.initialize_parameters`
-- :meth:`~pysic.ChargeRelaxation.get_relaxation`
-- :meth:`~pysic.ChargeRelaxation.set_relaxation`
-- :data:`~pysic.ChargeRelaxation.relaxation_modes`
-- :data:`~pysic.ChargeRelaxation.relaxation_parameter_descriptions`
-- :data:`~pysic.ChargeRelaxation.relaxation_parameters`
+- :meth:`~pysic.charges.relaxation.ChargeRelaxation.initialize_parameters`
+- :meth:`~pysic.charges.relaxation.ChargeRelaxation.get_relaxation`
+- :meth:`~pysic.charges.relaxation.ChargeRelaxation.set_relaxation`
+- :data:`~pysic.charges.relaxation.ChargeRelaxation.relaxation_modes`
+- :data:`~pysic.charges.relaxation.ChargeRelaxation.relaxation_parameter_descriptions`
+- :data:`~pysic.charges.relaxation.ChargeRelaxation.relaxation_parameters`
 
 Atoms handling
 ______________
 
-- :meth:`~pysic.ChargeRelaxation.get_atoms`
-- :meth:`~pysic.ChargeRelaxation.set_atoms`
+- :meth:`~pysic.charges.relaxation.ChargeRelaxation.get_atoms`
+- :meth:`~pysic.charges.relaxation.ChargeRelaxation.set_atoms`
 
 Calculator handling
 ___________________
 
-- :meth:`~pysic.ChargeRelaxation.get_calculator`
-- :meth:`~pysic.ChargeRelaxation.set_calculator`
+- :meth:`~pysic.charges.relaxation.ChargeRelaxation.get_calculator`
+- :meth:`~pysic.charges.relaxation.ChargeRelaxation.set_calculator`
 
 
 Parameter handling
 __________________
 
-- :meth:`~pysic.ChargeRelaxation.get_parameters`
-- :meth:`~pysic.ChargeRelaxation.set_parameter_value`
-- :meth:`~pysic.ChargeRelaxation.set_parameter_values`
-- :meth:`~pysic.ChargeRelaxation.set_parameters`
+- :meth:`~pysic.charges.relaxation.ChargeRelaxation.get_parameters`
+- :meth:`~pysic.charges.relaxation.ChargeRelaxation.set_parameter_value`
+- :meth:`~pysic.charges.relaxation.ChargeRelaxation.set_parameter_values`
+- :meth:`~pysic.charges.relaxation.ChargeRelaxation.set_parameters`
 
 Charge relaxation
 _________________
 
-- :meth:`~pysic.ChargeRelaxation.charge_relaxation`
+- :meth:`~pysic.charges.relaxation.ChargeRelaxation.charge_relaxation`
 
 
 Full documentation of the ChargeRelaxation class
 ------------------------------------------------
 
-.. currentmodule:: pysic
+.. currentmodule:: pysic.charges.relaxation
 .. autoclass:: ChargeRelaxation
    :members:
    :undoc-members:

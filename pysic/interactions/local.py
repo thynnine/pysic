@@ -2,10 +2,15 @@
 
 from pysic.core import *
 from pysic.utility.error import InvalidPotentialError
-
+import copy
 
 class ProductPotential:
     """Class representing an interaction obtained by multiplying several :class:`~pysic.interactions.local.Potential` objects.
+        
+        Parameters:
+        
+        potentials: a list of :class:`~pysic.interactions.local.Potential` objects
+            the potentials
     """
 
     def __init__(self,potentials):
@@ -31,6 +36,14 @@ class ProductPotential:
     
     
     def set_potentials(self,potentials):
+        """Sets the list of potentials for the product.
+            
+            Parameters:
+            
+            potentials: a list of :class:`~pysic.interactions.local.Potential` objects
+                the potentials
+            """
+
         self.potentials = []
         self.n_targets = None
         for pot in potentials:
@@ -38,84 +51,218 @@ class ProductPotential:
         
     
     def add_potential(self,potential):
+        """Adds a potential in the product.
+            
+        Parameters:
+            
+        potential: a :class:`~pysic.interactions.local.Potential` object
+            the potential to be added
+            """
         if self.n_targets is None:
             self.n_targets = potential.get_number_of_targets()
         
         elif self.n_targets != potential.get_number_of_targets():
             raise InvalidPotentialError("You may only multiply potentials with the same number of targets.")
 
-        self.potentials.append(potential)
+        self.potentials.append(copy.deepcopy(potential))
 
 
     def get_symbols(self):
+        """Return a list of the chemical symbols (elements) on which the potential
+            acts on."""
         return self.potentials[0].get_symbols()
 
     def get_tags(self):
+        """Return the tags on which the potential acts on."""
         return self.potentials[0].get_tags()
 
     def get_indices(self):
+        """Return a list of indices on which the potential acts on. """
         return self.potentials[0].get_indices()
 
     def get_different_symbols(self):
+        """Returns a list containing each symbol the potential affects once."""
         return self.potentials[0].get_different_symbols()
 
     def get_different_tags(self):
+        """Returns a list containing each tag the potential affects once."""
         return self.potentials[0].get_different_tags()
 
     def get_different_indices(self):
+        """Returns a list containing each index the potential affects once."""
         return self.potentials[0].get_different_indices()
 
     def get_cutoff(self):
+        """Returns the cutoff."""
         return self.potentials[0].get_cutoff()
 
     def get_cutoff_margin(self):
+        """Returns the margin for a smooth cutoff."""
         return self.potentials[0].get_cutoff_margin()
 
     def get_soft_cutoff(self):
+        """Returns the lower limit for a smooth cutoff."""
         return self.potentials[0].get_soft_cutoff()
 
     def get_number_of_targets(self):
+        """Returns the number of targets."""
         return self.n_targets
 
     def get_coordinator(self):
+        """Returns the Coordinator.
+            """
         return self.potentials[0].get_coordinator()
 
     def set_coordinator(self, coordinator):
+        """Sets a new Coordinator.
+            
+            Parameters:
+            
+            coordinator: a :class:`~pysic.interactions.bondorder.Coordinator` object
+            the Coordinator
+            """
         self.potentials[0].set_coordinator(coordinator)
 
     def set_symbols(self, symbols):
+        """Sets the list of symbols to equal the given list.
+            
+            Parameters:
+            
+            symbols: list of strings
+            list of element symbols on which the potential acts
+            """
         self.potentials[0].set_symbols(symbols)
 
     def set_tags(self, tags):
+        """Sets the list of tags to equal the given list.
+            
+            Parameters:
+            
+            tags: list of integers
+            list of tags on which the potential acts
+            """
         self.potentials[0].set_tags(tags)
 
     def set_indices(self, indices):
+        """Sets the list of indices to equal the given list.
+            
+            Parameters:
+            
+            indices: list of integers
+            list of integers on which the potential acts
+            """
         self.potentials[0].set_indices(indices)
 
     def add_symbols(self, symbols):
+        """Adds the given symbols to the list of symbols.
+            
+            Parameters:
+            
+            symbols: list of strings
+            list of additional symbols on which the potential acts
+            """
         self.potentials[0].add_symbols(symbols)
 
     def add_tags(self, tags):
+        """Adds the given tags to the list of tags.
+            
+            Parameters:
+            
+            tags: list of integers
+            list of additional tags on which the potential acts
+            """
         self.potentials[0].add_tags(tags)
     
     def add_indices(self, indices):
+        """Adds the given indices to the list of indices.
+            
+            Parameters:
+            
+            indices: list of integers
+            list of additional indices on which the potential acts
+            """
         self.potentials[0].add_indices(indices)
 
     def set_cutoff(self, cutoff):
+        """Sets the cutoff to a given value.
+            
+            This method affects the hard cutoff.
+            For a detailed explanation on how to define a soft cutoff, see :meth:`~pysic.interactions.local.Potential.set_cutoff_margin`.
+            
+            Parameters:
+            
+            cutoff: double
+            new cutoff for the potential
+            """
         self.potentials[0].set_cutoff(cutoff)
     
     def set_cutoff_margin(self, cutoff_margin):
+        """Sets the margin for smooth cutoff to a given value.
+            
+            Many potentials decay towards zero in infinity, but in a numeric simulation
+            they are cut at a finite range as specified by the cutoff radius. If the potential
+            is not exactly zero at this range, a discontinuity will be introduced.
+            It is possible to avoid this by including a smoothening factor in the potential
+            to force a decay to zero in a finite interval.
+            
+            This method defines the decay interval :math:`r_\mathrm{hard}-r_\mathrm{soft}`.
+            Note that if the soft cutoff value is made smaller than 0 or larger than the
+            hard cutoff value an :class:`~pysic.utility.error.InvalidPotentialError` is raised.
+            
+            Parameters:
+            
+            margin: double
+            The new cutoff margin
+            """
         self.potentials[0].set_cutoff_margin(cutoff_margin)
 
     def set_soft_cutoff(self, cutoff):
+        """Sets the soft cutoff to a given value.
+            
+            For a detailed explanation on the meaning of a soft cutoff, see
+            :meth:`~pysic.interactions.local.Potential.set_cutoff_margin`.
+            Note that actually the cutoff margin is recorded, so changing the
+            hard cutoff (see :meth:`~pysic.interactions.local.Potential.set_cutoff`) will also affect the
+            soft cutoff.
+            
+            Parameters:
+            
+            cutoff: double
+            The new soft cutoff
+            """
         self.potentials[0].set_soft_cutoff(cutoff)
 
     def get_potentials(self):
+        """Returns the potentials stored in the :class:`~pysic.interactions.local.ProductPotential`.
+            """
         return self.potentials
 
     def is_multiplier(self):
+        """Returns a list of logical values specifying if the potentials are multipliers for a product.
+            
+            The leading potential is considered not to be a multiplier, while the rest are multipliers.
+            Therefore the returned list is [False, True, ..., True], withlength equal to the length of
+            potentials in the product.
+            """
         return [False] + [True] * (len(self.potentials)-1)
 
+    def accepts_target_list(self,targets):
+        """Tests whether a list is suitable as a list of targets, i.e., symbols, tags, or indices and returns True or False accordingly.
+            
+        A list of targets should be of the format::
+            
+          targets = [[a, b], [c, d]]
+            
+        where the length of the sublists must equal the number of targets.
+            
+        It is not tested that the values contained in the list are valid.
+            
+        Parameters:
+            
+        targets: list of strings or integers
+            a list whose format is checked
+            """
+        return self.potentials[0].accepts_target_list(targets)
 
 
 class Potential:
@@ -124,7 +271,7 @@ class Potential:
     Several types of potentials can be defined by specifying the type of the potential
     as a keyword. The potentials contain a host of parameters and information on
     what types of particles they act on. To view a list of available potentials, use the method
-    :meth:`~pysic.list_valid_potentials`.
+    :meth:`~pysic.core.list_valid_potentials`.
 
     A potential may be a pair or many-body potential: here, the bodies a potential
     acts on are called targets. Thus specifying the number of targets of a potential also
@@ -345,6 +492,11 @@ class Potential:
 
     def set_coordinator(self,coordinator):
         """Sets a new Coordinator.
+            
+        Parameters:
+            
+        coordinator: a :class:`~pysic.interactions.bondorder.Coordinator` object
+            the Coordinator
         """
         self.coordinator = coordinator
         
@@ -471,7 +623,7 @@ class Potential:
     def set_parameters(self, values):
         """Sets the numeric values of all parameters.
 
-        Equivalent to :meth:`~pysic.Potential.set_parameter_values`.
+        Equivalent to :meth:`~pysic.interactions.local.Potential.set_parameter_values`.
 
         Parameters:
 
@@ -518,7 +670,7 @@ class Potential:
         """Sets the cutoff to a given value.
 
         This method affects the hard cutoff.
-        For a detailed explanation on how to define a soft cutoff, see :meth:`~pysic.Potential.set_cutoff_margin`.
+        For a detailed explanation on how to define a soft cutoff, see :meth:`~pysic.interactions.local.Potential.set_cutoff_margin`.
         
         Parameters:
 
@@ -539,7 +691,7 @@ class Potential:
 
         This method defines the decay interval :math:`r_\mathrm{hard}-r_\mathrm{soft}`.
         Note that if the soft cutoff value is made smaller than 0 or larger than the
-        hard cutoff value an :class:`~pysic.InvalidPotentialError` is raised.
+        hard cutoff value an :class:`~pysic.utility.error.InvalidPotentialError` is raised.
 
         Parameters:
 
@@ -558,9 +710,9 @@ class Potential:
         """Sets the soft cutoff to a given value.
 
         For a detailed explanation on the meaning of a soft cutoff, see
-        :meth:`~pysic.Potential.set_cutoff_margin`.
+        :meth:`~pysic.interactions.local.Potential.set_cutoff_margin`.
         Note that actually the cutoff margin is recorded, so changing the
-        hard cutoff (see :meth:`~pysic.Potential.set_cutoff`) will also affect the
+        hard cutoff (see :meth:`~pysic.interactions.local.Potential.set_cutoff`) will also affect the
         soft cutoff.
 
         Parameters:
@@ -572,14 +724,24 @@ class Potential:
 
 
     def get_potentials(self):
+        """Returns a list containing the potential itself.
+
+            This is a method ensuring cross compatibility with the 
+            :class:`~pysic.interactions.local.ProductPotential` class.
+            """
         return [self]
     
     def is_multiplier(self):
+        """Returns a list containing False.
+
+            This is a method ensuring cross compatibility with the 
+            :class:`~pysic.interactions.local.ProductPotential` class.
+            """
         return [False]
     
     
     def describe(self):
-        """Prints a short description of the potential using the method :meth:`~pysic.describe_potential`."""
+        """Prints a short description of the potential using the method :meth:`~pysic.core.describe_potential`."""
         description_of_potential(self.potential_type,
                                  self.parameters,
                                  self.cutoff,

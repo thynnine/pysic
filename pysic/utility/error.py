@@ -8,7 +8,7 @@ class InvalidPotentialError(Exception):
 
     message: string
         information describing why the error occurred
-    potential: :class:`~pysic.Potential`
+    potential: :class:`~pysic.interactions.local.Potential`
         the errorneous potential
     """
     def __init__(self,message='',potential=None):
@@ -30,7 +30,7 @@ class InvalidCoordinatorError(Exception):
     
     message: string
         information describing why the error occurred
-    coordinator: :class:`~pysic.Coordinator`
+    coordinator: :class:`~pysic.interactions.bondorder.Coordinator`
         the errorneous coordinator
     """
     def __init__(self,message='',coordinator=None):
@@ -53,7 +53,7 @@ class InvalidParametersError(Exception):
 
     message: string
         information describing why the error occurred
-    params: :class:`~pysic.BondOrderParameters`
+    params: :class:`~pysic.interactions.bondorder.BondOrderParameters`
         the errorneous parameters
     """
     def __init__(self,message='',params=None):
@@ -75,7 +75,7 @@ class InvalidSummationError(Exception):
 
     message: string
         information describing why the error occurred
-    params: :class:`~pysic.CoulombSummation`
+    params: :class:`~pysic.interactions.coulomb.CoulombSummation`
         the errorneous summation
     """
     def __init__(self,message='',summer=None):
@@ -96,7 +96,7 @@ class InvalidRelaxationError(Exception):
         
         message: string
             information describing why the error occurred
-        params: :class:`~pysic.ChargeRelaxation`
+        params: :class:`~pysic.charges.relaxation.ChargeRelaxation`
             the errorneous parameters
         """
     def __init__(self,message='',relaxation=None):
@@ -130,7 +130,7 @@ class MissingAtomsError(Exception):
 class MissingNeighborsError(Exception):
     """An error raised when a calculation is initiated without initializing the neighbor lists.
 
-    In principle :class:`~pysic.Pysic` should always take care of handling the neighbors automatically.
+    In principle :class:`~pysic.calculator.Pysic` should always take care of handling the neighbors automatically.
     This error is an indication that there is loophole in the built-in preparations.
 
     Parameters:
@@ -145,7 +145,7 @@ class MissingNeighborsError(Exception):
         return self.message
 
 class LockedCoreError(Exception):
-    """An error raised when a :class:`~pysic.Pysic` tries to access the core which is locked
+    """An error raised when a :class:`~pysic.calculator.Pysic` tries to access the core which is locked
     by another calculator.
 
     Parameters:

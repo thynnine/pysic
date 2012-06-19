@@ -8,13 +8,13 @@ class BondOrderParameters:
     """Class for representing a collection of parameters for bond order calculations.
 
     Calculating bond order factors using Tersoff-like methods defined in
-    :class:`~pysic.Coordinator` requires several parameters per element and
+    :class:`~pysic.interactions.bondorder.Coordinator` requires several parameters per element and
     element pair. To facilitate the handling of all these parameters, they are
     wrapped in a BondOrderParameters object.
 
     The object can be created empty and filled later with the parameters. Alternatively,
     a list of parameters can be given upon initialization in which case it is passed
-    to the :meth:`~pysic.BondOrderParameter.set_parameters` method.
+    to the :meth:`~pysic.interactions.bondorder.BondOrderParameter.set_parameters` method.
 
     Parameters:
 
@@ -276,7 +276,7 @@ class BondOrderParameters:
 
         This method defines the decay interval :math:`r_\mathrm{hard}-r_\mathrm{soft}`.
         Note that if the soft cutoff value is made smaller than 0 or larger than the
-        hard cutoff value an :class:`~pysic.InvalidParametersError` is raised.
+        hard cutoff value an :class:`~pysic.utility.error.InvalidParametersError` is raised.
 
         Parameters:
 
@@ -295,7 +295,7 @@ class BondOrderParameters:
         """Sets the soft cutoff to a given value.
 
         Note that actually the cutoff margin is recorded, so changing the
-        hard cutoff (see :meth:`~pysic.BondOrderParameters.set_cutoff`) will also affect the
+        hard cutoff (see :meth:`~pysic.interactions.bondorder.BondOrderParameters.set_cutoff`) will also affect the
         soft cutoff.
 
         Parameters:
@@ -339,7 +339,7 @@ class BondOrderParameters:
     def set_parameters(self,params):
         """Sets the numeric values of all parameters.
 
-        Equivalent to :meth:`~pysic.BondOrderParameters.set_parameter_values`.
+        Equivalent to :meth:`~pysic.interactions.bondorder.BondOrderParameters.set_parameter_values`.
 
         Parameters:
         
@@ -374,7 +374,7 @@ class Coordinator:
 
     Parameters:
 
-    bond_order_parameters: list of :class:`~pysic.BondOrderParameters` objects
+    bond_order_parameters: list of :class:`~pysic.interactions.bondorder.BondOrderParameters` objects
         Parameters for calculating bond order factors.
     """
 
@@ -416,7 +416,7 @@ class Coordinator:
 
         Parameters:
 
-        params: :class:`~pysic.BondOrderCoordinator`
+        params: :class:`~pysic.interactions.bondorder.BondOrderParameters`
             new bond order parameters
         """
 
@@ -429,8 +429,8 @@ class Coordinator:
         """Adds the given parameters to this Coordinator.
 
         Parameters:
-
-        params: :class:`~pysic.BondOrderCoordinator`
+            
+        params: :class:`~pysic.interactions.bondorder.BondOrderParameters`
             new bond order parameters
         """
         if isinstance(params,list):
@@ -466,7 +466,7 @@ class Coordinator:
     def calculate_bond_order_factors(self):
         """Recalculates the bond order factors for all atoms and stores them.
 
-        Similarly to coordination numbers (:meth:`~pysic.Coordinator.calculate_coordination`),
+        Similarly to coordination numbers (:meth:`~pysic.interactions.bondorder.Coordinator.calculate_coordination`),
         this method only calculates the factors and stores them but does not return them.
         """
         n_atoms = pf.pysic_interface.get_number_of_atoms()

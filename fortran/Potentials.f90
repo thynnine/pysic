@@ -2053,6 +2053,8 @@ contains
   ! *pot_index the internal index of the potential
   ! *new_potential the created :data:`potential`
   ! *success logical tag specifying if creation of the potential succeeded
+  ! *n_multi number of multiplying potentials
+  ! *multipliers the multiplying potentials
   subroutine create_potential(n_targets,n_params,pot_name,parameters,cutoff,soft_cutoff,&
        elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,&
        n_multi,multipliers,&
@@ -2200,6 +2202,8 @@ contains
   !
   !    \chi_{\alpha,ijk} = -\mu_{\alpha,ijk} = -\frac{\partial U_{ijk}}{\partial q_\alpha}
   !
+  ! This routine can evaluate the contribution from a product potential.
+  !
   ! To be consist the forces returned by :func:`evaluate_electronegativity` must be
   ! derivatives of the energies returned by :func:`evaluate_energy`.
   !
@@ -2209,6 +2213,7 @@ contains
   ! *interaction a :data:`potential` containing the parameters
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
   ! *eneg the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+  ! *n_product the number of potentials for a product potential
   subroutine evaluate_electronegativity(n_targets,n_product,separations,distances,interaction,eneg,atoms)
     implicit none
     integer, intent(in) :: n_targets, n_product
@@ -2261,8 +2266,7 @@ contains
   !
   !    \chi_{\alpha,ijk} = -\mu_{\alpha,ijk} = -\frac{\partial U_{ijk}}{\partial q_\alpha}
   !
-  ! To be consist the forces returned by :func:`evaluate_electronegativity` must be
-  ! derivatives of the energies returned by :func:`evaluate_energy`.
+  ! This routine evaluates an elemental :math:`\chi_{\alpha,ijk}`.
   !
   ! *n_targets number of targets
   ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
@@ -2310,6 +2314,8 @@ contains
   ! this routine evaluates :math:`\mathbf{f}_{\alpha,ijk}` for :math:`\alpha = (i,j,k)` for the given
   ! atoms i, j, and k.
   !
+  ! This routine can evaluate the contribution from a product potential.
+  !
   ! To be consist the forces returned by :func:`evaluate_forces` must be
   ! gradients of the energies returned by :func:`evaluate_energy`.
   !
@@ -2319,6 +2325,7 @@ contains
   ! *interaction a :data:`potential` containing the parameters
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
   ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  ! *n_product the number of potentials for a product potential
   subroutine evaluate_forces(n_targets,n_product,separations,distances,interaction,force,atoms)
     implicit none
     integer, intent(in) :: n_targets, n_product
@@ -2370,6 +2377,8 @@ contains
   !
   ! this routine evaluates :math:`\mathbf{f}_{\alpha,ijk}` for :math:`\alpha = (i,j,k)` for the given
   ! atoms i, j, and k.
+  !
+  ! This routine evaluates an elemental :math:`\mathbf{f}_{\alpha,ijk}`.
   !
   ! To be consist the forces returned by :func:`evaluate_forces` must be
   ! gradients of the energies returned by :func:`evaluate_energy`.
@@ -2434,6 +2443,8 @@ contains
   ! this routine evaluates :math:`v_{ijk}` for the given
   ! atoms i, j, and k.
   ! 
+  ! This routine can evaluate the contribution from a product potential.
+  !
   ! To be consist the forces returned by :func:`evaluate_forces` must be
   ! gradients of the energies returned by :func:`evaluate_energy`.
   !
@@ -2444,6 +2455,7 @@ contains
   ! *interaction a :data:`bond_order_parameters` containing the parameters
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
   ! *energy the calculated energy :math:`v_{ijk}`
+  ! *n_product the number of potentials for a product potential
   subroutine evaluate_energy(n_targets,n_product,separations,distances,interaction,energy,atoms)
     implicit none
     integer, intent(in) :: n_targets, n_product
@@ -2479,7 +2491,9 @@ contains
   !
   ! this routine evaluates :math:`v_{ijk}` for the given
   ! atoms i, j, and k.
-  ! 
+  !
+  ! This routine evaluates an elemental :math:`v_{\alpha,ijk}`.
+  !
   ! To be consist the forces returned by :func:`evaluate_forces` must be
   ! gradients of the energies returned by :func:`evaluate_energy`.
   !

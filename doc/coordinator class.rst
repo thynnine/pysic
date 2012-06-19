@@ -4,16 +4,13 @@
 
 
 
-
-
-
-
 .. file:coordinator class - description
 
 .. _coordinator class - description:
 
 
 
+.. module:: pysic.interactions.bondorder
 
 ============================
 Coordinator class
@@ -26,10 +23,10 @@ needed for bond order or Tersoff-like potentials. Here, bond order refers
 roughly to the number of neighbors of an atom, however, the bond order factors may
 depend also on the atomic distances, angles and other local geometric factors.
 
-To use a :class:`~pysic.Coordinator`, one must pass it first to a :class:`~pysic.Potential` object,
+To use a :class:`~pysic.interactions.bondorder.Coordinator`, one must pass it first to a :class:`~pysic.interactions.local.Potential` object,
 which is further given to a :class:`~pysic.calculator.Pysic` calculator. Then, one can use the
-calculator to calculate forces or just the bond order factors. When a :class:`~pysic.Coordinator`
-is added to a :class:`~pysic.Potential`, the potential is multiplied by the bond order factors
+calculator to calculate forces or just the bond order factors. When a :class:`~pysic.interactions.bondorder.Coordinator`
+is added to a :class:`~pysic.interactions.local.Potential`, the potential is multiplied by the bond order factors
 as defined by the Coordinator.
 
 .. file:bond order potentials
@@ -42,7 +39,7 @@ as defined by the Coordinator.
 Bond order potentials
 ---------------------
 
-A bond order factor can be added to any :class:`~pysic.Potential` object. 
+A bond order factor can be added to any :class:`~pysic.interactions.local.Potential` object. 
 This means that the potential is multiplied by the bond order factor. The factors are always
 defined by atom, but for a two and many body potentials the average is applied.
 To put in other words, if we have, say, a three-body potential
@@ -97,13 +94,13 @@ pairs of elements, element triplets etc. Due to this, a bond order factor can co
 plenty of parameters. 
 
 To ease the handling of all the parameters, a wrapper class
-:class:`~pysic.BondOrderParameters` is defined. 
+:class:`~pysic.interactions.bondorder.BondOrderParameters` is defined. 
 A single instance of this class defines the type of bond order factor and
 contains the cutoffs and parameters for one set of elements. 
-The :class:`~pysic.Coordinator` object then collects these parameters in one bundle.
+The :class:`~pysic.interactions.bondorder.Coordinator` object then collects these parameters in one bundle.
 
 The bond order types and all associated parameters are explained in the documentation
-of :class:`~pysic.BondOrderParameters`.
+of :class:`~pysic.interactions.bondorder.BondOrderParameters`.
 
 .. file:mixing bond order types
 
@@ -139,7 +136,7 @@ then
 When bond order factors are evaluated, the sums :math:`\sum_{(i,j,\ldots)} b_{ij\ldots}`
 are always calculated first and only then the scaling :math:`s_i` is applied atom-by-atom.
 
-When a :class:`~pysic.Coordinator` contains several :class:`~pysic.BondOrderParameters`::
+When a :class:`~pysic.interactions.bondorder.Coordinator` contains several :class:`~pysic.interactions.bondorder.BondOrderParameters`::
 
      >>> crd = pysic.Coordinator( [ bond1, bond2, bond3 ] )
 
@@ -153,7 +150,7 @@ contains 1-body parameters for the correct element. (That is, the first atomic s
 the list of targets of the parameter must equal the element of the atom for which the scaling
 is done.) Once such parameters are found, they are used for scaling and the rest of the parameters
 are ignored. In practice this means that the first applicable set of parameters in the list of 
-:class:`~pysic.BondOrderParameters` in the :class:`~pysic.Coordinator` is used.
+:class:`~pysic.interactions.bondorder.BondOrderParameters` in the :class:`~pysic.interactions.bondorder.Coordinator` is used.
 
 Because of this behaviour, the default scaling can be overridden as shown in the following example.
 
@@ -181,8 +178,8 @@ We can define this in pysic by overriding the scaling of the coordination bond o
    >>> pot = pysic.Potential( 'constant', symbols = ['Cu'], 
    ...                        parameters = [1.0], coordinator = crd )
 
-In the final step, the :class:`~pysic.Coordinator` is attached to a 
-:class:`~pysic.Potential` with a constant value of 1.0. 
+In the final step, the :class:`~pysic.interactions.bondorder.Coordinator` is attached to a 
+:class:`~pysic.interactions.local.Potential` with a constant value of 1.0. 
 Since the result is a product between the bond order factor and
 the potential, the resulting potential is just the bond order factor.
 
@@ -196,36 +193,36 @@ the potential, the resulting potential is just the bond order factor.
 List of methods
 ---------------
 
-Below is a list of methods in :class:`~pysic.Coordinator`, grouped according to
+Below is a list of methods in :class:`~pysic.interactions.bondorder.Coordinator`, grouped according to
 the type of functionality.
 
 Parameter handling
 __________________
 
-- :meth:`~pysic.Coordinator.add_bond_order_parameters`
-- :meth:`~pysic.Coordinator.set_bond_order_parameters`
-- :meth:`~pysic.Coordinator.get_bond_order_parameters`
+- :meth:`~pysic.interactions.bondorder.Coordinator.add_bond_order_parameters`
+- :meth:`~pysic.interactions.bondorder.Coordinator.set_bond_order_parameters`
+- :meth:`~pysic.interactions.bondorder.Coordinator.get_bond_order_parameters`
 
 
 Coordination and bond order
 ___________________________
 
-- :meth:`~pysic.Coordinator.calculate_bond_order_factors`
-- :meth:`~pysic.Coordinator.get_bond_order_factors`
-- :meth:`~pysic.Coordinator.get_bond_order_gradients`
-- :meth:`~pysic.Coordinator.get_bond_order_gradients_of_factor`
+- :meth:`~pysic.interactions.bondorder.Coordinator.calculate_bond_order_factors`
+- :meth:`~pysic.interactions.bondorder.Coordinator.get_bond_order_factors`
+- :meth:`~pysic.interactions.bondorder.Coordinator.get_bond_order_gradients`
+- :meth:`~pysic.interactions.bondorder.Coordinator.get_bond_order_gradients_of_factor`
 
 Miscellaneous
 _____________
 
-- :meth:`~pysic.Coordinator.get_group_index` (meant for internal use)
-- :meth:`~pysic.Coordinator.set_group_index` (meant for internal use)
+- :meth:`~pysic.interactions.bondorder.Coordinator.get_group_index` (meant for internal use)
+- :meth:`~pysic.interactions.bondorder.Coordinator.set_group_index` (meant for internal use)
 
 
 Full documentation of the Coordinator class
 -------------------------------------------
 
-.. currentmodule:: pysic
+.. currentmodule:: pysic.interactions.bondorder
 .. autoclass:: Coordinator
    :members:
    :undoc-members:

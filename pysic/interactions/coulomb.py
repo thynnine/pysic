@@ -13,7 +13,7 @@ class CoulombSummation:
     in reciprocal space.
     
     Instances of this class are used for wrapping the parameters controlling
-    the summations. Passing such an instance to the :class:`~pysic.Pysic`
+    the summations. Passing such an instance to the :class:`~pysic.calculator.Pysic`
     calculator activates the evaluation of Coulomb interactions.
     
     Currently, only Ewald summation is available as a calculation method.
@@ -76,7 +76,7 @@ class CoulombSummation:
         """Sets the summation method.
             
             The method also creates a dictionary of parameters initialized to 0.0
-            by invoking :meth:`~pysic.CoulombSummation.initialize_parameters`.
+            by invoking :meth:`~pysic.interactions.coulomb.CoulombSummation.initialize_parameters`.
             
             Parameters:
             
@@ -102,7 +102,7 @@ class CoulombSummation:
     def set_parameters(self, parameters):
         """Sets the numeric values for all parameters.
         
-        Equivalent to :meth:`~pysic.CoulombSummation.set_parameter_values`
+        Equivalent to :meth:`~pysic.interactions.coulomb..CoulombSummation.set_parameter_values`
         
         Parameters:
         

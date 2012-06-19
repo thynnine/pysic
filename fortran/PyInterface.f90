@@ -426,6 +426,7 @@ contains
   ! *orig_indices original indices specifying the atoms the interaction acts on
   ! *pot_index index of the potential
   ! *success logical tag specifying if creation of the potential succeeded
+  ! *is_multiplier logical tag defining if the potential is a multiplier for a product potential
   subroutine add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
        elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,is_multiplier,&
        success)
@@ -1052,7 +1053,7 @@ contains
 
   end subroutine generate_neighbor_lists
 
-
+  ! Returns the number of neighbors for an atom
   subroutine get_number_of_neighbors_of_atom(atom_index,n_neighbors)
     implicit none
     integer, intent(in) :: atom_index
@@ -1062,6 +1063,7 @@ contains
 
   end subroutine get_number_of_neighbors_of_atom
 
+  ! Returns the list of neighbors for an atom
   subroutine get_neighbor_list_of_atom(atom_index, n_neighbors, neighbors, offsets)
     implicit none
     integer, intent(in) :: atom_index, n_neighbors
@@ -1074,6 +1076,7 @@ contains
   end subroutine get_neighbor_list_of_atom
 
 
+  ! Clears the temporary stored array of multiplier potentials
   subroutine clear_potential_multipliers()
     implicit none
 

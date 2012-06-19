@@ -48,8 +48,10 @@ to Python are simply calling routines here.
     - :data:`force_evaluation_index`
     - :data:`group_index_save_slot`
     - :data:`interactions`
+    - :data:`multipliers`
     - :data:`n_bond_factors`
     - :data:`n_interactions`
+    - :data:`n_multi`
     - :data:`n_saved_bond_order_factors`
     - :data:`potentials_allocated`
     - :data:`saved_bond_order_factors`
@@ -79,6 +81,7 @@ to Python are simply calling routines here.
     - :func:`core_clear_atoms`
     - :func:`core_clear_bond_order_factors`
     - :func:`core_clear_bond_order_storage`
+    - :func:`core_clear_potential_multipliers`
     - :func:`core_clear_potentials`
     - :func:`core_create_cell`
     - :func:`core_create_neighbor_list`
@@ -244,6 +247,12 @@ Full documentation of global variables in pysic_core
     
     an array of :data:`potential` objects representing the interactions
     
+  .. data:: multipliers
+
+    type(potential)  *allocatable*  *size(:)*    
+    
+    a temporary array for storing multiplying potentials before associating them with a master potential
+    
   .. data:: n_bond_factors
 
     integer    *scalar*    
@@ -259,6 +268,14 @@ Full documentation of global variables in pysic_core
     *initial value* = 0
     
     number of potentials
+    
+  .. data:: n_multi
+
+    integer    *scalar*    
+
+    *initial value* = 0
+    
+    number of temporary product potentials
     
   .. data:: n_saved_bond_order_factors
 
@@ -371,7 +388,7 @@ Full documentation of subroutines in pysic_core
     **success**: logical  **intent(out)**    *scalar*  
         logical tag specifying if creation of the factor succeeded
             
-  .. function:: core_add_potential(n_targets, n_params, pot_name, parameters, cutoff, smooth_cut, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index, success)
+  .. function:: core_add_potential(n_targets, n_params, pot_name, parameters, cutoff, smooth_cut, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index, is_multiplier, success)
 
     Creates one additional potential in the core.
     The routine assumes that adequate memory has been
@@ -391,6 +408,15 @@ Full documentation of subroutines in pysic_core
     Therefore it is necessary to also store the original targets of
     the potential as specified in the Python interface. These are
     to be given in the 'orig_*' lists.
+    
+    If product potentials are created, the first all but one of the potentials
+    are created with ``is_multiplier == .true.``. This leads to the potentials
+    being stored in the global temporary array ``multipliers``. The last potential
+    of a group should be created with ``is_multiplier = .false.`` and the stored
+    multipliers are attached to it. The list of multipliers is not cleared automatically,
+    since usually one creates copies of the same potential with permutated targets and all
+    of these need the same multipiers.
+    Instead the multipliers are cleared with a call of :func:`clear_potential_multipliers`.
     
     called from PyInterface: :func:`add_potential`
     
@@ -423,6 +449,8 @@ Full documentation of subroutines in pysic_core
         original indices specifying the atoms the interaction acts on
     pot_index: integer  *intent(in)*    *scalar*  
         index of the potential
+    is_multiplier: logical  *intent(in)*    *scalar*  
+        logical tag specifying if this potential should be treated as a multiplier
     **success**: logical  **intent(out)**    *scalar*  
         logical tag specifying if creation of the potential succeeded
             
@@ -493,13 +521,17 @@ Full documentation of subroutines in pysic_core
             
   .. function:: core_build_neighbor_lists(n_atoms, cutoffs)
 
+    Builds the neighbor lists in the core.
+    The simulation cell must be partitioned with :func:`core_create_space_partitioning`
+    before this routine can be called.
+    
 
     Parameters:
 
     n_atoms: integer  *intent(in)*    *scalar*  
-        
+        number of atoms
     cutoffs: double precision  *intent(in)*    *size(n_atoms)*  
-        
+        list of cutoffs, atom by atom
             
   .. function:: core_calculate_bond_order_factors(n_atoms, group_index, total_bond_orders)
 
@@ -697,6 +729,10 @@ Full documentation of subroutines in pysic_core
     Deallocates pointers for bond order factors (the precalculated factor values).
 
             
+  .. function:: core_clear_potential_multipliers()
+
+
+            
   .. function:: core_clear_potentials()
 
     Deallocates pointers for potentials
@@ -771,11 +807,13 @@ Full documentation of subroutines in pysic_core
             
   .. function:: core_create_space_partitioning(max_cutoff)
 
+    Partitions the simulation volume in subvolumes for fast neighbor searching
+    
 
     Parameters:
 
     max_cutoff: double precision  *intent(in)*    *scalar*  
-        
+        the maximum cutoff radius for neighbor search
             
   .. function:: core_debug_dump(forces)
 
@@ -1101,17 +1139,19 @@ Full documentation of subroutines in pysic_core
             
   .. function:: core_get_neighbor_list_of_atom(atom_index, n_neighbors, neighbors, offsets)
 
+    Returns the list of neighbros for an atom
+    
 
     Parameters:
 
     atom_index: integer  *intent(in)*    *scalar*  
-        
+        the index of the atom whose neighbors are returned
     n_neighbors: integer  *intent(in)*    *scalar*  
-        
+        the number of neighbors
     **neighbors**: integer  **intent(out)**    *size(n_neighbors)*  
-        
+        the indices of the neighboring atoms
     **offsets**: integer  **intent(out)**    *size(3, n_neighbors)*  
-        
+        the offsets for periodic boundaries
             
   .. function:: core_get_number_of_atoms(n_atoms)
 
@@ -1127,13 +1167,15 @@ Full documentation of subroutines in pysic_core
             
   .. function:: core_get_number_of_neighbors(atom_index, n_neighbors)
 
+    Returns the number of neighbors for an atom
+    
 
     Parameters:
 
     atom_index: integer  *intent(in)*    *scalar*  
-        
+        the index of the atoms
     **n_neighbors**: integer  **intent(out)**    *scalar*  
-        
+        the number of neighbors
             
   .. function:: core_loop_over_local_interactions(n_atoms, calculation_type, total_energy, total_forces, total_enegs, total_stress)
 
@@ -1141,9 +1183,9 @@ Full documentation of subroutines in pysic_core
     and calculates the contributions from local potentials to energy, forces,
     or electronegativities. This routine is called from the routines
     
-     - :meth:`core_calculate_energy`
-     - :meth:`core_calculate_forces`
-     - :meth:`core_calculate_electronegaivities`
+     - :func:`core_calculate_energy`
+     - :func:`core_calculate_forces`
+     - :func:`core_calculate_electronegaivities`
     
 
     Parameters:
@@ -1336,6 +1378,7 @@ Full documentation of subroutines in pysic_core
             
   .. function:: expand_neighbor_storage(nbors_and_offsets, length, new_length, n_atoms)
 
+    Expands the allocated memory for storing neighbor lists
 
     Parameters:
 

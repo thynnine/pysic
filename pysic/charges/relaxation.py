@@ -29,14 +29,14 @@ class ChargeRelaxation:
         
         relaxation: string
             a keyword specifying the mode of charge relaxation
-        calculator: :class:`~pysic.Pysic` object
+        calculator: :class:`~pysic.calculator.Pysic` object
             a Pysic calculator 
         parameters: list of doubles
             numeric values for parameters        
         atoms: `ASE Atoms`_ object
             The system whose charges are to be relaxed. 
             Note! The relaxation is always done using the atoms copy in 
-            :class:`~pysic.Pysic`, but if the original structure needs to be
+            :class:`~pysic.calculator.Pysic`, but if the original structure needs to be
             updated as well, the relaxation algorithm must have access to it.
     """
 
@@ -44,7 +44,7 @@ class ChargeRelaxation:
     """Names of the charge relaxation algorithms available. 
         
         These are keywords needed when creating the 
-        :class:`~pysic.ChargeRelaxation` objects as type specifiers."""
+        :class:`~pysic.charges.relaxation.ChargeRelaxation` objects as type specifiers."""
     
     relaxation_parameters = { relaxation_modes[0] : ['n_steps', 'timestep', 'inertia', 'friction', 'tolerance'] }
     """Names of the parameters of the charge relaxation algorithms."""
@@ -93,7 +93,7 @@ class ChargeRelaxation:
             
             
     def set_calculator(self, calculator, reciprocal=False):
-        """Assigns a :class:`~pysic.Pysic` calculator.
+        """Assigns a :class:`~pysic.calculator.Pysic` calculator.
             
             The calculator is necessary for calculation of electronegativities.
             It is also possible to automatically assign the charge relaxation
@@ -101,19 +101,19 @@ class ChargeRelaxation:
             
             Note though
             that it does make a difference whether the calculator knows the
-            charge relaxation or not: If the :class:`~pysic.Pysic` has a connection
-            to the :class:`~pysic.ChargeRelaxation`, every time force or energy calculations
+            charge relaxation or not: If the :class:`~pysic.calculator.Pysic` has a connection
+            to the :class:`~pysic.charges.relaxation.ChargeRelaxation`, every time force or energy calculations
             are requested the charges are first relaxed by automatically invoking
-            :meth:`~pysic.ChargeRelaxation.charge_relaxation`. If there is no link,
+            :meth:`~pysic.charges.relaxation.ChargeRelaxation.charge_relaxation`. If there is no link,
             it is up to the user to start the relaxation.
             
             Parameters:
             
-            calculator: :class:`~pysic.Pysic` object
+            calculator: :class:`~pysic.calculator.Pysic` object
                 a Pysic calculator
             reciprocal: logical
-                if True, also the :class:`~pysic.ChargeRelaxation` is passed to the
-                :class:`~pysic.Pysic` through :meth:`~pysic.Pysic.set_charge_relaxation`.
+                if True, also the :class:`~pysic.charges.relaxation.ChargeRelaxation` is passed to the
+                :class:`~pysic.calculator.Pysic` through :meth:`~pysic.calculator.Pysic.set_charge_relaxation`.
             """
         
         # remove possible return link from the calculator
@@ -132,7 +132,7 @@ class ChargeRelaxation:
         """Sets the relaxation method.
             
             The method also creates a dictionary of parameters initialized to 0.0
-            by invoking :meth:`~pysic.ChargeRelaxation.initialize_parameters`.
+            by invoking :meth:`~pysic.charges.relaxation.ChargeRelaxation.initialize_parameters`.
             
             Parameters:
             
@@ -157,7 +157,7 @@ class ChargeRelaxation:
     def set_parameters(self, parameters):
         """Sets the numeric values for all parameters.
             
-            Equivalent to :meth:`~pysic.ChargeRelaxation.set_parameter_values`
+            Equivalent to :meth:`~pysic.charges.relaxation.ChargeRelaxation.set_parameter_values`
             
             Parameters:
             
@@ -200,7 +200,7 @@ class ChargeRelaxation:
 
     
     def get_calculator(self):
-        """Returns the :class:`~pysic.Pysic` calculator assigned to this :class:`~pysic.ChargeRelaxation`.
+        """Returns the :class:`~pysic.calculator.Pysic` calculator assigned to this :class:`~pysic.charges.relaxation.ChargeRelaxation`.
             """
         return self.calculator
     
@@ -219,18 +219,18 @@ class ChargeRelaxation:
         """Lets the relaxation algorithm know the atomic structure to be updated.
             
             The relaxation algorithm always works with the structure stored in the
-            :class:`~pysic.Pysic` calculator it knows. If ``pass_to_calculator = True``,
+            :class:`~pysic.calculator.Pysic` calculator it knows. If ``pass_to_calculator = True``,
             this method also updates the structure known by the calculator. However,
-            this is not the main purpose of letting the :class:`~pysic.ChargeRelaxation`
+            this is not the main purpose of letting the :class:`~pysic.charges.relaxation.ChargeRelaxation`
             know the structure -
             it is not even necessary that the structure known by the relaxation algorithm
             is the same as that known by the calculator.
             
             The structure given to the algorithm is the structure whose charges it 
             automatically updates after relaxing the charges in
-            :meth:`~pysic.ChargeRelaxation.charge_relaxation`. In other words, if no
+            :meth:`~pysic.charges.relaxation.ChargeRelaxation.charge_relaxation`. In other words, if no
             structure is given, the relaxation will update the charges in the strucure
-            known by :class:`~pysic.Pysic`, but this is always just a copy and so the
+            known by :class:`~pysic.calculator.Pysic`, but this is always just a copy and so the
             original structure is left untouched.
             
             
@@ -239,7 +239,7 @@ class ChargeRelaxation:
             atoms: `ASE Atoms`_ object
                 The system whose charges are to be relaxed. 
                 Note! The relaxation is always done using the atoms copy in 
-                :class:`~pysic.Pysic`, but if the original structure needs to be
+                :class:`~pysic.calculator.Pysic`, but if the original structure needs to be
                 updated as well, the relaxation algorithm must have access to it.
             pass_to_calculator: logical
                 if True, the atoms are also set for the calculator via 
@@ -263,16 +263,16 @@ class ChargeRelaxation:
         """Performs the charge relaxation.
 
             The relaxation is always performed on the system associated with
-            the :class:`~pysic.Pysic` calculator joint with this :class:`~pysic.ChargeRelaxation`.
+            the :class:`~pysic.calculator.Pysic` calculator joint with this :class:`~pysic.charges.relaxation.ChargeRelaxation`.
             The calculated equilibrium charges are returned as a numeric array.
             
             If an `ASE Atoms`_ structure is known by the 
-            :class:`~pysic.ChargeRelaxation` 
-            (given through :meth:`~pysic.ChargeRelaxation.set_atoms`), the charges of
+            :class:`~pysic.charges.relaxation.ChargeRelaxation` 
+            (given through :meth:`~pysic.charges.relaxation.ChargeRelaxation.set_atoms`), the charges of
             the structure are updated according to the calculation result.
             If the structure is not known, the charges are updated in the
-            structure stored in the :class:`~pysic.Pysic` calculator, but not in any other
-            object. Since :class:`~pysic.Pysic` only stores a copy of the structure it 
+            structure stored in the :class:`~pysic.calculator.Pysic` calculator, but not in any other
+            object. Since :class:`~pysic.calculator.Pysic` only stores a copy of the structure it 
             is given, the original `ASE Atoms`_ object will not be updated.
             """
         

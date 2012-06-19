@@ -31,7 +31,7 @@ class FastNeighborList(nbl.NeighborList):
     """ASE has a neighbor list class built in, but its implementation is
         currently inefficient, and building of the list is an :math:`O(n^2)`
         operation. This neighbor list class overrides the 
-        :meth:`~pysic_utility.FastNeighborList.build` method with
+        :meth:`~pysic.calculator.FastNeighborList.build` method with
         an :math:`O(n)` time routine. The fast routine is based on a
         spatial partitioning algorithm.
         
@@ -60,12 +60,12 @@ class FastNeighborList(nbl.NeighborList):
             method in the original ASE neighborlist class, which directly operates
             on the given structure, so this method also takes the atomic structure 
             as an argument. However, in order to keep the core modification routines in
-            the :class:`~pysic.Pysic` class, this method does not change the core
+            the :class:`~pysic.calculator.Pysic` class, this method does not change the core
             structure. It does raise an error if the structures do not match, though.
             
             The neighbor search is done via the :meth:`generate_neighbor_lists` routine.
             The routine builds the neighbor list in the core, after which the list is
-            fed back to the :class:`~pysic.FastNeighborList` object by looping over all
+            fed back to the :class:`~pysic.calculator.FastNeighborList` object by looping over all
             atoms and saving the lists of neighbors and offsets.
 
             Parameters:
@@ -104,14 +104,14 @@ class Pysic:
     """A calculator class providing the necessary methods for interfacing with `ASE`_.
 
     Pysic is a calculator for evaluating energies and forces for given atomic structures
-    according to the given :class:`~pysic.Potential` set. Neither the geometry nor the
+    according to the given :class:`~pysic.interactions.local.Potential` set. Neither the geometry nor the
     potentials have to be specified upon creating the calculator, as they can be specified
     or changed later. They are necessary for actual calculation, of course.
 
     Simulation geometries must be defined as `ASE Atoms`_. This object contains both the
     atomistic coordinates and supercell parameters.
 
-    Potentials must be defined as a list of :class:`~pysic.Potential` objects. 
+    Potentials must be defined as a list of :class:`~pysic.interactions.local.Potential` objects. 
     The total potential of the system is then the sum of the individual potentials.
     
     .. _ASE: https://wiki.fysik.dtu.dk/ase/
@@ -121,23 +121,23 @@ class Pysic:
 
     atoms: `ASE Atoms`_ object
         an Atoms object containing the full simulation geometry
-    potentials: list of :class:`~pysic.Potential` objects
+    potentials: list of :class:`~pysic.interactions.local.Potential` objects
         list of potentials for describing interactions
     force_initialization: boolean
         If true, calculations always fully initialize the Fortran core.
         If false, the Pysic tries to evaluate what needs updating by
-        consulting the :data:`~pysic.Pysic.core` instance of :class:`~pysic.CoreMirror`.
+        consulting the :data:`~pysic.calculator.Pysic.core` instance of :class:`~pysic.core.CoreMirror`.
     """
 
     core = CoreMirror()
     """An object storing the data passed to the core.
 
-    Whenever a :class:`~pysic.Pysic` calculator alters the Fortran core,
-    it should also modify the :data:`~pysic.Pysic.core` object so that
+    Whenever a :class:`~pysic.calculator.Pysic` calculator alters the Fortran core,
+    it should also modify the :data:`~pysic.calculator.Pysic.core` object so that
     it is always a valid representation of the actual core.
-    Then, whenever :class:`~pysic.Pysic` needs to check if the
+    Then, whenever :class:`~pysic.calculator.Pysic` needs to check if the
     representation in the core is up to date, it only needs to compare
-    against :data:`~pysic.Pysic.core` instead of accessing the
+    against :data:`~pysic.calculator.Pysic.core` instead of accessing the
     Fortran core itself.
     """
     def __init__(self,atoms=None,potentials=None,charge_relaxation=None,
@@ -275,13 +275,13 @@ class Pysic:
 
 
     def get_neighbor_lists(self):
-        """Returns the :class:`~pysic.FastNeighborList` or `ASE NeighborList`_ 
+        """Returns the :class:`~pysic.calculator.FastNeighborList` or `ASE NeighborList`_ 
         object assigned to the calculator.
 
         The neighbor lists are generated according to the given `ASE Atoms`_ object
-        and the :class:`~pysic.Potential` objects of the calculator. Note that the lists
+        and the :class:`~pysic.interactions.local.Potential` objects of the calculator. Note that the lists
         are created when the core is set or if the method 
-        :meth:`~pysic.Pysic.create_neighbor_lists` is called.
+        :meth:`~pysic.calculator.Pysic.create_neighbor_lists` is called.
         """
         return self.neighbor_list
 
@@ -318,8 +318,8 @@ class Pysic:
         Otherwise the structure already associated with the calculator is used.
 
         The calculator checks if the forces have been calculated already
-        via :meth:`~pysic.Pysic.calculation_required`. If the structure
-        has changed, the forces are calculated using :meth:`~pysic.Pysic.calculate_forces`
+        via :meth:`~pysic.calculator.Pysic.calculation_required`. If the structure
+        has changed, the forces are calculated using :meth:`~pysic.calculator.Pysic.calculate_forces`
 
         Parameters:
 
@@ -341,8 +341,8 @@ class Pysic:
         Otherwise the structure already associated with the calculator is used.
 
         The calculator checks if the energy has been calculated already
-        via :meth:`~pysic.Pysic.calculation_required`. If the structure
-        has changed, the energy is calculated using :meth:`~pysic.Pysic.calculate_energy`
+        via :meth:`~pysic.calculator.Pysic.calculation_required`. If the structure
+        has changed, the energy is calculated using :meth:`~pysic.calculator.Pysic.calculate_energy`
 
         Parameters:
 
@@ -367,8 +367,8 @@ class Pysic:
         Otherwise the structure already associated with the calculator is used.
 
         The calculator checks if the stress has been calculated already
-        via :meth:`~pysic.Pysic.calculation_required`. If the structure
-        has changed, the stress is calculated using :meth:`~pysic.Pysic.calculate_stress`
+        via :meth:`~pysic.calculator.Pysic.calculation_required`. If the structure
+        has changed, the stress is calculated using :meth:`~pysic.calculator.Pysic.calculate_stress`
 
         Stress (potential part) and force are evaluated in tandem. 
         Therefore, invoking the evaluation of
@@ -489,7 +489,7 @@ class Pysic:
 
         Parameters:
 
-        potentials: list of :class:`~pysic.Potential` objects
+        potentials: list of :class:`~pysic.interactions.local.Potential` objects
             a list of potentials to describe interactinos
         """
         if potentials == None:
@@ -515,7 +515,7 @@ class Pysic:
 
         Parameters:
 
-        potential: :class:`~pysic.Potential` object
+        potential: :class:`.interactions.local.Potential` object
             a new potential to describe interactions
         """
 
@@ -541,7 +541,7 @@ class Pysic:
             
             Parameters:
             
-            coulomb: :class:`~pysic.CoulombSummation`
+            coulomb: :class:`.interactions.coulomb.CoulombSummation`
                 the Coulomb summation algorithm
             """
         self.coulomb = coulomb
@@ -558,24 +558,24 @@ class Pysic:
     def set_charge_relaxation(self,charge_relaxation):
         """Add a charge relaxation algorithm to the calculator.
             
-            If a charge relaxation scheme has been added to the :class:`~pysic.Pysic`
+            If a charge relaxation scheme has been added to the :class:`~pysic.calculator.Pysic`
             calculator, it will be automatically asked to do the charge relaxation 
             before the calculation of energies or forces via 
-            :meth:`~pysic.ChargeRelaxation.charge_relaxation`.
+            :meth:`~pysic.charges.relaxation.ChargeRelaxation.charge_relaxation`.
             
-            It is also possible to pass the :class:`~pysic.Pysic` calculator to the 
-            :class:`~pysic.ChargeRelaxation` algorithm without creating the opposite
-            link using :meth:`~pysic.ChargeRelaxation.set_calculator`. 
+            It is also possible to pass the :class:`~pysic.calculator.Pysic` calculator to the 
+            :class:`~pysic.charges.relaxation.ChargeRelaxation` algorithm without creating the opposite
+            link using :meth:`~pysic.charges.relaxation.ChargeRelaxation.set_calculator`. 
             In that case, the calculator does not automatically relax the charges, but
             the user can manually trigger the relaxation with 
-            :meth:`~pysic.ChargeRelaxation.charge_relaxation`.
+            :meth:`~pysic.charges.relaxation.ChargeRelaxation.charge_relaxation`.
             
             If you wish to remove automatic charge relaxation, just call this method
             again with None as argument.
             
             Parameters:
             
-            charge_relaxation: :class:`~pysic.ChargeRelaxation` object
+            charge_relaxation: :class:`~pysic.charges.relaxation.ChargeRelaxation` object
                 the charge relaxation algorithm
             """
 
@@ -587,7 +587,7 @@ class Pysic:
 
                 
     def get_charge_relaxation(self):
-        """Returns the :class:`~pysic.ChargeRelaxation` object connected to the calculator.
+        """Returns the :class:`~pysic.charges.relaxation.ChargeRelaxation` object connected to the calculator.
             """
         return self.charge_relaxation
     
@@ -709,7 +709,7 @@ class Pysic:
 
         Calls the Fortran core to calculate forces for the currently assigned structure.
             
-        If a link exists to a :class:`~pysic.ChargeRelaxation`, it is first made to
+        If a link exists to a :class:`~pysic.charges.relaxation.ChargeRelaxation`, it is first made to
         relax the atomic charges before the forces are calculated.
         """
         self.set_core()
@@ -725,7 +725,7 @@ class Pysic:
 
         Calls the Fortran core to calculate the potential energy for the currently assigned structure.
  
-        If a link exists to a :class:`~pysic.ChargeRelaxation`, it is first made to
+        If a link exists to a :class:`~pysic.charges.relaxation.ChargeRelaxation`, it is first made to
         relax the atomic charges before the forces are calculated.
         """
         self.set_core()
@@ -803,7 +803,7 @@ class Pysic:
     def update_core_potential_lists(self):
         """Initializes the potential lists.
 
-        Since one often runs :class:`~pysic.Pysic` with a set of potentials,
+        Since one often runs :class:`~pysic.calculator.Pysic` with a set of potentials,
         the core pre-analyzes which potentials affect each atom and saves a list
         of such potentials for every particle. This method asks the core to
         generate these lists.
@@ -1149,7 +1149,7 @@ class Pysic:
     def update_core_neighbor_lists(self):
         """Updates the neighbor lists in the Fortran core.
 
-         If uninitialized, the lists are created first via :meth:`~pysic.Pysic.create_neighbor_lists`.
+         If uninitialized, the lists are created first via :meth:`~pysic.calculator.Pysic.create_neighbor_lists`.
          """
         if not Pysic.core.atoms_ready(self.structure):
             raise MissingAtomsError("Creating neighbor lists before updating atoms in the core.")

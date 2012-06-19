@@ -740,6 +740,15 @@ contains
   ! the potential as specified in the Python interface. These are
   ! to be given in the 'orig_*' lists.
   !
+  ! If product potentials are created, the first all but one of the potentials
+  ! are created with ``is_multiplier == .true.``. This leads to the potentials
+  ! being stored in the global temporary array ``multipliers``. The last potential
+  ! of a group should be created with ``is_multiplier = .false.`` and the stored
+  ! multipliers are attached to it. The list of multipliers is not cleared automatically,
+  ! since usually one creates copies of the same potential with permutated targets and all
+  ! of these need the same multipiers.
+  ! Instead the multipliers are cleared with a call of :func:`clear_potential_multipliers`.
+  !
   ! called from PyInterface: :func:`add_potential`
   !
   ! *n_targets number of targets (interacting bodies)
@@ -756,6 +765,7 @@ contains
   ! *orig_indices original indices specifying the atoms the interaction acts on
   ! *pot_index index of the potential
   ! *success logical tag specifying if creation of the potential succeeded
+  ! *is_multiplier logical tag specifying if this potential should be treated as a multiplier
   subroutine core_add_potential(n_targets,n_params,pot_name,parameters,cutoff,smooth_cut,&
        elements,tags,indices,orig_elements,orig_tags,orig_indices,pot_index,is_multiplier,&
        success)
@@ -2270,9 +2280,9 @@ contains
   ! and calculates the contributions from local potentials to energy, forces, 
   ! or electronegativities. This routine is called from the routines
   !
-  !  - :meth:`core_calculate_energy`
-  !  - :meth:`core_calculate_forces`
-  !  - :meth:`core_calculate_electronegaivities`
+  !  - :func:`core_calculate_energy`
+  !  - :func:`core_calculate_forces`
+  !  - :func:`core_calculate_electronegaivities`
   !
   ! *n_atoms number of atoms
   ! *calculation_type index to specify if the loop calculates energies, forces, or e-negativities
@@ -4278,6 +4288,9 @@ contains
   end subroutine core_set_ewald_parameters
 
 
+  ! Partitions the simulation volume in subvolumes for fast neighbor searching
+  !
+  ! *max_cutoff the maximum cutoff radius for neighbor search
   subroutine core_create_space_partitioning(max_cutoff)
     implicit none
     double precision, intent(in) :: max_cutoff
@@ -4289,10 +4302,14 @@ contains
        call find_subcell_for_atom(cell,atoms(i))
     end do
 
-
   end subroutine core_create_space_partitioning
 
-
+  ! Builds the neighbor lists in the core.
+  ! The simulation cell must be partitioned with :func:`core_create_space_partitioning` 
+  ! before this routine can be called.
+  !
+  ! *n_atoms number of atoms
+  ! *cutoffs list of cutoffs, atom by atom
   subroutine core_build_neighbor_lists(n_atoms,cutoffs)
     implicit none
     integer, intent(in) :: n_atoms
@@ -4418,6 +4435,7 @@ contains
   end subroutine core_build_neighbor_lists
 
 
+  ! Expands the allocated memory for storing neighbor lists
   subroutine expand_neighbor_storage(nbors_and_offsets,length,new_length,n_atoms)
     implicit none
     integer, intent(in) :: n_atoms
@@ -4436,6 +4454,10 @@ contains
   end subroutine expand_neighbor_storage
 
 
+  ! Returns the number of neighbors for an atom
+  !
+  ! *atom_index the index of the atoms
+  ! *n_neighbors the number of neighbors
   subroutine core_get_number_of_neighbors(atom_index,n_neighbors)
     implicit none
     integer, intent(in) :: atom_index
@@ -4446,6 +4468,12 @@ contains
   end subroutine core_get_number_of_neighbors
 
 
+  ! Returns the list of neighbros for an atom
+  !
+  ! *atom_index the index of the atom whose neighbors are returned
+  ! *n_neighbors the number of neighbors
+  ! *neighbors the indices of the neighboring atoms
+  ! *offsets the offsets for periodic boundaries
   subroutine core_get_neighbor_list_of_atom(atom_index, n_neighbors, neighbors, offsets)
     implicit none
     integer, intent(in) :: atom_index, n_neighbors

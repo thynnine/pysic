@@ -10,6 +10,9 @@
 
 
 
+.. module:: pysic.interactions
+.. module:: pysic.interactions.local
+
 ============================
 Potential class
 ============================
@@ -115,6 +118,7 @@ Below is a list of potentials currently implemented.
 
 - :ref:`constant potential`
 - :ref:`constant force potential`
+- :ref:`charge self energy potential`
 - :ref:`power decay potential`
 - :ref:`harmonic potential`
 - :ref:`Lennard-Jones potential`
@@ -144,7 +148,7 @@ __________________
 i.e., a constant potential.
 
 A constant potential is of course irrelevant in force calculation since the
-gradient is zero. However, one can add a :class:`~pysic.BondOrderParameters` bond order
+gradient is zero. However, one can add a :class:`~pysic.interactions.bondorder.BondOrderParameters` bond order
 factor with the potential to create essentially a bond order potential. 
 
 The constant potential can also be used for assigning an energy offset which depends on the
@@ -192,6 +196,36 @@ Fortran routines:
 
 
 
+.. file:charge self energy potential
+
+.. _charge self energy potential:
+
+
+
+
+Charge self energy potential
+_____________________________
+
+1-body potential defined as
+
+.. math ::
+   V(q) = - \varepsilon q^n,
+
+where :math:`\varepsilon` is an energy scale constant and :math:`n` an integer exponent. Note that only the integer part of the exponent is taken if a real number is given. This is because you must expect negative values for :math:`q` and so a non-integer :math:`n` would be ill-defined.
+
+Keywords::
+
+    >>> names_of_parameters('charge_self')
+    ['epsilon', 'n']
+
+Fortran routines:
+
+- :meth:`create_potential_characterizer_constant_force`
+- :meth:`evaluate_energy_constant_force`
+- :meth:`evaluate_force_constant_force`
+
+
+
 .. file:power decay potential
 
 .. _power decay potential:
@@ -210,7 +244,7 @@ _____________________
 
 where :math:`\varepsilon` is an energy scale constant, :math:`a` is a lenght scale constant or lattice parameter, and :math:`n` is an exponent.
 
-There are many potentials defined in Pysic which already incorporate power law terms, and so this potential is often not needed. Still, one can build, for instance, the :ref:`Lennard-Jones potential` potential by stacking two power decay potentials. Note that :math:`n` should be large enough fo the potential to be sensible. Especially if one is creating a Coulomb potential with :math:`n = 1`, one should not define the potential through :class:`~pysic.Potential` objects, which are directly summed, but with the :class:`~pysic.CoulombSummation` class instead.
+There are many potentials defined in Pysic which already incorporate power law terms, and so this potential is often not needed. Still, one can build, for instance, the :ref:`Lennard-Jones potential` potential by stacking two power decay potentials. Note that :math:`n` should be large enough fo the potential to be sensible. Especially if one is creating a Coulomb potential with :math:`n = 1`, one should not define the potential through :class:`~pysic.interactions.local.Potential` objects, which are directly summed, but with the :class:`~pysic.interactions.coulomb.CoulombSummation` class instead.
 
 Keywords::
 
@@ -727,62 +761,64 @@ List of methods
 ---------------
 
     
-Below is a list of methods in :class:`~pysic.Potential`, grouped according to
+Below is a list of methods in :class:`~pysic.interactions.local.Potential`, grouped according to
 the type of functionality.
 
 
 Interaction handling
 ____________________
 
-- :meth:`~pysic.Potential.get_cutoff`
-- :meth:`~pysic.Potential.get_cutoff_margin`
-- :meth:`~pysic.Potential.get_parameter_names`
-- :meth:`~pysic.Potential.get_parameter_value`
-- :meth:`~pysic.Potential.get_parameter_values`
-- :meth:`~pysic.Potential.get_potential_type`
-- :meth:`~pysic.Potential.get_soft_cutoff`
-- :meth:`~pysic.Potential.set_cutoff`
-- :meth:`~pysic.Potential.set_cutoff_margin`
-- :meth:`~pysic.Potential.set_parameter_value`
-- :meth:`~pysic.Potential.set_parameter_values`
-- :meth:`~pysic.Potential.set_soft_cutoff`
+- :meth:`~pysic.interactions.local.Potential.get_cutoff`
+- :meth:`~pysic.interactions.local.Potential.get_cutoff_margin`
+- :meth:`~pysic.interactions.local.Potential.get_parameter_names`
+- :meth:`~pysic.interactions.local.Potential.get_parameter_value`
+- :meth:`~pysic.interactions.local.Potential.get_parameter_values`
+- :meth:`~pysic.interactions.local.Potential.get_potential_type`
+- :meth:`~pysic.interactions.local.Potential.get_soft_cutoff`
+- :meth:`~pysic.interactions.local.Potential.set_cutoff`
+- :meth:`~pysic.interactions.local.Potential.set_cutoff_margin`
+- :meth:`~pysic.interactions.local.Potential.set_parameter_value`
+- :meth:`~pysic.interactions.local.Potential.set_parameter_values`
+- :meth:`~pysic.interactions.local.Potential.set_soft_cutoff`
 
 Coordinator handling
 _____________________
 
-- :meth:`~pysic.Potential.get_coordinator`
-- :meth:`~pysic.Potential.set_coordinator`
+- :meth:`~pysic.interactions.local.Potential.get_coordinator`
+- :meth:`~pysic.interactions.local.Potential.set_coordinator`
 
 Target handling
 __________________
 
-- :meth:`~pysic.Potential.accepts_target_list`
-- :meth:`~pysic.Potential.add_indices`
-- :meth:`~pysic.Potential.add_symbols`
-- :meth:`~pysic.Potential.add_tags`
-- :meth:`~pysic.Potential.get_different_indices`
-- :meth:`~pysic.Potential.get_different_symbols`
-- :meth:`~pysic.Potential.get_different_tags`
-- :meth:`~pysic.Potential.get_indices`
-- :meth:`~pysic.Potential.get_number_of_targets`
-- :meth:`~pysic.Potential.get_symbols`
-- :meth:`~pysic.Potential.get_tags`
-- :meth:`~pysic.Potential.set_indices`
-- :meth:`~pysic.Potential.set_symbols`
-- :meth:`~pysic.Potential.set_tags`
+- :meth:`~pysic.interactions.local.Potential.accepts_target_list`
+- :meth:`~pysic.interactions.local.Potential.add_indices`
+- :meth:`~pysic.interactions.local.Potential.add_symbols`
+- :meth:`~pysic.interactions.local.Potential.add_tags`
+- :meth:`~pysic.interactions.local.Potential.get_different_indices`
+- :meth:`~pysic.interactions.local.Potential.get_different_symbols`
+- :meth:`~pysic.interactions.local.Potential.get_different_tags`
+- :meth:`~pysic.interactions.local.Potential.get_indices`
+- :meth:`~pysic.interactions.local.Potential.get_number_of_targets`
+- :meth:`~pysic.interactions.local.Potential.get_symbols`
+- :meth:`~pysic.interactions.local.Potential.get_tags`
+- :meth:`~pysic.interactions.local.Potential.set_indices`
+- :meth:`~pysic.interactions.local.Potential.set_symbols`
+- :meth:`~pysic.interactions.local.Potential.set_tags`
 
 
 Description
 ___________
 
-- :meth:`~pysic.Potential.describe`
+- :meth:`~pysic.interactions.local.Potential.describe`
+- :meth:`~pysic.interactions.local.Potential.is_multiplier` (meant for internal use)
+- :meth:`~pysic.interactions.local.Potential.get_potentials` (meant for internal use)
 
 
 
 Full documentation of the Potential class
 -----------------------------------------
 
-.. currentmodule:: pysic
+.. currentmodule:: pysic.interactions.local
 .. autoclass:: Potential
    :members:
    :undoc-members:
