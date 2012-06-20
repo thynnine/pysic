@@ -446,6 +446,52 @@ Fortran routines:
 - :meth:`evaluate_force_buckingham`
 
 
+.. file:charged-pair potential
+
+.. _charged-pair potential:
+
+
+
+
+Charged-pair potential
+_______________________
+
+2-body interaction defined as
+
+.. math::
+
+    V(q_1,q_2) = \varepsilon q_1^{n_1} q_2^{n_2}
+
+where :math:`\varepsilon` is an energy scale constant, and :math:`n_i` are integer exponents.
+
+This potential is similar to the :ref:`charge self energy potential`, but it affects two atoms.
+It is mainly meant to be used together with distance dependent potentials in a
+:class:`~pysic.interactions.local.ProductPotential` to add charge dependence to other potentials.
+For instance::
+
+ pot1 = pysic.Potential('power')
+ pot2 = pysic.Potential('charge_pair')
+ prod = pysic.ProductPotential([pot1,pot2])
+
+Defines the potential
+
+.. math::
+
+  V(q_1,q_2,r) = \varepsilon q_1^{n_1} q_2^{n_2} \frac{a^n}{r^n}
+
+Keywords::
+
+    >>> names_of_parameters('charge_pair')
+    ['epsilon', 'n1', 'n2']
+
+
+Fortran routines:
+
+- :meth:`create_potential_characterizer_charge_pair`
+- :meth:`evaluate_energy_charge_pair`
+- :meth:`evaluate_electronegativity_charge_pair`
+
+
 .. file:charge exponential potential
 
 .. _charge exponential potential:

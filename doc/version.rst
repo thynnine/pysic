@@ -9,10 +9,16 @@ Version history
 
 This is a list of the main updates in the different versions of Pysic.
 
+The version number is available in Pysic as the variable::
+
+  pysic.version
+
+
 Version 0.4.4
 -------------
 
 - Added the ability to calculate products of local potentials (see :class:`pysic.interactions.local.ProductPotential`)
+- Added the :ref:`charged-pair potential`
 
 
 Version 0.4.3

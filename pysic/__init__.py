@@ -8,6 +8,6 @@ from pysic.interactions.bondorder import Coordinator, BondOrderParameters
 from pysic.interactions.coulomb import CoulombSummation
 from pysic.charges.relaxation import ChargeRelaxation
 
-version = '0.4.3'
+version = '0.4.4'
 """program version"""
 

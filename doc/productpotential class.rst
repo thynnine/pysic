@@ -79,6 +79,10 @@ However, the object does not store parameters itself. It merely wraps a group of
 potentials are used for storing the parameters. More precisesly, the *first* 
 :class:`~pysic.interactions.local.Potential` object in the list contained by the 
 :class:`~pysic.interactions.local.ProductPotential` defines all the general parameters of the potential.
+We call this the *leading potential* in the following discussion::
+
+  # Here, pot1 is the leading potential
+  prod = pysic.ProductPotential( [pot1, pot2, pot3] )
 
 Since the product potential is defined as
 
@@ -89,10 +93,7 @@ Since the product potential is defined as
 the potentials :math:`v^p_{i,j,\ldots}` being multiplied need to be defined for the same group of atoms -
 both the number of atoms and their types must match. Also the cutoffs should be equal, since if one :math:`v^p = 0`,
 the whole product is. Because of this, the targets and cutoffs defined by the *leading* potential 
-are used for the entire product::
-
-  # Here, pot1 is the leading potential
-  prod = pysic.ProductPotential( [pot1, pot2, pot3] )
+are used for the entire product.
   
 In fact, since the cutoff and targets of the potentials forming the product besides 
 the leading one are ignored, they need not be defined at all. 

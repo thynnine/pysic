@@ -120,7 +120,7 @@ module potentials
   ! *param_note_length maximum length allowed for the descriptions of parameters
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
-       n_potential_types = 11, &
+       n_potential_types = 12, &
        n_bond_order_types = 8, &
        n_max_params = 12, &
        pot_note_length = 500, &
@@ -164,7 +164,8 @@ module potentials
        quad_dihedral_index = 8, &
        pair_power_index = 9, &
        pair_table_index = 10, &
-       mono_qself_index = 11
+       mono_qself_index = 11, &
+       pair_qpair_index = 12
 
 
   !***********************************!
@@ -2025,6 +2026,9 @@ contains
     ! **** Charge self potential ****
     call create_potential_characterizer_charge_self(mono_qself_index)
 
+    ! **** Charge pair potential ****
+    call create_potential_characterizer_charge_pair(pair_qpair_index)
+
     descriptors_created = .true.
 
   end subroutine initialize_potential_characterizers
@@ -2294,8 +2298,10 @@ contains
     select case (interaction%type_index)
     case (pair_exp_index) ! charge-dependent exponential potential
        call evaluate_electronegativity_charge_exp(separations(1:3,1),distances(1),interaction,eneg(1:2),atoms(1:2))
-    case (mono_qself_index) ! charge-dependent exponential potential
+    case (mono_qself_index) ! charge-dependent self energy potential
        call evaluate_electronegativity_charge_self(interaction,eneg(1),atoms(1))
+    case (pair_qpair_index) ! charge-dependent pair energy potential
+       call evaluate_electronegativity_charge_pair(interaction,eneg(1:2),atoms(1:2))
     end select
 
   end subroutine evaluate_electronegativity_component
@@ -2543,6 +2549,8 @@ contains
        call evaluate_energy_table(separations(1:3,1),distances(1),interaction,energy)
     case (mono_qself_index) ! charge self energy potential
        call evaluate_energy_charge_self(interaction,energy,atoms(1))
+    case (pair_qpair_index) ! charge pair energy potential
+       call evaluate_energy_charge_pair(interaction,energy,atoms(1:2))
     end select
 
   end subroutine evaluate_energy_component
@@ -4028,7 +4036,7 @@ contains
 
 
   ! Charge self energy
-  !  s
+  ! 
   ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
   ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
   ! *interaction a :data:`bond_order_parameters` containing the parameters
@@ -4045,6 +4053,87 @@ contains
     energy = interaction%parameters(1) * atoms(1)%charge**(n)
 
   end subroutine evaluate_energy_charge_self
+
+
+
+
+  !******************************!
+  ! charge pair energy potential !
+  !******************************!
+
+  ! charge self energy characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_charge_pair(index)
+    implicit none
+    integer, intent(in) :: index
+
+    potential_descriptors(index)%type_index = index
+    call pad_string('charge_pair', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 3
+    potential_descriptors(index)%n_targets = 2
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+    call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('n1', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('exponent', param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('n2', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('exponent', param_note_length,potential_descriptors(index)%parameter_notes(3))
+    call pad_string('Charge-dependent self energy potential: '//&
+         'V(q1,q2) = epsilon q1^n1 q2^n2',&
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_charge_pair
+
+
+  ! Charge pair energy electronegativity
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *eneg the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+  subroutine evaluate_electronegativity_charge_pair(interaction,eneg,atoms)
+    implicit none
+    type(potential), intent(in) :: interaction
+    type(atom), intent(in) :: atoms(2)
+    double precision, intent(out) :: eneg(2)
+    integer :: n1, n2
+
+    n1 = int(interaction%parameters(2))
+    n2 = int(interaction%parameters(3))
+    eneg(1) = -interaction%parameters(1) * & 
+         ( n1 * atoms(1)%charge**(n1-1) * atoms(2)%charge**n2 )
+    eneg(2) = -interaction%parameters(1) * & 
+         ( n2 * atoms(1)%charge**n1 * atoms(2)%charge**(n2-1) )
+
+  end subroutine evaluate_electronegativity_charge_pair
+
+
+
+  ! Charge pair energy
+  ! 
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_energy_charge_pair(interaction,energy,atoms)
+    implicit none
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    type(atom), intent(in) :: atoms(2)
+    integer :: n1, n2
+
+    n1 = int(interaction%parameters(2))
+    n2 = int(interaction%parameters(3))
+    energy = interaction%parameters(1) * & 
+         ( atoms(1)%charge**n1 * atoms(2)%charge**n2 )
+
+  end subroutine evaluate_energy_charge_pair
+
 
 
 
