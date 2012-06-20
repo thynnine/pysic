@@ -10,6 +10,8 @@
 
 
 
+.. module:: pysic.calculator
+
 ========================
 Pysic class
 ========================
@@ -27,7 +29,7 @@ forces and energies of given atomistic structures provided as an
 Pysic is not a fixed potential calculator, where the interactions are determined
 solely based on the elements present in the system. Instead, Pysic allows and requires 
 the user to specify the interactions governing the system. This is done by providing
-the calculator with one or several :class:`~pysic.Potential` objects.
+the calculator with one or several :class:`~pysic.interactions.local.Potential` objects.
 
 
 .. file:ASE calculators

@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Version history &mdash; Pysic 0.4.3 documentation</title>
+    <title>Version history &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="next" title="Roadmap" href="roadmap.html" />
     <link rel="prev" title="mt95 (Mersenne.f90)" href="Mersenne_f90.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="Mersenne_f90.html" title="mt95 (Mersenne.f90)"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -54,6 +54,7 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Version history</a><ul>
+<li><a class="reference internal" href="#version-0-4-4">Version 0.4.4</a></li>
 <li><a class="reference internal" href="#version-0-4-3">Version 0.4.3</a></li>
 <li><a class="reference internal" href="#version-0-4-2">Version 0.4.2</a></li>
 <li><a class="reference internal" href="#version-0-4-1">Version 0.4.1</a></li>
@@ -100,13 +101,26 @@
   <div class="section" id="version-history">
 <span id="version"></span><h1>Version history<a class="headerlink" href="#version-history" title="Permalink to this headline">¶</a></h1>
 <p>This is a list of the main updates in the different versions of Pysic.</p>
+<p>The version number is available in Pysic as the variable:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">pysic</span><span class="o">.</span><span class="n">version</span>
+</pre></div>
+</div>
+<div class="section" id="version-0-4-4">
+<h2>Version 0.4.4<a class="headerlink" href="#version-0-4-4" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added the ability to calculate products of local potentials (see <a class="reference internal" href="productpotential class.html#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">pysic.interactions.local.ProductPotential</span></tt></a>)</li>
+<li>Added the <a class="reference internal" href="potential class.html#charged-pair-potential"><em>Charged-pair potential</em></a></li>
+</ul>
+</div>
 <div class="section" id="version-0-4-3">
 <h2>Version 0.4.3<a class="headerlink" href="#version-0-4-3" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Major restructuring of the Python source code</li>
 <li>Provided a Makefile for compiling</li>
-<li>Added calculation of the stress tensor with the method <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.get_stress" title="pysic.calculator.Pysic.get_stress"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.calculator.Pysic.get_stress()</span></tt></a>.</li>
+<li>Added calculation of the stress tensor with the method <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.get_stress" title="pysic.calculator.Pysic.get_stress"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.calculator.Pysic.get_stress()</span></tt></a></li>
 <li>Added the <a class="reference internal" href="potential class.html#tabulated-potential"><em>Tabulated potential</em></a></li>
+<li>Added the <a class="reference internal" href="bondorderparameters class.html#tabulated-scaling-function"><em>Tabulated scaling function</em></a></li>
+<li>Added the <a class="reference internal" href="bondorderparameters class.html#tabulated-bond-order-factor"><em>Tabulated bond order factor</em></a></li>
 <li>Bug fix: Fixed an issue with core initialization where changing the size of the supercell would lead to a conflict in neighbor list updating (the list update was tried before the cell update but failed due to the cell having been changed).</li>
 <li>Bug fix: Fixed an issue with the parallel neighbor list building algorithm which did not properly broadcast the calculated lists to all cpus.</li>
 </ul>
@@ -121,31 +135,31 @@
 <li>Added the <a class="reference internal" href="potential class.html#power-decay-potential"><em>Power decay potential</em></a></li>
 <li>Added the <a class="reference internal" href="bondorderparameters class.html#power-decay-bond-order-factor"><em>Power decay bond order factor</em></a></li>
 <li>Added the <a class="reference internal" href="bondorderparameters class.html#square-root-scaling-function"><em>Square root scaling function</em></a></li>
-<li>Bug fix: fixed a memory issue in Ewald summation <a class="reference internal" href="coulombsummation class.html#pysic.CoulombSummation" title="pysic.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a></li>
-<li>Bug fix: fixed an issue with periodic boundaries in <a class="reference internal" href="fastneighborlist class.html#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">FastNeighborList</span></tt></a></li>
+<li>Bug fix: fixed a memory issue in Ewald summation <a class="reference internal" href="coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation" title="pysic.interactions.coulomb.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a></li>
+<li>Bug fix: fixed an issue with periodic boundaries in <a class="reference internal" href="fastneighborlist class.html#pysic.calculator.FastNeighborList" title="pysic.calculator.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">FastNeighborList</span></tt></a></li>
 <li>Bug fix: fixed an issue with special parameter values in Tersoff bond order factor evaluation</li>
 <li>Bug fix: fixed an issue where the cutoff of a bond order factor could overwrite a longer cutoff a potential</li>
 <li>Bug fix: fixed an indexing error in evaluation of 3-body interaction which gave to incorrect forces</li>
-<li>Bug fix: fixed and indexing error in neighbor offsets in <a class="reference internal" href="fastneighborlist class.html#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">FastNeighborList</span></tt></a></li>
+<li>Bug fix: fixed and indexing error in neighbor offsets in <a class="reference internal" href="fastneighborlist class.html#pysic.calculator.FastNeighborList" title="pysic.calculator.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">FastNeighborList</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="version-0-4-1">
 <h2>Version 0.4.1<a class="headerlink" href="#version-0-4-1" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Implemented an order <span class="math">\(\mathcal{O}(n)\)</span> neighbor finding algorithm in Fortran (see <a class="reference internal" href="fastneighborlist class.html#pysic.FastNeighborList" title="pysic.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">pysic.FastNeighborList</span></tt></a>)</li>
+<li>Implemented an order <span class="math">\(\mathcal{O}(n)\)</span> neighbor finding algorithm in Fortran (see <a class="reference internal" href="fastneighborlist class.html#pysic.calculator.FastNeighborList" title="pysic.calculator.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">pysic.calculator.FastNeighborList</span></tt></a>)</li>
 </ul>
 </div>
 <div class="section" id="version-0-4">
 <h2>Version 0.4<a class="headerlink" href="#version-0-4" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Implemented the Ewald summation of <span class="math">\(\frac{1}{r}\)</span> potentials (see <a class="reference internal" href="coulombsummation class.html#pysic.CoulombSummation" title="pysic.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">pysic.CoulombSummation</span></tt></a>)</li>
+<li>Implemented the Ewald summation of <span class="math">\(\frac{1}{r}\)</span> potentials (see <a class="reference internal" href="coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation" title="pysic.interactions.coulomb.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">pysic.interactions.coulomb.CoulombSummation</span></tt></a>)</li>
 <li>The framework allows for the addition of other summation methods later on, but for now only standard Ewald is available</li>
 </ul>
 </div>
 <div class="section" id="version-0-3">
 <h2>Version 0.3<a class="headerlink" href="#version-0-3" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Implemented framework for charge relaxation (see <a class="reference internal" href="chargerelaxation class.html#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">pysic.ChargeRelaxation</span></tt></a>)</li>
+<li>Implemented framework for charge relaxation (see <a class="reference internal" href="chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">pysic.charges.relaxation.ChargeRelaxation</span></tt></a>)</li>
 <li>Implemented the <a class="reference internal" href="chargerelaxation class.html#damped-dynamics"><em>Damped dynamics</em></a> charge relaxation algorithm.</li>
 <li>Implemented the <a class="reference internal" href="potential class.html#charge-exponential-potential"><em>Charge dependent exponential potential</em></a> potential.</li>
 </ul>
@@ -153,8 +167,8 @@
 <div class="section" id="version-0-2">
 <h2>Version 0.2<a class="headerlink" href="#version-0-2" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li>Implemented bond order factors (see <a class="reference internal" href="coordinator class.html#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">pysic.Coordinator</span></tt></a> and <a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">pysic.BondOrderParameters</span></tt></a>) for scaling of potential energy according to local bond structure.</li>
-<li>Implemented a more robust method for tracking the status of the Fortran core (see <a class="reference internal" href="coremirror class.html#pysic.CoreMirror" title="pysic.CoreMirror"><tt class="xref py py-class docutils literal"><span class="pre">pysic.CoreMirror</span></tt></a>). This makes it less likely that wrong results are produced due to the changes in the user interface not propagating to the core.</li>
+<li>Implemented bond order factors (see <a class="reference internal" href="coordinator class.html#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">pysic.interactions.bondorder.Coordinator</span></tt></a> and <a class="reference internal" href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters" title="pysic.interactions.bondorder.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">pysic.interactions.bondorder.BondOrderParameters</span></tt></a>) for scaling of potential energy according to local bond structure.</li>
+<li>Implemented a more robust method for tracking the status of the Fortran core (see <a class="reference internal" href="coremirror class.html#pysic.core.CoreMirror" title="pysic.core.CoreMirror"><tt class="xref py py-class docutils literal"><span class="pre">pysic.core.CoreMirror</span></tt></a>). This makes it less likely that wrong results are produced due to the changes in the user interface not propagating to the core.</li>
 </ul>
 </div>
 <div class="section" id="version-0-1">
@@ -164,7 +178,7 @@
 <li>Python interface<ul>
 <li><a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a></li>
 <li><a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">pysic.calculator.Pysic</span></tt></a></li>
-<li><a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">pysic.Potential</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">pysic.interactions.local.Potential</span></tt></a></li>
 <li><tt class="docutils literal"><span class="pre">pysic_utility</span></tt></li>
 </ul>
 </li>
@@ -199,7 +213,7 @@
         <li class="right" >
           <a href="Mersenne_f90.html" title="mt95 (Mersenne.f90)"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

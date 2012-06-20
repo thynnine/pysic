@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Potential class &mdash; Pysic 0.4.3 documentation</title>
+    <title>Potential class &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,9 +26,9 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="up" title="Pysic module" href="pysic.html" />
-    <link rel="next" title="CoulombSummation class" href="coulombsummation class.html" />
+    <link rel="next" title="ProductPotential class" href="productpotential class.html" />
     <link rel="prev" title="Pysic class" href="pysic class.html" /> 
   </head>
   <body>
@@ -42,12 +42,12 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="coulombsummation class.html" title="CoulombSummation class"
+          <a href="productpotential class.html" title="ProductPotential class"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="pysic class.html" title="Pysic class"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
       </ul>
     </div>
@@ -60,10 +60,12 @@
 <li><a class="reference internal" href="#list-of-currently-available-potentials">List of currently available potentials</a><ul>
 <li><a class="reference internal" href="#constant-potential">Constant potential</a></li>
 <li><a class="reference internal" href="#constant-force-potential">Constant force potential</a></li>
+<li><a class="reference internal" href="#charge-self-energy-potential">Charge self energy potential</a></li>
 <li><a class="reference internal" href="#power-decay-potential">Power decay potential</a></li>
 <li><a class="reference internal" href="#harmonic-potential">Harmonic potential</a></li>
 <li><a class="reference internal" href="#lennard-jones-potential">Lennard-Jones potential</a></li>
 <li><a class="reference internal" href="#buckingham-potential">Buckingham potential</a></li>
+<li><a class="reference internal" href="#charged-pair-potential">Charged-pair potential</a></li>
 <li><a class="reference internal" href="#charge-dependent-exponential-potential">Charge dependent exponential potential</a></li>
 <li><a class="reference internal" href="#tabulated-potential">Tabulated potential</a></li>
 <li><a class="reference internal" href="#bond-bending-potential">Bond bending potential</a></li>
@@ -86,8 +88,8 @@
   <p class="topless"><a href="pysic class.html"
                         title="previous chapter">Pysic class</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="coulombsummation class.html"
-                        title="next chapter">CoulombSummation class</a></p>
+  <p class="topless"><a href="productpotential class.html"
+                        title="next chapter">ProductPotential class</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/potential class.txt"
@@ -114,8 +116,8 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="potential-class"></span><div class="section" id="potential-class-description">
-<span id="id1"></span><h1>Potential class<a class="headerlink" href="#potential-class-description" title="Permalink to this headline">¶</a></h1>
+  <span class="target" id="potential-class"></span><span class="target" id="module-pysic.interactions"><span id="potential-class-description"></span></span><span class="target" id="module-pysic.interactions.local"></span><div class="section" id="id1">
+<h1>Potential class<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
 <p>This class defines an atomistic potential to be used by <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>.
 An interaction between two or more particles can be defined and the
 targets of the interaction can be specified by chemical symbol, tag, or index.
@@ -155,6 +157,7 @@ no smoothening is applied.</p>
 <ul class="simple">
 <li><a class="reference internal" href="#constant-potential"><em>Constant potential</em></a></li>
 <li><a class="reference internal" href="#constant-force-potential"><em>Constant force potential</em></a></li>
+<li><a class="reference internal" href="#charge-self-energy-potential"><em>Charge self energy potential</em></a></li>
 <li><a class="reference internal" href="#power-decay-potential"><em>Power decay potential</em></a></li>
 <li><a class="reference internal" href="#harmonic-potential"><em>Harmonic potential</em></a></li>
 <li><a class="reference internal" href="#lennard-jones-potential"><em>Lennard-Jones potential</em></a></li>
@@ -171,7 +174,7 @@ no smoothening is applied.</p>
 \[V(\mathbf{r}) = V,\]</div>
 <p>i.e., a constant potential.</p>
 <p>A constant potential is of course irrelevant in force calculation since the
-gradient is zero. However, one can add a <a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> bond order
+gradient is zero. However, one can add a <a class="reference internal" href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters" title="pysic.interactions.bondorder.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> bond order
 factor with the potential to create essentially a bond order potential.</p>
 <p>The constant potential can also be used for assigning an energy offset which depends on the
 number of atoms of required types.</p>
@@ -204,13 +207,31 @@ number of atoms of required types.</p>
 <li><a class="reference internal" href="Potentials_f90.html#evaluate_force_constant_force" title="evaluate_force_constant_force"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_force_constant_force()</span></tt></a></li>
 </ul>
 </div>
+<div class="section" id="charge-self-energy-potential">
+<span id="id4"></span><h3>Charge self energy potential<a class="headerlink" href="#charge-self-energy-potential" title="Permalink to this headline">¶</a></h3>
+<p>1-body potential defined as</p>
+<div class="math">
+\[V(q) = - \varepsilon q^n,\]</div>
+<p>where <span class="math">\(\varepsilon\)</span> is an energy scale constant and <span class="math">\(n\)</span> an integer exponent. Note that only the integer part of the exponent is taken if a real number is given. This is because you must expect negative values for <span class="math">\(q\)</span> and so a non-integer <span class="math">\(n\)</span> would be ill-defined.</p>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;charge_self&#39;</span><span class="p">)</span>
+<span class="go">[&#39;epsilon&#39;, &#39;n&#39;]</span>
+</pre></div>
+</div>
+<p>Fortran routines:</p>
+<ul class="simple">
+<li><a class="reference internal" href="Potentials_f90.html#create_potential_characterizer_constant_force" title="create_potential_characterizer_constant_force"><tt class="xref py py-meth docutils literal"><span class="pre">create_potential_characterizer_constant_force()</span></tt></a></li>
+<li><a class="reference internal" href="Potentials_f90.html#evaluate_energy_constant_force" title="evaluate_energy_constant_force"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_energy_constant_force()</span></tt></a></li>
+<li><a class="reference internal" href="Potentials_f90.html#evaluate_force_constant_force" title="evaluate_force_constant_force"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_force_constant_force()</span></tt></a></li>
+</ul>
+</div>
 <div class="section" id="power-decay-potential">
-<span id="id4"></span><h3>Power decay potential<a class="headerlink" href="#power-decay-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id5"></span><h3>Power decay potential<a class="headerlink" href="#power-decay-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction defined as</p>
 <div class="math">
 \[V(r) = \varepsilon \left( \frac{a}{r} \right)^n\]</div>
 <p>where <span class="math">\(\varepsilon\)</span> is an energy scale constant, <span class="math">\(a\)</span> is a lenght scale constant or lattice parameter, and <span class="math">\(n\)</span> is an exponent.</p>
-<p>There are many potentials defined in Pysic which already incorporate power law terms, and so this potential is often not needed. Still, one can build, for instance, the <a class="reference internal" href="#lennard-jones-potential"><em>Lennard-Jones potential</em></a> potential by stacking two power decay potentials. Note that <span class="math">\(n\)</span> should be large enough fo the potential to be sensible. Especially if one is creating a Coulomb potential with <span class="math">\(n = 1\)</span>, one should not define the potential through <a class="reference internal" href="#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects, which are directly summed, but with the <a class="reference internal" href="coulombsummation class.html#pysic.CoulombSummation" title="pysic.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a> class instead.</p>
+<p>There are many potentials defined in Pysic which already incorporate power law terms, and so this potential is often not needed. Still, one can build, for instance, the <a class="reference internal" href="#lennard-jones-potential"><em>Lennard-Jones potential</em></a> potential by stacking two power decay potentials. Note that <span class="math">\(n\)</span> should be large enough fo the potential to be sensible. Especially if one is creating a Coulomb potential with <span class="math">\(n = 1\)</span>, one should not define the potential through <a class="reference internal" href="#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects, which are directly summed, but with the <a class="reference internal" href="coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation" title="pysic.interactions.coulomb.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a> class instead.</p>
 <p>Keywords:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;power&#39;</span><span class="p">)</span>
 <span class="go">[&#39;epsilon&#39;, &#39;a&#39;, &#39;n&#39;]</span>
@@ -228,7 +249,7 @@ number of atoms of required types.</p>
 </ul>
 </div>
 <div class="section" id="harmonic-potential">
-<span id="id5"></span><h3>Harmonic potential<a class="headerlink" href="#harmonic-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id6"></span><h3>Harmonic potential<a class="headerlink" href="#harmonic-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction defined as</p>
 <div class="math">
 \[V(r) = \frac{1}{2} k (r-R_0)^{2} - \frac{1}{2} k (r_\mathrm{cut}-R_0)^2,\]</div>
@@ -250,7 +271,7 @@ number of atoms of required types.</p>
 </ul>
 </div>
 <div class="section" id="lennard-jones-potential">
-<span id="id6"></span><h3>Lennard-Jones potential<a class="headerlink" href="#lennard-jones-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id7"></span><h3>Lennard-Jones potential<a class="headerlink" href="#lennard-jones-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction defined as</p>
 <div class="math">
 \[V(r) = \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r} \right)^{6} \right],\]</div>
@@ -272,7 +293,7 @@ number of atoms of required types.</p>
 </ul>
 </div>
 <div class="section" id="buckingham-potential">
-<span id="id7"></span><h3>Buckingham potential<a class="headerlink" href="#buckingham-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id8"></span><h3>Buckingham potential<a class="headerlink" href="#buckingham-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction defined as</p>
 <div class="math">
 \[V(r) = A e^{-\frac{r}{\sigma}} - C \left( \frac{\sigma}{r} \right)^6\]</div>
@@ -291,6 +312,36 @@ number of atoms of required types.</p>
 <li><a class="reference internal" href="Potentials_f90.html#create_potential_characterizer_buckingham" title="create_potential_characterizer_buckingham"><tt class="xref py py-meth docutils literal"><span class="pre">create_potential_characterizer_buckingham()</span></tt></a></li>
 <li><a class="reference internal" href="Potentials_f90.html#evaluate_energy_buckingham" title="evaluate_energy_buckingham"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_energy_buckingham()</span></tt></a></li>
 <li><a class="reference internal" href="Potentials_f90.html#evaluate_force_buckingham" title="evaluate_force_buckingham"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_force_buckingham()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="charged-pair-potential">
+<span id="id9"></span><h3>Charged-pair potential<a class="headerlink" href="#charged-pair-potential" title="Permalink to this headline">¶</a></h3>
+<p>2-body interaction defined as</p>
+<div class="math">
+\[V(q_1,q_2) = \varepsilon q_1^{n_1} q_2^{n_2}\]</div>
+<p>where <span class="math">\(\varepsilon\)</span> is an energy scale constant, and <span class="math">\(n_i\)</span> are integer exponents.</p>
+<p>This potential is similar to the <a class="reference internal" href="#charge-self-energy-potential"><em>Charge self energy potential</em></a>, but it affects two atoms.
+It is mainly meant to be used together with distance dependent potentials in a
+<a class="reference internal" href="productpotential class.html#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a> to add charge dependence to other potentials.
+For instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">pot1</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;power&#39;</span><span class="p">)</span>
+<span class="n">pot2</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;charge_pair&#39;</span><span class="p">)</span>
+<span class="n">prod</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">ProductPotential</span><span class="p">([</span><span class="n">pot1</span><span class="p">,</span><span class="n">pot2</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Defines the potential</p>
+<div class="math">
+\[V(q_1,q_2,r) = \varepsilon q_1^{n_1} q_2^{n_2} \frac{a^n}{r^n}\]</div>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;charge_pair&#39;</span><span class="p">)</span>
+<span class="go">[&#39;epsilon&#39;, &#39;n1&#39;, &#39;n2&#39;]</span>
+</pre></div>
+</div>
+<p>Fortran routines:</p>
+<ul class="simple">
+<li><a class="reference internal" href="Potentials_f90.html#create_potential_characterizer_charge_pair" title="create_potential_characterizer_charge_pair"><tt class="xref py py-meth docutils literal"><span class="pre">create_potential_characterizer_charge_pair()</span></tt></a></li>
+<li><a class="reference internal" href="Potentials_f90.html#evaluate_energy_charge_pair" title="evaluate_energy_charge_pair"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_energy_charge_pair()</span></tt></a></li>
+<li><a class="reference internal" href="Potentials_f90.html#evaluate_electronegativity_charge_pair" title="evaluate_electronegativity_charge_pair"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_electronegativity_charge_pair()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="charge-dependent-exponential-potential">
@@ -323,7 +374,7 @@ D_i(q) &amp; = R_{i,\max} + | \beta_i (Q_{i,\max} - q) |^{\eta_i} \\
 </ul>
 </div>
 <div class="section" id="tabulated-potential">
-<span id="id8"></span><h3>Tabulated potential<a class="headerlink" href="#tabulated-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id10"></span><h3>Tabulated potential<a class="headerlink" href="#tabulated-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction of the type <span class="math">\(V(r)\)</span> defined with a tabulated list of values.</p>
 <p>The values of the potential are read from text files of the format:</p>
 <div class="highlight-python"><pre>V(0)     V'(0)*R
@@ -373,7 +424,7 @@ h_{11}(t) = &amp; t^3-t^2\end{split}\]</div>
 </ul>
 </div>
 <div class="section" id="bond-bending-potential">
-<span id="id9"></span><h3>Bond bending potential<a class="headerlink" href="#bond-bending-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id11"></span><h3>Bond bending potential<a class="headerlink" href="#bond-bending-potential" title="Permalink to this headline">¶</a></h3>
 <p>3-body interaction defined as</p>
 <div class="math">
 \[V(\theta) = \frac{k}{2} ( \cos \theta - \cos \theta_0 )^2,\]</div>
@@ -403,7 +454,7 @@ h_{11}(t) = &amp; t^3-t^2\end{split}\]</div>
 </ul>
 </div>
 <div class="section" id="dihedral-angle-potential">
-<span id="id10"></span><h3>Dihedral angle potential<a class="headerlink" href="#dihedral-angle-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id12"></span><h3>Dihedral angle potential<a class="headerlink" href="#dihedral-angle-potential" title="Permalink to this headline">¶</a></h3>
 <p>4-body interaction defined as</p>
 <div class="math">
 \[V(r) = \frac{k}{2} (\cos \theta - \cos \theta_0)^2\]</div>
@@ -429,68 +480,70 @@ h_{11}(t) = &amp; t^3-t^2\end{split}\]</div>
 </div>
 <div class="section" id="list-of-methods">
 <span id="potential-class-autogenerated"></span><h2>List of methods<a class="headerlink" href="#list-of-methods" title="Permalink to this headline">¶</a></h2>
-<p>Below is a list of methods in <a class="reference internal" href="#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>, grouped according to
+<p>Below is a list of methods in <a class="reference internal" href="#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>, grouped according to
 the type of functionality.</p>
 <div class="section" id="interaction-handling">
 <h3>Interaction handling<a class="headerlink" href="#interaction-handling" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.Potential.get_cutoff" title="pysic.Potential.get_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">get_cutoff()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_cutoff_margin" title="pysic.Potential.get_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">get_cutoff_margin()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_parameter_names" title="pysic.Potential.get_parameter_names"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameter_names()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_parameter_value" title="pysic.Potential.get_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameter_value()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_parameter_values" title="pysic.Potential.get_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameter_values()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_potential_type" title="pysic.Potential.get_potential_type"><tt class="xref py py-meth docutils literal"><span class="pre">get_potential_type()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_soft_cutoff" title="pysic.Potential.get_soft_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">get_soft_cutoff()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.set_cutoff" title="pysic.Potential.set_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.set_cutoff_margin" title="pysic.Potential.set_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff_margin()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.set_parameter_value" title="pysic.Potential.set_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_value()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.set_parameter_values" title="pysic.Potential.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.set_soft_cutoff" title="pysic.Potential.set_soft_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_soft_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_cutoff" title="pysic.interactions.local.Potential.get_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">get_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_cutoff_margin" title="pysic.interactions.local.Potential.get_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">get_cutoff_margin()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_parameter_names" title="pysic.interactions.local.Potential.get_parameter_names"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameter_names()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_parameter_value" title="pysic.interactions.local.Potential.get_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameter_value()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_parameter_values" title="pysic.interactions.local.Potential.get_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameter_values()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_potential_type" title="pysic.interactions.local.Potential.get_potential_type"><tt class="xref py py-meth docutils literal"><span class="pre">get_potential_type()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_soft_cutoff" title="pysic.interactions.local.Potential.get_soft_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">get_soft_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.set_cutoff" title="pysic.interactions.local.Potential.set_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.set_cutoff_margin" title="pysic.interactions.local.Potential.set_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff_margin()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.set_parameter_value" title="pysic.interactions.local.Potential.set_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_value()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.set_parameter_values" title="pysic.interactions.local.Potential.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.set_soft_cutoff" title="pysic.interactions.local.Potential.set_soft_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_soft_cutoff()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="coordinator-handling">
 <h3>Coordinator handling<a class="headerlink" href="#coordinator-handling" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.Potential.get_coordinator" title="pysic.Potential.get_coordinator"><tt class="xref py py-meth docutils literal"><span class="pre">get_coordinator()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.set_coordinator" title="pysic.Potential.set_coordinator"><tt class="xref py py-meth docutils literal"><span class="pre">set_coordinator()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_coordinator" title="pysic.interactions.local.Potential.get_coordinator"><tt class="xref py py-meth docutils literal"><span class="pre">get_coordinator()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.set_coordinator" title="pysic.interactions.local.Potential.set_coordinator"><tt class="xref py py-meth docutils literal"><span class="pre">set_coordinator()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="target-handling">
 <h3>Target handling<a class="headerlink" href="#target-handling" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.Potential.accepts_target_list" title="pysic.Potential.accepts_target_list"><tt class="xref py py-meth docutils literal"><span class="pre">accepts_target_list()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.add_indices" title="pysic.Potential.add_indices"><tt class="xref py py-meth docutils literal"><span class="pre">add_indices()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.add_symbols" title="pysic.Potential.add_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">add_symbols()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.add_tags" title="pysic.Potential.add_tags"><tt class="xref py py-meth docutils literal"><span class="pre">add_tags()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_different_indices" title="pysic.Potential.get_different_indices"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_indices()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_different_symbols" title="pysic.Potential.get_different_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_symbols()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_different_tags" title="pysic.Potential.get_different_tags"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_tags()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_indices" title="pysic.Potential.get_indices"><tt class="xref py py-meth docutils literal"><span class="pre">get_indices()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_number_of_targets" title="pysic.Potential.get_number_of_targets"><tt class="xref py py-meth docutils literal"><span class="pre">get_number_of_targets()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_symbols" title="pysic.Potential.get_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">get_symbols()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.get_tags" title="pysic.Potential.get_tags"><tt class="xref py py-meth docutils literal"><span class="pre">get_tags()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.set_indices" title="pysic.Potential.set_indices"><tt class="xref py py-meth docutils literal"><span class="pre">set_indices()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.set_symbols" title="pysic.Potential.set_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">set_symbols()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Potential.set_tags" title="pysic.Potential.set_tags"><tt class="xref py py-meth docutils literal"><span class="pre">set_tags()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.accepts_target_list" title="pysic.interactions.local.Potential.accepts_target_list"><tt class="xref py py-meth docutils literal"><span class="pre">accepts_target_list()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.add_indices" title="pysic.interactions.local.Potential.add_indices"><tt class="xref py py-meth docutils literal"><span class="pre">add_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.add_symbols" title="pysic.interactions.local.Potential.add_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">add_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.add_tags" title="pysic.interactions.local.Potential.add_tags"><tt class="xref py py-meth docutils literal"><span class="pre">add_tags()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_different_indices" title="pysic.interactions.local.Potential.get_different_indices"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_different_symbols" title="pysic.interactions.local.Potential.get_different_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_different_tags" title="pysic.interactions.local.Potential.get_different_tags"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_tags()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_indices" title="pysic.interactions.local.Potential.get_indices"><tt class="xref py py-meth docutils literal"><span class="pre">get_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_number_of_targets" title="pysic.interactions.local.Potential.get_number_of_targets"><tt class="xref py py-meth docutils literal"><span class="pre">get_number_of_targets()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_symbols" title="pysic.interactions.local.Potential.get_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">get_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_tags" title="pysic.interactions.local.Potential.get_tags"><tt class="xref py py-meth docutils literal"><span class="pre">get_tags()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.set_indices" title="pysic.interactions.local.Potential.set_indices"><tt class="xref py py-meth docutils literal"><span class="pre">set_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.set_symbols" title="pysic.interactions.local.Potential.set_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">set_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.set_tags" title="pysic.interactions.local.Potential.set_tags"><tt class="xref py py-meth docutils literal"><span class="pre">set_tags()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="description">
 <h3>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.Potential.describe" title="pysic.Potential.describe"><tt class="xref py py-meth docutils literal"><span class="pre">describe()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.describe" title="pysic.interactions.local.Potential.describe"><tt class="xref py py-meth docutils literal"><span class="pre">describe()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.is_multiplier" title="pysic.interactions.local.Potential.is_multiplier"><tt class="xref py py-meth docutils literal"><span class="pre">is_multiplier()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_potentials" title="pysic.interactions.local.Potential.get_potentials"><tt class="xref py py-meth docutils literal"><span class="pre">get_potentials()</span></tt></a> (meant for internal use)</li>
 </ul>
 </div>
 </div>
 <div class="section" id="full-documentation-of-the-potential-class">
 <h2>Full documentation of the Potential class<a class="headerlink" href="#full-documentation-of-the-potential-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="pysic.Potential">
-<em class="property">class </em><tt class="descclassname">pysic.</tt><tt class="descname">Potential</tt><big>(</big><em>potential_type</em>, <em>symbols=None</em>, <em>tags=None</em>, <em>indices=None</em>, <em>parameters=None</em>, <em>cutoff=0.0</em>, <em>cutoff_margin=0.0</em>, <em>coordinator=None</em><big>)</big><a class="headerlink" href="#pysic.Potential" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential">
+<em class="property">class </em><tt class="descclassname">pysic.interactions.local.</tt><tt class="descname">Potential</tt><big>(</big><em>potential_type</em>, <em>symbols=None</em>, <em>tags=None</em>, <em>indices=None</em>, <em>parameters=None</em>, <em>cutoff=0.0</em>, <em>cutoff_margin=0.0</em>, <em>coordinator=None</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for representing a potential.</p>
 <p>Several types of potentials can be defined by specifying the type of the potential
 as a keyword. The potentials contain a host of parameters and information on
 what types of particles they act on. To view a list of available potentials, use the method
-<a class="reference internal" href="pysic.html#pysic.list_valid_potentials" title="pysic.list_valid_potentials"><tt class="xref py py-meth docutils literal"><span class="pre">list_valid_potentials()</span></tt></a>.</p>
+<tt class="xref py py-meth docutils literal"><span class="pre">list_valid_potentials()</span></tt>.</p>
 <p>A potential may be a pair or many-body potential: here, the bodies a potential
 acts on are called targets. Thus specifying the number of targets of a potential also
 determines if the potential is a many-body potential.</p>
@@ -517,8 +570,8 @@ a list of lists of n values where n is the number of targets. For example, if:</
 <dd>the maximum atomic separation at which the potential is applied</dd>
 </dl>
 <dl class="method">
-<dt id="pysic.Potential.accepts_target_list">
-<tt class="descname">accepts_target_list</tt><big>(</big><em>targets</em><big>)</big><a class="headerlink" href="#pysic.Potential.accepts_target_list" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.accepts_target_list">
+<tt class="descname">accepts_target_list</tt><big>(</big><em>targets</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.accepts_target_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.accepts_target_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tests whether a list is suitable as a list of targets, i.e., symbols, tags, or indices
 and returns True or False accordingly.</p>
 <p>A list of targets should be of the format:</p>
@@ -535,8 +588,8 @@ and returns True or False accordingly.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.add_indices">
-<tt class="descname">add_indices</tt><big>(</big><em>indices</em><big>)</big><a class="headerlink" href="#pysic.Potential.add_indices" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.add_indices">
+<tt class="descname">add_indices</tt><big>(</big><em>indices</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.add_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.add_indices" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds the given indices to the list of indices.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -546,8 +599,8 @@ and returns True or False accordingly.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.add_symbols">
-<tt class="descname">add_symbols</tt><big>(</big><em>symbols</em><big>)</big><a class="headerlink" href="#pysic.Potential.add_symbols" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.add_symbols">
+<tt class="descname">add_symbols</tt><big>(</big><em>symbols</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.add_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.add_symbols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds the given symbols to the list of symbols.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -557,8 +610,8 @@ and returns True or False accordingly.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.add_tags">
-<tt class="descname">add_tags</tt><big>(</big><em>tags</em><big>)</big><a class="headerlink" href="#pysic.Potential.add_tags" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.add_tags">
+<tt class="descname">add_tags</tt><big>(</big><em>tags</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.add_tags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.add_tags" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds the given tags to the list of tags.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -568,68 +621,68 @@ and returns True or False accordingly.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.describe">
-<tt class="descname">describe</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.describe" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.describe">
+<tt class="descname">describe</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.describe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.describe" title="Permalink to this definition">¶</a></dt>
 <dd><p>Prints a short description of the potential using the method <tt class="xref py py-meth docutils literal"><span class="pre">describe_potential()</span></tt>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_coordinator">
-<tt class="descname">get_coordinator</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_coordinator" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_coordinator">
+<tt class="descname">get_coordinator</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_coordinator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_coordinator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the Coordinator.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_cutoff">
-<tt class="descname">get_cutoff</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_cutoff" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_cutoff">
+<tt class="descname">get_cutoff</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_cutoff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the cutoff.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_cutoff_margin">
-<tt class="descname">get_cutoff_margin</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_cutoff_margin" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_cutoff_margin">
+<tt class="descname">get_cutoff_margin</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_cutoff_margin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_cutoff_margin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the margin for a smooth cutoff.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_different_indices">
-<tt class="descname">get_different_indices</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_different_indices" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_different_indices">
+<tt class="descname">get_different_indices</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_different_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_different_indices" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list containing each index the potential affects once.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_different_symbols">
-<tt class="descname">get_different_symbols</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_different_symbols" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_different_symbols">
+<tt class="descname">get_different_symbols</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_different_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_different_symbols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list containing each symbol the potential affects once.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_different_tags">
-<tt class="descname">get_different_tags</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_different_tags" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_different_tags">
+<tt class="descname">get_different_tags</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_different_tags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_different_tags" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list containing each tag the potential affects once.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_indices">
-<tt class="descname">get_indices</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_indices" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_indices">
+<tt class="descname">get_indices</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_indices" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list of indices on which the potential acts on.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_number_of_targets">
-<tt class="descname">get_number_of_targets</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_number_of_targets" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_number_of_targets">
+<tt class="descname">get_number_of_targets</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_number_of_targets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_number_of_targets" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the number of targets.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_parameter_names">
-<tt class="descname">get_parameter_names</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_parameter_names" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_parameter_names">
+<tt class="descname">get_parameter_names</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_parameter_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_parameter_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of the names of the parameters of the potential.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_parameter_value">
-<tt class="descname">get_parameter_value</tt><big>(</big><em>param_name</em><big>)</big><a class="headerlink" href="#pysic.Potential.get_parameter_value" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_parameter_value">
+<tt class="descname">get_parameter_value</tt><big>(</big><em>param_name</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_parameter_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_parameter_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the value of the given parameter.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -639,48 +692,69 @@ and returns True or False accordingly.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_parameter_values">
-<tt class="descname">get_parameter_values</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_parameter_values" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_parameter_values">
+<tt class="descname">get_parameter_values</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_parameter_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_parameter_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list containing the current parameter values of the potential.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_potential_type">
-<tt class="descname">get_potential_type</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_potential_type" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_potential_type">
+<tt class="descname">get_potential_type</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_potential_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_potential_type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the keyword specifying the type of the potential.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_soft_cutoff">
-<tt class="descname">get_soft_cutoff</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_soft_cutoff" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_potentials">
+<tt class="descname">get_potentials</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_potentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list containing the potential itself.</p>
+<p>This is a method ensuring cross compatibility with the 
+<a class="reference internal" href="productpotential class.html#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a> class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.Potential.get_soft_cutoff">
+<tt class="descname">get_soft_cutoff</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_soft_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_soft_cutoff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the lower limit for a smooth cutoff.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_symbols">
-<tt class="descname">get_symbols</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_symbols" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_symbols">
+<tt class="descname">get_symbols</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_symbols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list of the chemical symbols (elements) on which the potential
 acts on.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.get_tags">
-<tt class="descname">get_tags</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Potential.get_tags" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.get_tags">
+<tt class="descname">get_tags</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_tags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_tags" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return the tags on which the potential acts on.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.set_coordinator">
-<tt class="descname">set_coordinator</tt><big>(</big><em>coordinator</em><big>)</big><a class="headerlink" href="#pysic.Potential.set_coordinator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets a new Coordinator.</p>
+<dt id="pysic.interactions.local.Potential.is_multiplier">
+<tt class="descname">is_multiplier</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.is_multiplier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.is_multiplier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list containing False.</p>
+<p>This is a method ensuring cross compatibility with the 
+<a class="reference internal" href="productpotential class.html#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a> class.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.set_cutoff">
-<tt class="descname">set_cutoff</tt><big>(</big><em>cutoff</em><big>)</big><a class="headerlink" href="#pysic.Potential.set_cutoff" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.set_coordinator">
+<tt class="descname">set_coordinator</tt><big>(</big><em>coordinator</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.set_coordinator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.set_coordinator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets a new Coordinator.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>coordinator: a <a class="reference internal" href="coordinator class.html#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> object</dt>
+<dd>the Coordinator</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.Potential.set_cutoff">
+<tt class="descname">set_cutoff</tt><big>(</big><em>cutoff</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.set_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.set_cutoff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the cutoff to a given value.</p>
 <p>This method affects the hard cutoff.
-For a detailed explanation on how to define a soft cutoff, see <a class="reference internal" href="#pysic.Potential.set_cutoff_margin" title="pysic.Potential.set_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff_margin()</span></tt></a>.</p>
+For a detailed explanation on how to define a soft cutoff, see <a class="reference internal" href="#pysic.interactions.local.Potential.set_cutoff_margin" title="pysic.interactions.local.Potential.set_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff_margin()</span></tt></a>.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>cutoff: double</dt>
@@ -689,8 +763,8 @@ For a detailed explanation on how to define a soft cutoff, see <a class="referen
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.set_cutoff_margin">
-<tt class="descname">set_cutoff_margin</tt><big>(</big><em>margin</em><big>)</big><a class="headerlink" href="#pysic.Potential.set_cutoff_margin" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.set_cutoff_margin">
+<tt class="descname">set_cutoff_margin</tt><big>(</big><em>margin</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.set_cutoff_margin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.set_cutoff_margin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the margin for smooth cutoff to a given value.</p>
 <p>Many potentials decay towards zero in infinity, but in a numeric simulation
 they are cut at a finite range as specified by the cutoff radius. If the potential
@@ -699,7 +773,7 @@ It is possible to avoid this by including a smoothening factor in the potential
 to force a decay to zero in a finite interval.</p>
 <p>This method defines the decay interval <span class="math">\(r_\mathrm{hard}-r_\mathrm{soft}\)</span>.
 Note that if the soft cutoff value is made smaller than 0 or larger than the
-hard cutoff value an <a class="reference internal" href="pysic.html#pysic.InvalidPotentialError" title="pysic.InvalidPotentialError"><tt class="xref py py-class docutils literal"><span class="pre">InvalidPotentialError</span></tt></a> is raised.</p>
+hard cutoff value an <a class="reference internal" href="pysic_utility.html#pysic.utility.error.InvalidPotentialError" title="pysic.utility.error.InvalidPotentialError"><tt class="xref py py-class docutils literal"><span class="pre">InvalidPotentialError</span></tt></a> is raised.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>margin: double</dt>
@@ -708,8 +782,8 @@ hard cutoff value an <a class="reference internal" href="pysic.html#pysic.Invali
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.set_indices">
-<tt class="descname">set_indices</tt><big>(</big><em>indices</em><big>)</big><a class="headerlink" href="#pysic.Potential.set_indices" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.set_indices">
+<tt class="descname">set_indices</tt><big>(</big><em>indices</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.set_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.set_indices" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the list of indices to equal the given list.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -719,8 +793,8 @@ hard cutoff value an <a class="reference internal" href="pysic.html#pysic.Invali
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.set_parameter_value">
-<tt class="descname">set_parameter_value</tt><big>(</big><em>parameter_name</em>, <em>value</em><big>)</big><a class="headerlink" href="#pysic.Potential.set_parameter_value" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.set_parameter_value">
+<tt class="descname">set_parameter_value</tt><big>(</big><em>parameter_name</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.set_parameter_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.set_parameter_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets a given parameter to the desired value.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -732,8 +806,8 @@ hard cutoff value an <a class="reference internal" href="pysic.html#pysic.Invali
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.set_parameter_values">
-<tt class="descname">set_parameter_values</tt><big>(</big><em>values</em><big>)</big><a class="headerlink" href="#pysic.Potential.set_parameter_values" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.set_parameter_values">
+<tt class="descname">set_parameter_values</tt><big>(</big><em>values</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.set_parameter_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.set_parameter_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the numeric values of all parameters.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -743,10 +817,10 @@ hard cutoff value an <a class="reference internal" href="pysic.html#pysic.Invali
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.set_parameters">
-<tt class="descname">set_parameters</tt><big>(</big><em>values</em><big>)</big><a class="headerlink" href="#pysic.Potential.set_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.set_parameters">
+<tt class="descname">set_parameters</tt><big>(</big><em>values</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.set_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.set_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the numeric values of all parameters.</p>
-<p>Equivalent to <a class="reference internal" href="#pysic.Potential.set_parameter_values" title="pysic.Potential.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a>.</p>
+<p>Equivalent to <a class="reference internal" href="#pysic.interactions.local.Potential.set_parameter_values" title="pysic.interactions.local.Potential.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a>.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>values: list of doubles</dt>
@@ -755,13 +829,13 @@ hard cutoff value an <a class="reference internal" href="pysic.html#pysic.Invali
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.set_soft_cutoff">
-<tt class="descname">set_soft_cutoff</tt><big>(</big><em>cutoff</em><big>)</big><a class="headerlink" href="#pysic.Potential.set_soft_cutoff" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.set_soft_cutoff">
+<tt class="descname">set_soft_cutoff</tt><big>(</big><em>cutoff</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.set_soft_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.set_soft_cutoff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the soft cutoff to a given value.</p>
 <p>For a detailed explanation on the meaning of a soft cutoff, see
-<a class="reference internal" href="#pysic.Potential.set_cutoff_margin" title="pysic.Potential.set_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff_margin()</span></tt></a>.
+<a class="reference internal" href="#pysic.interactions.local.Potential.set_cutoff_margin" title="pysic.interactions.local.Potential.set_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff_margin()</span></tt></a>.
 Note that actually the cutoff margin is recorded, so changing the
-hard cutoff (see <a class="reference internal" href="#pysic.Potential.set_cutoff" title="pysic.Potential.set_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff()</span></tt></a>) will also affect the
+hard cutoff (see <a class="reference internal" href="#pysic.interactions.local.Potential.set_cutoff" title="pysic.interactions.local.Potential.set_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff()</span></tt></a>) will also affect the
 soft cutoff.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -771,8 +845,8 @@ soft cutoff.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.set_symbols">
-<tt class="descname">set_symbols</tt><big>(</big><em>symbols</em><big>)</big><a class="headerlink" href="#pysic.Potential.set_symbols" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.set_symbols">
+<tt class="descname">set_symbols</tt><big>(</big><em>symbols</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.set_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.set_symbols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the list of symbols to equal the given list.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -782,8 +856,8 @@ soft cutoff.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Potential.set_tags">
-<tt class="descname">set_tags</tt><big>(</big><em>tags</em><big>)</big><a class="headerlink" href="#pysic.Potential.set_tags" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.local.Potential.set_tags">
+<tt class="descname">set_tags</tt><big>(</big><em>tags</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.set_tags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.set_tags" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the list of tags to equal the given list.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -813,12 +887,12 @@ soft cutoff.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="coulombsummation class.html" title="CoulombSummation class"
+          <a href="productpotential class.html" title="ProductPotential class"
              >next</a> |</li>
         <li class="right" >
           <a href="pysic class.html" title="Pysic class"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
       </ul>
     </div>

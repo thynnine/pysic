@@ -14,13 +14,9 @@ Pysic module
 
 
 
-
-Pysic is an object based calculator for atomistic many-body interactions. It is controlled via several classes: :class:`~pysic.calculator.Pysic`, which defines a calculator 
-for the `ASE`_ simulation environment [#]_, :class:`~pysic.Potential`, which defines
-potentials to be used by :class:`~pysic.calculator.Pysic` for calculating atomic interactions,
-:class:`~pysic.Coordinator` which can be used for modifying potentials with
-bond order factors, and :class:`~pysic.BondOrderParameters` which are used as a
-container of parameters for the :class:`~pysic.Coordinator`.
+Pysic is an object based calculator for atomistic many-body interactions. It is controlled via several classes such as :class:`~pysic.calculator.Pysic`, which defines a calculator 
+for the `ASE`_ simulation environment [#]_, and :class:`~pysic.interactions.local.Potential`, which defines
+potentials to be used by for calculating atomic interactions.
 
 .. _ASE: https://wiki.fysik.dtu.dk/ase/
 
@@ -32,7 +28,6 @@ container of parameters for the :class:`~pysic.Coordinator`.
 
 
 
-.. currentmodule:: pysic
 
 Classes of the pysic module
 ---------------------------
@@ -42,6 +37,7 @@ Classes of the pysic module
 
    pysic class
    potential class
+   productpotential class
    coulombsummation class
    coordinator class
    bondorderparameters class
@@ -90,28 +86,6 @@ _________________________
 - :meth:`~pysic.get_cpu_id`
  
  
-Errors defined by the pysic module
-----------------------------------
-
-The module defines a group of intrinsic errors to describe situations where
-one tries to use or set up the calculator with errorneous or insufficient
-information.
-
-.. autoexception:: InvalidParametersError
-   :members:
-.. autoexception:: InvalidCoordinatorError
-   :members:
-.. autoexception:: InvalidPotentialError
-   :members:
-.. autoexception:: MissingAtomsError
-   :members:
-.. autoexception:: MissingNeighborsError
-   :members:
-.. autoexception:: LockedCoreError
-   :members:
-
-
-
 Functions of the pysic module
 -----------------------------
 

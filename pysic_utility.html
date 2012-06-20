@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Pysic Utility modules &mdash; Pysic 0.4.3 documentation</title>
+    <title>Pysic Utility modules &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="next" title="Pysic Fortran module" href="pysic_fortran.html" />
     <link rel="prev" title="CoreMirror class" href="coremirror class.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="coremirror class.html" title="CoreMirror class"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -54,9 +54,12 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Pysic Utility modules</a><ul>
-<li><a class="reference internal" href="#module-pysic.utility.plot">Plot</a></li>
-<li><a class="reference internal" href="#module-pysic.utility.convenience">Convenience</a></li>
-<li><a class="reference internal" href="#module-pysic.utility.geometry">Geometry</a></li>
+<li><a class="reference internal" href="#plot">Plot</a></li>
+<li><a class="reference internal" href="#convenience">Convenience</a></li>
+<li><a class="reference internal" href="#geometry">Geometry</a></li>
+<li><a class="reference internal" href="#error">Error</a></li>
+<li><a class="reference internal" href="#debug">Debug</a></li>
+<li><a class="reference internal" href="#f2py">F2py</a></li>
 </ul>
 </li>
 </ul>
@@ -93,12 +96,13 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="pysic-utility-modules">
-<span id="pysic-utility"></span><h1>Pysic Utility modules<a class="headerlink" href="#pysic-utility-modules" title="Permalink to this headline">¶</a></h1>
+  <span class="target" id="module-pysic.utility"><span id="pysic-utility"></span></span><div class="section" id="pysic-utility-modules">
+<h1>Pysic Utility modules<a class="headerlink" href="#pysic-utility-modules" title="Permalink to this headline">¶</a></h1>
 <p>Modules for providing utility tools and parameters.</p>
-<div class="section" id="module-pysic.utility.plot">
-<span id="plot"></span><h2>Plot<a class="headerlink" href="#module-pysic.utility.plot" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
+<div class="section" id="plot">
+<span id="plot-utility"></span><h2>Plot<a class="headerlink" href="#plot" title="Permalink to this headline">¶</a></h2>
+<p>The plot utility defines a group of tools for exploring and plotting energy and force landscapes.</p>
+<span class="target" id="module-pysic.utility.plot"></span><dl class="function">
 <dt id="pysic.utility.plot.plot_abs_force_on_line">
 <tt class="descclassname">pysic.utility.plot.</tt><tt class="descname">plot_abs_force_on_line</tt><big>(</big><em>index, system, direction=None, length=None, steps=100, start=None, end=None, lims=[-10000000000.0, 10000000000.0]</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/plot.html#plot_abs_force_on_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.plot.plot_abs_force_on_line" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plots the absolute value of the force on a particle as a function of the position.</p>
@@ -300,9 +304,10 @@ the distances traveled on the plane and the recorded forces is returned.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pysic.utility.convenience">
-<span id="convenience"></span><h2>Convenience<a class="headerlink" href="#module-pysic.utility.convenience" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
+<div class="section" id="convenience">
+<span id="convenience-utility"></span><h2>Convenience<a class="headerlink" href="#convenience" title="Permalink to this headline">¶</a></h2>
+<p>The convenience utility defines functions to ease the handling of complicated data structures.</p>
+<span class="target" id="module-pysic.utility.convenience"></span><dl class="function">
 <dt id="pysic.utility.convenience.expand_symbols_table">
 <tt class="descclassname">pysic.utility.convenience.</tt><tt class="descname">expand_symbols_table</tt><big>(</big><em>symbol_list</em>, <em>type=None</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/convenience.html#expand_symbols_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.convenience.expand_symbols_table" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a table of symbols for a BondOrderParameters object.</p>
@@ -359,9 +364,10 @@ specifies a custom way of generating the table</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pysic.utility.geometry">
-<span id="geometry"></span><h2>Geometry<a class="headerlink" href="#module-pysic.utility.geometry" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
+<div class="section" id="geometry">
+<span id="geometry-utility"></span><h2>Geometry<a class="headerlink" href="#geometry" title="Permalink to this headline">¶</a></h2>
+<p>The geometry utility defines tools for geometric operations.</p>
+<span class="target" id="module-pysic.utility.geometry"></span><dl class="class">
 <dt id="pysic.utility.geometry.Cell">
 <em class="property">class </em><tt class="descclassname">pysic.utility.geometry.</tt><tt class="descname">Cell</tt><big>(</big><em>vector1</em>, <em>vector2</em>, <em>vector3</em>, <em>pbc</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/geometry.html#Cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.geometry.Cell" title="Permalink to this definition">¶</a></dt>
 <dd><p>Cell describing the simulation volume of a subvolume.</p>
@@ -458,6 +464,148 @@ an the coordinates [-1.0, 12.0, 3.0] wrap to [9.0, 2.0, 3.0].</p>
 </dd></dl>
 
 </div>
+<div class="section" id="error">
+<span id="error-utility"></span><h2>Error<a class="headerlink" href="#error" title="Permalink to this headline">¶</a></h2>
+<p>The error utility defines a group of intrinsic errors to describe situations where
+one tries to use or set up the calculator with errorneous or insufficient
+information.</p>
+<span class="target" id="module-pysic.utility.error"></span><dl class="exception">
+<dt id="pysic.utility.error.InvalidCoordinatorError">
+<em class="property">exception </em><tt class="descclassname">pysic.utility.error.</tt><tt class="descname">InvalidCoordinatorError</tt><big>(</big><em>message=''</em>, <em>coordinator=None</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/error.html#InvalidCoordinatorError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.error.InvalidCoordinatorError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An error raised when an invalid coordination calculator is about to be created or used.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>message: string</dt>
+<dd>information describing why the error occurred</dd>
+<dt>coordinator: <a class="reference internal" href="coordinator class.html#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a></dt>
+<dd>the errorneous coordinator</dd>
+</dl>
+</dd></dl>
+
+<dl class="exception">
+<dt id="pysic.utility.error.InvalidParametersError">
+<em class="property">exception </em><tt class="descclassname">pysic.utility.error.</tt><tt class="descname">InvalidParametersError</tt><big>(</big><em>message=''</em>, <em>params=None</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/error.html#InvalidParametersError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.error.InvalidParametersError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An error raised when an invalid set of parameters is about to be created.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>message: string</dt>
+<dd>information describing why the error occurred</dd>
+<dt>params: <a class="reference internal" href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters" title="pysic.interactions.bondorder.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a></dt>
+<dd>the errorneous parameters</dd>
+</dl>
+</dd></dl>
+
+<dl class="exception">
+<dt id="pysic.utility.error.InvalidPotentialError">
+<em class="property">exception </em><tt class="descclassname">pysic.utility.error.</tt><tt class="descname">InvalidPotentialError</tt><big>(</big><em>message=''</em>, <em>potential=None</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/error.html#InvalidPotentialError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.error.InvalidPotentialError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An error raised when an invalid potential is about to be created or used.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>message: string</dt>
+<dd>information describing why the error occurred</dd>
+<dt>potential: <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a></dt>
+<dd>the errorneous potential</dd>
+</dl>
+</dd></dl>
+
+<dl class="exception">
+<dt id="pysic.utility.error.InvalidRelaxationError">
+<em class="property">exception </em><tt class="descclassname">pysic.utility.error.</tt><tt class="descname">InvalidRelaxationError</tt><big>(</big><em>message=''</em>, <em>relaxation=None</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/error.html#InvalidRelaxationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.error.InvalidRelaxationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An error raised when an invalid charge relaxation is about to be created.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>message: string</dt>
+<dd>information describing why the error occurred</dd>
+<dt>params: <a class="reference internal" href="chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a></dt>
+<dd>the errorneous parameters</dd>
+</dl>
+</dd></dl>
+
+<dl class="exception">
+<dt id="pysic.utility.error.InvalidSummationError">
+<em class="property">exception </em><tt class="descclassname">pysic.utility.error.</tt><tt class="descname">InvalidSummationError</tt><big>(</big><em>message=''</em>, <em>summer=None</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/error.html#InvalidSummationError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.error.InvalidSummationError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An error raised when an invalid coulomb summation is about to be created.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>message: string</dt>
+<dd>information describing why the error occurred</dd>
+<dt>params: <a class="reference internal" href="coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation" title="pysic.interactions.coulomb.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a></dt>
+<dd>the errorneous summation</dd>
+</dl>
+</dd></dl>
+
+<dl class="exception">
+<dt id="pysic.utility.error.LockedCoreError">
+<em class="property">exception </em><tt class="descclassname">pysic.utility.error.</tt><tt class="descname">LockedCoreError</tt><big>(</big><em>message=''</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/error.html#LockedCoreError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.error.LockedCoreError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An error raised when a <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> tries to access the core which is locked
+by another calculator.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>message: string</dt>
+<dd>information describing why the error occurred</dd>
+</dl>
+</dd></dl>
+
+<dl class="exception">
+<dt id="pysic.utility.error.MissingAtomsError">
+<em class="property">exception </em><tt class="descclassname">pysic.utility.error.</tt><tt class="descname">MissingAtomsError</tt><big>(</big><em>message=''</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/error.html#MissingAtomsError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.error.MissingAtomsError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An error raised when the core is being updated with per atom information before updating the atoms.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>message: string</dt>
+<dd>information describing why the error occurred</dd>
+</dl>
+</dd></dl>
+
+<dl class="exception">
+<dt id="pysic.utility.error.MissingNeighborsError">
+<em class="property">exception </em><tt class="descclassname">pysic.utility.error.</tt><tt class="descname">MissingNeighborsError</tt><big>(</big><em>message=''</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/error.html#MissingNeighborsError"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.error.MissingNeighborsError" title="Permalink to this definition">¶</a></dt>
+<dd><p>An error raised when a calculation is initiated without initializing the neighbor lists.</p>
+<p>In principle <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> should always take care of handling the neighbors automatically.
+This error is an indication that there is loophole in the built-in preparations.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>message: string</dt>
+<dd>information describing why the error occurred</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="debug">
+<span id="debug-utility"></span><h2>Debug<a class="headerlink" href="#debug" title="Permalink to this headline">¶</a></h2>
+<p>The debug utility defines debugging tools.</p>
+<span class="target" id="module-pysic.utility.debug"></span></div>
+<div class="section" id="f2py">
+<span id="f2py-utility"></span><h2>F2py<a class="headerlink" href="#f2py" title="Permalink to this headline">¶</a></h2>
+<p>The f2py utility defines tools for the Python-Fortran interfacing.</p>
+<span class="target" id="module-pysic.utility.f2py"></span><dl class="function">
+<dt id="pysic.utility.f2py.char2int">
+<tt class="descclassname">pysic.utility.f2py.</tt><tt class="descname">char2int</tt><big>(</big><em>char_in</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/f2py.html#char2int"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.f2py.char2int" title="Permalink to this definition">¶</a></dt>
+<dd><p>Codes a single character to an integer.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.f2py.int2char">
+<tt class="descclassname">pysic.utility.f2py.</tt><tt class="descname">int2char</tt><big>(</big><em>int_in</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/f2py.html#int2char"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.f2py.int2char" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decodes an integer to a single character.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.f2py.ints2str">
+<tt class="descclassname">pysic.utility.f2py.</tt><tt class="descname">ints2str</tt><big>(</big><em>ints_in</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/f2py.html#ints2str"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.f2py.ints2str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Decodes a list of integers to a string.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.f2py.str2ints">
+<tt class="descclassname">pysic.utility.f2py.</tt><tt class="descname">str2ints</tt><big>(</big><em>string_in</em>, <em>target_length=0</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/f2py.html#str2ints"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.f2py.str2ints" title="Permalink to this definition">¶</a></dt>
+<dd><p>Codes a string to a list of integers.</p>
+<p>Turns a string to a list of integers for f2py interfacing.
+If required, the length of the list can be specified and trailing spaces
+will be added to the end.</p>
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -481,7 +629,7 @@ an the coordinates [-1.0, 12.0, 3.0] wrap to [9.0, 2.0, 3.0].</p>
         <li class="right" >
           <a href="coremirror class.html" title="CoreMirror class"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

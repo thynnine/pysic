@@ -1,0 +1,415 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.charges.relaxation &mdash; Pysic 0.4.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.4 documentation" href="../../../index.html" />
+    <link rel="up" title="pysic" href="../../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.charges.relaxation</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<div class="viewcode-block" id="ChargeRelaxation"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation">[docs]</a><span class="k">class</span> <span class="nc">ChargeRelaxation</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A class for handling charge dynamics and relaxation.</span>
+<span class="sd">        </span>
+<span class="sd">        Pysic does not implement molecular dynamics or geometric</span>
+<span class="sd">        optimization since they are handled by ASE.</span>
+<span class="sd">        Conceptually, the structural dynamics of the system are</span>
+<span class="sd">        properties of the atomic geometry and so it makes sense that</span>
+<span class="sd">        they are handled by ASE, which defines the atomic structure</span>
+<span class="sd">        in the first place, in the `ASE Atoms`_ class.</span>
+<span class="sd">        </span>
+<span class="sd">        On the other hand, charge dynamics are related to the electronic</span>
+<span class="sd">        structure of the system. Since ASE is meant to use methods such as </span>
+<span class="sd">        density functional theory (DFT) in the calculators is employs, all</span>
+<span class="sd">        electronic properties are left at the responsibilty of the</span>
+<span class="sd">        calculator. This makes sense since in DFT the electron density is </span>
+<span class="sd">        needed for calculations of forces and energies.</span>
+<span class="sd">        </span>
+<span class="sd">        Pysic is not a DFT calculator and there is no electron density</span>
+<span class="sd">        but the atomic charges can be made to develop dynamically. The</span>
+<span class="sd">        ChargeRelaxation class handles these dynamics.</span>
+<span class="sd">        </span>
+<span class="sd">        .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        relaxation: string</span>
+<span class="sd">            a keyword specifying the mode of charge relaxation</span>
+<span class="sd">        calculator: :class:`~pysic.Pysic` object</span>
+<span class="sd">            a Pysic calculator </span>
+<span class="sd">        parameters: list of doubles</span>
+<span class="sd">            numeric values for parameters        </span>
+<span class="sd">        atoms: `ASE Atoms`_ object</span>
+<span class="sd">            The system whose charges are to be relaxed. </span>
+<span class="sd">            Note! The relaxation is always done using the atoms copy in </span>
+<span class="sd">            :class:`~pysic.Pysic`, but if the original structure needs to be</span>
+<span class="sd">            updated as well, the relaxation algorithm must have access to it.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">relaxation_modes</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&#39;dynamic&#39;</span> <span class="p">]</span>
+    <span class="sd">&quot;&quot;&quot;Names of the charge relaxation algorithms available. </span>
+<span class="sd">        </span>
+<span class="sd">        These are keywords needed when creating the </span>
+<span class="sd">        :class:`~pysic.ChargeRelaxation` objects as type specifiers.&quot;&quot;&quot;</span>
+    
+    <span class="n">relaxation_parameters</span> <span class="o">=</span> <span class="p">{</span> <span class="n">relaxation_modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="p">[</span><span class="s">&#39;n_steps&#39;</span><span class="p">,</span> <span class="s">&#39;timestep&#39;</span><span class="p">,</span> <span class="s">&#39;inertia&#39;</span><span class="p">,</span> <span class="s">&#39;friction&#39;</span><span class="p">,</span> <span class="s">&#39;tolerance&#39;</span><span class="p">]</span> <span class="p">}</span>
+    <span class="sd">&quot;&quot;&quot;Names of the parameters of the charge relaxation algorithms.&quot;&quot;&quot;</span>
+    
+    <span class="n">relaxation_parameter_descriptions</span> <span class="o">=</span> <span class="p">{</span> <span class="n">relaxation_modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="p">[</span><span class="s">&#39;time steps of charge dynamics between molecular dynamics&#39;</span><span class="p">,</span> 
+                                                                 <span class="s">&#39;time step of charge dynamics&#39;</span><span class="p">,</span> 
+                                                                 <span class="s">&#39;fictional charge mass&#39;</span><span class="p">,</span> 
+                                                                 <span class="s">&#39;friction coefficient for damped charge dynamics&#39;</span><span class="p">,</span>
+                                                                 <span class="s">&#39;convergence tolerance&#39;</span><span class="p">]</span> <span class="p">}</span>
+    <span class="sd">&quot;&quot;&quot;Short descriptions of the relaxation parameters.&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relaxation</span><span class="o">=</span><span class="s">&#39;dynamic&#39;</span><span class="p">,</span> <span class="n">calculator</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">atoms</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_relaxation</span><span class="p">(</span><span class="n">relaxation</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calculator</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+
+    
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">relaxation</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">relaxation</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">calculator</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">atoms</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
+
+            
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;ChargeRelaxation(&#39;{m}&#39;,calculator={c},parameters={p},atoms={a})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+            <span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">relaxation</span><span class="p">,</span> 
+            <span class="n">c</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="p">),</span> 
+            <span class="n">p</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">),</span>
+            <span class="n">a</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="p">)</span> <span class="p">)</span>
+            
+            
+<div class="viewcode-block" id="ChargeRelaxation.set_calculator"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation.set_calculator">[docs]</a>    <span class="k">def</span> <span class="nf">set_calculator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">calculator</span><span class="p">,</span> <span class="n">reciprocal</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Assigns a :class:`~pysic.Pysic` calculator.</span>
+<span class="sd">            </span>
+<span class="sd">            The calculator is necessary for calculation of electronegativities.</span>
+<span class="sd">            It is also possible to automatically assign the charge relaxation</span>
+<span class="sd">            method to the calculator by setting ``reciprocal = True``. </span>
+<span class="sd">            </span>
+<span class="sd">            Note though</span>
+<span class="sd">            that it does make a difference whether the calculator knows the</span>
+<span class="sd">            charge relaxation or not: If the :class:`~pysic.Pysic` has a connection</span>
+<span class="sd">            to the :class:`~pysic.ChargeRelaxation`, every time force or energy calculations</span>
+<span class="sd">            are requested the charges are first relaxed by automatically invoking</span>
+<span class="sd">            :meth:`~pysic.ChargeRelaxation.charge_relaxation`. If there is no link,</span>
+<span class="sd">            it is up to the user to start the relaxation.</span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            calculator: :class:`~pysic.Pysic` object</span>
+<span class="sd">                a Pysic calculator</span>
+<span class="sd">            reciprocal: logical</span>
+<span class="sd">                if True, also the :class:`~pysic.ChargeRelaxation` is passed to the</span>
+<span class="sd">                :class:`~pysic.Pysic` through :meth:`~pysic.Pysic.set_charge_relaxation`.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        
+        <span class="c"># remove possible return link from the calculator</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span> <span class="o">!=</span> <span class="n">calculator</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">set_charge_relaxation</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span> <span class="o">=</span> <span class="n">calculator</span>
+        <span class="k">if</span> <span class="n">reciprocal</span><span class="p">:</span>
+            <span class="n">calculator</span><span class="o">.</span><span class="n">set_charge_relaxation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+
+    </div>
+<div class="viewcode-block" id="ChargeRelaxation.set_relaxation"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation.set_relaxation">[docs]</a>    <span class="k">def</span> <span class="nf">set_relaxation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">relaxation</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the relaxation method.</span>
+<span class="sd">            </span>
+<span class="sd">            The method also creates a dictionary of parameters initialized to 0.0</span>
+<span class="sd">            by invoking :meth:`~pysic.ChargeRelaxation.initialize_parameters`.</span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            relaxation: string</span>
+<span class="sd">                a keyword specifying the mode of charge relaxation</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">ChargeRelaxation</span><span class="o">.</span><span class="n">relaxation_modes</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">relaxation</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">relaxation</span> <span class="o">=</span> <span class="n">relaxation</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize_parameters</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidRelaxationError</span><span class="p">(</span><span class="s">&quot;no such relaxation mode &quot;</span><span class="o">+</span><span class="n">relaxation</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="ChargeRelaxation.initialize_parameters"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation.initialize_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a dictionary of parameters and initializes all values to 0.0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">CoulombSummation</span><span class="o">.</span><span class="n">summation_parameters</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">relaxation</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+</div>
+<div class="viewcode-block" id="ChargeRelaxation.set_parameters"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation.set_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the numeric values for all parameters.</span>
+<span class="sd">            </span>
+<span class="sd">            Equivalent to :meth:`~pysic.ChargeRelaxation.set_parameter_values`</span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            parameters: list of doubles</span>
+<span class="sd">                list of values to be assigned to parameters</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_parameter_values</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="ChargeRelaxation.set_parameter_values"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation.set_parameter_values">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameter_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the numeric values for all parameters.                    </span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">                    </span>
+<span class="sd">            parameters: list of doubles</span>
+<span class="sd">                list of values to be assigned to parameters</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">parameters</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize_parameters</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidRelaxationError</span><span class="p">(</span><span class="s">&quot;The relaxation mode &quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">relaxation</span><span class="o">+</span><span class="s">&quot; requires &quot;</span><span class="o">+</span>
+                                         <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; parameters.&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get_keys</span><span class="p">(),</span> <span class="n">parameters</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">parameters</span>
+
+</div>
+<div class="viewcode-block" id="ChargeRelaxation.set_parameter_value"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation.set_parameter_value">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameter_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter_name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets a given parameter to the desired value.</span>
+<span class="sd">                    </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">                        </span>
+<span class="sd">            parameter_name: string</span>
+<span class="sd">                name of the parameter</span>
+<span class="sd">            value: double</span>
+<span class="sd">                the new value of the parameter</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">parameter_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+    </div>
+<div class="viewcode-block" id="ChargeRelaxation.get_calculator"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation.get_calculator">[docs]</a>    <span class="k">def</span> <span class="nf">get_calculator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the :class:`~pysic.Pysic` calculator assigned to this :class:`~pysic.ChargeRelaxation`.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span>
+    </div>
+<div class="viewcode-block" id="ChargeRelaxation.get_relaxation"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation.get_relaxation">[docs]</a>    <span class="k">def</span> <span class="nf">get_relaxation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the keyword specifying the mode of relaxation.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">relaxation</span>
+    </div>
+<div class="viewcode-block" id="ChargeRelaxation.get_parameters"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation.get_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list containing the numeric values of the parameters.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+        
+    </div>
+<div class="viewcode-block" id="ChargeRelaxation.set_atoms"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation.set_atoms">[docs]</a>    <span class="k">def</span> <span class="nf">set_atoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">pass_to_calculator</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Lets the relaxation algorithm know the atomic structure to be updated.</span>
+<span class="sd">            </span>
+<span class="sd">            The relaxation algorithm always works with the structure stored in the</span>
+<span class="sd">            :class:`~pysic.Pysic` calculator it knows. If ``pass_to_calculator = True``,</span>
+<span class="sd">            this method also updates the structure known by the calculator. However,</span>
+<span class="sd">            this is not the main purpose of letting the :class:`~pysic.ChargeRelaxation`</span>
+<span class="sd">            know the structure -</span>
+<span class="sd">            it is not even necessary that the structure known by the relaxation algorithm</span>
+<span class="sd">            is the same as that known by the calculator.</span>
+<span class="sd">            </span>
+<span class="sd">            The structure given to the algorithm is the structure whose charges it </span>
+<span class="sd">            automatically updates after relaxing the charges in</span>
+<span class="sd">            :meth:`~pysic.ChargeRelaxation.charge_relaxation`. In other words, if no</span>
+<span class="sd">            structure is given, the relaxation will update the charges in the strucure</span>
+<span class="sd">            known by :class:`~pysic.Pysic`, but this is always just a copy and so the</span>
+<span class="sd">            original structure is left untouched.</span>
+<span class="sd">            </span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            atoms: `ASE Atoms`_ object</span>
+<span class="sd">                The system whose charges are to be relaxed. </span>
+<span class="sd">                Note! The relaxation is always done using the atoms copy in </span>
+<span class="sd">                :class:`~pysic.Pysic`, but if the original structure needs to be</span>
+<span class="sd">                updated as well, the relaxation algorithm must have access to it.</span>
+<span class="sd">            pass_to_calculator: logical</span>
+<span class="sd">                if True, the atoms are also set for the calculator via </span>
+<span class="sd">                :meth:`~pysic.Pysic.set_atoms`</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span> <span class="o">=</span> <span class="n">atoms</span>
+        <span class="k">if</span> <span class="n">pass_to_calculator</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="ChargeRelaxation.get_atoms"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation.get_atoms">[docs]</a>    <span class="k">def</span> <span class="nf">get_atoms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the atoms object known by the algorithm.</span>
+<span class="sd">            </span>
+<span class="sd">        This is the `ASE Atoms`_ which will be automatically updated when</span>
+<span class="sd">        charge relaxation is invoked.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span>
+    
+    <span class="c"># ToDo: save charge velocities</span>
+    <span class="c"># ToDo: compare performance to pure Fortran dynamics</span></div>
+<div class="viewcode-block" id="ChargeRelaxation.charge_relaxation"><a class="viewcode-back" href="../../../chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation.charge_relaxation">[docs]</a>    <span class="k">def</span> <span class="nf">charge_relaxation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Performs the charge relaxation.</span>
+
+<span class="sd">            The relaxation is always performed on the system associated with</span>
+<span class="sd">            the :class:`~pysic.Pysic` calculator joint with this :class:`~pysic.ChargeRelaxation`.</span>
+<span class="sd">            The calculated equilibrium charges are returned as a numeric array.</span>
+<span class="sd">            </span>
+<span class="sd">            If an `ASE Atoms`_ structure is known by the </span>
+<span class="sd">            :class:`~pysic.ChargeRelaxation` </span>
+<span class="sd">            (given through :meth:`~pysic.ChargeRelaxation.set_atoms`), the charges of</span>
+<span class="sd">            the structure are updated according to the calculation result.</span>
+<span class="sd">            If the structure is not known, the charges are updated in the</span>
+<span class="sd">            structure stored in the :class:`~pysic.Pysic` calculator, but not in any other</span>
+<span class="sd">            object. Since :class:`~pysic.Pysic` only stores a copy of the structure it </span>
+<span class="sd">            is given, the original `ASE Atoms`_ object will not be updated.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        
+        <span class="n">atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">get_atoms</span><span class="p">()</span>
+        <span class="n">charges</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_charges</span><span class="p">()</span> <span class="c"># starting charges</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">relaxation</span> <span class="o">==</span> <span class="n">ChargeRelaxation</span><span class="o">.</span><span class="n">relaxation_modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="c"># damped dynamic relaxation</span>
+            <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;timestep&#39;</span><span class="p">]</span>
+            <span class="n">dt2</span> <span class="o">=</span> <span class="n">dt</span><span class="o">*</span><span class="n">dt</span>
+            <span class="n">mq</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;inertia&#39;</span><span class="p">]</span>
+            <span class="n">inv_mq</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">mq</span>
+            <span class="n">n_steps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;n_steps&#39;</span><span class="p">]</span>
+            <span class="n">tolerance</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;tolerance&#39;</span><span class="p">]</span>
+            <span class="n">friction</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;friction&#39;</span><span class="p">]</span>
+            <span class="n">future_friction</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">friction</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span>
+
+            <span class="n">error</span> <span class="o">=</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">tolerance</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">charge_rates</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span><span class="o">*</span><span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="p">)</span> <span class="c"># starting &quot;velocities&quot; \dot{q}</span>
+            <span class="n">charge_forces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">get_electronegativity_differences</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+            
+            <span class="k">while</span> <span class="p">(</span><span class="n">error</span> <span class="o">&gt;</span> <span class="n">tolerance</span> <span class="ow">and</span> <span class="n">step</span> <span class="o">&lt;</span> <span class="n">n_steps</span><span class="p">):</span>
+                <span class="n">charges</span> <span class="o">+=</span> <span class="n">charge_rates</span> <span class="o">*</span> <span class="n">dt</span> <span class="o">+</span> \
+                           <span class="p">(</span><span class="n">charge_forces</span> <span class="o">-</span> <span class="n">friction</span> <span class="o">*</span> <span class="n">charge_rates</span><span class="p">)</span> <span class="o">*</span> <span class="n">inv_mq</span> <span class="o">*</span> <span class="n">dt2</span>
+                <span class="n">charge_rates</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">friction</span> <span class="o">*</span> <span class="n">dt</span><span class="p">)</span> <span class="o">*</span> <span class="n">charge_rates</span> <span class="o">+</span> \
+                            <span class="n">charge_forces</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">inv_mq</span> <span class="o">*</span> <span class="n">dt</span>
+
+                <span class="n">atoms</span><span class="o">.</span><span class="n">set_charges</span><span class="p">(</span><span class="n">charges</span><span class="p">)</span>
+                <span class="n">charge_forces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">get_electronegativity_differences</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+            
+                <span class="n">charge_rates</span> <span class="o">=</span> <span class="n">future_friction</span> <span class="o">*</span> \
+                            <span class="p">(</span> <span class="n">charge_rates</span> <span class="o">+</span> <span class="n">charge_forces</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">inv_mq</span> <span class="o">*</span> <span class="n">dt</span> <span class="p">)</span>
+
+                <span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">error</span> <span class="o">=</span> <span class="n">charge_forces</span><span class="o">.</span><span class="n">max</span><span class="p">()</span>
+    
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atoms</span><span class="o">.</span><span class="n">set_charges</span><span class="p">(</span><span class="n">charges</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">charges</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

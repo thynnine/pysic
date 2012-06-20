@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Examples &mdash; Pysic 0.4.3 documentation</title>
+    <title>Examples &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="next" title="Structure and syntax of Pysic" href="syntax.html" />
     <link rel="prev" title="Running Pysic" href="running.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="running.html" title="Running Pysic"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -188,7 +188,7 @@ potential</p>
 <p>In the code above, <tt class="docutils literal"><span class="pre">system</span></tt> is an <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/">ASE Atoms</a> object containing the structure of the system to be calculated -
 two He atoms in this case. The object <tt class="docutils literal"><span class="pre">calc</span></tt> is an instance of <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html">ASE calculator</a> class
 defined by Pysic. The interactions governing the system are defined by the <tt class="docutils literal"><span class="pre">physics</span></tt> object, which is an instance of the
-<a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> class of Pysic.</p>
+<a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> class of Pysic.</p>
 <p>Now, the potential energy of the system and the forces acting on the atoms can be calculated with:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">system</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
 <span class="go">-0.022274132189576905</span>
@@ -337,7 +337,7 @@ In a similar fashion we can collect whatever information we need:</p>
         <li class="right" >
           <a href="running.html" title="Running Pysic"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

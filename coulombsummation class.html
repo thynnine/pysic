@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>CoulombSummation class &mdash; Pysic 0.4.3 documentation</title>
+    <title>CoulombSummation class &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,10 +26,10 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="up" title="Pysic module" href="pysic.html" />
     <link rel="next" title="Coordinator class" href="coordinator class.html" />
-    <link rel="prev" title="Potential class" href="potential class.html" /> 
+    <link rel="prev" title="ProductPotential class" href="productpotential class.html" /> 
   </head>
   <body>
     <div class="related">
@@ -45,9 +45,9 @@
           <a href="coordinator class.html" title="Coordinator class"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="potential class.html" title="Potential class"
+          <a href="productpotential class.html" title="ProductPotential class"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
       </ul>
     </div>
@@ -72,8 +72,8 @@
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="potential class.html"
-                        title="previous chapter">Potential class</a></p>
+  <p class="topless"><a href="productpotential class.html"
+                        title="previous chapter">ProductPotential class</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="coordinator class.html"
                         title="next chapter">Coordinator class</a></p>
@@ -103,15 +103,15 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="coulombsummation-class"></span><div class="section" id="coulombsummation-class-description">
-<span id="id1"></span><h1>CoulombSummation class<a class="headerlink" href="#coulombsummation-class-description" title="Permalink to this headline">¶</a></h1>
+  <span class="target" id="coulombsummation-class"></span><span class="target" id="module-pysic.interactions.coulomb"><span id="coulombsummation-class-description"></span></span><div class="section" id="id1">
+<h1>CoulombSummation class<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
 <p>If a periodic system contains charges interacting via the <span class="math">\(\frac{1}{r}\)</span> Coulomb potential, direct summation of the interactions</p>
 <blockquote>
 <div><div class="math" id="equation-direct_sum">
 <span class="eqno">(1)</span>\[E = \sum_{(i,j)} \frac{1}{4\pi\epsilon_0}\frac{q_i q_j}{r_{ij}},\]</div>
 </div></blockquote>
 <p>where the sum is over pairs of charges <span class="math">\(q_i, q_j\)</span> (charges of the entire system, not just the simulation cell) and the distance between the charges is <span class="math">\(r_{ij} = |\mathbf{r}_j - \mathbf{r}_i|\)</span>, does not work in general because the sum <a href="#equation-direct_sum">(1)</a> converges very slowly (it actually converges only conditionally). Therefore truncating the sum may lead to severe errors. More advanced techniques must be used in order to accurately evaluate such sums.</p>
-<p>This class represents the algorithms used for evaluating the <span class="math">\(1/r\)</span> sums. It wraps the summation parameters and activates the summation of Coulomb interactions. If an instance of <a class="reference internal" href="#pysic.CoulombSummation" title="pysic.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a> is given to the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator, Coulomb interactions between all charged atoms are automatically included in the calculations, regardless of possible <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> potentials the calculator may also contain. Otherwise the charges do not directly interact. This is due to two reasons: First, the direct Coulomb interaction is usually always required and it is convenient that it is easily enabled. Second, the specific potentials described by <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> are evaluated by direct summation and so the Coulomb summation is separate also on algorithm level in the core.</p>
+<p>This class represents the algorithms used for evaluating the <span class="math">\(1/r\)</span> sums. It wraps the summation parameters and activates the summation of Coulomb interactions. If an instance of <a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation" title="pysic.interactions.coulomb.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a> is given to the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator, Coulomb interactions between all charged atoms are automatically included in the calculations, regardless of possible <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> potentials the calculator may also contain. Otherwise the charges do not directly interact. This is due to two reasons: First, the direct Coulomb interaction is usually always required and it is convenient that it is easily enabled. Second, the specific potentials described by <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> are evaluated by direct summation and so the Coulomb summation is separate also on algorithm level in the core.</p>
 <div class="section" id="list-of-currently-available-summation-algorithms">
 <span id="list-of-summation-modes"></span><h2>List of currently available summation algorithms<a class="headerlink" href="#list-of-currently-available-summation-algorithms" title="Permalink to this headline">¶</a></h2>
 <p>Below is a list of summation algorithms currently implemented.</p>
@@ -172,42 +172,42 @@ The long range forces are obtained by differentiating the structure factor</p>
 </div>
 <div class="section" id="list-of-methods">
 <span id="coulombsummation-class-autogenerated"></span><h2>List of methods<a class="headerlink" href="#list-of-methods" title="Permalink to this headline">¶</a></h2>
-<p>Below is a list of methods in <a class="reference internal" href="#pysic.CoulombSummation" title="pysic.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a>, grouped according to
+<p>Below is a list of methods in <a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation" title="pysic.interactions.coulomb.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a>, grouped according to
 the type of functionality.</p>
 <div class="section" id="initialization">
 <h3>Initialization<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.CoulombSummation.initialize_parameters" title="pysic.CoulombSummation.initialize_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">initialize_parameters()</span></tt></a> (meant for internal use)</li>
-<li><a class="reference internal" href="#pysic.CoulombSummation.get_summation" title="pysic.CoulombSummation.get_summation"><tt class="xref py py-meth docutils literal"><span class="pre">get_summation()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.CoulombSummation.set_summation" title="pysic.CoulombSummation.set_summation"><tt class="xref py py-meth docutils literal"><span class="pre">set_summation()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.CoulombSummation.summation_modes" title="pysic.CoulombSummation.summation_modes"><tt class="xref py py-data docutils literal"><span class="pre">summation_modes</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.CoulombSummation.summation_parameter_descriptions" title="pysic.CoulombSummation.summation_parameter_descriptions"><tt class="xref py py-data docutils literal"><span class="pre">summation_parameter_descriptions</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.CoulombSummation.summation_parameters" title="pysic.CoulombSummation.summation_parameters"><tt class="xref py py-data docutils literal"><span class="pre">summation_parameters</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.initialize_parameters" title="pysic.interactions.coulomb.CoulombSummation.initialize_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">initialize_parameters()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.get_summation" title="pysic.interactions.coulomb.CoulombSummation.get_summation"><tt class="xref py py-meth docutils literal"><span class="pre">get_summation()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.set_summation" title="pysic.interactions.coulomb.CoulombSummation.set_summation"><tt class="xref py py-meth docutils literal"><span class="pre">set_summation()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.summation_modes" title="pysic.interactions.coulomb.CoulombSummation.summation_modes"><tt class="xref py py-data docutils literal"><span class="pre">summation_modes</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.summation_parameter_descriptions" title="pysic.interactions.coulomb.CoulombSummation.summation_parameter_descriptions"><tt class="xref py py-data docutils literal"><span class="pre">summation_parameter_descriptions</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.summation_parameters" title="pysic.interactions.coulomb.CoulombSummation.summation_parameters"><tt class="xref py py-data docutils literal"><span class="pre">summation_parameters</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="parameter-handling">
 <h3>Parameter handling<a class="headerlink" href="#parameter-handling" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.CoulombSummation.get_parameters" title="pysic.CoulombSummation.get_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameters()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.CoulombSummation.set_parameter_value" title="pysic.CoulombSummation.set_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_value()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.CoulombSummation.set_parameter_values" title="pysic.CoulombSummation.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.CoulombSummation.set_parameters" title="pysic.CoulombSummation.set_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.get_parameters" title="pysic.interactions.coulomb.CoulombSummation.get_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.set_parameter_value" title="pysic.interactions.coulomb.CoulombSummation.set_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_value()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.set_parameter_values" title="pysic.interactions.coulomb.CoulombSummation.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.set_parameters" title="pysic.interactions.coulomb.CoulombSummation.set_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameters()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="miscellaneous">
 <h3>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.CoulombSummation.get_realspace_cutoff" title="pysic.CoulombSummation.get_realspace_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">get_realspace_cutoff()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.CoulombSummation.get_scaling_factors" title="pysic.CoulombSummation.get_scaling_factors"><tt class="xref py py-meth docutils literal"><span class="pre">get_scaling_factors()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.CoulombSummation.set_scaling_factors" title="pysic.CoulombSummation.set_scaling_factors"><tt class="xref py py-meth docutils literal"><span class="pre">set_scaling_factors()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.get_realspace_cutoff" title="pysic.interactions.coulomb.CoulombSummation.get_realspace_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">get_realspace_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.get_scaling_factors" title="pysic.interactions.coulomb.CoulombSummation.get_scaling_factors"><tt class="xref py py-meth docutils literal"><span class="pre">get_scaling_factors()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.set_scaling_factors" title="pysic.interactions.coulomb.CoulombSummation.set_scaling_factors"><tt class="xref py py-meth docutils literal"><span class="pre">set_scaling_factors()</span></tt></a></li>
 </ul>
 </div>
 </div>
 <div class="section" id="full-documentation-of-the-coulombsummation-class">
 <h2>Full documentation of the CoulombSummation class<a class="headerlink" href="#full-documentation-of-the-coulombsummation-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="pysic.CoulombSummation">
-<em class="property">class </em><tt class="descclassname">pysic.</tt><tt class="descname">CoulombSummation</tt><big>(</big><em>method='ewald'</em>, <em>parameters=None</em>, <em>scaler=None</em><big>)</big><a class="headerlink" href="#pysic.CoulombSummation" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation">
+<em class="property">class </em><tt class="descclassname">pysic.interactions.coulomb.</tt><tt class="descname">CoulombSummation</tt><big>(</big><em>method='ewald'</em>, <em>parameters=None</em>, <em>scaler=None</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/coulomb.html#CoulombSummation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for representing a collection of parameters for evaluating Coulomb potentials.</p>
 <p>Summing <span class="math">\(1/r\)</span> potentials in periodic systems requires more 
 advanced techniques than just direct summation of pair interactions.
@@ -215,7 +215,7 @@ The starndard method for evaluating these kinds of potentials is through
 Ewald summation, where the long range part of the potential is evaluated
 in reciprocal space.</p>
 <p>Instances of this class are used for wrapping the parameters controlling
-the summations. Passing such an instance to the <tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt>
+the summations. Passing such an instance to the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>
 calculator activates the evaluation of Coulomb interactions.</p>
 <p>Currently, only Ewald summation is available as a calculation method.</p>
 <p>Parameters:</p>
@@ -228,38 +228,38 @@ calculator activates the evaluation of Coulomb interactions.</p>
 <dd>numeric values for scaling the atomic charges in summation</dd>
 </dl>
 <dl class="method">
-<dt id="pysic.CoulombSummation.get_parameters">
-<tt class="descname">get_parameters</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.CoulombSummation.get_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.get_parameters">
+<tt class="descname">get_parameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/coulomb.html#CoulombSummation.get_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.get_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list containing the numeric values of the parameters.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.CoulombSummation.get_realspace_cutoff">
-<tt class="descname">get_realspace_cutoff</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.CoulombSummation.get_realspace_cutoff" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.get_realspace_cutoff">
+<tt class="descname">get_realspace_cutoff</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/coulomb.html#CoulombSummation.get_realspace_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.get_realspace_cutoff" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the real space cutoff.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.CoulombSummation.get_scaling_factors">
-<tt class="descname">get_scaling_factors</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.CoulombSummation.get_scaling_factors" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.get_scaling_factors">
+<tt class="descname">get_scaling_factors</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/coulomb.html#CoulombSummation.get_scaling_factors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.get_scaling_factors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the list of scaling parameters for atomic charges.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.CoulombSummation.get_summation">
-<tt class="descname">get_summation</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.CoulombSummation.get_summation" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.get_summation">
+<tt class="descname">get_summation</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/coulomb.html#CoulombSummation.get_summation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.get_summation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the mode of summation.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.CoulombSummation.initialize_parameters">
-<tt class="descname">initialize_parameters</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.CoulombSummation.initialize_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.initialize_parameters">
+<tt class="descname">initialize_parameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/coulomb.html#CoulombSummation.initialize_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.initialize_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a dictionary of parameters and initializes all values to 0.0.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.CoulombSummation.set_parameter_value">
-<tt class="descname">set_parameter_value</tt><big>(</big><em>parameter_name</em>, <em>value</em><big>)</big><a class="headerlink" href="#pysic.CoulombSummation.set_parameter_value" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.set_parameter_value">
+<tt class="descname">set_parameter_value</tt><big>(</big><em>parameter_name</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/coulomb.html#CoulombSummation.set_parameter_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.set_parameter_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets a given parameter to the desired value.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -271,8 +271,8 @@ calculator activates the evaluation of Coulomb interactions.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.CoulombSummation.set_parameter_values">
-<tt class="descname">set_parameter_values</tt><big>(</big><em>parameters</em><big>)</big><a class="headerlink" href="#pysic.CoulombSummation.set_parameter_values" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.set_parameter_values">
+<tt class="descname">set_parameter_values</tt><big>(</big><em>parameters</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/coulomb.html#CoulombSummation.set_parameter_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.set_parameter_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the numeric values for all parameters.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -282,10 +282,10 @@ calculator activates the evaluation of Coulomb interactions.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.CoulombSummation.set_parameters">
-<tt class="descname">set_parameters</tt><big>(</big><em>parameters</em><big>)</big><a class="headerlink" href="#pysic.CoulombSummation.set_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.set_parameters">
+<tt class="descname">set_parameters</tt><big>(</big><em>parameters</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/coulomb.html#CoulombSummation.set_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.set_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the numeric values for all parameters.</p>
-<p>Equivalent to <a class="reference internal" href="#pysic.CoulombSummation.set_parameter_values" title="pysic.CoulombSummation.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a></p>
+<p>Equivalent to <tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>parameters: list of doubles</dt>
@@ -294,8 +294,8 @@ calculator activates the evaluation of Coulomb interactions.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.CoulombSummation.set_scaling_factors">
-<tt class="descname">set_scaling_factors</tt><big>(</big><em>scaler</em><big>)</big><a class="headerlink" href="#pysic.CoulombSummation.set_scaling_factors" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.set_scaling_factors">
+<tt class="descname">set_scaling_factors</tt><big>(</big><em>scaler</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/coulomb.html#CoulombSummation.set_scaling_factors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.set_scaling_factors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the list of scaling parameters for atomic charges.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -305,11 +305,11 @@ calculator activates the evaluation of Coulomb interactions.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.CoulombSummation.set_summation">
-<tt class="descname">set_summation</tt><big>(</big><em>method</em><big>)</big><a class="headerlink" href="#pysic.CoulombSummation.set_summation" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.set_summation">
+<tt class="descname">set_summation</tt><big>(</big><em>method</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/coulomb.html#CoulombSummation.set_summation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.set_summation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the summation method.</p>
 <p>The method also creates a dictionary of parameters initialized to 0.0
-by invoking <a class="reference internal" href="#pysic.CoulombSummation.initialize_parameters" title="pysic.CoulombSummation.initialize_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">initialize_parameters()</span></tt></a>.</p>
+by invoking <a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation.initialize_parameters" title="pysic.interactions.coulomb.CoulombSummation.initialize_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">initialize_parameters()</span></tt></a>.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>method: string</dt>
@@ -318,20 +318,20 @@ by invoking <a class="reference internal" href="#pysic.CoulombSummation.initiali
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pysic.CoulombSummation.summation_modes">
-<tt class="descname">summation_modes</tt><em class="property"> = ['ewald']</em><a class="headerlink" href="#pysic.CoulombSummation.summation_modes" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.summation_modes">
+<tt class="descname">summation_modes</tt><em class="property"> = ['ewald']</em><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.summation_modes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Names of the summation methods. These are keywords used for setting up the summation algorithms.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pysic.CoulombSummation.summation_parameter_descriptions">
-<tt class="descname">summation_parameter_descriptions</tt><em class="property"> = {'ewald': ['real space cutoff radius', 'reciprocal space cutoff radius', 'ewald summation split parameter', 'vacuum permittivity']}</em><a class="headerlink" href="#pysic.CoulombSummation.summation_parameter_descriptions" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.summation_parameter_descriptions">
+<tt class="descname">summation_parameter_descriptions</tt><em class="property"> = {'ewald': ['real space cutoff radius', 'reciprocal space cutoff radius', 'ewald summation split parameter', 'vacuum permittivity']}</em><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.summation_parameter_descriptions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Short descriptions of the parameters of the summation algorithm.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pysic.CoulombSummation.summation_parameters">
-<tt class="descname">summation_parameters</tt><em class="property"> = {'ewald': ['real_cutoff', 'k_cutoff', 'sigma', 'epsilon']}</em><a class="headerlink" href="#pysic.CoulombSummation.summation_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.coulomb.CoulombSummation.summation_parameters">
+<tt class="descname">summation_parameters</tt><em class="property"> = {'ewald': ['real_cutoff', 'k_cutoff', 'sigma', 'epsilon']}</em><a class="headerlink" href="#pysic.interactions.coulomb.CoulombSummation.summation_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Names of the parameters of the summation algorithm.</p>
 </dd></dl>
 
@@ -359,9 +359,9 @@ by invoking <a class="reference internal" href="#pysic.CoulombSummation.initiali
           <a href="coordinator class.html" title="Coordinator class"
              >next</a> |</li>
         <li class="right" >
-          <a href="potential class.html" title="Potential class"
+          <a href="productpotential class.html" title="ProductPotential class"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
       </ul>
     </div>

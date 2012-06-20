@@ -14,14 +14,14 @@
 
 
 
-.. module:: pysic_fortran
-.. module:: pysic_fortran.pysic_interface
+.. module:: pysic.pysic_fortran
+.. module:: pysic.pysic_fortran.pysic_interface
 
 ====================
 Pysic Fortran module
 ====================
 
-Pysic Fortran (:mod:`pysic_fortran`) is the Python interface of the Fortran core generated
+Pysic Fortran (:mod:`pysic.pysic_fortran`) is the Python interface of the Fortran core generated
 using `f2py`_ from PyInterface.F90. This is the only Fortran source file of Pysic 
 that should be wrapped with f2py: the rest of the core needs to be directly 
 compiled with a Fortran compiler to .mod Fortran modules.

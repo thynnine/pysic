@@ -1,0 +1,685 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.interactions.local &mdash; Pysic 0.4.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.4 documentation" href="../../../index.html" />
+    <link rel="up" title="pysic" href="../../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.interactions.local</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+
+<span class="kn">from</span> <span class="nn">pysic.core</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">pysic.utility.error</span> <span class="kn">import</span> <span class="n">InvalidPotentialError</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<div class="viewcode-block" id="ProductPotential"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential">[docs]</a><span class="k">class</span> <span class="nc">ProductPotential</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class representing an interaction obtained by multiplying several :class:`~pysic.interactions.local.Potential` objects.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">potentials</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_targets</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">for</span> <span class="n">pot</span> <span class="ow">in</span> <span class="n">potentials</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">pot</span><span class="p">)</span>
+        
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_targets</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">n_targets</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">potentials</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+    
+    
+<div class="viewcode-block" id="ProductPotential.set_potentials"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.set_potentials">[docs]</a>    <span class="k">def</span> <span class="nf">set_potentials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">potentials</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_targets</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">for</span> <span class="n">pot</span> <span class="ow">in</span> <span class="n">potentials</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">pot</span><span class="p">)</span>
+        
+    </div>
+<div class="viewcode-block" id="ProductPotential.add_potential"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.add_potential">[docs]</a>    <span class="k">def</span> <span class="nf">add_potential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">potential</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_targets</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_targets</span> <span class="o">=</span> <span class="n">potential</span><span class="o">.</span><span class="n">get_number_of_targets</span><span class="p">()</span>
+        
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_targets</span> <span class="o">!=</span> <span class="n">potential</span><span class="o">.</span><span class="n">get_number_of_targets</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span><span class="s">&quot;You may only multiply potentials with the same number of targets.&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">potential</span><span class="p">))</span>
+
+</div>
+<div class="viewcode-block" id="ProductPotential.get_symbols"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.get_symbols">[docs]</a>    <span class="k">def</span> <span class="nf">get_symbols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_symbols</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.get_tags"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.get_tags">[docs]</a>    <span class="k">def</span> <span class="nf">get_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_tags</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.get_indices"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.get_indices">[docs]</a>    <span class="k">def</span> <span class="nf">get_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_indices</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.get_different_symbols"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.get_different_symbols">[docs]</a>    <span class="k">def</span> <span class="nf">get_different_symbols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_different_symbols</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.get_different_tags"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.get_different_tags">[docs]</a>    <span class="k">def</span> <span class="nf">get_different_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_different_tags</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.get_different_indices"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.get_different_indices">[docs]</a>    <span class="k">def</span> <span class="nf">get_different_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_different_indices</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.get_cutoff"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.get_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">get_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_cutoff</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.get_cutoff_margin"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.get_cutoff_margin">[docs]</a>    <span class="k">def</span> <span class="nf">get_cutoff_margin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_cutoff_margin</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.get_soft_cutoff"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.get_soft_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">get_soft_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_soft_cutoff</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.get_number_of_targets"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.get_number_of_targets">[docs]</a>    <span class="k">def</span> <span class="nf">get_number_of_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_targets</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.get_coordinator"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.get_coordinator">[docs]</a>    <span class="k">def</span> <span class="nf">get_coordinator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_coordinator</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.set_coordinator"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.set_coordinator">[docs]</a>    <span class="k">def</span> <span class="nf">set_coordinator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">coordinator</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_coordinator</span><span class="p">(</span><span class="n">coordinator</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.set_symbols"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.set_symbols">[docs]</a>    <span class="k">def</span> <span class="nf">set_symbols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbols</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.set_tags"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.set_tags">[docs]</a>    <span class="k">def</span> <span class="nf">set_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_tags</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.set_indices"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.set_indices">[docs]</a>    <span class="k">def</span> <span class="nf">set_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_indices</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.add_symbols"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.add_symbols">[docs]</a>    <span class="k">def</span> <span class="nf">add_symbols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">symbols</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">add_symbols</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.add_tags"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.add_tags">[docs]</a>    <span class="k">def</span> <span class="nf">add_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tags</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">add_tags</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="ProductPotential.add_indices"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.add_indices">[docs]</a>    <span class="k">def</span> <span class="nf">add_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">add_indices</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.set_cutoff"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.set_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">set_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_cutoff</span><span class="p">(</span><span class="n">cutoff</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="ProductPotential.set_cutoff_margin"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.set_cutoff_margin">[docs]</a>    <span class="k">def</span> <span class="nf">set_cutoff_margin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cutoff_margin</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_cutoff_margin</span><span class="p">(</span><span class="n">cutoff_margin</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.set_soft_cutoff"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.set_soft_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">set_soft_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_soft_cutoff</span><span class="p">(</span><span class="n">cutoff</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.get_potentials"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.get_potentials">[docs]</a>    <span class="k">def</span> <span class="nf">get_potentials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span>
+</div>
+<div class="viewcode-block" id="ProductPotential.is_multiplier"><a class="viewcode-back" href="../../../productpotential class.html#pysic.interactions.local.ProductPotential.is_multiplier">[docs]</a>    <span class="k">def</span> <span class="nf">is_multiplier</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">False</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="bp">True</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+
+</div></div>
+<div class="viewcode-block" id="Potential"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential">[docs]</a><span class="k">class</span> <span class="nc">Potential</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing a potential.</span>
+
+<span class="sd">    Several types of potentials can be defined by specifying the type of the potential</span>
+<span class="sd">    as a keyword. The potentials contain a host of parameters and information on</span>
+<span class="sd">    what types of particles they act on. To view a list of available potentials, use the method</span>
+<span class="sd">    :meth:`~pysic.list_valid_potentials`.</span>
+
+<span class="sd">    A potential may be a pair or many-body potential: here, the bodies a potential</span>
+<span class="sd">    acts on are called targets. Thus specifying the number of targets of a potential also</span>
+<span class="sd">    determines if the potential is a many-body potential.</span>
+<span class="sd">    </span>
+<span class="sd">    A potential may be defined for atom types or specifically for certain atoms. These are</span>
+<span class="sd">    specified by the symbols, tags, and indices. Each of these should be either &#39;None&#39; or</span>
+<span class="sd">    a list of lists of n values where n is the number of targets. For example, if::</span>
+
+<span class="sd">        indices = [[0, 1], [1, 2], [2, 3]]</span>
+
+<span class="sd">    the potential will be applied between atoms 0 and 1, 1 and 2, and 2 and 3.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    symbols: list of string</span>
+<span class="sd">        the chemical symbols (elements) on which the potential acts</span>
+<span class="sd">    tags: integer</span>
+<span class="sd">        atoms with specific tags on which the potential acts</span>
+<span class="sd">    indices: list of integers</span>
+<span class="sd">        atoms with specific indices on which the potential acts</span>
+<span class="sd">    potential_type: string</span>
+<span class="sd">        a keyword specifying the type of the potential</span>
+<span class="sd">    parameters: list of doubles</span>
+<span class="sd">        a list of parameters for characterizing the potential; their meaning depends on the type of potential</span>
+<span class="sd">    cutoff: double</span>
+<span class="sd">        the maximum atomic separation at which the potential is applied</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">potential_type</span><span class="p">,</span><span class="n">symbols</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">tags</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">indices</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">parameters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">cutoff_margin</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">coordinator</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">is_valid_potential</span><span class="p">(</span><span class="n">potential_type</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">potential_type</span> <span class="o">=</span> <span class="n">potential_type</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">cutoff</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span> <span class="o">=</span> <span class="mf">0.0</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">coordinator</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_cutoff_margin</span><span class="p">(</span><span class="n">cutoff_margin</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_targets</span> <span class="o">=</span> <span class="n">number_of_targets</span><span class="p">(</span><span class="n">potential_type</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">names_of_params</span> <span class="o">=</span> <span class="n">names_of_parameters</span><span class="p">(</span><span class="n">potential_type</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_tags</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_indices</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+            <span class="k">if</span><span class="p">(</span><span class="n">parameters</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names_of_params</span><span class="p">)</span><span class="o">*</span><span class="p">[</span><span class="mf">0.0</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+                
+            <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names_of_params</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span>
+                    <span class="s">&#39;The potential &quot;{pot}&quot; requires {num} parameters: {par}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                    <span class="n">pot</span><span class="o">=</span><span class="n">potential_type</span><span class="p">,</span>
+                    <span class="n">num</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">number_of_parameters</span><span class="p">(</span><span class="n">potential_type</span><span class="p">)),</span>
+                    <span class="n">par</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">names_of_parameters</span><span class="p">(</span><span class="n">potential_type</span><span class="p">))</span>
+                    <span class="p">)</span> <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_coordinator</span><span class="p">(</span><span class="n">coordinator</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span><span class="s">&#39;There is no potential called &quot;{pot}&quot;.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pot</span><span class="o">=</span><span class="n">potential_type</span><span class="p">))</span>
+
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">symbols</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">tags</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">indices</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">potential_type</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">potential_type</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">cutoff</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>         
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinator</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">coordinator</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>               
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">(</span><span class="s">&quot;Potential({name},symbols={symbs},&quot;</span><span class="o">+</span> \
+                <span class="s">&quot;tags={tags},indices={inds},parameters={params}&quot;</span><span class="o">+</span> \
+                <span class="s">&quot;,cutoff={cut},cutoff_margin={marg},&quot;</span><span class="o">+</span> \
+                <span class="s">&quot;coordinator={coord})&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">potential_type</span><span class="p">,</span>
+                                               <span class="n">symbs</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">),</span>
+                                               <span class="n">tags</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="p">),</span>
+                                               <span class="n">inds</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">),</span>
+                                               <span class="n">params</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">),</span>
+                                               <span class="n">cut</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">),</span>
+                                               <span class="n">marg</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span><span class="p">),</span>
+                                               <span class="n">coord</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinator</span><span class="p">))</span>
+    
+                                          
+<div class="viewcode-block" id="Potential.get_symbols"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_symbols">[docs]</a>    <span class="k">def</span> <span class="nf">get_symbols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a list of the chemical symbols (elements) on which the potential</span>
+<span class="sd">        acts on.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span>
+</div>
+<div class="viewcode-block" id="Potential.get_tags"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_tags">[docs]</a>    <span class="k">def</span> <span class="nf">get_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the tags on which the potential acts on.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span>
+</div>
+<div class="viewcode-block" id="Potential.get_indices"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_indices">[docs]</a>    <span class="k">def</span> <span class="nf">get_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a list of indices on which the potential acts on. &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span>
+</div>
+<div class="viewcode-block" id="Potential.get_different_symbols"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_different_symbols">[docs]</a>    <span class="k">def</span> <span class="nf">get_different_symbols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list containing each symbol the potential affects once.&quot;&quot;&quot;</span>
+        <span class="n">all_symbols</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">all_symbols</span>
+
+        <span class="k">for</span> <span class="n">symblist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">symb</span> <span class="ow">in</span> <span class="n">symblist</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">all_symbols</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">symb</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">all_symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">symb</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">all_symbols</span>
+</div>
+<div class="viewcode-block" id="Potential.get_different_tags"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_different_tags">[docs]</a>    <span class="k">def</span> <span class="nf">get_different_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list containing each tag the potential affects once.&quot;&quot;&quot;</span>
+        <span class="n">all_tags</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">all_tags</span>
+            
+        <span class="k">for</span> <span class="n">taglist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">taglist</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">all_tags</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">all_tags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tag</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">all_tags</span>
+</div>
+<div class="viewcode-block" id="Potential.get_different_indices"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_different_indices">[docs]</a>    <span class="k">def</span> <span class="nf">get_different_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list containing each index the potential affects once.&quot;&quot;&quot;</span>
+        <span class="n">all_indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">all_indices</span>
+
+        <span class="k">for</span> <span class="n">indicelist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="n">indicelist</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">all_indices</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">index</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">all_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">all_indices</span>
+    </div>
+<div class="viewcode-block" id="Potential.get_parameter_values"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_parameter_values">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameter_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list containing the current parameter values of the potential.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+</div>
+<div class="viewcode-block" id="Potential.get_parameter_names"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_parameter_names">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameter_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of the names of the parameters of the potential.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">names_of_params</span>
+</div>
+<div class="viewcode-block" id="Potential.get_parameter_value"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_parameter_value">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameter_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">param_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the value of the given parameter.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        param_name: string</span>
+<span class="sd">            name of the parameter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">index_of_parameter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potential_type</span><span class="p">,</span><span class="n">param_name</span><span class="p">)]</span>
+</div>
+<div class="viewcode-block" id="Potential.get_potential_type"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_potential_type">[docs]</a>    <span class="k">def</span> <span class="nf">get_potential_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the keyword specifying the type of the potential.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">potential_type</span>
+</div>
+<div class="viewcode-block" id="Potential.get_cutoff"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">get_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the cutoff.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span>
+</div>
+<div class="viewcode-block" id="Potential.get_cutoff_margin"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_cutoff_margin">[docs]</a>    <span class="k">def</span> <span class="nf">get_cutoff_margin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the margin for a smooth cutoff.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span>
+</div>
+<div class="viewcode-block" id="Potential.get_soft_cutoff"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_soft_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">get_soft_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the lower limit for a smooth cutoff.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span>
+</div>
+<div class="viewcode-block" id="Potential.get_number_of_targets"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_number_of_targets">[docs]</a>    <span class="k">def</span> <span class="nf">get_number_of_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the number of targets.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_targets</span>
+</div>
+<div class="viewcode-block" id="Potential.accepts_target_list"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.accepts_target_list">[docs]</a>    <span class="k">def</span> <span class="nf">accepts_target_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">targets</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests whether a list is suitable as a list of targets, i.e., symbols, tags, or indices</span>
+<span class="sd">        and returns True or False accordingly.</span>
+
+<span class="sd">        A list of targets should be of the format::</span>
+
+<span class="sd">            targets = [[a, b], [c, d]]</span>
+
+<span class="sd">        where the length of the sublists must equal the number of targets.</span>
+
+<span class="sd">        It is not tested that the values contained in the list are valid.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        targets: list of strings or integers</span>
+<span class="sd">            a list whose format is checked</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_targets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_number_of_targets</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">a_set</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a_set</span><span class="p">,</span><span class="nb">list</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a_set</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_targets</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="Potential.get_coordinator"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_coordinator">[docs]</a>    <span class="k">def</span> <span class="nf">get_coordinator</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the Coordinator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinator</span>
+</div>
+<div class="viewcode-block" id="Potential.set_coordinator"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.set_coordinator">[docs]</a>    <span class="k">def</span> <span class="nf">set_coordinator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">coordinator</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets a new Coordinator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coordinator</span> <span class="o">=</span> <span class="n">coordinator</span>
+        
+</div>
+<div class="viewcode-block" id="Potential.set_symbols"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.set_symbols">[docs]</a>    <span class="k">def</span> <span class="nf">set_symbols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">symbols</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the list of symbols to equal the given list.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        symbols: list of strings</span>
+<span class="sd">            list of element symbols on which the potential acts</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">symbols</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">(</span><span class="n">symbols</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="n">symbols</span>
+        <span class="k">elif</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">([</span><span class="n">symbols</span><span class="p">])):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">symbols</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span><span class="s">&quot;Invalid number of targets.&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Potential.set_tags"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.set_tags">[docs]</a>    <span class="k">def</span> <span class="nf">set_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">tags</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the list of tags to equal the given list.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        tags: list of integers</span>
+<span class="sd">            list of tags on which the potential acts</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">tags</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">(</span><span class="n">tags</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="n">tags</span>
+        <span class="k">elif</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">([</span><span class="n">tags</span><span class="p">])):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">[</span><span class="n">tags</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span><span class="s">&quot;Invalid number of targets.&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Potential.set_indices"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.set_indices">[docs]</a>    <span class="k">def</span> <span class="nf">set_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">indices</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the list of indices to equal the given list.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        indices: list of integers</span>
+<span class="sd">            list of integers on which the potential acts</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">indices</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">(</span><span class="n">indices</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">=</span> <span class="n">indices</span>
+        <span class="k">elif</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">([</span><span class="n">indices</span><span class="p">])):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span><span class="s">&quot;Invalid number of targets.&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Potential.add_symbols"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.add_symbols">[docs]</a>    <span class="k">def</span> <span class="nf">add_symbols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">symbols</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds the given symbols to the list of symbols.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        symbols: list of strings</span>
+<span class="sd">            list of additional symbols on which the potential acts</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">(</span><span class="n">symbols</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">stuff</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stuff</span><span class="p">)</span>
+        <span class="k">elif</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">([</span><span class="n">symbols</span><span class="p">])):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span><span class="s">&quot;Invalid number of targets.&quot;</span><span class="p">)</span>
+            
+</div>
+<div class="viewcode-block" id="Potential.add_tags"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.add_tags">[docs]</a>    <span class="k">def</span> <span class="nf">add_tags</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">tags</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds the given tags to the list of tags.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        tags: list of integers</span>
+<span class="sd">            list of additional tags on which the potential acts</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">(</span><span class="n">tags</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">stuff</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stuff</span><span class="p">)</span>
+        <span class="k">elif</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">([</span><span class="n">tags</span><span class="p">])):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">tags</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tags</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span><span class="s">&quot;Invalid number of targets.&quot;</span><span class="p">)</span>
+        
+</div>
+<div class="viewcode-block" id="Potential.add_indices"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.add_indices">[docs]</a>    <span class="k">def</span> <span class="nf">add_indices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">indices</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds the given indices to the list of indices.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        indices: list of integers</span>
+<span class="sd">            list of additional indices on which the potential acts</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">(</span><span class="n">indices</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">stuff</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stuff</span><span class="p">)</span>
+        <span class="k">elif</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">([</span><span class="n">indices</span><span class="p">])):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span><span class="s">&quot;Invalid number of targets.&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Potential.set_parameters"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.set_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the numeric values of all parameters.</span>
+
+<span class="sd">        Equivalent to :meth:`~pysic.Potential.set_parameter_values`.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        values: list of doubles</span>
+<span class="sd">            list of values to be assigned to parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_parameter_values</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+
+    </div>
+<div class="viewcode-block" id="Potential.set_parameter_values"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.set_parameter_values">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameter_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">values</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the numeric values of all parameters.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        values: list of doubles</span>
+<span class="sd">            list of values to be assigned to parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)</span> <span class="o">==</span> <span class="n">number_of_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potential_type</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">values</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span><span class="s">&quot;The potential &#39;{pot}&#39; takes {n_par} parameters, not {n_in}.&quot;</span><span class="o">.</span>
+                                        <span class="n">format</span><span class="p">(</span><span class="n">pot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">potential_type</span><span class="p">,</span>
+                                               <span class="n">n_par</span><span class="o">=</span><span class="n">number_of_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potential_type</span><span class="p">),</span>
+                                               <span class="n">n_in</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">values</span><span class="p">)))</span>
+</div>
+<div class="viewcode-block" id="Potential.set_parameter_value"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.set_parameter_value">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameter_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parameter_name</span><span class="p">,</span><span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets a given parameter to the desired value.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        parameter_name: string</span>
+<span class="sd">            name of the parameter</span>
+<span class="sd">        value: double</span>
+<span class="sd">            the new value of the parameter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="n">index_of_parameter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potential_type</span><span class="p">,</span><span class="n">parameter_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span><span class="s">&quot;The potential &#39;{pot}&#39; does not have a parameter &#39;{para}&#39;&quot;</span><span class="o">.</span>
+                                        <span class="n">format</span><span class="p">(</span><span class="n">pot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">potential_type</span><span class="p">,</span><span class="n">para</span><span class="o">=</span><span class="n">parameter_name</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Potential.set_cutoff"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.set_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">set_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoff</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the cutoff to a given value.</span>
+
+<span class="sd">        This method affects the hard cutoff.</span>
+<span class="sd">        For a detailed explanation on how to define a soft cutoff, see :meth:`~pysic.Potential.set_cutoff_margin`.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        cutoff: double</span>
+<span class="sd">            new cutoff for the potential</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">cutoff</span>
+
+</div>
+<div class="viewcode-block" id="Potential.set_cutoff_margin"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.set_cutoff_margin">[docs]</a>    <span class="k">def</span> <span class="nf">set_cutoff_margin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">margin</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the margin for smooth cutoff to a given value.</span>
+
+<span class="sd">        Many potentials decay towards zero in infinity, but in a numeric simulation</span>
+<span class="sd">        they are cut at a finite range as specified by the cutoff radius. If the potential</span>
+<span class="sd">        is not exactly zero at this range, a discontinuity will be introduced.</span>
+<span class="sd">        It is possible to avoid this by including a smoothening factor in the potential</span>
+<span class="sd">        to force a decay to zero in a finite interval.</span>
+
+<span class="sd">        This method defines the decay interval :math:`r_\mathrm{hard}-r_\mathrm{soft}`.</span>
+<span class="sd">        Note that if the soft cutoff value is made smaller than 0 or larger than the</span>
+<span class="sd">        hard cutoff value an :class:`~pysic.InvalidPotentialError` is raised.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        margin: double</span>
+<span class="sd">            The new cutoff margin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">margin</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span><span class="s">&quot;A negative cutoff margin of {marg} was given.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">marg</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">margin</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">margin</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidPotentialError</span><span class="p">(</span><span class="s">&quot;A cutoff margin ({marg}) longer than the hard cutoff ({hard}) was given.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">marg</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">margin</span><span class="p">),</span> <span class="n">hard</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">)))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span> <span class="o">=</span> <span class="n">margin</span>
+
+</div>
+<div class="viewcode-block" id="Potential.set_soft_cutoff"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.set_soft_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">set_soft_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoff</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the soft cutoff to a given value.</span>
+
+<span class="sd">        For a detailed explanation on the meaning of a soft cutoff, see</span>
+<span class="sd">        :meth:`~pysic.Potential.set_cutoff_margin`.</span>
+<span class="sd">        Note that actually the cutoff margin is recorded, so changing the</span>
+<span class="sd">        hard cutoff (see :meth:`~pysic.Potential.set_cutoff`) will also affect the</span>
+<span class="sd">        soft cutoff.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        cutoff: double</span>
+<span class="sd">            The new soft cutoff</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_cutoff_margin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">-</span><span class="n">cutoff</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Potential.get_potentials"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.get_potentials">[docs]</a>    <span class="k">def</span> <span class="nf">get_potentials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="p">]</span>
+    </div>
+<div class="viewcode-block" id="Potential.is_multiplier"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.is_multiplier">[docs]</a>    <span class="k">def</span> <span class="nf">is_multiplier</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">False</span><span class="p">]</span>
+    
+    </div>
+<div class="viewcode-block" id="Potential.describe"><a class="viewcode-back" href="../../../potential class.html#pysic.interactions.local.Potential.describe">[docs]</a>    <span class="k">def</span> <span class="nf">describe</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Prints a short description of the potential using the method :meth:`~pysic.describe_potential`.&quot;&quot;&quot;</span>
+        <span class="n">description_of_potential</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potential_type</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="p">,</span>
+                                 <span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

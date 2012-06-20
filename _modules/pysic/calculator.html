@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pysic.calculator &mdash; Pysic 0.4.3 documentation</title>
+    <title>pysic.calculator &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="../../index.html" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="../../index.html" />
     <link rel="up" title="pysic" href="../pysic.html" /> 
   </head>
   <body>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
       </ul>
@@ -97,7 +97,7 @@
 <span class="n">neighbor_marginal</span> <span class="o">=</span> <span class="mf">0.5</span>
 <span class="sd">&quot;&quot;&quot;Default skin width for the neighbor list&quot;&quot;&quot;</span>
 
-<span class="k">class</span> <span class="nc">FastNeighborList</span><span class="p">(</span><span class="n">nbl</span><span class="o">.</span><span class="n">NeighborList</span><span class="p">):</span>
+<div class="viewcode-block" id="FastNeighborList"><a class="viewcode-back" href="../../fastneighborlist class.html#pysic.calculator.FastNeighborList">[docs]</a><span class="k">class</span> <span class="nc">FastNeighborList</span><span class="p">(</span><span class="n">nbl</span><span class="o">.</span><span class="n">NeighborList</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;ASE has a neighbor list class built in, but its implementation is</span>
 <span class="sd">        currently inefficient, and building of the list is an :math:`O(n^2)`</span>
 <span class="sd">        operation. This neighbor list class overrides the </span>
@@ -120,7 +120,7 @@
                               <span class="n">self_interaction</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
                               <span class="n">bothways</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>    
     
-    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">atoms</span><span class="p">):</span>
+<div class="viewcode-block" id="FastNeighborList.build"><a class="viewcode-back" href="../../fastneighborlist class.html#pysic.calculator.FastNeighborList.build">[docs]</a>    <span class="k">def</span> <span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">atoms</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Builds the neighbor list.</span>
 <span class="sd">            </span>
 <span class="sd">            The routine requires that the given atomic structure matches</span>
@@ -169,7 +169,7 @@
         
 
 
-
+</div></div>
 <div class="viewcode-block" id="Pysic"><a class="viewcode-back" href="../../pysic class.html#pysic.calculator.Pysic">[docs]</a><span class="k">class</span> <span class="nc">Pysic</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;A calculator class providing the necessary methods for interfacing with `ASE`_.</span>
 
@@ -1420,7 +1420,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li>
           <li><a href="../pysic.html" >pysic</a> &raquo;</li> 
       </ul>

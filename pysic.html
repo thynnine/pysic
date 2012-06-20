@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Pysic module &mdash; Pysic 0.4.3 documentation</title>
+    <title>Pysic module &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="next" title="Pysic class" href="pysic class.html" />
     <link rel="prev" title="Structure and syntax of Pysic" href="syntax.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="syntax.html" title="Structure and syntax of Pysic"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -63,7 +63,6 @@
 <li><a class="reference internal" href="#message-parsing-interface">Message Parsing Interface</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#errors-defined-by-the-pysic-module">Errors defined by the pysic module</a></li>
 <li><a class="reference internal" href="#functions-of-the-pysic-module">Functions of the pysic module</a></li>
 </ul>
 </li>
@@ -103,12 +102,9 @@
             
   <div class="section" id="pysic-module">
 <span id="pysic"></span><h1>Pysic module<a class="headerlink" href="#pysic-module" title="Permalink to this headline">¶</a></h1>
-<p id="pysic-description">Pysic is an object based calculator for atomistic many-body interactions. It is controlled via several classes: <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, which defines a calculator
-for the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a> simulation environment <a class="footnote-reference" href="#id2" id="id1">[1]</a>, <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>, which defines
-potentials to be used by <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> for calculating atomic interactions,
-<a class="reference internal" href="coordinator class.html#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> which can be used for modifying potentials with
-bond order factors, and <a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> which are used as a
-container of parameters for the <a class="reference internal" href="coordinator class.html#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a>.</p>
+<p id="pysic-description">Pysic is an object based calculator for atomistic many-body interactions. It is controlled via several classes such as <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, which defines a calculator
+for the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/">ASE</a> simulation environment <a class="footnote-reference" href="#id2" id="id1">[1]</a>, and <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>, which defines
+potentials to be used by for calculating atomic interactions.</p>
 <table class="docutils footnote" frame="void" id="id2" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
@@ -129,6 +125,13 @@ container of parameters for the <a class="reference internal" href="coordinator 
 <li class="toctree-l2"><a class="reference internal" href="potential class.html#list-of-currently-available-potentials">List of currently available potentials</a></li>
 <li class="toctree-l2"><a class="reference internal" href="potential class.html#list-of-methods">List of methods</a></li>
 <li class="toctree-l2"><a class="reference internal" href="potential class.html#full-documentation-of-the-potential-class">Full documentation of the Potential class</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="productpotential class.html">ProductPotential class</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="productpotential class.html#adding-and-multiplying-potentials">Adding and multiplying potentials</a></li>
+<li class="toctree-l2"><a class="reference internal" href="productpotential class.html#parameterization">Parameterization</a></li>
+<li class="toctree-l2"><a class="reference internal" href="productpotential class.html#list-of-methods">List of methods</a></li>
+<li class="toctree-l2"><a class="reference internal" href="productpotential class.html#full-documentation-of-the-productpotential-class">Full documentation of the ProductPotential class</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="coulombsummation class.html">CoulombSummation class</a><ul>
@@ -215,87 +218,6 @@ container of parameters for the <a class="reference internal" href="coordinator 
 </ul>
 </div>
 </div>
-<div class="section" id="errors-defined-by-the-pysic-module">
-<h2>Errors defined by the pysic module<a class="headerlink" href="#errors-defined-by-the-pysic-module" title="Permalink to this headline">¶</a></h2>
-<p>The module defines a group of intrinsic errors to describe situations where
-one tries to use or set up the calculator with errorneous or insufficient
-information.</p>
-<dl class="exception">
-<dt id="pysic.InvalidParametersError">
-<em class="property">exception </em><tt class="descclassname">pysic.</tt><tt class="descname">InvalidParametersError</tt><big>(</big><em>message=''</em>, <em>params=None</em><big>)</big><a class="headerlink" href="#pysic.InvalidParametersError" title="Permalink to this definition">¶</a></dt>
-<dd><p>An error raised when an invalid set of parameters is about to be created.</p>
-<p>Parameters:</p>
-<dl class="docutils">
-<dt>message: string</dt>
-<dd>information describing why the error occurred</dd>
-<dt>params: <a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a></dt>
-<dd>the errorneous parameters</dd>
-</dl>
-</dd></dl>
-
-<dl class="exception">
-<dt id="pysic.InvalidCoordinatorError">
-<em class="property">exception </em><tt class="descclassname">pysic.</tt><tt class="descname">InvalidCoordinatorError</tt><big>(</big><em>message=''</em>, <em>coordinator=None</em><big>)</big><a class="headerlink" href="#pysic.InvalidCoordinatorError" title="Permalink to this definition">¶</a></dt>
-<dd><p>An error raised when an invalid coordination calculator is about to be created or used.</p>
-<p>Parameters:</p>
-<dl class="docutils">
-<dt>message: string</dt>
-<dd>information describing why the error occurred</dd>
-<dt>coordinator: <a class="reference internal" href="coordinator class.html#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a></dt>
-<dd>the errorneous coordinator</dd>
-</dl>
-</dd></dl>
-
-<dl class="exception">
-<dt id="pysic.InvalidPotentialError">
-<em class="property">exception </em><tt class="descclassname">pysic.</tt><tt class="descname">InvalidPotentialError</tt><big>(</big><em>message=''</em>, <em>potential=None</em><big>)</big><a class="headerlink" href="#pysic.InvalidPotentialError" title="Permalink to this definition">¶</a></dt>
-<dd><p>An error raised when an invalid potential is about to be created or used.</p>
-<p>Parameters:</p>
-<dl class="docutils">
-<dt>message: string</dt>
-<dd>information describing why the error occurred</dd>
-<dt>potential: <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a></dt>
-<dd>the errorneous potential</dd>
-</dl>
-</dd></dl>
-
-<dl class="exception">
-<dt id="pysic.MissingAtomsError">
-<em class="property">exception </em><tt class="descclassname">pysic.</tt><tt class="descname">MissingAtomsError</tt><big>(</big><em>message=''</em><big>)</big><a class="headerlink" href="#pysic.MissingAtomsError" title="Permalink to this definition">¶</a></dt>
-<dd><p>An error raised when the core is being updated with per atom information before updating the atoms.</p>
-<p>Parameters:</p>
-<dl class="docutils">
-<dt>message: string</dt>
-<dd>information describing why the error occurred</dd>
-</dl>
-</dd></dl>
-
-<dl class="exception">
-<dt id="pysic.MissingNeighborsError">
-<em class="property">exception </em><tt class="descclassname">pysic.</tt><tt class="descname">MissingNeighborsError</tt><big>(</big><em>message=''</em><big>)</big><a class="headerlink" href="#pysic.MissingNeighborsError" title="Permalink to this definition">¶</a></dt>
-<dd><p>An error raised when a calculation is initiated without initializing the neighbor lists.</p>
-<p>In principle <tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt> should always take care of handling the neighbors automatically.
-This error is an indication that there is loophole in the built-in preparations.</p>
-<p>Parameters:</p>
-<dl class="docutils">
-<dt>message: string</dt>
-<dd>information describing why the error occurred</dd>
-</dl>
-</dd></dl>
-
-<dl class="exception">
-<dt id="pysic.LockedCoreError">
-<em class="property">exception </em><tt class="descclassname">pysic.</tt><tt class="descname">LockedCoreError</tt><big>(</big><em>message=''</em><big>)</big><a class="headerlink" href="#pysic.LockedCoreError" title="Permalink to this definition">¶</a></dt>
-<dd><p>An error raised when a <tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt> tries to access the core which is locked
-by another calculator.</p>
-<p>Parameters:</p>
-<dl class="docutils">
-<dt>message: string</dt>
-<dd>information describing why the error occurred</dd>
-</dl>
-</dd></dl>
-
-</div>
 <div class="section" id="functions-of-the-pysic-module">
 <h2>Functions of the pysic module<a class="headerlink" href="#functions-of-the-pysic-module" title="Permalink to this headline">¶</a></h2>
 <p>The module defines a group of functions to directly access the Fortran core for
@@ -303,7 +225,7 @@ information on available potentials.</p>
 <span class="target" id="module-pysic"></span><dl class="function">
 <dt id="pysic.list_potentials">
 <tt class="descclassname">pysic.</tt><tt class="descname">list_potentials</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.list_potentials" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as <a class="reference internal" href="#pysic.list_valid_potentials" title="pysic.list_valid_potentials"><tt class="xref py py-meth docutils literal"><span class="pre">list_valid_potentials()</span></tt></a></p>
+<dd><p>Same as <tt class="xref py py-meth docutils literal"><span class="pre">list_valid_potentials()</span></tt></p>
 </dd></dl>
 
 <dl class="function">
@@ -318,7 +240,7 @@ updates made in the core source code should get noticed automatically.</p>
 <dl class="function">
 <dt id="pysic.is_potential">
 <tt class="descclassname">pysic.</tt><tt class="descname">is_potential</tt><big>(</big><em>potential_name</em><big>)</big><a class="headerlink" href="#pysic.is_potential" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as <a class="reference internal" href="#pysic.is_valid_potential" title="pysic.is_valid_potential"><tt class="xref py py-meth docutils literal"><span class="pre">is_valid_potential()</span></tt></a></p>
+<dd><p>Same as <tt class="xref py py-meth docutils literal"><span class="pre">is_valid_potential()</span></tt></p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>potential_name: string</dt>
@@ -329,7 +251,7 @@ updates made in the core source code should get noticed automatically.</p>
 <dl class="function">
 <dt id="pysic.is_charge_relaxation">
 <tt class="descclassname">pysic.</tt><tt class="descname">is_charge_relaxation</tt><big>(</big><em>relaxation_name</em><big>)</big><a class="headerlink" href="#pysic.is_charge_relaxation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as <a class="reference internal" href="#pysic.is_valid_charge_relaxation" title="pysic.is_valid_charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">is_valid_charge_relaxation()</span></tt></a></p>
+<dd><p>Same as <tt class="xref py py-meth docutils literal"><span class="pre">is_valid_charge_relaxation()</span></tt></p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>relaxation_name: string</dt>
@@ -362,7 +284,7 @@ updates made in the core source code should get noticed automatically.</p>
 <dl class="function">
 <dt id="pysic.list_bond_order_factors">
 <tt class="descclassname">pysic.</tt><tt class="descname">list_bond_order_factors</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.list_bond_order_factors" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as <a class="reference internal" href="#pysic.list_valid_bond_order_factors" title="pysic.list_valid_bond_order_factors"><tt class="xref py py-meth docutils literal"><span class="pre">list_valid_bond_order_factors()</span></tt></a></p>
+<dd><p>Same as <tt class="xref py py-meth docutils literal"><span class="pre">list_valid_bond_order_factors()</span></tt></p>
 </dd></dl>
 
 <dl class="function">
@@ -377,7 +299,7 @@ updates made in the core source code should get noticed automatically.</p>
 <dl class="function">
 <dt id="pysic.is_bond_order_factor">
 <tt class="descclassname">pysic.</tt><tt class="descname">is_bond_order_factor</tt><big>(</big><em>bond_order_name</em><big>)</big><a class="headerlink" href="#pysic.is_bond_order_factor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Same as <a class="reference internal" href="#pysic.is_valid_bond_order_factor" title="pysic.is_valid_bond_order_factor"><tt class="xref py py-meth docutils literal"><span class="pre">is_valid_bond_order_factor()</span></tt></a></p>
+<dd><p>Same as <tt class="xref py py-meth docutils literal"><span class="pre">is_valid_bond_order_factor()</span></tt></p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>bond_order_name: string</dt>
@@ -538,7 +460,7 @@ initialize MPI upon being imported. This method terminates the MPI.</p>
         <li class="right" >
           <a href="syntax.html" title="Structure and syntax of Pysic"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

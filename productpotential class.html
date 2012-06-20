@@ -1,0 +1,554 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>ProductPotential class &mdash; Pysic 0.4.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
+    <link rel="up" title="Pysic module" href="pysic.html" />
+    <link rel="next" title="CoulombSummation class" href="coulombsummation class.html" />
+    <link rel="prev" title="Potential class" href="potential class.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coulombsummation class.html" title="CoulombSummation class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="potential class.html" title="Potential class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">ProductPotential class</a><ul>
+<li><a class="reference internal" href="#adding-and-multiplying-potentials">Adding and multiplying potentials</a></li>
+<li><a class="reference internal" href="#parameterization">Parameterization</a></li>
+<li><a class="reference internal" href="#list-of-methods">List of methods</a><ul>
+<li><a class="reference internal" href="#interaction-handling">Interaction handling</a></li>
+<li><a class="reference internal" href="#coordinator-handling">Coordinator handling</a></li>
+<li><a class="reference internal" href="#target-handling">Target handling</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#full-documentation-of-the-productpotential-class">Full documentation of the ProductPotential class</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="potential class.html"
+                        title="previous chapter">Potential class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="coulombsummation class.html"
+                        title="next chapter">CoulombSummation class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/productpotential class.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="productpotential-class"></span><div class="section" id="productpotential-class-description">
+<span id="id1"></span><h1>ProductPotential class<a class="headerlink" href="#productpotential-class-description" title="Permalink to this headline">¶</a></h1>
+<p>This class defines an interaction as a product of <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>s.</p>
+<div class="section" id="adding-and-multiplying-potentials">
+<span id="multiplying-potentials"></span><h2>Adding and multiplying potentials<a class="headerlink" href="#adding-and-multiplying-potentials" title="Permalink to this headline">¶</a></h2>
+<p>The ordinary <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> defines a local interaction for <span class="math">\(n\)</span> bodies (<span class="math">\(i,j,\ldots\)</span>),
+so that the total potential energy is</p>
+<div class="math">
+\[V = \sum_{(i,j,\ldots)} v_{i,j,\ldots}.\]</div>
+<p>Defining several such potentials (<span class="math">\(p\)</span>) for the same set of atoms simply adds them together</p>
+<div class="math">
+\[V = \sum_{(i,j,\ldots)} \sum_p  v^p_{i,j,\ldots}.\]</div>
+<p>In code, this could be done for instance this way:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">pot1</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">pot2</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+<span class="n">calc</span><span class="o">.</span><span class="n">set_potentials</span><span class="p">(</span> <span class="p">[</span><span class="n">pot1</span><span class="p">,</span> <span class="n">pot2</span><span class="p">]</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>However, you may also wish to <em>multiply</em> the potentials to obtain</p>
+<div class="math">
+\[V = \sum_{(i,j,\ldots)} \prod_p v^p_{i,j,\ldots}.\]</div>
+<p>This can be done by wrapping the potentials to be multiplied in a <a class="reference internal" href="#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a>:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">pot1</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">pot2</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">prod</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">ProductPotential</span><span class="p">(</span> <span class="p">[</span><span class="n">pot1</span><span class="p">,</span> <span class="n">pot2</span><span class="p">]</span> <span class="p">)</span>
+<span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+<span class="n">calc</span><span class="o">.</span><span class="n">set_potentials</span><span class="p">(</span> <span class="n">prod</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>An immediate benefit of this functionality is the possibility to construct complicated potentials from simple building blocks
+without having to hardcode all the different variants.</p>
+</div>
+<div class="section" id="parameterization">
+<span id="id2"></span><h2>Parameterization<a class="headerlink" href="#parameterization" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a> class has mostly a similar interface as the elemental <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> class.
+However, the object does not store parameters itself. It merely wraps a group of potentials and these
+potentials are used for storing the parameters. More precisesly, the <em>first</em>
+<a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> object in the list contained by the
+<a class="reference internal" href="#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a> defines all the general parameters of the potential.
+We call this the <em>leading potential</em> in the following discussion:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="c"># Here, pot1 is the leading potential</span>
+<span class="n">prod</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">ProductPotential</span><span class="p">(</span> <span class="p">[</span><span class="n">pot1</span><span class="p">,</span> <span class="n">pot2</span><span class="p">,</span> <span class="n">pot3</span><span class="p">]</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>Since the product potential is defined as</p>
+<div class="math">
+\[V = \sum_{(i,j,\ldots)} \prod_p v^p_{i,j,\ldots},\]</div>
+<p>the potentials <span class="math">\(v^p_{i,j,\ldots}\)</span> being multiplied need to be defined for the same group of atoms -
+both the number of atoms and their types must match. Also the cutoffs should be equal, since if one <span class="math">\(v^p = 0\)</span>,
+the whole product is. Because of this, the targets and cutoffs defined by the <em>leading</em> potential
+are used for the entire product.</p>
+<p>In fact, since the cutoff and targets of the potentials forming the product besides
+the leading one are ignored, they need not be defined at all.
+Also possible <a class="reference internal" href="coordinator class.html#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> objects defining bond order factors need to
+be attached to the leading potential in order to have an effect.</p>
+<p>As an example, the following code:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">pot1</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">symbols</span><span class="o">=</span><span class="p">[[</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="s">&#39;O&#39;</span><span class="p">]])</span>
+<span class="n">pot2</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">symbols</span><span class="o">=</span><span class="p">[[</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="s">&#39;H&#39;</span><span class="p">]])</span>
+<span class="n">prod1</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">ProductPotential</span><span class="p">(</span> <span class="p">[</span><span class="n">pot1</span><span class="p">,</span> <span class="n">pot2</span><span class="p">]</span> <span class="p">)</span>
+<span class="n">prod2</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">ProductPotential</span><span class="p">(</span> <span class="p">[</span><span class="n">pot2</span><span class="p">,</span> <span class="n">pot1</span><span class="p">]</span> <span class="p">)</span>
+</pre></div>
+</div>
+<p>defines two products, <tt class="docutils literal"><span class="pre">prod1</span></tt> and <tt class="docutils literal"><span class="pre">prod2</span></tt>, which are both a product of the potentials <tt class="docutils literal"><span class="pre">pot1</span></tt> and <tt class="docutils literal"><span class="pre">pot2</span></tt>.
+However, the former, <tt class="docutils literal"><span class="pre">prod1</span></tt>, targets H-O pairs (<tt class="docutils literal"><span class="pre">pot1</span></tt> is the leading potential) while the latter,
+<tt class="docutils literal"><span class="pre">prod2</span></tt>, affects H-H pairs (<tt class="docutils literal"><span class="pre">pot2</span></tt> is the leading potential).</p>
+<p>Furthermore, the <a class="reference internal" href="#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a> defines methods for handling the general parameters
+similarly to the <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> class, and these methods directly affect the leading potential.
+That is, methods of the type:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">prod</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">ProductPotential</span><span class="p">(</span> <span class="p">[</span><span class="n">pot1</span><span class="p">,</span> <span class="n">pot2</span><span class="p">]</span> <span class="p">)</span>
+<span class="c"># method call on prod</span>
+<span class="n">prod</span><span class="o">.</span><span class="n">set_cutoff</span><span class="p">(</span><span class="mf">8.0</span><span class="p">)</span>
+<span class="c"># is equivalent to a method call on the leading potential in prod</span>
+<span class="n">prod</span><span class="o">.</span><span class="n">get_potentials</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_cutoff</span><span class="p">(</span><span class="mf">8.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>are equivalent.</p>
+<p>To avoid changing the original potentials, the objects are copied when passed to the product.
+However, this also means that you are unable to modify the product by changing the component potentials after having wrapped them:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">prod</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">ProductPotential</span><span class="p">(</span> <span class="p">[</span><span class="n">pot1</span><span class="p">,</span> <span class="n">pot2</span><span class="p">]</span> <span class="p">)</span>
+<span class="c"># method call on prod</span>
+<span class="n">prod</span><span class="o">.</span><span class="n">set_cutoff</span><span class="p">(</span><span class="mf">8.0</span><span class="p">)</span>
+<span class="c"># is not the same as a method call on the original pot1</span>
+<span class="n">pot1</span><span class="o">.</span><span class="n">set_cutoff</span><span class="p">(</span><span class="mf">8.0</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+<span class="n">pot1</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">symbols</span><span class="o">=</span><span class="p">[[</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="s">&#39;O&#39;</span><span class="p">]])</span>   <span class="c"># Define a potential for H-O</span>
+<span class="n">calc</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span> <span class="n">pot1</span> <span class="p">)</span>                         <span class="c"># Add pot1 to the calculator</span>
+<span class="n">pot2</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>                        <span class="c"># Define another potential</span>
+<span class="n">prod</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">ProductPotential</span><span class="p">(</span> <span class="p">[</span><span class="n">pot1</span><span class="p">,</span> <span class="n">pot2</span><span class="p">]</span> <span class="p">)</span>      <span class="c"># Multiply pot1 and pot2 to make prod</span>
+<span class="n">prod</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">(</span> <span class="p">[[</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="s">&#39;H&#39;</span><span class="p">]]</span> <span class="p">)</span>                    <span class="c"># Set prod to target H-H</span>
+<span class="n">calc</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span> <span class="n">prod</span> <span class="p">)</span>                         <span class="c"># Add the prod to the calculator</span>
+</pre></div>
+</div>
+<p>creates two potentials, <tt class="docutils literal"><span class="pre">pot1</span></tt> and <tt class="docutils literal"><span class="pre">prod</span></tt> affecting H-O and H-H pairs.
+Although <tt class="docutils literal"><span class="pre">prod</span></tt> is constructed from <tt class="docutils literal"><span class="pre">pot1</span></tt> and <tt class="docutils literal"><span class="pre">pot2</span></tt>, is actually contains only
+copies of these potentials.
+If <tt class="docutils literal"><span class="pre">prod</span></tt> contained the original potential objects <tt class="docutils literal"><span class="pre">prod.set_symbols(</span> <span class="pre">[['H','H']]</span> <span class="pre">)</span></tt>
+would affect <tt class="docutils literal"><span class="pre">pot1</span></tt>, the leading potential, and change <tt class="docutils literal"><span class="pre">symbols</span></tt>
+in <tt class="docutils literal"><span class="pre">pot1</span></tt> as well having both potentials end up targeting H-H pairs.
+This kind of behaviour could lead to one unintentional changes the properties of other potentials</p>
+<p>On the other hand, this example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+<span class="n">pot1</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">symbols</span><span class="o">=</span><span class="p">[[</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="s">&#39;O&#39;</span><span class="p">]])</span>   <span class="c"># Define a potential for H-O</span>
+<span class="n">calc</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span> <span class="n">pot1</span> <span class="p">)</span>                         <span class="c"># Add pot1 to the calculator</span>
+<span class="n">pot2</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>                        <span class="c"># Define another potential</span>
+<span class="n">prod</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">ProductPotential</span><span class="p">(</span> <span class="p">[</span><span class="n">pot1</span><span class="p">,</span> <span class="n">pot2</span><span class="p">]</span> <span class="p">)</span>      <span class="c"># Multiply pot1 and pot2 to make prod</span>
+<span class="n">pot1</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">(</span> <span class="p">[[</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="s">&#39;H&#39;</span><span class="p">]]</span> <span class="p">)</span>                    <span class="c"># Set pot1 to target H-H</span>
+<span class="n">calc</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span> <span class="n">prod</span> <span class="p">)</span>                         <span class="c"># Add the prod to the calculator</span>
+</pre></div>
+</div>
+<p>Leads to <tt class="docutils literal"><span class="pre">pot1</span></tt> and <tt class="docutils literal"><span class="pre">prod</span></tt> affecting H-H and H-O pairs, respectively. This is because
+<tt class="docutils literal"><span class="pre">pot1.set_symbols(</span> <span class="pre">[['H','H']]</span> <span class="pre">)</span></tt> only changes the original potential, not the copy stored in <tt class="docutils literal"><span class="pre">prod</span></tt>.</p>
+<p>The physical parameters of the potential components are naturally defined separately for each potential.
+Therefore the <a class="reference internal" href="#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a> has no methods for accessing these parameters of its constituents.
+Instead, one has to directly access the <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects themselves:</p>
+<div class="highlight-python"><pre>pot1 = pysic.Potential(...)                            # Define a potential
+pot2 = pysic.Potential(...)                            # Define another potential
+prod = pysic.ProductPotential( [pot1, pot2] )          # Multiply pot1 and pot2 to make prod
+prod.get_potentials()[1].set_parameter_value('a', 1.0) # set parameter a to 1.0
+pot2.set_parameter_value('a' 2.0)                      # set parameter a to 2.0</pre>
+</div>
+<p>Above, the second potential in <tt class="docutils literal"><span class="pre">prod</span></tt> gets the parameter value <tt class="docutils literal"><span class="pre">a</span> <span class="pre">=</span> <span class="pre">1.0</span></tt>.
+The last command changes the parameter value in <tt class="docutils literal"><span class="pre">pot2</span></tt>, but the change does not propagate
+to the copy stored in <tt class="docutils literal"><span class="pre">prod</span></tt>.</p>
+</div>
+<div class="section" id="list-of-methods">
+<span id="productpotential-class-autogenerated"></span><h2>List of methods<a class="headerlink" href="#list-of-methods" title="Permalink to this headline">¶</a></h2>
+<p>Below is a list of methods in <a class="reference internal" href="#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a>, grouped according to
+the type of functionality.</p>
+<div class="section" id="interaction-handling">
+<h3>Interaction handling<a class="headerlink" href="#interaction-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.get_cutoff" title="pysic.interactions.local.ProductPotential.get_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">get_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.get_cutoff_margin" title="pysic.interactions.local.ProductPotential.get_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">get_cutoff_margin()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.get_soft_cutoff" title="pysic.interactions.local.ProductPotential.get_soft_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">get_soft_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.set_cutoff" title="pysic.interactions.local.ProductPotential.set_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.set_cutoff_margin" title="pysic.interactions.local.ProductPotential.set_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff_margin()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.set_soft_cutoff" title="pysic.interactions.local.ProductPotential.set_soft_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_soft_cutoff()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="coordinator-handling">
+<h3>Coordinator handling<a class="headerlink" href="#coordinator-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.get_coordinator" title="pysic.interactions.local.ProductPotential.get_coordinator"><tt class="xref py py-meth docutils literal"><span class="pre">get_coordinator()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.set_coordinator" title="pysic.interactions.local.ProductPotential.set_coordinator"><tt class="xref py py-meth docutils literal"><span class="pre">set_coordinator()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="target-handling">
+<h3>Target handling<a class="headerlink" href="#target-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.accepts_target_list" title="pysic.interactions.local.ProductPotential.accepts_target_list"><tt class="xref py py-meth docutils literal"><span class="pre">accepts_target_list()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.add_indices" title="pysic.interactions.local.ProductPotential.add_indices"><tt class="xref py py-meth docutils literal"><span class="pre">add_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.add_symbols" title="pysic.interactions.local.ProductPotential.add_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">add_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.add_tags" title="pysic.interactions.local.ProductPotential.add_tags"><tt class="xref py py-meth docutils literal"><span class="pre">add_tags()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.get_different_indices" title="pysic.interactions.local.ProductPotential.get_different_indices"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.get_different_symbols" title="pysic.interactions.local.ProductPotential.get_different_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.get_different_tags" title="pysic.interactions.local.ProductPotential.get_different_tags"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_tags()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.get_indices" title="pysic.interactions.local.ProductPotential.get_indices"><tt class="xref py py-meth docutils literal"><span class="pre">get_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.get_number_of_targets" title="pysic.interactions.local.ProductPotential.get_number_of_targets"><tt class="xref py py-meth docutils literal"><span class="pre">get_number_of_targets()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.get_symbols" title="pysic.interactions.local.ProductPotential.get_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">get_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.get_tags" title="pysic.interactions.local.ProductPotential.get_tags"><tt class="xref py py-meth docutils literal"><span class="pre">get_tags()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.set_indices" title="pysic.interactions.local.ProductPotential.set_indices"><tt class="xref py py-meth docutils literal"><span class="pre">set_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.set_symbols" title="pysic.interactions.local.ProductPotential.set_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">set_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.set_tags" title="pysic.interactions.local.ProductPotential.set_tags"><tt class="xref py py-meth docutils literal"><span class="pre">set_tags()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="description">
+<h3>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.is_multiplier" title="pysic.interactions.local.ProductPotential.is_multiplier"><tt class="xref py py-meth docutils literal"><span class="pre">is_multiplier()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.interactions.local.ProductPotential.get_potentials" title="pysic.interactions.local.ProductPotential.get_potentials"><tt class="xref py py-meth docutils literal"><span class="pre">get_potentials()</span></tt></a> (meant for internal use)</li>
+</ul>
+</div>
+</div>
+<div class="section" id="full-documentation-of-the-productpotential-class">
+<h2>Full documentation of the ProductPotential class<a class="headerlink" href="#full-documentation-of-the-productpotential-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pysic.interactions.local.ProductPotential">
+<em class="property">class </em><tt class="descclassname">pysic.interactions.local.</tt><tt class="descname">ProductPotential</tt><big>(</big><em>potentials</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class representing an interaction obtained by multiplying several <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>potentials: a list of <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects</dt>
+<dd>the potentials</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.accepts_target_list">
+<tt class="descname">accepts_target_list</tt><big>(</big><em>targets</em><big>)</big><a class="headerlink" href="#pysic.interactions.local.ProductPotential.accepts_target_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tests whether a list is suitable as a list of targets, i.e., symbols, tags, or indices and returns True or False accordingly.</p>
+<p>A list of targets should be of the format:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">targets</span> <span class="o">=</span> <span class="p">[[</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">],</span> <span class="p">[</span><span class="n">c</span><span class="p">,</span> <span class="n">d</span><span class="p">]]</span>
+</pre></div>
+</div>
+<p>where the length of the sublists must equal the number of targets.</p>
+<p>It is not tested that the values contained in the list are valid.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>targets: list of strings or integers</dt>
+<dd>a list whose format is checked</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.add_indices">
+<tt class="descname">add_indices</tt><big>(</big><em>indices</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.add_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.add_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the given indices to the list of indices.</p>
+<p>Parameters:</p>
+<p>indices: list of integers
+list of additional indices on which the potential acts</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.add_potential">
+<tt class="descname">add_potential</tt><big>(</big><em>potential</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.add_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.add_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a potential in the product.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>potential: a <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> object</dt>
+<dd>the potential to be added</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.add_symbols">
+<tt class="descname">add_symbols</tt><big>(</big><em>symbols</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.add_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.add_symbols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the given symbols to the list of symbols.</p>
+<p>Parameters:</p>
+<p>symbols: list of strings
+list of additional symbols on which the potential acts</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.add_tags">
+<tt class="descname">add_tags</tt><big>(</big><em>tags</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.add_tags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.add_tags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds the given tags to the list of tags.</p>
+<p>Parameters:</p>
+<p>tags: list of integers
+list of additional tags on which the potential acts</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.get_coordinator">
+<tt class="descname">get_coordinator</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.get_coordinator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.get_coordinator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the Coordinator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.get_cutoff">
+<tt class="descname">get_cutoff</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.get_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.get_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the cutoff.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.get_cutoff_margin">
+<tt class="descname">get_cutoff_margin</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.get_cutoff_margin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.get_cutoff_margin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the margin for a smooth cutoff.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.get_different_indices">
+<tt class="descname">get_different_indices</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.get_different_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.get_different_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list containing each index the potential affects once.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.get_different_symbols">
+<tt class="descname">get_different_symbols</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.get_different_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.get_different_symbols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list containing each symbol the potential affects once.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.get_different_tags">
+<tt class="descname">get_different_tags</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.get_different_tags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.get_different_tags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list containing each tag the potential affects once.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.get_indices">
+<tt class="descname">get_indices</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.get_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.get_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of indices on which the potential acts on.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.get_number_of_targets">
+<tt class="descname">get_number_of_targets</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.get_number_of_targets"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.get_number_of_targets" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of targets.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.get_potentials">
+<tt class="descname">get_potentials</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.get_potentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.get_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the potentials stored in the <a class="reference internal" href="#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.get_soft_cutoff">
+<tt class="descname">get_soft_cutoff</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.get_soft_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.get_soft_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the lower limit for a smooth cutoff.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.get_symbols">
+<tt class="descname">get_symbols</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.get_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.get_symbols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of the chemical symbols (elements) on which the potential
+acts on.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.get_tags">
+<tt class="descname">get_tags</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.get_tags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.get_tags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the tags on which the potential acts on.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.is_multiplier">
+<tt class="descname">is_multiplier</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.is_multiplier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.is_multiplier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of logical values specifying if the potentials are multipliers for a product.</p>
+<p>The leading potential is considered not to be a multiplier, while the rest are multipliers.
+Therefore the returned list is [False, True, ..., True], withlength equal to the length of
+potentials in the product.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.set_coordinator">
+<tt class="descname">set_coordinator</tt><big>(</big><em>coordinator</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.set_coordinator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.set_coordinator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets a new Coordinator.</p>
+<p>Parameters:</p>
+<p>coordinator: a <a class="reference internal" href="coordinator class.html#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> object
+the Coordinator</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.set_cutoff">
+<tt class="descname">set_cutoff</tt><big>(</big><em>cutoff</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.set_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.set_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the cutoff to a given value.</p>
+<p>This method affects the hard cutoff.
+For a detailed explanation on how to define a soft cutoff, see <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.set_cutoff_margin" title="pysic.interactions.local.Potential.set_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff_margin()</span></tt></a>.</p>
+<p>Parameters:</p>
+<p>cutoff: double
+new cutoff for the potential</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.set_cutoff_margin">
+<tt class="descname">set_cutoff_margin</tt><big>(</big><em>cutoff_margin</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.set_cutoff_margin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.set_cutoff_margin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the margin for smooth cutoff to a given value.</p>
+<p>Many potentials decay towards zero in infinity, but in a numeric simulation
+they are cut at a finite range as specified by the cutoff radius. If the potential
+is not exactly zero at this range, a discontinuity will be introduced.
+It is possible to avoid this by including a smoothening factor in the potential
+to force a decay to zero in a finite interval.</p>
+<p>This method defines the decay interval <span class="math">\(r_\mathrm{hard}-r_\mathrm{soft}\)</span>.
+Note that if the soft cutoff value is made smaller than 0 or larger than the
+hard cutoff value an <a class="reference internal" href="pysic_utility.html#pysic.utility.error.InvalidPotentialError" title="pysic.utility.error.InvalidPotentialError"><tt class="xref py py-class docutils literal"><span class="pre">InvalidPotentialError</span></tt></a> is raised.</p>
+<p>Parameters:</p>
+<p>margin: double
+The new cutoff margin</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.set_indices">
+<tt class="descname">set_indices</tt><big>(</big><em>indices</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.set_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.set_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the list of indices to equal the given list.</p>
+<p>Parameters:</p>
+<p>indices: list of integers
+list of integers on which the potential acts</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.set_potentials">
+<tt class="descname">set_potentials</tt><big>(</big><em>potentials</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.set_potentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.set_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the list of potentials for the product.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>potentials: a list of <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects</dt>
+<dd>the potentials</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.set_soft_cutoff">
+<tt class="descname">set_soft_cutoff</tt><big>(</big><em>cutoff</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.set_soft_cutoff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.set_soft_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the soft cutoff to a given value.</p>
+<p>For a detailed explanation on the meaning of a soft cutoff, see
+<a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.set_cutoff_margin" title="pysic.interactions.local.Potential.set_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff_margin()</span></tt></a>.
+Note that actually the cutoff margin is recorded, so changing the
+hard cutoff (see <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.set_cutoff" title="pysic.interactions.local.Potential.set_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">set_cutoff()</span></tt></a>) will also affect the
+soft cutoff.</p>
+<p>Parameters:</p>
+<p>cutoff: double
+The new soft cutoff</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.set_symbols">
+<tt class="descname">set_symbols</tt><big>(</big><em>symbols</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.set_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.set_symbols" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the list of symbols to equal the given list.</p>
+<p>Parameters:</p>
+<p>symbols: list of strings
+list of element symbols on which the potential acts</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.ProductPotential.set_tags">
+<tt class="descname">set_tags</tt><big>(</big><em>tags</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.set_tags"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.set_tags" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the list of tags to equal the given list.</p>
+<p>Parameters:</p>
+<p>tags: list of integers
+list of tags on which the potential acts</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="coulombsummation class.html" title="CoulombSummation class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="potential class.html" title="Potential class"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

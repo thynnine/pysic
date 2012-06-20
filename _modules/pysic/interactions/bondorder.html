@@ -1,0 +1,607 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.interactions.bondorder &mdash; Pysic 0.4.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.4 documentation" href="../../../index.html" />
+    <link rel="up" title="pysic" href="../../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.interactions.bondorder</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+
+<span class="kn">from</span> <span class="nn">pysic.core</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">pysic.utility.error</span> <span class="kn">import</span> <span class="n">InvalidParametersError</span><span class="p">,</span> <span class="n">InvalidCoordinatorError</span>
+<span class="kn">import</span> <span class="nn">pysic.pysic_fortran</span> <span class="kn">as</span> <span class="nn">pf</span>
+
+<div class="viewcode-block" id="BondOrderParameters"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters">[docs]</a><span class="k">class</span> <span class="nc">BondOrderParameters</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing a collection of parameters for bond order calculations.</span>
+
+<span class="sd">    Calculating bond order factors using Tersoff-like methods defined in</span>
+<span class="sd">    :class:`~pysic.Coordinator` requires several parameters per element and</span>
+<span class="sd">    element pair. To facilitate the handling of all these parameters, they are</span>
+<span class="sd">    wrapped in a BondOrderParameters object.</span>
+
+<span class="sd">    The object can be created empty and filled later with the parameters. Alternatively,</span>
+<span class="sd">    a list of parameters can be given upon initialization in which case it is passed</span>
+<span class="sd">    to the :meth:`~pysic.BondOrderParameter.set_parameters` method.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    bond_order_type: string</span>
+<span class="sd">        a keyword specifying the type of the bond order factor</span>
+<span class="sd">    soft_cut: double</span>
+<span class="sd">        The soft cutoff for calculating partial coordination.</span>
+<span class="sd">        Any atom closer than this is considered a full neighbor.</span>
+<span class="sd">    hard_cut: double</span>
+<span class="sd">        The hard cutoff for calculating partial coordination.</span>
+<span class="sd">        Any atom closer than this is considered (at least) a partial neighbor</span>
+<span class="sd">        and will give a fractional contribution to the total coordination.</span>
+<span class="sd">        Any atom farther than this will not contribute to the neighbor count.</span>
+<span class="sd">    parameters: list of doubles</span>
+<span class="sd">        a list of parameters to be contained in the parameter object</span>
+<span class="sd">    symbols: list of strings</span>
+<span class="sd">        a list of elements on which the factor is applied</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">bond_order_type</span><span class="p">,</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">cutoff_margin</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span><span class="n">parameters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">symbols</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span><span class="p">(</span><span class="ow">not</span> <span class="n">is_valid_bond_order_factor</span><span class="p">(</span><span class="n">bond_order_type</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="n">InvalidParametersError</span><span class="p">(</span><span class="s">&#39;There is no bond order factor called &quot;{bof}&quot;&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bof</span><span class="o">=</span><span class="n">bond_order_type</span><span class="p">))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_type</span> <span class="o">=</span> <span class="n">bond_order_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">cutoff</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_cutoff_margin</span><span class="p">(</span><span class="n">cutoff_margin</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_targets</span> <span class="o">=</span> <span class="n">number_of_targets</span><span class="p">(</span><span class="n">bond_order_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names_of_params</span> <span class="o">=</span> <span class="n">names_of_parameters</span><span class="p">(</span><span class="n">bond_order_type</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_params</span> <span class="o">=</span> <span class="n">number_of_parameters</span><span class="p">(</span><span class="n">bond_order_type</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">parameters</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_targets</span><span class="o">*</span><span class="p">[[]]</span>
+            <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)):</span> 
+                <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="p">[</span><span class="n">index</span><span class="p">]</span><span class="o">*</span><span class="p">[</span><span class="mf">0.0</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>  
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+
+        
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;BondOrderParameters( bond_order_type=&#39;&quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">bond_order_type</span><span class="o">+</span>\
+               <span class="s">&quot;&#39;,cutoff=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;,cutoff_margin=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span><span class="p">)</span><span class="o">+</span>\
+               <span class="s">&quot;,parameters=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;,symbols=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; )&quot;</span>
+
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_type</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">bond_order_type</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">cutoff</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">cutoff_margin</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">symbols</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+        
+
+            
+<div class="viewcode-block" id="BondOrderParameters.accepts_parameters"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.accepts_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">accepts_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Test if the given parameters array has the correct dimensions.</span>
+
+<span class="sd">        A bond order parameter can contain separate parameters for single,</span>
+<span class="sd">        pair etc. elements and each class can have a different number of</span>
+<span class="sd">        parameters. This method checks if the given list has the correct</span>
+<span class="sd">        dimensions.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        params: list of doubles</span>
+<span class="sd">            list of parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="p">)):</span>
+            <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">params</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+
+</div>
+<div class="viewcode-block" id="BondOrderParameters.get_number_of_parameters"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_number_of_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_number_of_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the number of parameters the bond order parameter object contains.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_params</span>
+
+</div>
+<div class="viewcode-block" id="BondOrderParameters.get_number_of_targets"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_number_of_targets">[docs]</a>    <span class="k">def</span> <span class="nf">get_number_of_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the (maximum) number of targets the bond order factor affects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="BondOrderParameters.get_parameters_as_list"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_parameters_as_list">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameters_as_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the parameters of the bond order factor as a single list.</span>
+
+<span class="sd">        The generated list first contains the single element parameters, then</span>
+<span class="sd">        pair parameters, etc.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">allparams</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">target_params</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">target_params</span><span class="p">:</span>
+                <span class="n">allparams</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">allparams</span>
+</div>
+<div class="viewcode-block" id="BondOrderParameters.set_symbols"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.set_symbols">[docs]</a>    <span class="k">def</span> <span class="nf">set_symbols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">symbols</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the list of symbols to equal the given list.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        symbols: list of strings</span>
+<span class="sd">            list of element symbols on which the bond order factor acts</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">symbols</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">(</span><span class="n">symbols</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="n">symbols</span>
+        <span class="k">elif</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">([</span><span class="n">symbols</span><span class="p">])):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="p">[</span><span class="n">symbols</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidParametersError</span><span class="p">(</span><span class="s">&quot;Invalid number of targets.&quot;</span><span class="p">)</span>
+
+        </div>
+<div class="viewcode-block" id="BondOrderParameters.add_symbols"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.add_symbols">[docs]</a>    <span class="k">def</span> <span class="nf">add_symbols</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">symbols</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds the given symbols to the list of symbols.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        symbols: list of strings</span>
+<span class="sd">            list of additional symbols on which the bond order factor acts</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">(</span><span class="n">symbols</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="k">for</span> <span class="n">stuff</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stuff</span><span class="p">)</span>
+        <span class="k">elif</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">accepts_target_list</span><span class="p">([</span><span class="n">symbols</span><span class="p">])):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">=</span> <span class="p">[]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">symbols</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidParametersError</span><span class="p">(</span><span class="s">&quot;Invalid number of targets.&quot;</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="BondOrderParameters.get_symbols"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_symbols">[docs]</a>    <span class="k">def</span> <span class="nf">get_symbols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the symbols the bond parameters affect.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span>
+</div>
+<div class="viewcode-block" id="BondOrderParameters.get_different_symbols"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_different_symbols">[docs]</a>    <span class="k">def</span> <span class="nf">get_different_symbols</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list containing each symbol the potential affects once.&quot;&quot;&quot;</span>
+        <span class="n">all_symbols</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">all_symbols</span>
+
+        <span class="k">for</span> <span class="n">symblist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">symb</span> <span class="ow">in</span> <span class="n">symblist</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">all_symbols</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">symb</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">all_symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">symb</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">all_symbols</span>
+
+
+</div>
+<div class="viewcode-block" id="BondOrderParameters.get_parameter_values"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_parameter_values">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameter_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list containing the current parameter values of the potential.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+</div>
+<div class="viewcode-block" id="BondOrderParameters.get_parameter_names"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_parameter_names">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameter_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of the names of the parameters of the potential.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">names_of_params</span>
+
+</div>
+<div class="viewcode-block" id="BondOrderParameters.get_parameter_value"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_parameter_value">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameter_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">param_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the value of the given parameter.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        param_name: string</span>
+<span class="sd">            name of the parameter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">index_of_parameter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bond_order_type</span><span class="p">,</span><span class="n">param_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+
+</div>
+<div class="viewcode-block" id="BondOrderParameters.get_bond_order_type"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_bond_order_type">[docs]</a>    <span class="k">def</span> <span class="nf">get_bond_order_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the keyword specifying the type of the bond order factor.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_type</span>
+</div>
+<div class="viewcode-block" id="BondOrderParameters.get_cutoff"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">get_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the cutoff.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span>
+</div>
+<div class="viewcode-block" id="BondOrderParameters.get_cutoff_margin"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_cutoff_margin">[docs]</a>    <span class="k">def</span> <span class="nf">get_cutoff_margin</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the margin for a smooth cutoff.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span>
+</div>
+<div class="viewcode-block" id="BondOrderParameters.get_soft_cutoff"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_soft_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">get_soft_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the lower limit for a smooth cutoff.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span>
+
+</div>
+<div class="viewcode-block" id="BondOrderParameters.set_parameter_values"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.set_parameter_values">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameter_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">values</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the numeric values of all parameters.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        params: list of doubles</span>
+<span class="sd">            list of values to be assigned to parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="BondOrderParameters.set_parameter_value"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.set_parameter_value">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameter_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">parameter_name</span><span class="p">,</span><span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets a given parameter to the desired value.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        parameter_name: string</span>
+<span class="sd">            name of the parameter</span>
+<span class="sd">        value: double</span>
+<span class="sd">            the new value of the parameter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">indices</span> <span class="o">=</span> <span class="n">index_of_parameter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bond_order_type</span><span class="p">,</span><span class="n">parameter_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">indices</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidParametersError</span><span class="p">(</span><span class="s">&quot;The bond order factor &#39;{pot}&#39; does not have a parameter &#39;{para}&#39;&quot;</span><span class="o">.</span>
+                                        <span class="n">format</span><span class="p">(</span><span class="n">pot</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bond_order_type</span><span class="p">,</span><span class="n">para</span><span class="o">=</span><span class="n">parameter_name</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="BondOrderParameters.set_cutoff"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.set_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">set_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoff</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the cutoff to a given value.</span>
+
+<span class="sd">        This method affects the hard cutoff.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        cutoff: double</span>
+<span class="sd">            new cutoff for the bond order factor</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">cutoff</span>
+
+</div>
+<div class="viewcode-block" id="BondOrderParameters.set_cutoff_margin"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.set_cutoff_margin">[docs]</a>    <span class="k">def</span> <span class="nf">set_cutoff_margin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">margin</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the margin for smooth cutoff to a given value.</span>
+
+<span class="sd">        This method defines the decay interval :math:`r_\mathrm{hard}-r_\mathrm{soft}`.</span>
+<span class="sd">        Note that if the soft cutoff value is made smaller than 0 or larger than the</span>
+<span class="sd">        hard cutoff value an :class:`~pysic.InvalidParametersError` is raised.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        margin: double</span>
+<span class="sd">            The new cutoff margin</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">margin</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidParametersError</span><span class="p">(</span><span class="s">&quot;A negative cutoff margin of {marg} was given.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">marg</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">margin</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="n">margin</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidParametersError</span><span class="p">(</span><span class="s">&quot;A cutoff margin ({marg}) longer than the hard cutoff ({hard}) was given.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">marg</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">margin</span><span class="p">),</span> <span class="n">hard</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">)))</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span> <span class="o">=</span> <span class="n">margin</span>
+
+</div>
+<div class="viewcode-block" id="BondOrderParameters.set_soft_cutoff"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.set_soft_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">set_soft_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">cutoff</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the soft cutoff to a given value.</span>
+
+<span class="sd">        Note that actually the cutoff margin is recorded, so changing the</span>
+<span class="sd">        hard cutoff (see :meth:`~pysic.BondOrderParameters.set_cutoff`) will also affect the</span>
+<span class="sd">        soft cutoff.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        cutoff: double</span>
+<span class="sd">            The new soft cutoff</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_cutoff_margin</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="o">-</span><span class="n">cutoff</span><span class="p">)</span>
+
+
+
+</div>
+<div class="viewcode-block" id="BondOrderParameters.accepts_target_list"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.accepts_target_list">[docs]</a>    <span class="k">def</span> <span class="nf">accepts_target_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">targets</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tests whether a list is suitable as a list of targets, i.e., element symbols</span>
+<span class="sd">        and returns True or False accordingly.</span>
+
+<span class="sd">        A list of targets should be of the format::</span>
+
+<span class="sd">            targets = [[a, b], [c, d]]</span>
+
+<span class="sd">        where the length of the sublists must equal the number of targets.</span>
+
+<span class="sd">        It is not tested that the values contained in the list are valid.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        targets: list of strings or integers</span>
+<span class="sd">            a list whose format is checked</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_targets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_number_of_targets</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">a_set</span> <span class="ow">in</span> <span class="n">targets</span><span class="p">:</span>
+                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">a_set</span><span class="p">,</span><span class="nb">list</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a_set</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_targets</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">return</span> <span class="bp">True</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+</div>
+<div class="viewcode-block" id="BondOrderParameters.set_parameters"><a class="viewcode-back" href="../../../bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.set_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the numeric values of all parameters.</span>
+
+<span class="sd">        Equivalent to :meth:`~pysic.BondOrderParameters.set_parameter_values`.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        params: list of doubles</span>
+<span class="sd">            list of values to be assigned to parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">accepts_parameters</span><span class="p">(</span><span class="n">params</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidParametersError</span><span class="p">(</span><span class="s">&#39;The bond order factor &quot;{bof}&quot; requires {num} parameters.&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bof</span><span class="o">=</span><span class="n">bond_order_type</span><span class="p">,</span><span class="n">num</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_params</span><span class="p">)))</span>
+
+
+        
+        </div></div>
+<div class="viewcode-block" id="Coordinator"><a class="viewcode-back" href="../../../coordinator class.html#pysic.interactions.bondorder.Coordinator">[docs]</a><span class="k">class</span> <span class="nc">Coordinator</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing a calculator for atomic coordination numbers and bond order factors.</span>
+
+<span class="sd">    Pysic can utilise &#39;Tersoff-like&#39; potentials which are locally scaled according to</span>
+<span class="sd">    bond order factors, related to the number of neighbors of each atom.</span>
+<span class="sd">    The coordination calculator keeps track of updating</span>
+<span class="sd">    the bond order factors and holds the parameters for calculating the values.</span>
+
+<span class="sd">    When calculating forces also the derivatives of the coordination numbers are needed.</span>
+<span class="sd">    Coordination numbers may be used repeatedly when calculating energies and forces even within</span>
+<span class="sd">    one evaluation of the forces and therefore they are stored by the calculator. Derivatives</span>
+<span class="sd">    are not stored since storing them could</span>
+<span class="sd">    potentially require an N x N matrix, where N is the number of particles.</span>
+
+<span class="sd">    The calculation of coordination is an operation on the geometry, not the complete physical</span>
+<span class="sd">    system including the interactions, and so one can define coordination calculators as</span>
+<span class="sd">    standalone objects as well. They always operate on the geometry currently allocated in the core.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    bond_order_parameters: list of :class:`~pysic.BondOrderParameters` objects</span>
+<span class="sd">        Parameters for calculating bond order factors.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">bond_order_parameters</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_params</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_factors</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">bond_order_parameters</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_bond_order_parameters</span><span class="p">(</span><span class="n">bond_order_parameters</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_index</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_index</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">group_index</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_params</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">bond_order_params</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+
+        <span class="k">return</span> <span class="bp">True</span>
+
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">__eq__</span><span class="p">(</span><span class="n">other</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;Coordinator(bond_order_parameters={bonds})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">bonds</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bond_order_params</span><span class="p">))</span>
+
+
+
+<div class="viewcode-block" id="Coordinator.get_bond_order_parameters"><a class="viewcode-back" href="../../../coordinator class.html#pysic.interactions.bondorder.Coordinator.get_bond_order_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_bond_order_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the bond order parameters of this Coordinator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_params</span>
+
+</div>
+<div class="viewcode-block" id="Coordinator.set_bond_order_parameters"><a class="viewcode-back" href="../../../coordinator class.html#pysic.interactions.bondorder.Coordinator.set_bond_order_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_bond_order_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Assigns new bond order parameters to this Coordinator.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        params: :class:`~pysic.BondOrderCoordinator`</span>
+<span class="sd">            new bond order parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_params</span> <span class="o">=</span> <span class="n">params</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_params</span> <span class="o">=</span> <span class="p">[</span><span class="n">params</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Coordinator.add_bond_order_parameters"><a class="viewcode-back" href="../../../coordinator class.html#pysic.interactions.bondorder.Coordinator.add_bond_order_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">add_bond_order_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">params</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds the given parameters to this Coordinator.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        params: :class:`~pysic.BondOrderCoordinator`</span>
+<span class="sd">            new bond order parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">params</span><span class="p">,</span><span class="nb">list</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">params</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_params</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_params</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">params</span><span class="p">])</span>
+        
+</div>
+<div class="viewcode-block" id="Coordinator.set_group_index"><a class="viewcode-back" href="../../../coordinator class.html#pysic.interactions.bondorder.Coordinator.set_group_index">[docs]</a>    <span class="k">def</span> <span class="nf">set_group_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets an index for the coordinator object.</span>
+
+<span class="sd">        In the fortran core, bond order parameters are calculated by</span>
+<span class="sd">        bond order parameters. Since a coordinator contains many, they are grouped</span>
+<span class="sd">        to a coordinator via a grouping index when the core is initialized.</span>
+<span class="sd">        This method is meant to be used for telling the Coordinator of this</span>
+<span class="sd">        index. That allows the bond orders can be calculated by calling the</span>
+<span class="sd">        Coordinator itself, since the index tells which bond parameters in the</span>
+<span class="sd">        core are needed.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        index: integer</span>
+<span class="sd">            an index for grouping bond order parameters in the core</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">group_index</span> <span class="o">=</span> <span class="n">index</span>
+</div>
+<div class="viewcode-block" id="Coordinator.get_group_index"><a class="viewcode-back" href="../../../coordinator class.html#pysic.interactions.bondorder.Coordinator.get_group_index">[docs]</a>    <span class="k">def</span> <span class="nf">get_group_index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the group index of the Coordinator.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">group_index</span>
+</div>
+<div class="viewcode-block" id="Coordinator.calculate_bond_order_factors"><a class="viewcode-back" href="../../../coordinator class.html#pysic.interactions.bondorder.Coordinator.calculate_bond_order_factors">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_bond_order_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Recalculates the bond order factors for all atoms and stores them.</span>
+
+<span class="sd">        Similarly to coordination numbers (:meth:`~pysic.Coordinator.calculate_coordination`),</span>
+<span class="sd">        this method only calculates the factors and stores them but does not return them.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_atoms</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_factors</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">calculate_bond_order_factors</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">group_index</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Coordinator.get_bond_order_factors"><a class="viewcode-back" href="../../../coordinator class.html#pysic.interactions.bondorder.Coordinator.get_bond_order_factors">[docs]</a>    <span class="k">def</span> <span class="nf">get_bond_order_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an array containing the bond order factors of all atoms.</span>
+
+<span class="sd">        This method does not calculate the bond order factors but returns the</span>
+<span class="sd">        precalculated array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_factors</span>
+
+
+    </div>
+<div class="viewcode-block" id="Coordinator.get_bond_order_gradients"><a class="viewcode-back" href="../../../coordinator class.html#pysic.interactions.bondorder.Coordinator.get_bond_order_gradients">[docs]</a>    <span class="k">def</span> <span class="nf">get_bond_order_gradients</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">atom_index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an array containing the gradients of bond order factors of all atoms with respect to moving one atom.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atom_index: integer</span>
+<span class="sd">            the index of the atom the position of which is being differentiated with</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_atoms</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span>
+        <span class="c"># add 1 to atom index because fortran indexing starts from 1, not 0</span>
+        <span class="k">return</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">calculate_bond_order_gradients</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">group_index</span><span class="p">,</span><span class="n">atom_index</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+
+</div>
+<div class="viewcode-block" id="Coordinator.get_bond_order_gradients_of_factor"><a class="viewcode-back" href="../../../coordinator class.html#pysic.interactions.bondorder.Coordinator.get_bond_order_gradients_of_factor">[docs]</a>    <span class="k">def</span> <span class="nf">get_bond_order_gradients_of_factor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">atom_index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an array containing the gradients of the bond order factor of one atom with respect to moving any atom.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atom_index: integer</span>
+<span class="sd">            the index of the atom the position of which is being differentiated with</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">n_atoms</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_atoms</span><span class="p">()</span>
+        <span class="c"># add 1 to atom index because fortran indexing starts from 1, not 0</span>
+        <span class="k">return</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">calculate_bond_order_gradients_of_factor</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">group_index</span><span class="p">,</span><span class="n">atom_index</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

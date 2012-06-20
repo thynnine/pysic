@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Pysic (Pythonic simulation code) &mdash; Pysic 0.4.3 documentation</title>
+    <title>Pysic (Pythonic simulation code) &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="#" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="#" />
     <link rel="next" title="Physics of Pysic" href="physics.html" /> 
   </head>
   <body>
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="physics.html" title="Physics of Pysic"
              accesskey="N">next</a> |</li>
-        <li><a href="#">Pysic 0.4.3 documentation</a> &raquo;</li> 
+        <li><a href="#">Pysic 0.4.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -181,6 +181,7 @@ Similarly, also this documentation is being constantly updated.</p>
 <li class="toctree-l2"><a class="reference internal" href="pysic.html#classes-of-the-pysic-module">Classes of the pysic module</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="pysic class.html">Pysic class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="potential class.html">Potential class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="productpotential class.html">ProductPotential class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="coulombsummation class.html">CoulombSummation class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="coordinator class.html">Coordinator class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="bondorderparameters class.html">BondOrderParameters class</a></li>
@@ -195,14 +196,16 @@ Similarly, also this documentation is being constantly updated.</p>
 <li class="toctree-l3"><a class="reference internal" href="pysic.html#message-parsing-interface">Message Parsing Interface</a></li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="pysic.html#errors-defined-by-the-pysic-module">Errors defined by the pysic module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pysic.html#functions-of-the-pysic-module">Functions of the pysic module</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pysic_utility.html">Pysic Utility modules</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="pysic_utility.html#module-pysic.utility.plot">Plot</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pysic_utility.html#module-pysic.utility.convenience">Convenience</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pysic_utility.html#module-pysic.utility.geometry">Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pysic_utility.html#plot">Plot</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pysic_utility.html#convenience">Convenience</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pysic_utility.html#geometry">Geometry</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pysic_utility.html#error">Error</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pysic_utility.html#debug">Debug</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pysic_utility.html#f2py">F2py</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pysic_fortran.html">Pysic Fortran module</a><ul>
@@ -227,6 +230,7 @@ Similarly, also this documentation is being constantly updated.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="version.html">Version history</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="version.html#version-0-4-4">Version 0.4.4</a></li>
 <li class="toctree-l2"><a class="reference internal" href="version.html#version-0-4-3">Version 0.4.3</a></li>
 <li class="toctree-l2"><a class="reference internal" href="version.html#version-0-4-2">Version 0.4.2</a></li>
 <li class="toctree-l2"><a class="reference internal" href="version.html#version-0-4-1">Version 0.4.1</a></li>
@@ -243,8 +247,7 @@ Similarly, also this documentation is being constantly updated.</p>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="issues.html">Development</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="issues.html#fixed-bugs">Fixed bugs</a></li>
-<li class="toctree-l2"><a class="reference internal" href="issues.html#known-issues">Known issues</a></li>
+<li class="toctree-l2"><a class="reference internal" href="issues.html#recently-fixed-bugs">Recently fixed bugs</a></li>
 </ul>
 </li>
 </ul>
@@ -270,7 +273,7 @@ Similarly, also this documentation is being constantly updated.</p>
         <li class="right" >
           <a href="physics.html" title="Physics of Pysic"
              >next</a> |</li>
-        <li><a href="#">Pysic 0.4.3 documentation</a> &raquo;</li> 
+        <li><a href="#">Pysic 0.4.4 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

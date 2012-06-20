@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>ChargeRelaxation class &mdash; Pysic 0.4.3 documentation</title>
+    <title>ChargeRelaxation class &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="up" title="Pysic module" href="pysic.html" />
     <link rel="next" title="FastNeighborList class" href="fastneighborlist class.html" />
     <link rel="prev" title="BondOrderParameters class" href="bondorderparameters class.html" /> 
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="bondorderparameters class.html" title="BondOrderParameters class"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
       </ul>
     </div>
@@ -106,20 +106,20 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="chargerelaxation-class"></span><div class="section" id="chargerelaxation-class-description">
-<span id="id1"></span><h1>ChargeRelaxation class<a class="headerlink" href="#chargerelaxation-class-description" title="Permalink to this headline">¶</a></h1>
+  <span class="target" id="chargerelaxation-class"></span><span class="target" id="module-pysic.charges"><span id="chargerelaxation-class-description"></span></span><span class="target" id="module-pysic.charges.relaxation"></span><div class="section" id="id1">
+<h1>ChargeRelaxation class<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
 <p>This class controls equilibration of atomic charges in the system.</p>
 <p>It is possible for the user to define the charges of atoms in ASE.
 If a system exhibits charge transfer, polarization, charged defects etc., one may not know the charges beforehand or the charges may change dynamically during simulation. To handle such systems, it is possible to let the charges in the system develop dynamically.</p>
 <p>Since charge dynamics are usually much faster than dynamics of the ions, it is usually reasonable to allow the charges to equilibrate between ionic steps. This does not conserve energy exactly, however, since the charge equilibration drives the system charge distribution towards a lower energy. The energy change in charge redistribution is lost unless it is fed back to the system.</p>
 <div class="section" id="connecting-the-structure-calculator-and-relaxation-algorithm">
 <span id="connecting-to-pysic"></span><h2>Connecting the structure, calculator and relaxation algorithm<a class="headerlink" href="#connecting-the-structure-calculator-and-relaxation-algorithm" title="Permalink to this headline">¶</a></h2>
-<p>Special care must be taken when setting up links between the atomic structure (<a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a>), the calculator (<a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>), and the charge relaxation algorithm (<a class="reference internal" href="#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>). While some of the objects must know the others, in some cases the behavior of the simulator changes depending on whether or not they have access to the other objects.</p>
+<p>Special care must be taken when setting up links between the atomic structure (<a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a>), the calculator (<a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>), and the charge relaxation algorithm (<a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>). While some of the objects must know the others, in some cases the behavior of the simulator changes depending on whether or not they have access to the other objects.</p>
 <p>The atoms and the calculator are linked as required in the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#calculator-interface">ASE calculator interface</a>: One can link the two by either the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.set_atoms" title="pysic.calculator.Pysic.set_atoms"><tt class="xref py py-meth docutils literal"><span class="pre">set_atoms()</span></tt></a> method of <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, or the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html#ase.atoms.Atoms.set_calculator">set_calculator</a> method of <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a>. In either case, the atomic structure is given a link to the calculator, and a <strong>copy</strong> of the structure is stored in the calculator. This must be done in order to do any calculations on the system.</p>
-<p>Also the relaxation algorithm has to know the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator, since the relaxation is done according to the <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> interactions stored in the calculator. The algorithm can be made to know the calculator via the <a class="reference internal" href="#pysic.ChargeRelaxation.set_calculator" title="pysic.ChargeRelaxation.set_calculator"><tt class="xref py py-meth docutils literal"><span class="pre">set_calculator()</span></tt></a> method of <a class="reference internal" href="#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>. By default, this does not make the calculator know the relaxation algorithm, however. Only if the optional argument <tt class="docutils literal"><span class="pre">reciprocal=True</span></tt> is given the backwards link is also made. <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> can be made to know the relaxation algorithm also by calling the method <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.set_charge_relaxation" title="pysic.calculator.Pysic.set_charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">set_charge_relaxation()</span></tt></a>. Unlike the opposite case, by making the link from the calculator, the backwards link from the relaxation algorithm is always made automatically. In fact, even though linking an algorithm to a calculator does not automatically link the calculator to the algorithm, if a different calculator was linked to the algorithm, the link is automatically removed.</p>
+<p>Also the relaxation algorithm has to know the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator, since the relaxation is done according to the <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> interactions stored in the calculator. The algorithm can be made to know the calculator via the <tt class="xref py py-meth docutils literal"><span class="pre">set_calculator()</span></tt> method of <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>. By default, this does not make the calculator know the relaxation algorithm, however. Only if the optional argument <tt class="docutils literal"><span class="pre">reciprocal=True</span></tt> is given the backwards link is also made. <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> can be made to know the relaxation algorithm also by calling the method <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.set_charge_relaxation" title="pysic.calculator.Pysic.set_charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">set_charge_relaxation()</span></tt></a>. Unlike the opposite case, by making the link from the calculator, the backwards link from the relaxation algorithm is always made automatically. In fact, even though linking an algorithm to a calculator does not automatically link the calculator to the algorithm, if a different calculator was linked to the algorithm, the link is automatically removed.</p>
 <p>This slightly complicated behavior is summarized as follows: The algorithm should always have a link to a calculator, but a calculator need not have a link to an algorithm. If a calculator does link to an algorithm, the algorithm must link back to the same calculator. Clearly one does not always want to perform charge relaxation on the system and so it makes sense that the calculator need not have a link to a charge relaxation algorithm. If such a link does exist, then the relaxation is <em>automatically</em> invoked prior to each energy and force evaluation. This is necessary in simulations such as molecular dynamics (MD). A charge relaxation can be linked to a calculator in order to do charge equilibration, but if one does not wish to trigger the charge relaxation automatically, then it is enough to just not let the calculator know the relaxation algorithm.</p>
 <p>The atomic structure cannot be given a link to the relaxation algorithm since the charge relaxation is not part of the ASE API and so the atoms object does not know how to interact with it. In essence, from the point of view of the structure, the charge relaxation is fully contained in the calculator.</p>
-<p>The charge relaxation algorithm always acts on the structure contained in the calculator. The atomic charges of this structure are automatically updated during the relaxation. Since the calculator only stores a copy of the original structure, the original is not updated. This may be desired if, for instance, one wishes to revert back to the original charges. However, during strucural dynamics simulations such as MD, it is necessary that the relaxed charges are saved between structural steps. This is a problem, since structural dynamics are handled by ASE, and ASE invokes the calculation of forces with the original <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object. Therefore, if the relaxed charges are not saved, charge relaxation is always started from the original charges, which may be very inefficient. In order to have also the original structure updated automatically, the charge relaxation can be made to know the original structure with <a class="reference internal" href="#pysic.ChargeRelaxation.set_atoms" title="pysic.ChargeRelaxation.set_atoms"><tt class="xref py py-meth docutils literal"><span class="pre">set_atoms()</span></tt></a>. Note that the structure given to the algorithm is not used in the actual relaxation; the algorithm always works on the structure in the calculator, which may be different. The given structure is merely updated according to the calculation results.</p>
+<p>The charge relaxation algorithm always acts on the structure contained in the calculator. The atomic charges of this structure are automatically updated during the relaxation. Since the calculator only stores a copy of the original structure, the original is not updated. This may be desired if, for instance, one wishes to revert back to the original charges. However, during strucural dynamics simulations such as MD, it is necessary that the relaxed charges are saved between structural steps. This is a problem, since structural dynamics are handled by ASE, and ASE invokes the calculation of forces with the original <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object. Therefore, if the relaxed charges are not saved, charge relaxation is always started from the original charges, which may be very inefficient. In order to have also the original structure updated automatically, the charge relaxation can be made to know the original structure with <tt class="xref py py-meth docutils literal"><span class="pre">set_atoms()</span></tt>. Note that the structure given to the algorithm is not used in the actual relaxation; the algorithm always works on the structure in the calculator, which may be different. The given structure is merely updated according to the calculation results.</p>
 </div>
 <div class="section" id="list-of-currently-available-relaxation-methods">
 <span id="list-of-relaxation-modes"></span><h2>List of currently available relaxation methods<a class="headerlink" href="#list-of-currently-available-relaxation-methods" title="Permalink to this headline">¶</a></h2>
@@ -147,54 +147,54 @@ M_q \ddot{q}_i & = & -\frac{\partial U}{\partial q_i} - \nu.
 </div>
 <div class="section" id="list-of-methods">
 <span id="chargerelaxation-class-autogenerated"></span><h2>List of methods<a class="headerlink" href="#list-of-methods" title="Permalink to this headline">¶</a></h2>
-<p>Below is a list of methods in <a class="reference internal" href="#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>, grouped according to
+<p>Below is a list of methods in <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>, grouped according to
 the type of functionality.</p>
 <div class="section" id="initialization">
 <h3>Initialization<a class="headerlink" href="#initialization" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.initialize_parameters" title="pysic.ChargeRelaxation.initialize_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">initialize_parameters()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.get_relaxation" title="pysic.ChargeRelaxation.get_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">get_relaxation()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.set_relaxation" title="pysic.ChargeRelaxation.set_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">set_relaxation()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.relaxation_modes" title="pysic.ChargeRelaxation.relaxation_modes"><tt class="xref py py-data docutils literal"><span class="pre">relaxation_modes</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.relaxation_parameter_descriptions" title="pysic.ChargeRelaxation.relaxation_parameter_descriptions"><tt class="xref py py-data docutils literal"><span class="pre">relaxation_parameter_descriptions</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.relaxation_parameters" title="pysic.ChargeRelaxation.relaxation_parameters"><tt class="xref py py-data docutils literal"><span class="pre">relaxation_parameters</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.initialize_parameters" title="pysic.charges.relaxation.ChargeRelaxation.initialize_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">initialize_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.get_relaxation" title="pysic.charges.relaxation.ChargeRelaxation.get_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">get_relaxation()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_relaxation" title="pysic.charges.relaxation.ChargeRelaxation.set_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">set_relaxation()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_modes" title="pysic.charges.relaxation.ChargeRelaxation.relaxation_modes"><tt class="xref py py-data docutils literal"><span class="pre">relaxation_modes</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_parameter_descriptions" title="pysic.charges.relaxation.ChargeRelaxation.relaxation_parameter_descriptions"><tt class="xref py py-data docutils literal"><span class="pre">relaxation_parameter_descriptions</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_parameters" title="pysic.charges.relaxation.ChargeRelaxation.relaxation_parameters"><tt class="xref py py-data docutils literal"><span class="pre">relaxation_parameters</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="atoms-handling">
 <h3>Atoms handling<a class="headerlink" href="#atoms-handling" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.get_atoms" title="pysic.ChargeRelaxation.get_atoms"><tt class="xref py py-meth docutils literal"><span class="pre">get_atoms()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.set_atoms" title="pysic.ChargeRelaxation.set_atoms"><tt class="xref py py-meth docutils literal"><span class="pre">set_atoms()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.get_atoms" title="pysic.charges.relaxation.ChargeRelaxation.get_atoms"><tt class="xref py py-meth docutils literal"><span class="pre">get_atoms()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_atoms" title="pysic.charges.relaxation.ChargeRelaxation.set_atoms"><tt class="xref py py-meth docutils literal"><span class="pre">set_atoms()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="calculator-handling">
 <h3>Calculator handling<a class="headerlink" href="#calculator-handling" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.get_calculator" title="pysic.ChargeRelaxation.get_calculator"><tt class="xref py py-meth docutils literal"><span class="pre">get_calculator()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.set_calculator" title="pysic.ChargeRelaxation.set_calculator"><tt class="xref py py-meth docutils literal"><span class="pre">set_calculator()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.get_calculator" title="pysic.charges.relaxation.ChargeRelaxation.get_calculator"><tt class="xref py py-meth docutils literal"><span class="pre">get_calculator()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_calculator" title="pysic.charges.relaxation.ChargeRelaxation.set_calculator"><tt class="xref py py-meth docutils literal"><span class="pre">set_calculator()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="parameter-handling">
 <h3>Parameter handling<a class="headerlink" href="#parameter-handling" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.get_parameters" title="pysic.ChargeRelaxation.get_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameters()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.set_parameter_value" title="pysic.ChargeRelaxation.set_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_value()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.set_parameter_values" title="pysic.ChargeRelaxation.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.set_parameters" title="pysic.ChargeRelaxation.set_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.get_parameters" title="pysic.charges.relaxation.ChargeRelaxation.get_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_parameter_value" title="pysic.charges.relaxation.ChargeRelaxation.set_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_value()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_parameter_values" title="pysic.charges.relaxation.ChargeRelaxation.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_parameters" title="pysic.charges.relaxation.ChargeRelaxation.set_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameters()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="charge-relaxation">
 <h3>Charge relaxation<a class="headerlink" href="#charge-relaxation" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.ChargeRelaxation.charge_relaxation" title="pysic.ChargeRelaxation.charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">charge_relaxation()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.charge_relaxation" title="pysic.charges.relaxation.ChargeRelaxation.charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">charge_relaxation()</span></tt></a></li>
 </ul>
 </div>
 </div>
 <div class="section" id="full-documentation-of-the-chargerelaxation-class">
 <h2>Full documentation of the ChargeRelaxation class<a class="headerlink" href="#full-documentation-of-the-chargerelaxation-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="pysic.ChargeRelaxation">
-<em class="property">class </em><tt class="descclassname">pysic.</tt><tt class="descname">ChargeRelaxation</tt><big>(</big><em>relaxation='dynamic'</em>, <em>calculator=None</em>, <em>parameters=None</em>, <em>atoms=None</em><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation">
+<em class="property">class </em><tt class="descclassname">pysic.charges.relaxation.</tt><tt class="descname">ChargeRelaxation</tt><big>(</big><em>relaxation='dynamic'</em>, <em>calculator=None</em>, <em>parameters=None</em>, <em>atoms=None</em><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation" title="Permalink to this definition">¶</a></dt>
 <dd><p>A class for handling charge dynamics and relaxation.</p>
 <p>Pysic does not implement molecular dynamics or geometric
 optimization since they are handled by ASE.
@@ -215,108 +215,108 @@ ChargeRelaxation class handles these dynamics.</p>
 <dl class="docutils">
 <dt>relaxation: string</dt>
 <dd>a keyword specifying the mode of charge relaxation</dd>
-<dt>calculator: <tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt> object</dt>
+<dt>calculator: <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> object</dt>
 <dd>a Pysic calculator</dd>
 <dt>parameters: list of doubles</dt>
 <dd>numeric values for parameters</dd>
 <dt>atoms: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object</dt>
 <dd>The system whose charges are to be relaxed. 
 Note! The relaxation is always done using the atoms copy in 
-<tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt>, but if the original structure needs to be
+<a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, but if the original structure needs to be
 updated as well, the relaxation algorithm must have access to it.</dd>
 </dl>
 <dl class="method">
-<dt id="pysic.ChargeRelaxation.charge_relaxation">
-<tt class="descname">charge_relaxation</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation.charge_relaxation" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.charge_relaxation">
+<tt class="descname">charge_relaxation</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.charge_relaxation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.charge_relaxation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs the charge relaxation.</p>
 <p>The relaxation is always performed on the system associated with
-the <tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt> calculator joint with this <a class="reference internal" href="#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>.
+the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator joint with this <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>.
 The calculated equilibrium charges are returned as a numeric array.</p>
 <p>If an <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> structure is known by the 
-<a class="reference internal" href="#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> 
-(given through <a class="reference internal" href="#pysic.ChargeRelaxation.set_atoms" title="pysic.ChargeRelaxation.set_atoms"><tt class="xref py py-meth docutils literal"><span class="pre">set_atoms()</span></tt></a>), the charges of
+<a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> 
+(given through <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_atoms" title="pysic.charges.relaxation.ChargeRelaxation.set_atoms"><tt class="xref py py-meth docutils literal"><span class="pre">set_atoms()</span></tt></a>), the charges of
 the structure are updated according to the calculation result.
 If the structure is not known, the charges are updated in the
-structure stored in the <tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt> calculator, but not in any other
-object. Since <tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt> only stores a copy of the structure it 
+structure stored in the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator, but not in any other
+object. Since <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> only stores a copy of the structure it 
 is given, the original <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object will not be updated.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.ChargeRelaxation.get_atoms">
-<tt class="descname">get_atoms</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation.get_atoms" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.get_atoms">
+<tt class="descname">get_atoms</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.get_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.get_atoms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the atoms object known by the algorithm.</p>
 <p>This is the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> which will be automatically updated when
 charge relaxation is invoked.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.ChargeRelaxation.get_calculator">
-<tt class="descname">get_calculator</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation.get_calculator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the <tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt> calculator assigned to this <a class="reference internal" href="#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>.</p>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.get_calculator">
+<tt class="descname">get_calculator</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.get_calculator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.get_calculator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator assigned to this <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.ChargeRelaxation.get_parameters">
-<tt class="descname">get_parameters</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation.get_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.get_parameters">
+<tt class="descname">get_parameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.get_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.get_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list containing the numeric values of the parameters.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.ChargeRelaxation.get_relaxation">
-<tt class="descname">get_relaxation</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation.get_relaxation" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.get_relaxation">
+<tt class="descname">get_relaxation</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.get_relaxation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.get_relaxation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the keyword specifying the mode of relaxation.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.ChargeRelaxation.initialize_parameters">
-<tt class="descname">initialize_parameters</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation.initialize_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.initialize_parameters">
+<tt class="descname">initialize_parameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.initialize_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.initialize_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a dictionary of parameters and initializes all values to 0.0.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pysic.ChargeRelaxation.relaxation_modes">
-<tt class="descname">relaxation_modes</tt><em class="property"> = ['dynamic']</em><a class="headerlink" href="#pysic.ChargeRelaxation.relaxation_modes" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.relaxation_modes">
+<tt class="descname">relaxation_modes</tt><em class="property"> = ['dynamic']</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_modes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Names of the charge relaxation algorithms available.</p>
 <p>These are keywords needed when creating the
-<a class="reference internal" href="#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> objects as type specifiers.</p>
+<a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> objects as type specifiers.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pysic.ChargeRelaxation.relaxation_parameter_descriptions">
-<tt class="descname">relaxation_parameter_descriptions</tt><em class="property"> = {'dynamic': ['time steps of charge dynamics between molecular dynamics', 'time step of charge dynamics', 'fictional charge mass', 'friction coefficient for damped charge dynamics', 'convergence tolerance']}</em><a class="headerlink" href="#pysic.ChargeRelaxation.relaxation_parameter_descriptions" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.relaxation_parameter_descriptions">
+<tt class="descname">relaxation_parameter_descriptions</tt><em class="property"> = {'dynamic': ['time steps of charge dynamics between molecular dynamics', 'time step of charge dynamics', 'fictional charge mass', 'friction coefficient for damped charge dynamics', 'convergence tolerance']}</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_parameter_descriptions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Short descriptions of the relaxation parameters.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pysic.ChargeRelaxation.relaxation_parameters">
-<tt class="descname">relaxation_parameters</tt><em class="property"> = {'dynamic': ['n_steps', 'timestep', 'inertia', 'friction', 'tolerance']}</em><a class="headerlink" href="#pysic.ChargeRelaxation.relaxation_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.relaxation_parameters">
+<tt class="descname">relaxation_parameters</tt><em class="property"> = {'dynamic': ['n_steps', 'timestep', 'inertia', 'friction', 'tolerance']}</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Names of the parameters of the charge relaxation algorithms.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.ChargeRelaxation.set_atoms">
-<tt class="descname">set_atoms</tt><big>(</big><em>atoms</em>, <em>pass_to_calculator=False</em><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation.set_atoms" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.set_atoms">
+<tt class="descname">set_atoms</tt><big>(</big><em>atoms</em>, <em>pass_to_calculator=False</em><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.set_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.set_atoms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Lets the relaxation algorithm know the atomic structure to be updated.</p>
 <p>The relaxation algorithm always works with the structure stored in the
-<tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt> calculator it knows. If <tt class="docutils literal"><span class="pre">pass_to_calculator</span> <span class="pre">=</span> <span class="pre">True</span></tt>,
+<a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator it knows. If <tt class="docutils literal"><span class="pre">pass_to_calculator</span> <span class="pre">=</span> <span class="pre">True</span></tt>,
 this method also updates the structure known by the calculator. However,
-this is not the main purpose of letting the <a class="reference internal" href="#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>
+this is not the main purpose of letting the <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>
 know the structure -
 it is not even necessary that the structure known by the relaxation algorithm
 is the same as that known by the calculator.</p>
 <p>The structure given to the algorithm is the structure whose charges it 
 automatically updates after relaxing the charges in
-<a class="reference internal" href="#pysic.ChargeRelaxation.charge_relaxation" title="pysic.ChargeRelaxation.charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">charge_relaxation()</span></tt></a>. In other words, if no
+<a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.charge_relaxation" title="pysic.charges.relaxation.ChargeRelaxation.charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">charge_relaxation()</span></tt></a>. In other words, if no
 structure is given, the relaxation will update the charges in the strucure
-known by <tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt>, but this is always just a copy and so the
+known by <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, but this is always just a copy and so the
 original structure is left untouched.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>atoms: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object</dt>
 <dd>The system whose charges are to be relaxed. 
 Note! The relaxation is always done using the atoms copy in 
-<tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt>, but if the original structure needs to be
+<a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, but if the original structure needs to be
 updated as well, the relaxation algorithm must have access to it.</dd>
 <dt>pass_to_calculator: logical</dt>
 <dd>if True, the atoms are also set for the calculator via 
@@ -325,32 +325,32 @@ updated as well, the relaxation algorithm must have access to it.</dd>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.ChargeRelaxation.set_calculator">
-<tt class="descname">set_calculator</tt><big>(</big><em>calculator</em>, <em>reciprocal=False</em><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation.set_calculator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Assigns a <tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt> calculator.</p>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.set_calculator">
+<tt class="descname">set_calculator</tt><big>(</big><em>calculator</em>, <em>reciprocal=False</em><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.set_calculator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.set_calculator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assigns a <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator.</p>
 <p>The calculator is necessary for calculation of electronegativities.
 It is also possible to automatically assign the charge relaxation
 method to the calculator by setting <tt class="docutils literal"><span class="pre">reciprocal</span> <span class="pre">=</span> <span class="pre">True</span></tt>.</p>
 <p>Note though
 that it does make a difference whether the calculator knows the
-charge relaxation or not: If the <tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt> has a connection
-to the <a class="reference internal" href="#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>, every time force or energy calculations
+charge relaxation or not: If the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> has a connection
+to the <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>, every time force or energy calculations
 are requested the charges are first relaxed by automatically invoking
-<a class="reference internal" href="#pysic.ChargeRelaxation.charge_relaxation" title="pysic.ChargeRelaxation.charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">charge_relaxation()</span></tt></a>. If there is no link,
+<a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.charge_relaxation" title="pysic.charges.relaxation.ChargeRelaxation.charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">charge_relaxation()</span></tt></a>. If there is no link,
 it is up to the user to start the relaxation.</p>
 <p>Parameters:</p>
 <dl class="docutils">
-<dt>calculator: <tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt> object</dt>
+<dt>calculator: <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> object</dt>
 <dd>a Pysic calculator</dd>
 <dt>reciprocal: logical</dt>
-<dd>if True, also the <a class="reference internal" href="#pysic.ChargeRelaxation" title="pysic.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> is passed to the
-<tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt> through <tt class="xref py py-meth docutils literal"><span class="pre">set_charge_relaxation()</span></tt>.</dd>
+<dd>if True, also the <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> is passed to the
+<a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> through <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.set_charge_relaxation" title="pysic.calculator.Pysic.set_charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">set_charge_relaxation()</span></tt></a>.</dd>
 </dl>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.ChargeRelaxation.set_parameter_value">
-<tt class="descname">set_parameter_value</tt><big>(</big><em>parameter_name</em>, <em>value</em><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation.set_parameter_value" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.set_parameter_value">
+<tt class="descname">set_parameter_value</tt><big>(</big><em>parameter_name</em>, <em>value</em><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.set_parameter_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.set_parameter_value" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets a given parameter to the desired value.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -362,8 +362,8 @@ it is up to the user to start the relaxation.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.ChargeRelaxation.set_parameter_values">
-<tt class="descname">set_parameter_values</tt><big>(</big><em>parameters</em><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation.set_parameter_values" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.set_parameter_values">
+<tt class="descname">set_parameter_values</tt><big>(</big><em>parameters</em><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.set_parameter_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.set_parameter_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the numeric values for all parameters.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -373,10 +373,10 @@ it is up to the user to start the relaxation.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.ChargeRelaxation.set_parameters">
-<tt class="descname">set_parameters</tt><big>(</big><em>parameters</em><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation.set_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.set_parameters">
+<tt class="descname">set_parameters</tt><big>(</big><em>parameters</em><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.set_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.set_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the numeric values for all parameters.</p>
-<p>Equivalent to <a class="reference internal" href="#pysic.ChargeRelaxation.set_parameter_values" title="pysic.ChargeRelaxation.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a></p>
+<p>Equivalent to <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_parameter_values" title="pysic.charges.relaxation.ChargeRelaxation.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a></p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>parameters: list of doubles</dt>
@@ -385,11 +385,11 @@ it is up to the user to start the relaxation.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.ChargeRelaxation.set_relaxation">
-<tt class="descname">set_relaxation</tt><big>(</big><em>relaxation</em><big>)</big><a class="headerlink" href="#pysic.ChargeRelaxation.set_relaxation" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.charges.relaxation.ChargeRelaxation.set_relaxation">
+<tt class="descname">set_relaxation</tt><big>(</big><em>relaxation</em><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.set_relaxation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.set_relaxation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the relaxation method.</p>
 <p>The method also creates a dictionary of parameters initialized to 0.0
-by invoking <a class="reference internal" href="#pysic.ChargeRelaxation.initialize_parameters" title="pysic.ChargeRelaxation.initialize_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">initialize_parameters()</span></tt></a>.</p>
+by invoking <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.initialize_parameters" title="pysic.charges.relaxation.ChargeRelaxation.initialize_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">initialize_parameters()</span></tt></a>.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>relaxation: string</dt>
@@ -423,7 +423,7 @@ by invoking <a class="reference internal" href="#pysic.ChargeRelaxation.initiali
         <li class="right" >
           <a href="bondorderparameters class.html" title="BondOrderParameters class"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
       </ul>
     </div>

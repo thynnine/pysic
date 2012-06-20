@@ -134,7 +134,7 @@ potential
 In the code above, ``system`` is an `ASE Atoms`_ object containing the structure of the system to be calculated -
 two He atoms in this case. The object ``calc`` is an instance of :class:`~pysic.calculator.Pysic`, the `ASE calculator`_ class
 defined by Pysic. The interactions governing the system are defined by the ``physics`` object, which is an instance of the
-:class:`~pysic.Potential` class of Pysic.
+:class:`~pysic.interactions.local.Potential` class of Pysic.
 
 Now, the potential energy of the system and the forces acting on the atoms can be calculated with::
 

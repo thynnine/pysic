@@ -1,0 +1,854 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.core &mdash; Pysic 0.4.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.4.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.4 documentation" href="../../index.html" />
+    <link rel="up" title="pysic" href="../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.core</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+
+<span class="kn">import</span> <span class="nn">pysic.pysic_fortran</span> <span class="kn">as</span> <span class="nn">pf</span>
+<span class="kn">import</span> <span class="nn">pysic.utility.f2py</span> <span class="kn">as</span> <span class="nn">pu</span>
+<span class="kn">from</span> <span class="nn">pysic.charges.relaxation</span> <span class="kn">import</span> <span class="n">ChargeRelaxation</span>
+<span class="kn">from</span> <span class="nn">pysic.interactions.coulomb</span> <span class="kn">import</span> <span class="n">CoulombSummation</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">atexit</span>
+
+<span class="c"># !!!: automatic initialization functions</span>
+
+<span class="c"># Below are general methods for accessing information about the built-in potentials.</span>
+<span class="c"># Note that the methods directly inquire the Fortran core, and thus all changes made</span>
+<span class="c"># to the core should automatically be taken into account, as long as the proper</span>
+<span class="c"># arrays are updated in Potentials.f90</span>
+
+<span class="c"># automatically call the initialization routine in Potentials.f90</span>
+<span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">start_potentials</span><span class="p">()</span>
+<span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">start_bond_order_factors</span><span class="p">()</span>
+
+<span class="c"># automatically initialize mpi - fortran side decides if we really are in mpi</span>
+<span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">start_mpi</span><span class="p">()</span>
+
+<span class="c"># automatically initialize the fortran rng</span>
+<span class="c"># it needs to be possible to force a seed by the user - to be implemented</span>
+<span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">start_rng</span><span class="p">(</span><span class="mi">5301</span><span class="p">)</span>
+
+
+<span class="c"># !!!: automatic termination functions</span>
+
+<span class="k">def</span> <span class="nf">termination</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Function for deallocating memory in the core and finalizing the MPI.</span>
+<span class="sd">    </span>
+<span class="sd">    The function is automatically called upon program termination by &#39;atexit&#39;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+    <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">finish_mpi</span><span class="p">()</span>
+
+<span class="n">atexit</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">termination</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">finish_mpi</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Terminates the MPI framework.</span>
+
+<span class="sd">    If the Fortran core is compiled in MPI mode, :mod:`~pysic` will automatically</span>
+<span class="sd">    initialize MPI upon being imported. This method terminates the MPI.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">finish_mpi</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">sync_mpi</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Calls MPI barrier from the Fortran core MPI framework.&quot;&quot;&quot;</span>
+
+    <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">sync_mpi</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">get_number_of_cpus</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Gets the number of cpus from the Fortran MPI.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_cpus</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">get_cpu_id</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Gets the cpu ID from the Fortran MPI.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_cpu_id</span><span class="p">()</span>
+
+
+<span class="k">def</span> <span class="nf">list_potentials</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Same as :meth:`~pysic.list_valid_potentials`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">list_valid_potentials</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">list_valid_potentials</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;A list of names of potentials currently known by the core.</span>
+
+<span class="sd">    The method retrieves from the core a list of the names of different potentials</span>
+<span class="sd">    currently implemented. Since the fortran core is directly accessed, any</span>
+<span class="sd">    updates made in the core source code should get noticed automatically.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_pots</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">number_of_potentials</span><span class="p">()</span>
+    <span class="n">pot_codes</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">list_valid_potentials</span><span class="p">(</span><span class="n">n_pots</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+    <span class="n">pot_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">pot_codes</span><span class="p">:</span>
+        <span class="n">pot_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pu</span><span class="o">.</span><span class="n">ints2str</span><span class="p">(</span><span class="n">code</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">pot_names</span>
+
+
+<span class="k">def</span> <span class="nf">list_bond_order_factors</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Same as :meth:`~pysic.list_valid_bond_order_factors`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">list_valid_bond_order_factors</span><span class="p">()</span>
+
+<span class="k">def</span> <span class="nf">list_valid_bond_order_factors</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;A list of names of bond order factors currently known by the core.</span>
+
+<span class="sd">    The method retrieves from the core a list of the names of different bond factors</span>
+<span class="sd">    currently implemented. Since the fortran core is directly accessed, any</span>
+<span class="sd">    updates made in the core source code should get noticed automatically.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">n_bonds</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">number_of_bond_order_factors</span><span class="p">()</span>
+    <span class="n">bond_codes</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">list_valid_bond_order_factors</span><span class="p">(</span><span class="n">n_bonds</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+    <span class="n">bond_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">bond_codes</span><span class="p">:</span>
+        <span class="n">bond_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pu</span><span class="o">.</span><span class="n">ints2str</span><span class="p">(</span><span class="n">code</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">bond_names</span>
+
+
+<span class="k">def</span> <span class="nf">is_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Same as :meth:`~pysic.is_valid_potential`</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">    </span>
+<span class="sd">    potential_name: string</span>
+<span class="sd">        the name of the potential</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">is_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">is_valid_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tells if the given string is the name of a potential.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    potential_name: string</span>
+<span class="sd">        the name of the potential</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">is_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">is_bond_order_factor</span><span class="p">(</span><span class="n">bond_order_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Same as :meth:`~pysic.is_valid_bond_order_factor`</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    bond_order_name: string</span>
+<span class="sd">        the name of the bond order factor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">is_bond_order_factor</span><span class="p">(</span><span class="n">bond_order_name</span><span class="p">)</span>
+
+<span class="k">def</span> <span class="nf">is_valid_bond_order_factor</span><span class="p">(</span><span class="n">bond_order_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tells if the given string is the name of a bond order factor.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    bond_order_name: string</span>
+<span class="sd">        the name of the bond order factor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">is_bond_order_factor</span><span class="p">(</span><span class="n">bond_order_name</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">is_charge_relaxation</span><span class="p">(</span><span class="n">relaxation_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Same as :meth:`~pysic.is_valid_charge_relaxation`</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        relaxation_name: string</span>
+<span class="sd">            the name of the relaxation mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">ChargeRelaxation</span><span class="o">.</span><span class="n">relaxation_modes</span><span class="p">:</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">relaxation_name</span> <span class="o">==</span> <span class="n">mode</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">return</span> <span class="bp">False</span>
+
+
+<span class="k">def</span> <span class="nf">is_valid_charge_relaxation</span><span class="p">(</span><span class="n">relaxation_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tells if the given string is the name of a charge relaxation mode.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        relaxation_name: string</span>
+<span class="sd">            the name of the relaxation mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">ChargeRelaxation</span><span class="o">.</span><span class="n">relaxation_modes</span><span class="p">:</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">relaxation_name</span> <span class="o">==</span> <span class="n">mode</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">return</span> <span class="bp">False</span>
+
+
+<span class="k">def</span> <span class="nf">is_coulomb_summation</span><span class="p">(</span><span class="n">summation_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Same as :meth:`~pysic.is_valid_coulomb_summation`</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        summation_name: string</span>
+<span class="sd">            the name of the summation mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">CoulombSummation</span><span class="o">.</span><span class="n">summation_modes</span><span class="p">:</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">summation_name</span> <span class="o">==</span> <span class="n">mode</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">return</span> <span class="bp">False</span>
+
+
+
+<span class="k">def</span> <span class="nf">is_valid_coulomb_summation</span><span class="p">(</span><span class="n">summation_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tells if the given string is the name of a coulomb summation mode.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        summation_name: string</span>
+<span class="sd">            the name of the summation mode</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">mode</span> <span class="ow">in</span> <span class="n">CoulombSummation</span><span class="o">.</span><span class="n">summation_modes</span><span class="p">:</span>
+        <span class="k">if</span><span class="p">(</span><span class="n">summation_name</span> <span class="o">==</span> <span class="n">mode</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">True</span>
+    <span class="k">return</span> <span class="bp">False</span>
+    
+
+
+
+<span class="k">def</span> <span class="nf">number_of_targets</span><span class="p">(</span><span class="n">potential_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tells how many targets a potential or bond order factor acts on, i.e., is it pair or many-body.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    potential_name: string</span>
+<span class="sd">        the name of the potential or bond order factor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">if</span><span class="p">(</span><span class="n">is_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">number_of_targets_of_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+    <span class="k">elif</span><span class="p">(</span><span class="n">is_bond_order_factor</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">number_of_targets_of_bond_order_factor</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+
+
+<span class="k">def</span> <span class="nf">number_of_parameters</span><span class="p">(</span><span class="n">potential_name</span><span class="p">,</span><span class="n">as_list</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tells how many parameters a potential, bond order factor, charge relaxation mode or coulomb summation mode incorporates.</span>
+
+<span class="sd">    A potential has a simple list of parameters and thus the function returns</span>
+<span class="sd">    by default a single number. A bond order factor can incorporate parameters for</span>
+<span class="sd">    different number of targets (some for single elements, others for pairs, etc.), and</span>
+<span class="sd">    so a list of numbers is returned, representing the number of single, pair etc.</span>
+<span class="sd">    parameters. If the parameter &#39;as_list&#39; is given and is True, the result is</span>
+<span class="sd">    a list containing one number also for a potential.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    potential_name: string</span>
+<span class="sd">        the name of the potential or bond order factor</span>
+<span class="sd">    as_list: logical</span>
+<span class="sd">        should the result always be a list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span><span class="p">(</span><span class="n">is_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="n">n_params</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">number_of_parameters_of_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">as_list</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">n_params</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">n_params</span>
+    <span class="k">elif</span><span class="p">(</span><span class="n">is_bond_order_factor</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="n">n_targets</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">number_of_targets_of_bond_order_factor</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+        <span class="n">n_params</span> <span class="o">=</span> <span class="p">[</span> <span class="p">[</span><span class="s">&quot;&quot;</span><span class="p">]</span> <span class="p">]</span><span class="o">*</span><span class="n">n_targets</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_targets</span><span class="p">):</span>
+            <span class="n">n_params</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">number_of_parameters_of_bond_order_factor</span><span class="p">(</span><span class="n">potential_name</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">n_params</span>
+    <span class="k">elif</span><span class="p">(</span><span class="n">is_charge_relaxation</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="n">n_params</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ChargeRelaxation</span><span class="o">.</span><span class="n">relaxation_parameters</span><span class="p">[</span><span class="n">potential_name</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">as_list</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">n_params</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">n_params</span>
+    <span class="k">elif</span><span class="p">(</span><span class="n">is_coulomb_summation</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="n">n_params</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">CoulombSummation</span><span class="o">.</span><span class="n">summation_parameters</span><span class="p">[</span><span class="n">potential_name</span><span class="p">])</span>
+        <span class="k">if</span> <span class="n">as_list</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">[</span><span class="n">n_params</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">n_params</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="mi">0</span>
+
+<span class="k">def</span> <span class="nf">names_of_parameters</span><span class="p">(</span><span class="n">potential_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Lists the names of the parameters of a potential, bond order factor, charge relaxation mode or coulomb summation mode.</span>
+
+<span class="sd">    For a potential, a simple list of names is returned. For a bond order factor, the</span>
+<span class="sd">    parameters are categorised according to the number of targets they apply to</span>
+<span class="sd">    (single element, pair, etc.). So, for a bond order factor, a list of lists is</span>
+<span class="sd">    returned, where the first list contains the single element parameters, the second</span>
+<span class="sd">    list the pair parameters etc.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    potential_name: string</span>
+<span class="sd">        the name of the potential or bond order factor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span><span class="p">(</span><span class="n">is_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="n">param_codes</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">names_of_parameters_of_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+
+        <span class="n">param_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">n_params</span> <span class="o">=</span> <span class="n">number_of_parameters</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">param_codes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="n">n_params</span><span class="p">:</span>
+                <span class="n">param_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pu</span><span class="o">.</span><span class="n">ints2str</span><span class="p">(</span><span class="n">code</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+                
+        <span class="k">return</span> <span class="n">param_names</span>
+
+    <span class="k">elif</span><span class="p">(</span><span class="n">is_bond_order_factor</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="n">n_targets</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">number_of_targets_of_bond_order_factor</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+        <span class="n">param_codes</span> <span class="o">=</span> <span class="p">[</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">]</span><span class="o">*</span><span class="n">n_targets</span>
+        <span class="n">param_names</span> <span class="o">=</span> <span class="p">[</span> <span class="p">[]</span> <span class="p">]</span><span class="o">*</span><span class="n">n_targets</span>
+        <span class="n">n_params</span> <span class="o">=</span> <span class="n">number_of_parameters</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_targets</span><span class="p">):</span>
+            <span class="n">param_codes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">names_of_parameters_of_bond_order_factor</span><span class="p">(</span><span class="n">potential_name</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+            <span class="n">param_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;&quot;</span><span class="p">]</span><span class="o">*</span><span class="n">n_params</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+
+        <span class="n">target_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">target_codes</span> <span class="ow">in</span> <span class="n">param_codes</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">target_codes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="n">n_params</span><span class="p">[</span><span class="n">target_index</span><span class="p">]:</span>
+                    <span class="n">param_names</span><span class="p">[</span><span class="n">target_index</span><span class="p">][</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">pu</span><span class="o">.</span><span class="n">ints2str</span><span class="p">(</span><span class="n">code</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">target_index</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">param_names</span>
+
+    <span class="k">elif</span><span class="p">(</span><span class="n">is_charge_relaxation</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">ChargeRelaxation</span><span class="o">.</span><span class="n">relaxation_parameters</span><span class="p">[</span><span class="n">potential_name</span><span class="p">]</span>
+
+    <span class="k">elif</span><span class="p">(</span><span class="n">is_coulomb_summation</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">CoulombSummation</span><span class="o">.</span><span class="n">summation_parameters</span><span class="p">[</span><span class="n">potential_name</span><span class="p">]</span>
+            
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+<span class="k">def</span> <span class="nf">index_of_parameter</span><span class="p">(</span><span class="n">potential_name</span><span class="p">,</span> <span class="n">parameter_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Tells the index of a parameter of a potential or bond order factor in the list of parameters the potential uses.</span>
+
+<span class="sd">    For a potential, the index of the specified parameter is given.</span>
+<span class="sd">    For a bond order factor, a list of two integers is given.</span>
+<span class="sd">    These give the number of targets (single element, pair etc.) the parameter</span>
+<span class="sd">    is associated with and the list index.</span>
+<span class="sd">    </span>
+<span class="sd">    Note especially that an index is returned, and these start counting from 0.</span>
+<span class="sd">    So for a bond order factor, a parameter for pairs (2 targets) will return 1</span>
+<span class="sd">    as the index for number of targets.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">    </span>
+<span class="sd">    potential_name: string</span>
+<span class="sd">        the name of the potential or bond order factor</span>
+<span class="sd">    parameter_name: string</span>
+<span class="sd">        the name of the parameter</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span><span class="p">(</span><span class="n">is_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_charge_relaxation</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="n">param_names</span> <span class="o">=</span> <span class="n">names_of_parameters</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">param_names</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">parameter_name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">index</span>
+            <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">elif</span><span class="p">(</span><span class="n">is_bond_order_factor</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="n">param_names</span> <span class="o">=</span> <span class="n">names_of_parameters</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+        <span class="n">target_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">listed</span> <span class="ow">in</span> <span class="n">param_names</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">listed</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="n">parameter_name</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="p">[</span><span class="n">target_index</span><span class="p">,</span><span class="n">index</span><span class="p">]</span>
+                <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">target_index</span> <span class="o">+=</span> <span class="mi">1</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">None</span>
+
+
+
+<span class="k">def</span> <span class="nf">descriptions_of_parameters</span><span class="p">(</span><span class="n">potential_name</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns a list of strings containing physical names of the parameters of a potential, bond order factor, or charge relaxation mode,</span>
+<span class="sd">    e.g., &#39;spring constant&#39; or &#39;decay length&#39;.</span>
+<span class="sd">    </span>
+<span class="sd">    For a potential, a simple list of descriptions is returned. For a bond order factor, the</span>
+<span class="sd">    parameters are categorised according to the number of targets they apply to</span>
+<span class="sd">    (single element, pair, etc.). So, for a bond order factor, a list of lists is</span>
+<span class="sd">    returned, where the first list contains the single element parameters, the second</span>
+<span class="sd">    list the pair parameters etc.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    potential_name: string</span>
+<span class="sd">        the name of the potential or bond order factor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span><span class="p">(</span><span class="n">is_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="n">param_codes</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">descriptions_of_parameters_of_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+        <span class="n">param_notes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">n_params</span> <span class="o">=</span> <span class="n">number_of_parameters</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">param_codes</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="n">n_params</span><span class="p">:</span>
+                <span class="n">param_notes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pu</span><span class="o">.</span><span class="n">ints2str</span><span class="p">(</span><span class="n">code</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span>
+                <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+    
+    <span class="k">elif</span><span class="p">(</span><span class="n">is_bond_order_factor</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="n">n_targets</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">number_of_targets_of_bond_order_factor</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+        <span class="n">param_codes</span> <span class="o">=</span> <span class="p">[</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">]</span><span class="o">*</span><span class="n">n_targets</span>
+        <span class="n">param_names</span> <span class="o">=</span> <span class="p">[</span> <span class="p">[]</span> <span class="p">]</span><span class="o">*</span><span class="n">n_targets</span>
+        <span class="n">n_params</span> <span class="o">=</span> <span class="n">number_of_parameters</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_targets</span><span class="p">):</span>
+            <span class="n">param_codes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">descriptions_of_parameters_of_bond_order_factor</span><span class="p">(</span><span class="n">potential_name</span><span class="p">,</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">transpose</span><span class="p">()</span>
+            <span class="n">param_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;&quot;</span><span class="p">]</span><span class="o">*</span><span class="n">n_params</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+        <span class="n">target_index</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">target_codes</span> <span class="ow">in</span> <span class="n">param_codes</span><span class="p">:</span>
+            <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">code</span> <span class="ow">in</span> <span class="n">target_codes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">index</span> <span class="o">&lt;</span> <span class="n">n_params</span><span class="p">[</span><span class="n">target_index</span><span class="p">]:</span>
+                    <span class="n">param_names</span><span class="p">[</span><span class="n">target_index</span><span class="p">][</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">pu</span><span class="o">.</span><span class="n">ints2str</span><span class="p">(</span><span class="n">code</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">target_index</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">param_names</span>
+            
+    
+    <span class="k">elif</span><span class="p">(</span><span class="n">is_charge_relaxation</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">ChargeRelaxation</span><span class="o">.</span><span class="n">relaxation_parameter_descriptions</span><span class="p">[</span><span class="n">potential_name</span><span class="p">]</span>
+    
+    <span class="k">elif</span><span class="p">(</span><span class="n">is_coulomb_summation</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)):</span>
+        <span class="k">return</span> <span class="n">CoulombSummation</span><span class="o">.</span><span class="n">summation_parameter_descriptions</span><span class="p">[</span><span class="n">potential_name</span><span class="p">]</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+
+    <span class="k">return</span> <span class="n">param_notes</span>
+
+<span class="c">#</span>
+<span class="c"># ToDo: implement descriptions of bond order factor and charge relaxation types</span>
+<span class="c">#</span>
+
+<span class="k">def</span> <span class="nf">description_of_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">,</span> <span class="n">parameter_values</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                             <span class="n">elements</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">tags</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Prints a brief description of a potential.</span>
+
+<span class="sd">    If optional arguments are provided,</span>
+<span class="sd">    they are incorporated in the description. That is, by default the method describes</span>
+<span class="sd">    the general features of a potential, but it can also be used for describing a</span>
+<span class="sd">    particular potential with set parameters.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    potential_name: string</span>
+<span class="sd">        the name of the potential</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">param_names</span> <span class="o">=</span> <span class="n">names_of_parameters</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+    <span class="n">param_notes</span> <span class="o">=</span> <span class="n">descriptions_of_parameters</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+    <span class="n">n_targets</span> <span class="o">=</span> <span class="n">number_of_targets</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+    <span class="n">n_params</span> <span class="o">=</span> <span class="n">number_of_parameters</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+    <span class="n">description</span> <span class="o">=</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">description_of_potential</span><span class="p">(</span><span class="n">potential_name</span><span class="p">)</span>
+
+    <span class="n">message</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
+<span class="s">potential &#39;{pot}&#39;</span>
+<span class="s">    </span>
+<span class="s">{n_targ}-body interaction</span>
+
+<span class="s">{descr}</span>
+<span class="s">parameters ({n_par}):</span>
+<span class="s">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pot</span><span class="o">=</span><span class="n">potential_name</span><span class="p">,</span><span class="n">n_targ</span><span class="o">=</span><span class="n">n_targets</span><span class="p">,</span><span class="n">descr</span><span class="o">=</span><span class="n">description</span><span class="p">,</span><span class="n">n_par</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">n_params</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">parameter_values</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">para</span><span class="p">,</span> <span class="n">note</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">param_names</span><span class="p">,</span> <span class="n">param_notes</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">+=</span> <span class="s">&quot;{pa} : {no}</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pa</span><span class="o">=</span><span class="n">para</span><span class="p">,</span><span class="n">no</span><span class="o">=</span><span class="n">note</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">para</span><span class="p">,</span> <span class="n">note</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">param_names</span><span class="p">,</span> <span class="n">param_notes</span><span class="p">,</span> <span class="n">parameter_values</span><span class="p">):</span>
+            <span class="n">message</span> <span class="o">+=</span> <span class="s">&quot;{pa} : {no} = {va}</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">pa</span><span class="o">=</span><span class="n">para</span><span class="p">,</span><span class="n">no</span><span class="o">=</span><span class="n">note</span><span class="p">,</span><span class="n">va</span><span class="o">=</span><span class="n">val</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">cutoff</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">cutoff = {cut}</span><span class="se">\n</span><span class="s">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">cut</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">cutoff</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">elements</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">targeted symbols:&quot;</span>
+        <span class="k">for</span> <span class="n">ele</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">:</span>            
+            <span class="n">message</span> <span class="o">+=</span> <span class="s">&quot; {0} &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ele</span><span class="p">))</span>
+        <span class="n">message</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+
+    <span class="k">if</span> <span class="n">tags</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">targeted tags:&quot;</span>
+        <span class="k">for</span> <span class="n">tag</span> <span class="ow">in</span> <span class="n">tags</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">+=</span> <span class="s">&quot; {0} &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">tag</span><span class="p">))</span>
+        <span class="n">message</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+
+    <span class="k">if</span> <span class="n">indices</span> <span class="o">!=</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">message</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">targeted indices:&quot;</span>
+        <span class="k">for</span> <span class="n">indy</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">:</span>
+            <span class="n">message</span> <span class="o">+=</span> <span class="s">&quot; {0} &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">indy</span><span class="p">))</span>
+        <span class="n">message</span> <span class="o">+=</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+            
+    <span class="k">print</span> <span class="n">message</span>
+
+
+<div class="viewcode-block" id="CoreMirror"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror">[docs]</a><span class="k">class</span> <span class="nc">CoreMirror</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A class representing the status of the core.</span>
+
+<span class="sd">    Whenever data is being passed over to the core for calculation,</span>
+<span class="sd">    it should also be saved in the CoreMirror. This makes the CoreMirror</span>
+<span class="sd">    reflect the current status of the core. Then, when something needs to be</span>
+<span class="sd">    calculated, the :class:`~pysic.Pysic` calculator can simply check that</span>
+<span class="sd">    it contains the same system as the CoreMirror to ensure that the</span>
+<span class="sd">    core operates on the correct data.</span>
+
+<span class="sd">    All data given to CoreMirror is saved as deep copies, i.e., not as</span>
+<span class="sd">    the objects themselves but objects with exactly the same contents.</span>
+<span class="sd">    This way if the original objects are modified, the ones in CoreMirror</span>
+<span class="sd">    are not. This is the proper way to work, since the Fortran core</span>
+<span class="sd">    obviously does not change without pushing the changes in the Python</span>
+<span class="sd">    side to the core first.</span>
+
+<span class="sd">        </span>
+<span class="sd">    Since exactly one CoreMirror should exist during the simulation, </span>
+<span class="sd">    deletion of the instance (which should happen at program termination automatically)</span>
+<span class="sd">    will automatically trigger release of memory in the Fortran core</span>
+<span class="sd">    as well as termination of the MPI framework.</span>
+<span class="sd">        </span>
+<span class="sd">    .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html</span>
+<span class="sd">    .. _ASE NeighborList: https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">structure</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoffs</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potential_lists_ready</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_order_factor_lists_ready</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mpi_ready</span> <span class="o">=</span> <span class="bp">False</span>        
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;CoreMirror()&quot;</span>
+
+
+<div class="viewcode-block" id="CoreMirror.get_atoms"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.get_atoms">[docs]</a>    <span class="k">def</span> <span class="nf">get_atoms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the `ASE Atoms`_ structure stored in the CoreMirror.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span>
+
+</div>
+<div class="viewcode-block" id="CoreMirror.view_fortran"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.view_fortran">[docs]</a>    <span class="k">def</span> <span class="nf">view_fortran</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Print some information on the data allocated in the Fortran core.</span>
+
+<span class="sd">        This is mainly a debugging utility for directly seeing the status of the core.</span>
+<span class="sd">        It can be accessed through::</span>
+
+<span class="sd">           &gt;&gt;&gt; pysic.Pysic.core.view_fortran()</span>
+
+<span class="sd">        The result is a bunch of data dumped to stdout. The function does</span>
+<span class="sd">        not return anything.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">examine_atoms</span><span class="p">()</span>
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">examine_cell</span><span class="p">()</span>
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">examine_potentials</span><span class="p">()</span>
+        <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">examine_bond_order_factors</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="CoreMirror.set_atoms"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.set_atoms">[docs]</a>    <span class="k">def</span> <span class="nf">set_atoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copies and stores the entire `ASE Atoms`_ instance.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: `ASE Atoms`_ object</span>
+<span class="sd">            atomic structure to be saved&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">structure</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">atoms</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potential_lists_ready</span> <span class="o">=</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="CoreMirror.set_charges"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.set_charges">[docs]</a>    <span class="k">def</span> <span class="nf">set_charges</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">charges</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copies and stores the charges of atoms in the `ASE Atoms`_ instance.</span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            atoms: `ASE Atoms`_ object</span>
+<span class="sd">                atomic structure containing the positions to be saved.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">set_charges</span><span class="p">(</span><span class="n">charges</span><span class="p">)</span>
+    </div>
+<div class="viewcode-block" id="CoreMirror.set_atomic_positions"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.set_atomic_positions">[docs]</a>    <span class="k">def</span> <span class="nf">set_atomic_positions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copies and stores the positions of atoms in the `ASE Atoms`_ instance.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: `ASE Atoms`_ object</span>
+<span class="sd">            atomic structure containing the positions to be saved.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">set_positions</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_positions</span><span class="p">())</span>
+        </div>
+<div class="viewcode-block" id="CoreMirror.set_atomic_momenta"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.set_atomic_momenta">[docs]</a>    <span class="k">def</span> <span class="nf">set_atomic_momenta</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copies and stores the momenta of atoms in the `ASE Atoms`_ instance.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: `ASE Atoms`_ object</span>
+<span class="sd">            atomic structure containing the momenta to be saved.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">set_momenta</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_momenta</span><span class="p">())</span>
+        </div>
+<div class="viewcode-block" id="CoreMirror.set_cell"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.set_cell">[docs]</a>    <span class="k">def</span> <span class="nf">set_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copies and stores the supercell in the `ASE Atoms`_ instance.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: `ASE Atoms`_ object</span>
+<span class="sd">            atomic structure containing the supercell to be saved.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">set_cell</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_cell</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">set_pbc</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_pbc</span><span class="p">())</span>
+        </div>
+<div class="viewcode-block" id="CoreMirror.set_potentials"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.set_potentials">[docs]</a>    <span class="k">def</span> <span class="nf">set_potentials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">potentials</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copies and stores :class:`~pysic.Potential` potentials.</span>
+
+<span class="sd">        The :class:`~pysic.Potential` instances are copied as a whole,</span>
+<span class="sd">        so any possible :class:`~pysic.Coordinator` and</span>
+<span class="sd">        :class:`~pysic.BondOrderParameters` objects are also stored.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: list of :class:`~pysic.Potential` objects</span>
+<span class="sd">            Potentials to be saved.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">potentials</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potential_lists_ready</span> <span class="o">=</span> <span class="bp">False</span>
+</div>
+<div class="viewcode-block" id="CoreMirror.set_neighbor_lists"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.set_neighbor_lists">[docs]</a>    <span class="k">def</span> <span class="nf">set_neighbor_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lists</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copies and stores the neighbor lists.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: `ASE NeighborList`_ object</span>
+<span class="sd">            Neighbor lists to be saved.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">lists</span><span class="p">)</span>
+
+        </div>
+<div class="viewcode-block" id="CoreMirror.set_coulomb"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.set_coulomb">[docs]</a>    <span class="k">def</span> <span class="nf">set_coulomb</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">coulomb</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Copies and stores the Coulomb summation algorithm.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">        coulomb: :class:`~pysic.CoulombSummation`</span>
+<span class="sd">            Coulomb summation algorithm to be saved            </span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">coulomb</span><span class="p">)</span>
+    
+    </div>
+<div class="viewcode-block" id="CoreMirror.atoms_ready"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.atoms_ready">[docs]</a>    <span class="k">def</span> <span class="nf">atoms_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if the positions and momenta of the given atoms match those in the core.</span>
+
+<span class="sd">        True is returned if the structures match, False otherwise.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: `ASE Atoms`_ object</span>
+<span class="sd">            The atoms to be compared.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">()</span> <span class="o">!=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">())</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_positions</span><span class="p">()</span> <span class="o">!=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_positions</span><span class="p">())</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_momenta</span><span class="p">()</span> <span class="o">!=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_momenta</span><span class="p">())</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+    
+        <span class="k">return</span> <span class="bp">True</span>
+                        </div>
+<div class="viewcode-block" id="CoreMirror.charges_ready"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.charges_ready">[docs]</a>    <span class="k">def</span> <span class="nf">charges_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if the charges of the given atoms match those in the core.</span>
+<span class="sd">            </span>
+<span class="sd">            True is returned if the charges match, False otherwise.</span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            atoms: `ASE Atoms`_ object</span>
+<span class="sd">                The atoms to be compared.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_charges</span><span class="p">()</span> <span class="o">!=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_charges</span><span class="p">())</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        
+        <span class="k">return</span> <span class="bp">True</span>
+            </div>
+<div class="viewcode-block" id="CoreMirror.cell_ready"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.cell_ready">[docs]</a>    <span class="k">def</span> <span class="nf">cell_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">atoms</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if the given supercell matches that in the core.</span>
+
+<span class="sd">        True is returned if the structures match, False otherwise.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: `ASE Atoms`_ object</span>
+<span class="sd">            The cell to be compared.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">structure</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()</span> <span class="o">!=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_cell</span><span class="p">())</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">if</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="o">.</span><span class="n">get_pbc</span><span class="p">()</span> <span class="o">!=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_pbc</span><span class="p">())</span><span class="o">.</span><span class="n">any</span><span class="p">()):</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="CoreMirror.potentials_ready"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.potentials_ready">[docs]</a>    <span class="k">def</span> <span class="nf">potentials_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pots</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if the given potentials match those in the core.</span>
+
+<span class="sd">        True is returned if the potentials match, False otherwise.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: list of :class:`~pysic.Potential` objects</span>
+<span class="sd">            The potentials to be compared.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">pots</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">True</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">==</span> <span class="n">pots</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CoreMirror.neighbor_lists_ready"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.neighbor_lists_ready">[docs]</a>    <span class="k">def</span> <span class="nf">neighbor_lists_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lists</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if the given neighbor lists match those in the core.</span>
+
+<span class="sd">        True is returned if the structures match, False otherwise.</span>
+
+<span class="sd">        Parameters:</span>
+
+<span class="sd">        atoms: `ASE NeighborList`_ object</span>
+<span class="sd">            The neighbor lists to be compared.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbor_lists</span> <span class="o">==</span> <span class="n">lists</span>
+
+            
+            
+
+            </div>
+<div class="viewcode-block" id="CoreMirror.coulomb_summation_ready"><a class="viewcode-back" href="../../coremirror class.html#pysic.core.CoreMirror.coulomb_summation_ready">[docs]</a>    <span class="k">def</span> <span class="nf">coulomb_summation_ready</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">coulomb</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks if the given Coulomb summation matches that in the core.</span>
+<span class="sd">            </span>
+<span class="sd">            True is returned if the summation algorithms match, False otherwise.</span>
+<span class="sd">            </span>
+<span class="sd">            Parameters: :class:`~pysic.CoulombSummation`</span>
+<span class="sd">                the summation algorithm to be compared</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">coulomb</span> <span class="o">==</span> <span class="n">coulomb</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

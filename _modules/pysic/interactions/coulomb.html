@@ -1,0 +1,275 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.interactions.coulomb &mdash; Pysic 0.4.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.4 documentation" href="../../../index.html" />
+    <link rel="up" title="pysic" href="../../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.interactions.coulomb</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+
+<span class="kn">from</span> <span class="nn">pysic.utility.error</span> <span class="kn">import</span> <span class="n">InvalidSummationError</span>
+
+
+<div class="viewcode-block" id="CoulombSummation"><a class="viewcode-back" href="../../../coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation">[docs]</a><span class="k">class</span> <span class="nc">CoulombSummation</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Class for representing a collection of parameters for evaluating Coulomb potentials.</span>
+
+<span class="sd">    Summing :math:`1/r` potentials in periodic systems requires more </span>
+<span class="sd">    advanced techniques than just direct summation of pair interactions.</span>
+<span class="sd">    The starndard method for evaluating these kinds of potentials is through</span>
+<span class="sd">    Ewald summation, where the long range part of the potential is evaluated</span>
+<span class="sd">    in reciprocal space.</span>
+<span class="sd">    </span>
+<span class="sd">    Instances of this class are used for wrapping the parameters controlling</span>
+<span class="sd">    the summations. Passing such an instance to the :class:`~pysic.Pysic`</span>
+<span class="sd">    calculator activates the evaluation of Coulomb interactions.</span>
+<span class="sd">    </span>
+<span class="sd">    Currently, only Ewald summation is available as a calculation method.</span>
+<span class="sd">        </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">    method: string</span>
+<span class="sd">        keyword specifying the method of summation</span>
+<span class="sd">    parameters: list of doubles</span>
+<span class="sd">        numeric values of summation parameters</span>
+<span class="sd">    scaler: list of doubles</span>
+<span class="sd">        numeric values for scaling the atomic charges in summation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">summation_modes</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&#39;ewald&#39;</span> <span class="p">]</span>
+    <span class="sd">&quot;&quot;&quot;Names of the summation methods. These are keywords used for setting up the summation algorithms.&quot;&quot;&quot;</span>
+    <span class="n">summation_parameters</span> <span class="o">=</span> <span class="p">{</span> <span class="n">summation_modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="p">[</span><span class="s">&#39;real_cutoff&#39;</span><span class="p">,</span>
+                                                   <span class="s">&#39;k_cutoff&#39;</span><span class="p">,</span>
+                                                   <span class="s">&#39;sigma&#39;</span><span class="p">,</span>
+                                                   <span class="s">&#39;epsilon&#39;</span><span class="p">]</span> <span class="p">}</span>
+    <span class="sd">&quot;&quot;&quot;Names of the parameters of the summation algorithm.&quot;&quot;&quot;</span>
+    <span class="n">summation_parameter_descriptions</span> <span class="o">=</span> <span class="p">{</span> <span class="n">summation_modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="p">:</span> <span class="p">[</span><span class="s">&#39;real space cutoff radius&#39;</span><span class="p">,</span>
+                                                   <span class="s">&#39;reciprocal space cutoff radius&#39;</span><span class="p">,</span>
+                                                   <span class="s">&#39;ewald summation split parameter&#39;</span><span class="p">,</span>
+                                                   <span class="s">&#39;vacuum permittivity&#39;</span><span class="p">]</span> <span class="p">}</span>
+    <span class="sd">&quot;&quot;&quot;Short descriptions of the parameters of the summation algorithm.&quot;&quot;&quot;</span>
+    
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">method</span><span class="o">=</span><span class="s">&#39;ewald&#39;</span><span class="p">,</span><span class="n">parameters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span><span class="n">scaler</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_summation</span><span class="p">(</span><span class="n">method</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_parameters</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_scaling_factors</span><span class="p">(</span><span class="n">scaler</span><span class="p">)</span>
+    
+    
+    <span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">method</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">parameters</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="o">!=</span> <span class="n">other</span><span class="o">.</span><span class="n">scaler</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">False</span>
+                    
+        <span class="k">return</span> <span class="bp">True</span>
+    
+    
+    <span class="k">def</span> <span class="nf">__ne__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">other</span><span class="p">):</span>
+        <span class="k">return</span> <span class="ow">not</span> <span class="bp">self</span> <span class="o">==</span> <span class="n">other</span>
+
+
+    <span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">&quot;CoulombSummation(method=&#39;{m}&#39;,parameters={p},scaler={s})&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+                                                                                 <span class="n">p</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">),</span>
+                                                                                 <span class="n">s</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scaler</span><span class="p">))</span>
+
+
+<span class="c"># ToDo: make an InvalidSummationError</span>
+<div class="viewcode-block" id="CoulombSummation.set_summation"><a class="viewcode-back" href="../../../coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation.set_summation">[docs]</a>    <span class="k">def</span> <span class="nf">set_summation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">method</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the summation method.</span>
+<span class="sd">            </span>
+<span class="sd">            The method also creates a dictionary of parameters initialized to 0.0</span>
+<span class="sd">            by invoking :meth:`~pysic.CoulombSummation.initialize_parameters`.</span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            method: string</span>
+<span class="sd">                a keyword specifying the mode of summation</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">CoulombSummation</span><span class="o">.</span><span class="n">summation_modes</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">method</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">=</span> <span class="n">method</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize_parameters</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">InvalidParametersError</span><span class="p">(</span><span class="s">&quot;no such summation mode &quot;</span><span class="o">+</span><span class="n">method</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="CoulombSummation.initialize_parameters"><a class="viewcode-back" href="../../../coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation.initialize_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">initialize_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates a dictionary of parameters and initializes all values to 0.0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>        
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">CoulombSummation</span><span class="o">.</span><span class="n">summation_parameters</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+                
+</div>
+<div class="viewcode-block" id="CoulombSummation.set_parameters"><a class="viewcode-back" href="../../../coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation.set_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the numeric values for all parameters.</span>
+<span class="sd">        </span>
+<span class="sd">        Equivalent to :meth:`~pysic.CoulombSummation.set_parameter_values`</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        parameters: list of doubles</span>
+<span class="sd">            list of values to be assigned to parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_parameter_values</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span>
+    
+    </div>
+<div class="viewcode-block" id="CoulombSummation.set_parameter_values"><a class="viewcode-back" href="../../../coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation.set_parameter_values">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameter_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the numeric values for all parameters.                    </span>
+<span class="sd">            </span>
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            parameters: list of doubles</span>
+<span class="sd">                list of values to be assigned to parameters</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">parameters</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">initialize_parameters</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">InvalidParametersError</span><span class="p">(</span><span class="s">&quot;The summation mode &quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="o">+</span><span class="s">&quot; requires &quot;</span><span class="o">+</span>
+                                         <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">)</span><span class="o">+</span><span class="s">&quot; parameters.&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">get_keys</span><span class="p">(),</span> <span class="n">parameters</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">parameters</span>
+    
+</div>
+<div class="viewcode-block" id="CoulombSummation.set_parameter_value"><a class="viewcode-back" href="../../../coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation.set_parameter_value">[docs]</a>    <span class="k">def</span> <span class="nf">set_parameter_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter_name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets a given parameter to the desired value.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        parameter_name: string</span>
+<span class="sd">            name of the parameter</span>
+<span class="sd">        value: double</span>
+<span class="sd">            the new value of the parameter</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="n">parameter_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
+</div>
+<div class="viewcode-block" id="CoulombSummation.set_scaling_factors"><a class="viewcode-back" href="../../../coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation.set_scaling_factors">[docs]</a>    <span class="k">def</span> <span class="nf">set_scaling_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">scaler</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the list of scaling parameters for atomic charges.</span>
+
+<span class="sd">            Parameters:</span>
+<span class="sd">            </span>
+<span class="sd">            scaler: list of doubles</span>
+<span class="sd">                the list of scaling factors</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span> <span class="o">=</span> <span class="n">scaler</span>
+                
+</div>
+<div class="viewcode-block" id="CoulombSummation.get_scaling_factors"><a class="viewcode-back" href="../../../coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation.get_scaling_factors">[docs]</a>    <span class="k">def</span> <span class="nf">get_scaling_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the list of scaling parameters for atomic charges.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scaler</span>
+                
+                </div>
+<div class="viewcode-block" id="CoulombSummation.get_summation"><a class="viewcode-back" href="../../../coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation.get_summation">[docs]</a>    <span class="k">def</span> <span class="nf">get_summation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the mode of summation.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span>
+</div>
+<div class="viewcode-block" id="CoulombSummation.get_parameters"><a class="viewcode-back" href="../../../coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation.get_parameters">[docs]</a>    <span class="k">def</span> <span class="nf">get_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list containing the numeric values of the parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span>
+</div>
+<div class="viewcode-block" id="CoulombSummation.get_realspace_cutoff"><a class="viewcode-back" href="../../../coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation.get_realspace_cutoff">[docs]</a>    <span class="k">def</span> <span class="nf">get_realspace_cutoff</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the real space cutoff.</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span> <span class="o">==</span> <span class="n">CoulombSummation</span><span class="o">.</span><span class="n">summation_modes</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="c">#ewald</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;real_cutoff&#39;</span><span class="p">]</span>
+        <span class="k">return</span> <span class="mf">0.0</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

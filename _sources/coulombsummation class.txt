@@ -10,6 +10,8 @@
 
 
 
+.. module:: pysic.interactions.coulomb
+
 ======================
 CoulombSummation class
 ======================
@@ -23,7 +25,7 @@ If a periodic system contains charges interacting via the :math:`\frac{1}{r}` Co
     
 where the sum is over pairs of charges :math:`q_i, q_j` (charges of the entire system, not just the simulation cell) and the distance between the charges is :math:`r_{ij} = |\mathbf{r}_j - \mathbf{r}_i|`, does not work in general because the sum :eq:`direct_sum` converges very slowly (it actually converges only conditionally). Therefore truncating the sum may lead to severe errors. More advanced techniques must be used in order to accurately evaluate such sums.
 
-This class represents the algorithms used for evaluating the :math:`1/r` sums. It wraps the summation parameters and activates the summation of Coulomb interactions. If an instance of :class:`~pysic.CoulombSummation` is given to the :class:`~pysic.calculator.Pysic` calculator, Coulomb interactions between all charged atoms are automatically included in the calculations, regardless of possible :class:`~pysic.Potential` potentials the calculator may also contain. Otherwise the charges do not directly interact. This is due to two reasons: First, the direct Coulomb interaction is usually always required and it is convenient that it is easily enabled. Second, the specific potentials described by :class:`~pysic.Potential` are evaluated by direct summation and so the Coulomb summation is separate also on algorithm level in the core.
+This class represents the algorithms used for evaluating the :math:`1/r` sums. It wraps the summation parameters and activates the summation of Coulomb interactions. If an instance of :class:`~pysic.interactions.coulomb.CoulombSummation` is given to the :class:`~pysic.calculator.Pysic` calculator, Coulomb interactions between all charged atoms are automatically included in the calculations, regardless of possible :class:`~pysic.interactions.local.Potential` potentials the calculator may also contain. Otherwise the charges do not directly interact. This is due to two reasons: First, the direct Coulomb interaction is usually always required and it is convenient that it is easily enabled. Second, the specific potentials described by :class:`~pysic.interactions.local.Potential` are evaluated by direct summation and so the Coulomb summation is separate also on algorithm level in the core.
 
 
 .. file:list of summation modes
@@ -147,34 +149,34 @@ The long range forces are obtained by differentiating the structure factor
 List of methods
 ---------------
   
-Below is a list of methods in :class:`~pysic.CoulombSummation`, grouped according to
+Below is a list of methods in :class:`~pysic.interactions.coulomb.CoulombSummation`, grouped according to
 the type of functionality.
 
 Initialization
 ______________
 
-- :meth:`~pysic.CoulombSummation.initialize_parameters` (meant for internal use)
-- :meth:`~pysic.CoulombSummation.get_summation`
-- :meth:`~pysic.CoulombSummation.set_summation`
-- :data:`~pysic.CoulombSummation.summation_modes`
-- :data:`~pysic.CoulombSummation.summation_parameter_descriptions`
-- :data:`~pysic.CoulombSummation.summation_parameters`
+- :meth:`~pysic.interactions.coulomb.CoulombSummation.initialize_parameters` (meant for internal use)
+- :meth:`~pysic.interactions.coulomb.CoulombSummation.get_summation`
+- :meth:`~pysic.interactions.coulomb.CoulombSummation.set_summation`
+- :data:`~pysic.interactions.coulomb.CoulombSummation.summation_modes`
+- :data:`~pysic.interactions.coulomb.CoulombSummation.summation_parameter_descriptions`
+- :data:`~pysic.interactions.coulomb.CoulombSummation.summation_parameters`
 
 Parameter handling
 __________________
 
-- :meth:`~pysic.CoulombSummation.get_parameters`
-- :meth:`~pysic.CoulombSummation.set_parameter_value`
-- :meth:`~pysic.CoulombSummation.set_parameter_values`
-- :meth:`~pysic.CoulombSummation.set_parameters`
+- :meth:`~pysic.interactions.coulomb.CoulombSummation.get_parameters`
+- :meth:`~pysic.interactions.coulomb.CoulombSummation.set_parameter_value`
+- :meth:`~pysic.interactions.coulomb.CoulombSummation.set_parameter_values`
+- :meth:`~pysic.interactions.coulomb.CoulombSummation.set_parameters`
 
 
 Miscellaneous
 ______________
 
-- :meth:`~pysic.CoulombSummation.get_realspace_cutoff`
-- :meth:`~pysic.CoulombSummation.get_scaling_factors`
-- :meth:`~pysic.CoulombSummation.set_scaling_factors`
+- :meth:`~pysic.interactions.coulomb.CoulombSummation.get_realspace_cutoff`
+- :meth:`~pysic.interactions.coulomb.CoulombSummation.get_scaling_factors`
+- :meth:`~pysic.interactions.coulomb.CoulombSummation.set_scaling_factors`
 
 
 
@@ -182,7 +184,7 @@ ______________
 Full documentation of the CoulombSummation class
 -------------------------------------------------
 
-.. currentmodule:: pysic
+.. currentmodule:: pysic.interactions.coulomb
 .. autoclass:: CoulombSummation
    :members:
    :undoc-members:

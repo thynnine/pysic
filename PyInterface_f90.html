@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pysic_interface (PyInterface.f90) &mdash; Pysic 0.4.3 documentation</title>
+    <title>pysic_interface (PyInterface.f90) &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="up" title="Pysic Fortran module" href="pysic_fortran.html" />
     <link rel="next" title="pysic_core (Core.f90)" href="Core_f90.html" />
     <link rel="prev" title="Pysic Fortran module" href="pysic_fortran.html" /> 
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="pysic_fortran.html" title="Pysic Fortran module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic_fortran.html" accesskey="U">Pysic Fortran module</a> &raquo;</li> 
       </ul>
     </div>
@@ -147,6 +147,7 @@ to, if the routine is just a redirect of the call.</p>
 <li><a class="reference internal" href="#calculate_electronegativities" title="calculate_electronegativities"><tt class="xref py py-func docutils literal"><span class="pre">calculate_electronegativities()</span></tt></a></li>
 <li><a class="reference internal" href="#calculate_energy" title="calculate_energy"><tt class="xref py py-func docutils literal"><span class="pre">calculate_energy()</span></tt></a></li>
 <li><a class="reference internal" href="#calculate_forces" title="calculate_forces"><tt class="xref py py-func docutils literal"><span class="pre">calculate_forces()</span></tt></a></li>
+<li><a class="reference internal" href="#clear_potential_multipliers" title="clear_potential_multipliers"><tt class="xref py py-func docutils literal"><span class="pre">clear_potential_multipliers()</span></tt></a></li>
 <li><a class="reference internal" href="#create_atoms" title="create_atoms"><tt class="xref py py-func docutils literal"><span class="pre">create_atoms()</span></tt></a></li>
 <li><a class="reference internal" href="#create_bond_order_factor_list" title="create_bond_order_factor_list"><tt class="xref py py-func docutils literal"><span class="pre">create_bond_order_factor_list()</span></tt></a></li>
 <li><a class="reference internal" href="#create_cell" title="create_cell"><tt class="xref py py-func docutils literal"><span class="pre">create_cell()</span></tt></a></li>
@@ -234,7 +235,7 @@ The memory must have been allocated first using allocate_potentials.</p>
 
 <dl class="function">
 <dt id="add_potential">
-<tt class="descname">add_potential</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>pot_name</em>, <em>parameters</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>tags</em>, <em>indices</em>, <em>orig_elements</em>, <em>orig_tags</em>, <em>orig_indices</em>, <em>pot_index</em>, <em>success</em><big>)</big><a class="headerlink" href="#add_potential" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">add_potential</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>pot_name</em>, <em>parameters</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>tags</em>, <em>indices</em>, <em>orig_elements</em>, <em>orig_tags</em>, <em>orig_indices</em>, <em>pot_index</em>, <em>is_multiplier</em>, <em>success</em><big>)</big><a class="headerlink" href="#add_potential" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a potential in the core.
 The memory must have been allocated first using allocate_potentials.</p>
 <p>Calls <a class="reference internal" href="Core_f90.html#core_add_potential" title="core_add_potential"><tt class="xref py py-func docutils literal"><span class="pre">core_add_potential()</span></tt></a></p>
@@ -266,6 +267,8 @@ The memory must have been allocated first using allocate_potentials.</p>
 <dd>original indices specifying the atoms the interaction acts on</dd>
 <dt>pot_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>index of the potential</dd>
+<dt>is_multiplier: logical  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>logical tag defining if the potential is a multiplier for a product potential</dd>
 <dt><strong>success</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>logical tag specifying if creation of the potential succeeded</dd>
 </dl>
@@ -432,6 +435,12 @@ the coordinator / potential.</p>
 <dt><strong>stress</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></dt>
 <dd>array containing the components of the stress tensor (in order <span class="math">\(xx,yy,zz,yz,xz,xy\)</span>)</dd>
 </dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="clear_potential_multipliers">
+<tt class="descname">clear_potential_multipliers</tt><big>(</big><big>)</big><a class="headerlink" href="#clear_potential_multipliers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Clears the temporary stored array of multiplier potentials</p>
 </dd></dl>
 
 <dl class="function">
@@ -732,7 +741,8 @@ for all other atoms.</p>
 <dl class="function">
 <dt id="get_neighbor_list_of_atom">
 <tt class="descname">get_neighbor_list_of_atom</tt><big>(</big><em>atom_index</em>, <em>n_neighbors</em>, <em>neighbors</em>, <em>offsets</em><big>)</big><a class="headerlink" href="#get_neighbor_list_of_atom" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parameters:</p>
+<dd><p>Returns the list of neighbors for an atom</p>
+<p>Parameters:</p>
 <p>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></p>
 <p>n_neighbors: integer  <em>intent(in)</em>    <em>scalar</em></p>
 <p><strong>neighbors</strong>: integer  <strong>intent(out)</strong>    <em>size(n_neighbors)</em></p>
@@ -765,7 +775,8 @@ for all other atoms.</p>
 <dl class="function">
 <dt id="get_number_of_neighbors_of_atom">
 <tt class="descname">get_number_of_neighbors_of_atom</tt><big>(</big><em>atom_index</em>, <em>n_neighbors</em><big>)</big><a class="headerlink" href="#get_number_of_neighbors_of_atom" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parameters:</p>
+<dd><p>Returns the number of neighbors for an atom</p>
+<p>Parameters:</p>
 <p>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></p>
 <p><strong>n_neighbors</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></p>
 </dd></dl>
@@ -1088,7 +1099,7 @@ must already exist in the core.</p>
         <li class="right" >
           <a href="pysic_fortran.html" title="Pysic Fortran module"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic_fortran.html" >Pysic Fortran module</a> &raquo;</li> 
       </ul>
     </div>

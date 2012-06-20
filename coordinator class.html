@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Coordinator class &mdash; Pysic 0.4.3 documentation</title>
+    <title>Coordinator class &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="up" title="Pysic module" href="pysic.html" />
     <link rel="next" title="BondOrderParameters class" href="bondorderparameters class.html" />
     <link rel="prev" title="CoulombSummation class" href="coulombsummation class.html" /> 
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="coulombsummation class.html" title="CoulombSummation class"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
       </ul>
     </div>
@@ -102,21 +102,21 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <span class="target" id="coordinator-class"></span><div class="section" id="coordinator-class-description">
-<span id="id1"></span><h1>Coordinator class<a class="headerlink" href="#coordinator-class-description" title="Permalink to this headline">¶</a></h1>
+  <span class="target" id="coordinator-class"></span><span class="target" id="module-pysic.interactions.bondorder"><span id="coordinator-class-description"></span></span><div class="section" id="id1">
+<h1>Coordinator class<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h1>
 <p>Coordinator is short for &#8216;Coordination Calculator&#8217;.</p>
 <p>This class provides a utility for calculating and storing bond order factors
 needed for bond order or Tersoff-like potentials. Here, bond order refers
 roughly to the number of neighbors of an atom, however, the bond order factors may
 depend also on the atomic distances, angles and other local geometric factors.</p>
-<p>To use a <a class="reference internal" href="#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a>, one must pass it first to a <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> object,
+<p>To use a <a class="reference internal" href="#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a>, one must pass it first to a <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> object,
 which is further given to a <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator. Then, one can use the
-calculator to calculate forces or just the bond order factors. When a <a class="reference internal" href="#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a>
-is added to a <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>, the potential is multiplied by the bond order factors
+calculator to calculate forces or just the bond order factors. When a <a class="reference internal" href="#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a>
+is added to a <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>, the potential is multiplied by the bond order factors
 as defined by the Coordinator.</p>
 <div class="section" id="bond-order-potentials">
 <span id="id2"></span><h2>Bond order potentials<a class="headerlink" href="#bond-order-potentials" title="Permalink to this headline">¶</a></h2>
-<p>A bond order factor can be added to any <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> object.
+<p>A bond order factor can be added to any <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> object.
 This means that the potential is multiplied by the bond order factor. The factors are always
 defined by atom, but for a two and many body potentials the average is applied.
 To put in other words, if we have, say, a three-body potential</p>
@@ -146,12 +146,12 @@ elements and in addition, they may contain parameters separately for single elem
 pairs of elements, element triplets etc. Due to this, a bond order factor can contain
 plenty of parameters.</p>
 <p>To ease the handling of all the parameters, a wrapper class
-<a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> is defined.
+<a class="reference internal" href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters" title="pysic.interactions.bondorder.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> is defined.
 A single instance of this class defines the type of bond order factor and
 contains the cutoffs and parameters for one set of elements.
-The <a class="reference internal" href="#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> object then collects these parameters in one bundle.</p>
+The <a class="reference internal" href="#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> object then collects these parameters in one bundle.</p>
 <p>The bond order types and all associated parameters are explained in the documentation
-of <a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a>.</p>
+of <a class="reference internal" href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters" title="pysic.interactions.bondorder.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a>.</p>
 </div>
 <div class="section" id="bond-order-mixing">
 <span id="mixing-bond-order-types"></span><h2>Bond order mixing<a class="headerlink" href="#bond-order-mixing" title="Permalink to this headline">¶</a></h2>
@@ -168,7 +168,7 @@ a per-atom scaling function. For example, if one would define a factor</p>
 s_i(x) = 1 + x.\end{split}\]</div>
 <p>When bond order factors are evaluated, the sums <span class="math">\(\sum_{(i,j,\ldots)} b_{ij\ldots}\)</span>
 are always calculated first and only then the scaling <span class="math">\(s_i\)</span> is applied atom-by-atom.</p>
-<p>When a <a class="reference internal" href="#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> contains several <a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a>:</p>
+<p>When a <a class="reference internal" href="#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> contains several <a class="reference internal" href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters" title="pysic.interactions.bondorder.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">crd</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Coordinator</span><span class="p">(</span> <span class="p">[</span> <span class="n">bond1</span><span class="p">,</span> <span class="n">bond2</span><span class="p">,</span> <span class="n">bond3</span> <span class="p">]</span> <span class="p">)</span>
 </pre></div>
 </div>
@@ -181,7 +181,7 @@ contains 1-body parameters for the correct element. (That is, the first atomic s
 the list of targets of the parameter must equal the element of the atom for which the scaling
 is done.) Once such parameters are found, they are used for scaling and the rest of the parameters
 are ignored. In practice this means that the first applicable set of parameters in the list of
-<a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> in the <a class="reference internal" href="#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> is used.</p>
+<a class="reference internal" href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters" title="pysic.interactions.bondorder.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> in the <a class="reference internal" href="#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> is used.</p>
 <p>Because of this behaviour, the default scaling can be overridden as shown in the following example.</p>
 <p>Let&#8217;s say we wish to create a potential to bias the coordination number of Cu-O bonds
 of Cu atoms, <span class="math">\(n\)</span>, according to</p>
@@ -203,45 +203,45 @@ of Cu atoms, <span class="math">\(n\)</span>, according to</p>
 <span class="gp">... </span>                       <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">],</span> <span class="n">coordinator</span> <span class="o">=</span> <span class="n">crd</span> <span class="p">)</span>
 </pre></div>
 </div>
-<p>In the final step, the <a class="reference internal" href="#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> is attached to a
-<a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> with a constant value of 1.0.
+<p>In the final step, the <a class="reference internal" href="#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> is attached to a
+<a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> with a constant value of 1.0.
 Since the result is a product between the bond order factor and
 the potential, the resulting potential is just the bond order factor.</p>
 </div>
 <div class="section" id="list-of-methods">
 <span id="coordinator-class-autogenerated"></span><h2>List of methods<a class="headerlink" href="#list-of-methods" title="Permalink to this headline">¶</a></h2>
-<p>Below is a list of methods in <a class="reference internal" href="#pysic.Coordinator" title="pysic.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a>, grouped according to
+<p>Below is a list of methods in <a class="reference internal" href="#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a>, grouped according to
 the type of functionality.</p>
 <div class="section" id="parameter-handling">
 <h3>Parameter handling<a class="headerlink" href="#parameter-handling" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.Coordinator.add_bond_order_parameters" title="pysic.Coordinator.add_bond_order_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">add_bond_order_parameters()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Coordinator.set_bond_order_parameters" title="pysic.Coordinator.set_bond_order_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">set_bond_order_parameters()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Coordinator.get_bond_order_parameters" title="pysic.Coordinator.get_bond_order_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">get_bond_order_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.bondorder.Coordinator.add_bond_order_parameters" title="pysic.interactions.bondorder.Coordinator.add_bond_order_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">add_bond_order_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.bondorder.Coordinator.set_bond_order_parameters" title="pysic.interactions.bondorder.Coordinator.set_bond_order_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">set_bond_order_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.bondorder.Coordinator.get_bond_order_parameters" title="pysic.interactions.bondorder.Coordinator.get_bond_order_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">get_bond_order_parameters()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="coordination-and-bond-order">
 <h3>Coordination and bond order<a class="headerlink" href="#coordination-and-bond-order" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.Coordinator.calculate_bond_order_factors" title="pysic.Coordinator.calculate_bond_order_factors"><tt class="xref py py-meth docutils literal"><span class="pre">calculate_bond_order_factors()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Coordinator.get_bond_order_factors" title="pysic.Coordinator.get_bond_order_factors"><tt class="xref py py-meth docutils literal"><span class="pre">get_bond_order_factors()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Coordinator.get_bond_order_gradients" title="pysic.Coordinator.get_bond_order_gradients"><tt class="xref py py-meth docutils literal"><span class="pre">get_bond_order_gradients()</span></tt></a></li>
-<li><a class="reference internal" href="#pysic.Coordinator.get_bond_order_gradients_of_factor" title="pysic.Coordinator.get_bond_order_gradients_of_factor"><tt class="xref py py-meth docutils literal"><span class="pre">get_bond_order_gradients_of_factor()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.bondorder.Coordinator.calculate_bond_order_factors" title="pysic.interactions.bondorder.Coordinator.calculate_bond_order_factors"><tt class="xref py py-meth docutils literal"><span class="pre">calculate_bond_order_factors()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.bondorder.Coordinator.get_bond_order_factors" title="pysic.interactions.bondorder.Coordinator.get_bond_order_factors"><tt class="xref py py-meth docutils literal"><span class="pre">get_bond_order_factors()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.bondorder.Coordinator.get_bond_order_gradients" title="pysic.interactions.bondorder.Coordinator.get_bond_order_gradients"><tt class="xref py py-meth docutils literal"><span class="pre">get_bond_order_gradients()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.bondorder.Coordinator.get_bond_order_gradients_of_factor" title="pysic.interactions.bondorder.Coordinator.get_bond_order_gradients_of_factor"><tt class="xref py py-meth docutils literal"><span class="pre">get_bond_order_gradients_of_factor()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="miscellaneous">
 <h3>Miscellaneous<a class="headerlink" href="#miscellaneous" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li><a class="reference internal" href="#pysic.Coordinator.get_group_index" title="pysic.Coordinator.get_group_index"><tt class="xref py py-meth docutils literal"><span class="pre">get_group_index()</span></tt></a> (meant for internal use)</li>
-<li><a class="reference internal" href="#pysic.Coordinator.set_group_index" title="pysic.Coordinator.set_group_index"><tt class="xref py py-meth docutils literal"><span class="pre">set_group_index()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.interactions.bondorder.Coordinator.get_group_index" title="pysic.interactions.bondorder.Coordinator.get_group_index"><tt class="xref py py-meth docutils literal"><span class="pre">get_group_index()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="#pysic.interactions.bondorder.Coordinator.set_group_index" title="pysic.interactions.bondorder.Coordinator.set_group_index"><tt class="xref py py-meth docutils literal"><span class="pre">set_group_index()</span></tt></a> (meant for internal use)</li>
 </ul>
 </div>
 </div>
 <div class="section" id="full-documentation-of-the-coordinator-class">
 <h2>Full documentation of the Coordinator class<a class="headerlink" href="#full-documentation-of-the-coordinator-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
-<dt id="pysic.Coordinator">
-<em class="property">class </em><tt class="descclassname">pysic.</tt><tt class="descname">Coordinator</tt><big>(</big><em>bond_order_parameters=None</em><big>)</big><a class="headerlink" href="#pysic.Coordinator" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.bondorder.Coordinator">
+<em class="property">class </em><tt class="descclassname">pysic.interactions.bondorder.</tt><tt class="descname">Coordinator</tt><big>(</big><em>bond_order_parameters=None</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/bondorder.html#Coordinator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.bondorder.Coordinator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for representing a calculator for atomic coordination numbers and bond order factors.</p>
 <p>Pysic can utilise &#8216;Tersoff-like&#8217; potentials which are locally scaled according to
 bond order factors, related to the number of neighbors of each atom.
@@ -257,39 +257,39 @@ system including the interactions, and so one can define coordination calculator
 standalone objects as well. They always operate on the geometry currently allocated in the core.</p>
 <p>Parameters:</p>
 <dl class="docutils">
-<dt>bond_order_parameters: list of <a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> objects</dt>
+<dt>bond_order_parameters: list of <a class="reference internal" href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters" title="pysic.interactions.bondorder.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> objects</dt>
 <dd>Parameters for calculating bond order factors.</dd>
 </dl>
 <dl class="method">
-<dt id="pysic.Coordinator.add_bond_order_parameters">
-<tt class="descname">add_bond_order_parameters</tt><big>(</big><em>params</em><big>)</big><a class="headerlink" href="#pysic.Coordinator.add_bond_order_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.bondorder.Coordinator.add_bond_order_parameters">
+<tt class="descname">add_bond_order_parameters</tt><big>(</big><em>params</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/bondorder.html#Coordinator.add_bond_order_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.bondorder.Coordinator.add_bond_order_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds the given parameters to this Coordinator.</p>
 <p>Parameters:</p>
 <dl class="docutils">
-<dt>params: <tt class="xref py py-class docutils literal"><span class="pre">BondOrderCoordinator</span></tt></dt>
+<dt>params: <a class="reference internal" href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters" title="pysic.interactions.bondorder.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a></dt>
 <dd>new bond order parameters</dd>
 </dl>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Coordinator.calculate_bond_order_factors">
-<tt class="descname">calculate_bond_order_factors</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Coordinator.calculate_bond_order_factors" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.bondorder.Coordinator.calculate_bond_order_factors">
+<tt class="descname">calculate_bond_order_factors</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/bondorder.html#Coordinator.calculate_bond_order_factors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.bondorder.Coordinator.calculate_bond_order_factors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Recalculates the bond order factors for all atoms and stores them.</p>
 <p>Similarly to coordination numbers (<tt class="xref py py-meth docutils literal"><span class="pre">calculate_coordination()</span></tt>),
 this method only calculates the factors and stores them but does not return them.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Coordinator.get_bond_order_factors">
-<tt class="descname">get_bond_order_factors</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Coordinator.get_bond_order_factors" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.bondorder.Coordinator.get_bond_order_factors">
+<tt class="descname">get_bond_order_factors</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/bondorder.html#Coordinator.get_bond_order_factors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.bondorder.Coordinator.get_bond_order_factors" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns an array containing the bond order factors of all atoms.</p>
 <p>This method does not calculate the bond order factors but returns the
 precalculated array.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Coordinator.get_bond_order_gradients">
-<tt class="descname">get_bond_order_gradients</tt><big>(</big><em>atom_index</em><big>)</big><a class="headerlink" href="#pysic.Coordinator.get_bond_order_gradients" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.bondorder.Coordinator.get_bond_order_gradients">
+<tt class="descname">get_bond_order_gradients</tt><big>(</big><em>atom_index</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/bondorder.html#Coordinator.get_bond_order_gradients"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.bondorder.Coordinator.get_bond_order_gradients" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns an array containing the gradients of bond order factors of all atoms with respect to moving one atom.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -299,8 +299,8 @@ precalculated array.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Coordinator.get_bond_order_gradients_of_factor">
-<tt class="descname">get_bond_order_gradients_of_factor</tt><big>(</big><em>atom_index</em><big>)</big><a class="headerlink" href="#pysic.Coordinator.get_bond_order_gradients_of_factor" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.bondorder.Coordinator.get_bond_order_gradients_of_factor">
+<tt class="descname">get_bond_order_gradients_of_factor</tt><big>(</big><em>atom_index</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/bondorder.html#Coordinator.get_bond_order_gradients_of_factor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.bondorder.Coordinator.get_bond_order_gradients_of_factor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns an array containing the gradients of the bond order factor of one atom with respect to moving any atom.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -310,31 +310,31 @@ precalculated array.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Coordinator.get_bond_order_parameters">
-<tt class="descname">get_bond_order_parameters</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Coordinator.get_bond_order_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.bondorder.Coordinator.get_bond_order_parameters">
+<tt class="descname">get_bond_order_parameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/bondorder.html#Coordinator.get_bond_order_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.bondorder.Coordinator.get_bond_order_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the bond order parameters of this Coordinator.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Coordinator.get_group_index">
-<tt class="descname">get_group_index</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.Coordinator.get_group_index" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.bondorder.Coordinator.get_group_index">
+<tt class="descname">get_group_index</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/bondorder.html#Coordinator.get_group_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.bondorder.Coordinator.get_group_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the group index of the Coordinator.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Coordinator.set_bond_order_parameters">
-<tt class="descname">set_bond_order_parameters</tt><big>(</big><em>params</em><big>)</big><a class="headerlink" href="#pysic.Coordinator.set_bond_order_parameters" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.bondorder.Coordinator.set_bond_order_parameters">
+<tt class="descname">set_bond_order_parameters</tt><big>(</big><em>params</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/bondorder.html#Coordinator.set_bond_order_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.bondorder.Coordinator.set_bond_order_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assigns new bond order parameters to this Coordinator.</p>
 <p>Parameters:</p>
 <dl class="docutils">
-<dt>params: <tt class="xref py py-class docutils literal"><span class="pre">BondOrderCoordinator</span></tt></dt>
+<dt>params: <a class="reference internal" href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters" title="pysic.interactions.bondorder.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a></dt>
 <dd>new bond order parameters</dd>
 </dl>
 </dd></dl>
 
 <dl class="method">
-<dt id="pysic.Coordinator.set_group_index">
-<tt class="descname">set_group_index</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#pysic.Coordinator.set_group_index" title="Permalink to this definition">¶</a></dt>
+<dt id="pysic.interactions.bondorder.Coordinator.set_group_index">
+<tt class="descname">set_group_index</tt><big>(</big><em>index</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/bondorder.html#Coordinator.set_group_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.bondorder.Coordinator.set_group_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets an index for the coordinator object.</p>
 <p>In the fortran core, bond order parameters are calculated by
 bond order parameters. Since a coordinator contains many, they are grouped
@@ -376,7 +376,7 @@ core are needed.</p>
         <li class="right" >
           <a href="coulombsummation class.html" title="CoulombSummation class"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
       </ul>
     </div>

@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pysic_core (Core.f90) &mdash; Pysic 0.4.3 documentation</title>
+    <title>pysic_core (Core.f90) &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="up" title="Pysic Fortran module" href="pysic_fortran.html" />
     <link rel="next" title="potentials (Potentials.f90)" href="Potentials_f90.html" />
     <link rel="prev" title="pysic_interface (PyInterface.f90)" href="PyInterface_f90.html" /> 
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="PyInterface_f90.html" title="pysic_interface (PyInterface.f90)"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic_fortran.html" accesskey="U">Pysic Fortran module</a> &raquo;</li> 
       </ul>
     </div>
@@ -134,8 +134,10 @@ to Python are simply calling routines here.</p>
 <li><a class="reference internal" href="#force_evaluation_index" title="force_evaluation_index"><tt class="xref py py-data docutils literal"><span class="pre">force_evaluation_index</span></tt></a></li>
 <li><a class="reference internal" href="#group_index_save_slot" title="group_index_save_slot"><tt class="xref py py-data docutils literal"><span class="pre">group_index_save_slot</span></tt></a></li>
 <li><a class="reference internal" href="#interactions" title="interactions"><tt class="xref py py-data docutils literal"><span class="pre">interactions</span></tt></a></li>
+<li><a class="reference internal" href="#multipliers" title="multipliers"><tt class="xref py py-data docutils literal"><span class="pre">multipliers</span></tt></a></li>
 <li><a class="reference internal" href="#n_bond_factors" title="n_bond_factors"><tt class="xref py py-data docutils literal"><span class="pre">n_bond_factors</span></tt></a></li>
 <li><a class="reference internal" href="#n_interactions" title="n_interactions"><tt class="xref py py-data docutils literal"><span class="pre">n_interactions</span></tt></a></li>
+<li><a class="reference internal" href="#n_multi" title="n_multi"><tt class="xref py py-data docutils literal"><span class="pre">n_multi</span></tt></a></li>
 <li><a class="reference internal" href="#n_saved_bond_order_factors" title="n_saved_bond_order_factors"><tt class="xref py py-data docutils literal"><span class="pre">n_saved_bond_order_factors</span></tt></a></li>
 <li><a class="reference internal" href="#potentials_allocated" title="potentials_allocated"><tt class="xref py py-data docutils literal"><span class="pre">potentials_allocated</span></tt></a></li>
 <li><a class="reference internal" href="#saved_bond_order_factors" title="saved_bond_order_factors"><tt class="xref py py-data docutils literal"><span class="pre">saved_bond_order_factors</span></tt></a></li>
@@ -166,6 +168,7 @@ to Python are simply calling routines here.</p>
 <li><a class="reference internal" href="#core_clear_atoms" title="core_clear_atoms"><tt class="xref py py-func docutils literal"><span class="pre">core_clear_atoms()</span></tt></a></li>
 <li><a class="reference internal" href="#core_clear_bond_order_factors" title="core_clear_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">core_clear_bond_order_factors()</span></tt></a></li>
 <li><a class="reference internal" href="#core_clear_bond_order_storage" title="core_clear_bond_order_storage"><tt class="xref py py-func docutils literal"><span class="pre">core_clear_bond_order_storage()</span></tt></a></li>
+<li><a class="reference internal" href="#core_clear_potential_multipliers" title="core_clear_potential_multipliers"><tt class="xref py py-func docutils literal"><span class="pre">core_clear_potential_multipliers()</span></tt></a></li>
 <li><a class="reference internal" href="#core_clear_potentials" title="core_clear_potentials"><tt class="xref py py-func docutils literal"><span class="pre">core_clear_potentials()</span></tt></a></li>
 <li><a class="reference internal" href="#core_create_cell" title="core_create_cell"><tt class="xref py py-func docutils literal"><span class="pre">core_create_cell()</span></tt></a></li>
 <li><a class="reference internal" href="#core_create_neighbor_list" title="core_create_neighbor_list"><tt class="xref py py-func docutils literal"><span class="pre">core_create_neighbor_list()</span></tt></a></li>
@@ -331,6 +334,13 @@ to Python are simply calling routines here.</p>
 </dd></dl>
 
 <dl class="data">
+<dt id="multipliers">
+<tt class="descname">multipliers</tt><a class="headerlink" href="#multipliers" title="Permalink to this definition">¶</a></dt>
+<dd><p>type(potential)  <em>allocatable</em>  <em>size(:)</em></p>
+<p>a temporary array for storing multiplying potentials before associating them with a master potential</p>
+</dd></dl>
+
+<dl class="data">
 <dt id="n_bond_factors">
 <tt class="descname">n_bond_factors</tt><a class="headerlink" href="#n_bond_factors" title="Permalink to this definition">¶</a></dt>
 <dd><p>integer    <em>scalar</em></p>
@@ -343,6 +353,14 @@ to Python are simply calling routines here.</p>
 <dd><p>integer    <em>scalar</em></p>
 <p><em>initial value</em> = 0</p>
 <p>number of potentials</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="n_multi">
+<tt class="descname">n_multi</tt><a class="headerlink" href="#n_multi" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em></p>
+<p><em>initial value</em> = 0</p>
+<p>number of temporary product potentials</p>
 </dd></dl>
 
 <dl class="data">
@@ -461,7 +479,7 @@ to be given in the &#8216;orig_elements&#8217; lists.</p>
 
 <dl class="function">
 <dt id="core_add_potential">
-<tt class="descname">core_add_potential</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>pot_name</em>, <em>parameters</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>tags</em>, <em>indices</em>, <em>orig_elements</em>, <em>orig_tags</em>, <em>orig_indices</em>, <em>pot_index</em>, <em>success</em><big>)</big><a class="headerlink" href="#core_add_potential" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">core_add_potential</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>pot_name</em>, <em>parameters</em>, <em>cutoff</em>, <em>smooth_cut</em>, <em>elements</em>, <em>tags</em>, <em>indices</em>, <em>orig_elements</em>, <em>orig_tags</em>, <em>orig_indices</em>, <em>pot_index</em>, <em>is_multiplier</em>, <em>success</em><big>)</big><a class="headerlink" href="#core_add_potential" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates one additional potential in the core.
 The routine assumes that adequate memory has been
 allocated already using core_allocate_potentials.</p>
@@ -479,6 +497,14 @@ triplets (A-B-C), the interaction is not symmetric for all the atoms.
 Therefore it is necessary to also store the original targets of
 the potential as specified in the Python interface. These are
 to be given in the &#8216;orig_*&#8217; lists.</p>
+<p>If product potentials are created, the first all but one of the potentials
+are created with <tt class="docutils literal"><span class="pre">is_multiplier</span> <span class="pre">==</span> <span class="pre">.true.</span></tt>. This leads to the potentials
+being stored in the global temporary array <tt class="docutils literal"><span class="pre">multipliers</span></tt>. The last potential
+of a group should be created with <tt class="docutils literal"><span class="pre">is_multiplier</span> <span class="pre">=</span> <span class="pre">.false.</span></tt> and the stored
+multipliers are attached to it. The list of multipliers is not cleared automatically,
+since usually one creates copies of the same potential with permutated targets and all
+of these need the same multipiers.
+Instead the multipliers are cleared with a call of <a class="reference internal" href="PyInterface_f90.html#clear_potential_multipliers" title="clear_potential_multipliers"><tt class="xref py py-func docutils literal"><span class="pre">clear_potential_multipliers()</span></tt></a>.</p>
 <p>called from PyInterface: <a class="reference internal" href="PyInterface_f90.html#add_potential" title="add_potential"><tt class="xref py py-func docutils literal"><span class="pre">add_potential()</span></tt></a></p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -508,6 +534,8 @@ to be given in the &#8216;orig_*&#8217; lists.</p>
 <dd>original indices specifying the atoms the interaction acts on</dd>
 <dt>pot_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>index of the potential</dd>
+<dt>is_multiplier: logical  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>logical tag specifying if this potential should be treated as a multiplier</dd>
 <dt><strong>success</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>logical tag specifying if creation of the potential succeeded</dd>
 </dl>
@@ -578,9 +606,16 @@ element, index or tag (one that the potential targets).</p>
 <dl class="function">
 <dt id="core_build_neighbor_lists">
 <tt class="descname">core_build_neighbor_lists</tt><big>(</big><em>n_atoms</em>, <em>cutoffs</em><big>)</big><a class="headerlink" href="#core_build_neighbor_lists" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parameters:</p>
-<p>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></p>
-<p>cutoffs: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></p>
+<dd><p>Builds the neighbor lists in the core.
+The simulation cell must be partitioned with <a class="reference internal" href="#core_create_space_partitioning" title="core_create_space_partitioning"><tt class="xref py py-func docutils literal"><span class="pre">core_create_space_partitioning()</span></tt></a>
+before this routine can be called.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>cutoffs: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dd>list of cutoffs, atom by atom</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
@@ -755,6 +790,11 @@ first to set up the calculation.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="core_clear_potential_multipliers">
+<tt class="descname">core_clear_potential_multipliers</tt><big>(</big><big>)</big><a class="headerlink" href="#core_clear_potential_multipliers" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="core_clear_potentials">
 <tt class="descname">core_clear_potentials</tt><big>(</big><big>)</big><a class="headerlink" href="#core_clear_potentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deallocates pointers for potentials</p>
@@ -830,8 +870,12 @@ different offsets.</p>
 <dl class="function">
 <dt id="core_create_space_partitioning">
 <tt class="descname">core_create_space_partitioning</tt><big>(</big><em>max_cutoff</em><big>)</big><a class="headerlink" href="#core_create_space_partitioning" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parameters:</p>
-<p>max_cutoff: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+<dd><p>Partitions the simulation volume in subvolumes for fast neighbor searching</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>max_cutoff: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the maximum cutoff radius for neighbor search</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
@@ -1109,11 +1153,18 @@ the calculated values if it does not find them.</p>
 <dl class="function">
 <dt id="core_get_neighbor_list_of_atom">
 <tt class="descname">core_get_neighbor_list_of_atom</tt><big>(</big><em>atom_index</em>, <em>n_neighbors</em>, <em>neighbors</em>, <em>offsets</em><big>)</big><a class="headerlink" href="#core_get_neighbor_list_of_atom" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parameters:</p>
-<p>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></p>
-<p>n_neighbors: integer  <em>intent(in)</em>    <em>scalar</em></p>
-<p><strong>neighbors</strong>: integer  <strong>intent(out)</strong>    <em>size(n_neighbors)</em></p>
-<p><strong>offsets</strong>: integer  <strong>intent(out)</strong>    <em>size(3, n_neighbors)</em></p>
+<dd><p>Returns the list of neighbros for an atom</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the index of the atom whose neighbors are returned</dd>
+<dt>n_neighbors: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the number of neighbors</dd>
+<dt><strong>neighbors</strong>: integer  <strong>intent(out)</strong>    <em>size(n_neighbors)</em></dt>
+<dd>the indices of the neighboring atoms</dd>
+<dt><strong>offsets</strong>: integer  <strong>intent(out)</strong>    <em>size(3, n_neighbors)</em></dt>
+<dd>the offsets for periodic boundaries</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
@@ -1131,9 +1182,14 @@ the calculated values if it does not find them.</p>
 <dl class="function">
 <dt id="core_get_number_of_neighbors">
 <tt class="descname">core_get_number_of_neighbors</tt><big>(</big><em>atom_index</em>, <em>n_neighbors</em><big>)</big><a class="headerlink" href="#core_get_number_of_neighbors" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parameters:</p>
-<p>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></p>
-<p><strong>n_neighbors</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></p>
+<dd><p>Returns the number of neighbors for an atom</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the index of the atoms</dd>
+<dt><strong>n_neighbors</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the number of neighbors</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
@@ -1144,9 +1200,9 @@ and calculates the contributions from local potentials to energy, forces,
 or electronegativities. This routine is called from the routines</p>
 <blockquote>
 <div><ul class="simple">
-<li><a class="reference internal" href="#core_calculate_energy" title="core_calculate_energy"><tt class="xref py py-meth docutils literal"><span class="pre">core_calculate_energy()</span></tt></a></li>
-<li><a class="reference internal" href="#core_calculate_forces" title="core_calculate_forces"><tt class="xref py py-meth docutils literal"><span class="pre">core_calculate_forces()</span></tt></a></li>
-<li><tt class="xref py py-meth docutils literal"><span class="pre">core_calculate_electronegaivities()</span></tt></li>
+<li><a class="reference internal" href="#core_calculate_energy" title="core_calculate_energy"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_energy()</span></tt></a></li>
+<li><a class="reference internal" href="#core_calculate_forces" title="core_calculate_forces"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_forces()</span></tt></a></li>
+<li><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_electronegaivities()</span></tt></li>
 </ul>
 </div></blockquote>
 <p>Parameters:</p>
@@ -1328,7 +1384,8 @@ bond factor is of a pair or many body type.</p>
 <dl class="function">
 <dt id="expand_neighbor_storage">
 <tt class="descname">expand_neighbor_storage</tt><big>(</big><em>nbors_and_offsets</em>, <em>length</em>, <em>new_length</em>, <em>n_atoms</em><big>)</big><a class="headerlink" href="#expand_neighbor_storage" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parameters:</p>
+<dd><p>Expands the allocated memory for storing neighbor lists</p>
+<p>Parameters:</p>
 <p>nbors_and_offsets: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:, :, :)</em></p>
 <p>length: integer  <em>intent(in)</em>    <em>scalar</em></p>
 <p>new_length: integer  <em>intent(in)</em>    <em>scalar</em></p>
@@ -1384,7 +1441,7 @@ bond factor is of a pair or many body type.</p>
         <li class="right" >
           <a href="PyInterface_f90.html" title="pysic_interface (PyInterface.f90)"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic_fortran.html" >Pysic Fortran module</a> &raquo;</li> 
       </ul>
     </div>

@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>potentials (Potentials.f90) &mdash; Pysic 0.4.3 documentation</title>
+    <title>potentials (Potentials.f90) &mdash; Pysic 0.4.4 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.3',
+        VERSION:     '0.4.4',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.3 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="up" title="Pysic Fortran module" href="pysic_fortran.html" />
     <link rel="next" title="geometry (Geometry.f90)" href="Geometry_f90.html" />
     <link rel="prev" title="pysic_core (Core.f90)" href="Core_f90.html" /> 
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="Core_f90.html" title="pysic_core (Core.f90)"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic_fortran.html" accesskey="U">Pysic Fortran module</a> &raquo;</li> 
       </ul>
     </div>
@@ -113,7 +113,7 @@ are provided.</p>
 These should be created at start-up and remain untouched during simulation.
 They are used by the Fortran core for checking the types of parameters a potential
 needs, for instance, but they are also accessible from the Python interface.
-Especially, upon creation of <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> and <a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a>
+Especially, upon creation of <tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt> and <tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt>
 instances, one needs to specify the type as a keyword. This keyword is then compared to the list of
 characterizers in the core to determine the type of the interaction.</p>
 <p>The basic routines for calculating the actual forces and energies are also defined in
@@ -193,6 +193,7 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#descriptors_created" title="descriptors_created"><tt class="xref py py-data docutils literal"><span class="pre">descriptors_created</span></tt></a></li>
 <li><a class="reference internal" href="#mono_const_index" title="mono_const_index"><tt class="xref py py-data docutils literal"><span class="pre">mono_const_index</span></tt></a></li>
 <li><a class="reference internal" href="#mono_none_index" title="mono_none_index"><tt class="xref py py-data docutils literal"><span class="pre">mono_none_index</span></tt></a></li>
+<li><a class="reference internal" href="#mono_qself_index" title="mono_qself_index"><tt class="xref py py-data docutils literal"><span class="pre">mono_qself_index</span></tt></a></li>
 <li><a class="reference internal" href="#n_bond_order_types" title="n_bond_order_types"><tt class="xref py py-data docutils literal"><span class="pre">n_bond_order_types</span></tt></a></li>
 <li><a class="reference internal" href="#n_max_params" title="n_max_params"><tt class="xref py py-data docutils literal"><span class="pre">n_max_params</span></tt></a></li>
 <li><a class="reference internal" href="#n_potential_types" title="n_potential_types"><tt class="xref py py-data docutils literal"><span class="pre">n_potential_types</span></tt></a></li>
@@ -201,6 +202,7 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#pair_exp_index" title="pair_exp_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_exp_index</span></tt></a></li>
 <li><a class="reference internal" href="#pair_lj_index" title="pair_lj_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_lj_index</span></tt></a></li>
 <li><a class="reference internal" href="#pair_power_index" title="pair_power_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_power_index</span></tt></a></li>
+<li><a class="reference internal" href="#pair_qpair_index" title="pair_qpair_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_qpair_index</span></tt></a></li>
 <li><a class="reference internal" href="#pair_spring_index" title="pair_spring_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_spring_index</span></tt></a></li>
 <li><a class="reference internal" href="#pair_table_index" title="pair_table_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_table_index</span></tt></a></li>
 <li><a class="reference internal" href="#param_name_length" title="param_name_length"><tt class="xref py py-data docutils literal"><span class="pre">param_name_length</span></tt></a></li>
@@ -256,6 +258,8 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#create_potential_characterizer_bond_bending" title="create_potential_characterizer_bond_bending"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_bond_bending()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_buckingham" title="create_potential_characterizer_buckingham"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_buckingham()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_charge_exp" title="create_potential_characterizer_charge_exp"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_charge_exp()</span></tt></a></li>
+<li><a class="reference internal" href="#create_potential_characterizer_charge_pair" title="create_potential_characterizer_charge_pair"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_charge_pair()</span></tt></a></li>
+<li><a class="reference internal" href="#create_potential_characterizer_charge_self" title="create_potential_characterizer_charge_self"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_charge_self()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_constant_force" title="create_potential_characterizer_constant_force"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_constant_force()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_constant_potential" title="create_potential_characterizer_constant_potential"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_constant_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_dihedral" title="create_potential_characterizer_dihedral"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_dihedral()</span></tt></a></li>
@@ -276,11 +280,17 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#evaluate_bond_order_gradient_triplet" title="evaluate_bond_order_gradient_triplet"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_gradient_triplet()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_electronegativity" title="evaluate_electronegativity"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_electronegativity_charge_exp" title="evaluate_electronegativity_charge_exp"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity_charge_exp()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_electronegativity_charge_pair" title="evaluate_electronegativity_charge_pair"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity_charge_pair()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_electronegativity_charge_self" title="evaluate_electronegativity_charge_self"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity_charge_self()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_electronegativity_component" title="evaluate_electronegativity_component"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity_component()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy" title="evaluate_energy"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_LJ" title="evaluate_energy_LJ"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_LJ()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_bond_bending" title="evaluate_energy_bond_bending"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_bond_bending()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_buckingham" title="evaluate_energy_buckingham"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_buckingham()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_charge_exp" title="evaluate_energy_charge_exp"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_charge_exp()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_energy_charge_pair" title="evaluate_energy_charge_pair"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_charge_pair()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_energy_charge_self" title="evaluate_energy_charge_self"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_charge_self()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_energy_component" title="evaluate_energy_component"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_component()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_constant_force" title="evaluate_energy_constant_force"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_constant_force()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_constant_potential" title="evaluate_energy_constant_potential"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_constant_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_dihedral" title="evaluate_energy_dihedral"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_dihedral()</span></tt></a></li>
@@ -291,6 +301,7 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#evaluate_force_bond_bending" title="evaluate_force_bond_bending"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_bond_bending()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_buckingham" title="evaluate_force_buckingham"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_buckingham()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_charge_exp" title="evaluate_force_charge_exp"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_charge_exp()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_force_component" title="evaluate_force_component"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_component()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_constant_force" title="evaluate_force_constant_force"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_constant_force()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_constant_potential" title="evaluate_force_constant_potential"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_constant_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_dihedral" title="evaluate_force_dihedral"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_dihedral()</span></tt></a></li>
@@ -398,6 +409,13 @@ must be updated accordingly.</p>
 </dd></dl>
 
 <dl class="data">
+<dt id="mono_qself_index">
+<tt class="descname">mono_qself_index</tt><a class="headerlink" href="#mono_qself_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
+<p><em>initial value</em> = 11</p>
+</dd></dl>
+
+<dl class="data">
 <dt id="n_bond_order_types">
 <tt class="descname">n_bond_order_types</tt><a class="headerlink" href="#n_bond_order_types" title="Permalink to this definition">¶</a></dt>
 <dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
@@ -416,7 +434,7 @@ must be updated accordingly.</p>
 <dt id="n_potential_types">
 <tt class="descname">n_potential_types</tt><a class="headerlink" href="#n_potential_types" title="Permalink to this definition">¶</a></dt>
 <dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
-<p><em>initial value</em> = 10</p>
+<p><em>initial value</em> = 12</p>
 <p>number of different types of potentials known</p>
 </dd></dl>
 
@@ -457,6 +475,13 @@ must be updated accordingly.</p>
 <dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
 <p><em>initial value</em> = 9</p>
 <p>internal index for the power law potential</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="pair_qpair_index">
+<tt class="descname">pair_qpair_index</tt><a class="headerlink" href="#pair_qpair_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
+<p><em>initial value</em> = 12</p>
 </dd></dl>
 
 <dl class="data">
@@ -634,7 +659,7 @@ The factor should correspond to the description of some
 built-in type and hold actual numeric values for parameters.
 In addition a real bond order factor must have information on the
 particles it acts on and the range it operates in.
-These are created based on the <a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> objects in the Python
+These are created based on the <tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt> objects in the Python
 interface when calculations are invoked.</p>
 <p>Contained data:</p>
 <dl class="docutils">
@@ -655,7 +680,7 @@ interface when calculations are invoked.</p>
 <dt>table: double precision  <em>pointer</em>  <em>size(:, :)</em></dt>
 <dd>array for storing tabulated values</dd>
 <dt>original_elements: character(len=2)  <em>pointer</em>  <em>size(:)</em></dt>
-<dd>The list of elements (atomic symbols) of the original <a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> in the Python interface from which this factor was created. Whereas the apply_elements lists are used for finding all pairs and triplets of atoms which could contribute to the bond order factor, the original_elements lists specify the roles of atoms in the factor.</dd>
+<dd>The list of elements (atomic symbols) of the original <tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt> in the Python interface from which this factor was created. Whereas the apply_elements lists are used for finding all pairs and triplets of atoms which could contribute to the bond order factor, the original_elements lists specify the roles of atoms in the factor.</dd>
 <dt>derived_parameters: double precision  <em>pointer</em>  <em>size(:, :)</em></dt>
 <dd>numerical values for parameters calculated based on the parameters specified by the user</dd>
 <dt>apply_elements: character(len=2)  <em>pointer</em>  <em>size(:)</em></dt>
@@ -671,7 +696,7 @@ The potential should correspond to the description of some
 built-in type and hold actual numeric values for parameters.
 In addition, a real potential must have information on the
 particles it acts on and the range it operates in.
-These are to be created based on the <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects in the Python
+These are to be created based on the <tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt> objects in the Python
 interface when calculations are invoked.</p>
 <p>Contained data:</p>
 <dl class="docutils">
@@ -679,6 +704,8 @@ interface when calculations are invoked.</p>
 <dd>The internal index of the <em>actual potential</em>. This is needed when bond order factors are included so that the factors may be joint with the correct potentials.</dd>
 <dt>smoothened: logical    <em>scalar</em></dt>
 <dd>logical switch specifying if a smooth cutoff is applied to the potential</dd>
+<dt>n_product: integer    <em>scalar</em></dt>
+<dd>number of multipliers for a product potential</dd>
 <dt>filter_elements: logical    <em>scalar</em></dt>
 <dd>a logical switch specifying whether the potential targets atoms based on the atomic symbols</dd>
 <dt>parameters: double precision  <em>pointer</em>  <em>size(:)</em></dt>
@@ -690,7 +717,7 @@ interface when calculations are invoked.</p>
 <dt>apply_tags: integer  <em>pointer</em>  <em>size(:)</em></dt>
 <dd>A list of atom tags the potential affects. Note that unlike in the Python interface, a single <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> only has one set of targets, and for multiple target options several <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> instances are created.</dd>
 <dt>original_indices: integer  <em>pointer</em>  <em>size(:)</em></dt>
-<dd>The list of atom indices of the original <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> in the Python interface from which this potential was created. Whereas the apply_* lists are used for finding all pairs and triplets of atoms for which the potential could act on, the original_* lists specify the roles of atoms in the interaction.</dd>
+<dd>The list of atom indices of the original <tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt> in the Python interface from which this potential was created. Whereas the apply_* lists are used for finding all pairs and triplets of atoms for which the potential could act on, the original_* lists specify the roles of atoms in the interaction.</dd>
 <dt>apply_indices: integer  <em>pointer</em>  <em>size(:)</em></dt>
 <dd>A list of atom indices the potential affects. Note that unlike in the Python interface, a single <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> only has one set of targets, and for multiple target options several <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> instances are created.</dd>
 <dt>filter_indices: logical    <em>scalar</em></dt>
@@ -698,11 +725,13 @@ interface when calculations are invoked.</p>
 <dt>type_index: integer    <em>scalar</em></dt>
 <dd>The internal index of the potential <em>type</em>. This is used for recognizing the potential. Note that the potential instance does not have a name. If the name is needed, it can be obtained from the <a class="reference internal" href="#potential_descriptor" title="potential_descriptor"><tt class="xref py py-data docutils literal"><span class="pre">potential_descriptor</span></tt></a> of the correct index.</dd>
 <dt>original_tags: integer  <em>pointer</em>  <em>size(:)</em></dt>
-<dd>The list of atom tags of the original <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> in the Python interface from which this potential was created. Whereas the apply_* lists are used for finding all pairs and triplets of atoms for which the potential could act on, the original_* lists specify the roles of atoms in the interaction.</dd>
+<dd>The list of atom tags of the original <tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt> in the Python interface from which this potential was created. Whereas the apply_* lists are used for finding all pairs and triplets of atoms for which the potential could act on, the original_* lists specify the roles of atoms in the interaction.</dd>
 <dt>table: double precision  <em>pointer</em>  <em>size(:, :)</em></dt>
 <dd>array for storing tabulated values</dd>
 <dt>original_elements: character(len=2)  <em>pointer</em>  <em>size(:)</em></dt>
-<dd>The list of elements (atomic symbols) of the original <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> in the Python interface from which this potential was created. Whereas the apply_* lists are used for finding all pairs and triplets of atoms for which the potential could act on, the original_* lists specify the roles of atoms in the interaction.</dd>
+<dd>The list of elements (atomic symbols) of the original <tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt> in the Python interface from which this potential was created. Whereas the apply_* lists are used for finding all pairs and triplets of atoms for which the potential could act on, the original_* lists specify the roles of atoms in the interaction.</dd>
+<dt>multipliers: type(potential)  <em>pointer</em>  <em>size(:)</em></dt>
+<dd>additional potentials with the same targets and cutoff, for potential multiplication</dd>
 <dt>derived_parameters: double precision  <em>pointer</em>  <em>size(:)</em></dt>
 <dd>numerical values for parameters calculated based on the parameters specified by the user</dd>
 <dt>apply_elements: character(len=2)  <em>pointer</em>  <em>size(:)</em></dt>
@@ -1025,7 +1054,7 @@ and returns a bond order parameters type wrapping them in one package.</p>
 <dt>elements: character(len=2)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
 <dd>a list of elements (atomic symbols) the factor affects</dd>
 <dt>orig_elements: character(len=2)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
-<dd>the list of elements (atomic symbols) of the original <a class="reference internal" href="bondorderparameters class.html#pysic.BondOrderParameters" title="pysic.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a> in the Python interface from which this factor was created</dd>
+<dd>the list of elements (atomic symbols) of the original <tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt> in the Python interface from which this factor was created</dd>
 <dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>The internal index of the <em>potential</em> the bond order factor is modifying.</dd>
 <dt><strong>new_bond</strong>: type(bond_order_parameters)  <strong>intent(out)</strong>    <em>scalar</em></dt>
@@ -1125,7 +1154,7 @@ and returns a bond order parameters type wrapping them in one package.</p>
 
 <dl class="function">
 <dt id="create_potential">
-<tt class="descname">create_potential</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>pot_name</em>, <em>parameters</em>, <em>cutoff</em>, <em>soft_cutoff</em>, <em>elements</em>, <em>tags</em>, <em>indices</em>, <em>orig_elements</em>, <em>orig_tags</em>, <em>orig_indices</em>, <em>pot_index</em>, <em>new_potential</em>, <em>success</em><big>)</big><a class="headerlink" href="#create_potential" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">create_potential</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>pot_name</em>, <em>parameters</em>, <em>cutoff</em>, <em>soft_cutoff</em>, <em>elements</em>, <em>tags</em>, <em>indices</em>, <em>orig_elements</em>, <em>orig_tags</em>, <em>orig_indices</em>, <em>pot_index</em>, <em>n_multi</em>, <em>multipliers</em>, <em>new_potential</em>, <em>success</em><big>)</big><a class="headerlink" href="#create_potential" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a>.</p>
 <p>The routine takes as arguments all the necessary parameters
 and returns a potential type wrapping them in one package.</p>
@@ -1150,13 +1179,17 @@ and returns a potential type wrapping them in one package.</p>
 <dt>indices: integer  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
 <dd>the atom indices the potential acts on</dd>
 <dt>orig_elements: character(len=2)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
-<dd>The elements (atomic symbols) in the <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> used for generating the potential. This is needed to specify the roles of the atoms in the interaction.</dd>
+<dd>The elements (atomic symbols) in the <tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt> used for generating the potential. This is needed to specify the roles of the atoms in the interaction.</dd>
 <dt>orig_tags: integer  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
-<dd>The atom tags in the <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> used for generating the potential. This is needed to specify the roles of the atoms in the interaction.</dd>
+<dd>The atom tags in the <tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt> used for generating the potential. This is needed to specify the roles of the atoms in the interaction.</dd>
 <dt>orig_indices: integer  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
-<dd>The atom indices in the <a class="reference internal" href="potential class.html#pysic.Potential" title="pysic.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> used for generating the potential. This is needed to specify the roles of the atoms in the interaction.</dd>
+<dd>The atom indices in the <tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt> used for generating the potential. This is needed to specify the roles of the atoms in the interaction.</dd>
 <dt>pot_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>the internal index of the potential</dd>
+<dt>n_multi: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of multiplying potentials</dd>
+<dt>multipliers: type(potential)  <em>intent(in)</em>    <em>size(n_multi)</em></dt>
+<dd>the multiplying potentials</dd>
 <dt><strong>new_potential</strong>: type(potential)  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>the created <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a></dd>
 <dt><strong>success</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
@@ -1201,6 +1234,28 @@ and returns a potential type wrapping them in one package.</p>
 <dt id="create_potential_characterizer_charge_exp">
 <tt class="descname">create_potential_characterizer_charge_exp</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#create_potential_characterizer_charge_exp" title="Permalink to this definition">¶</a></dt>
 <dd><p>charge exponential characterizer initialization</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the potential</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="create_potential_characterizer_charge_pair">
+<tt class="descname">create_potential_characterizer_charge_pair</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#create_potential_characterizer_charge_pair" title="Permalink to this definition">¶</a></dt>
+<dd><p>charge self energy characterizer initialization</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the potential</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="create_potential_characterizer_charge_self">
+<tt class="descname">create_potential_characterizer_charge_self</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#create_potential_characterizer_charge_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>charge self energy characterizer initialization</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
@@ -1511,7 +1566,7 @@ the x-coordinate (1), of the factor for atom2 (2), with respect to moving atom3 
 
 <dl class="function">
 <dt id="evaluate_electronegativity">
-<tt class="descname">evaluate_electronegativity</tt><big>(</big><em>n_targets</em>, <em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>eneg</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_electronegativity" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">evaluate_electronegativity</tt><big>(</big><em>n_targets</em>, <em>n_product</em>, <em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>eneg</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_electronegativity" title="Permalink to this definition">¶</a></dt>
 <dd><p>If a potential, say, <span class="math">\(U_{ijk}\)</span> depends on the charges of atoms <span class="math">\(q_i\)</span>
 it will not only create a force,
 but also a difference in chemical potential <span class="math">\(\mu_i\)</span> for the atomic partial charges.
@@ -1519,12 +1574,15 @@ Similarly to <a class="reference internal" href="#evaluate_forces" title="evalua
 &#8216;force&#8217; on the atomic charges</p>
 <div class="math">
 \[\chi_{\alpha,ijk} = -\mu_{\alpha,ijk} = -\frac{\partial U_{ijk}}{\partial q_\alpha}\]</div>
+<p>This routine can evaluate the contribution from a product potential.</p>
 <p>To be consist the forces returned by <a class="reference internal" href="#evaluate_electronegativity" title="evaluate_electronegativity"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity()</span></tt></a> must be
 derivatives of the energies returned by <a class="reference internal" href="#evaluate_energy" title="evaluate_energy"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy()</span></tt></a>.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>number of targets</dd>
+<dt>n_product: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the number of potentials for a product potential</dd>
 <dt>separations: double precision  <em>intent(in)</em>    <em>size(3, n_targets-1)</em></dt>
 <dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
 <dt>distances: double precision  <em>intent(in)</em>    <em>size(n_targets-1)</em></dt>
@@ -1558,16 +1616,46 @@ derivatives of the energies returned by <a class="reference internal" href="#eva
 </dd></dl>
 
 <dl class="function">
-<dt id="evaluate_energy">
-<tt class="descname">evaluate_energy</tt><big>(</big><em>n_targets</em>, <em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>energy</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_energy" title="Permalink to this definition">¶</a></dt>
-<dd><p>Evaluates the potential energy due to an interaction between the given
-atoms. In other words, if the total potential energy is</p>
+<dt id="evaluate_electronegativity_charge_pair">
+<tt class="descname">evaluate_electronegativity_charge_pair</tt><big>(</big><em>interaction</em>, <em>eneg</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_electronegativity_charge_pair" title="Permalink to this definition">¶</a></dt>
+<dd><p>Charge pair energy electronegativity</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> containing the parameters</dd>
+<dt><strong>eneg</strong>: double precision  <strong>intent(out)</strong>    <em>size(2)</em></dt>
+<dd>the calculated electronegativity component <span class="math">\(\chi_{\alpha,ijk}\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(2)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_electronegativity_charge_self">
+<tt class="descname">evaluate_electronegativity_charge_self</tt><big>(</big><em>interaction</em>, <em>eneg</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_electronegativity_charge_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>Charge self energy electronegativity</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> containing the parameters</dd>
+<dt><strong>eneg</strong>: double precision  <strong>intent(out)</strong>    <em>size(1)</em></dt>
+<dd>the calculated electronegativity component <span class="math">\(\chi_{\alpha,ijk}\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(1)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_electronegativity_component">
+<tt class="descname">evaluate_electronegativity_component</tt><big>(</big><em>n_targets</em>, <em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>eneg</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_electronegativity_component" title="Permalink to this definition">¶</a></dt>
+<dd><p>If a potential, say, <span class="math">\(U_{ijk}\)</span> depends on the charges of atoms <span class="math">\(q_i\)</span>
+it will not only create a force,
+but also a difference in chemical potential <span class="math">\(\mu_i\)</span> for the atomic partial charges.
+Similarly to <a class="reference internal" href="#evaluate_forces" title="evaluate_forces"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_forces()</span></tt></a>, this function evaluates the chemical
+&#8216;force&#8217; on the atomic charges</p>
 <div class="math">
-\[E = \sum_{ijk} v_{ijk}\]</div>
-<p>this routine evaluates <span class="math">\(v_{ijk}\)</span> for the given
-atoms i, j, and k.</p>
-<p>To be consist the forces returned by <a class="reference internal" href="#evaluate_forces" title="evaluate_forces"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_forces()</span></tt></a> must be
-gradients of the energies returned by <a class="reference internal" href="#evaluate_energy" title="evaluate_energy"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy()</span></tt></a>.</p>
+\[\chi_{\alpha,ijk} = -\mu_{\alpha,ijk} = -\frac{\partial U_{ijk}}{\partial q_\alpha}\]</div>
+<p>This routine evaluates an elemental <span class="math">\(\chi_{\alpha,ijk}\)</span>.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
@@ -1577,10 +1665,41 @@ gradients of the energies returned by <a class="reference internal" href="#evalu
 <dt>distances: double precision  <em>intent(in)</em>    <em>size(n_targets-1)</em></dt>
 <dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
 <dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> containing the parameters</dd>
+<dt><strong>eneg</strong>: double precision  <strong>intent(out)</strong>    <em>size(n_targets)</em></dt>
+<dd>the calculated electronegativity component <span class="math">\(\chi_{\alpha,ijk}\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_energy">
+<tt class="descname">evaluate_energy</tt><big>(</big><em>n_targets</em>, <em>n_product</em>, <em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>energy</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates the potential energy due to an interaction between the given
+atoms. In other words, if the total potential energy is</p>
+<div class="math">
+\[E = \sum_{ijk} v_{ijk}\]</div>
+<p>this routine evaluates <span class="math">\(v_{ijk}\)</span> for the given
+atoms i, j, and k.</p>
+<p>This routine can evaluate the contribution from a product potential.</p>
+<p>To be consist the forces returned by <a class="reference internal" href="#evaluate_forces" title="evaluate_forces"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_forces()</span></tt></a> must be
+gradients of the energies returned by <a class="reference internal" href="#evaluate_energy" title="evaluate_energy"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy()</span></tt></a>.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of targets</dd>
+<dt>n_product: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the number of potentials for a product potential</dd>
+<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, n_targets-1)</em></dt>
+<dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
+<dt>distances: double precision  <em>intent(in)</em>    <em>size(n_targets-1)</em></dt>
+<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
 <dt><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>the calculated energy <span class="math">\(v_{ijk}\)</span></dd>
-<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(n_targets)</em>  <em>optional</em></dt>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
 <dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
 </dl>
 </dd></dl>
@@ -1653,6 +1772,65 @@ gradients of the energies returned by <a class="reference internal" href="#evalu
 <dt><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>the calculated energy <span class="math">\(v_{ijk}\)</span></dd>
 <dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(2)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_energy_charge_pair">
+<tt class="descname">evaluate_energy_charge_pair</tt><big>(</big><em>interaction</em>, <em>energy</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_energy_charge_pair" title="Permalink to this definition">¶</a></dt>
+<dd><p>Charge pair energy</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
+<dt><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the calculated energy <span class="math">\(v_{ijk}\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(2)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_energy_charge_self">
+<tt class="descname">evaluate_energy_charge_self</tt><big>(</big><em>interaction</em>, <em>energy</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_energy_charge_self" title="Permalink to this definition">¶</a></dt>
+<dd><p>Charge self energy</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
+<dt><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the calculated energy <span class="math">\(v_{ijk}\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(1)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_energy_component">
+<tt class="descname">evaluate_energy_component</tt><big>(</big><em>n_targets</em>, <em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>energy</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_energy_component" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates the potential energy due to an interaction between the given
+atoms. In other words, if the total potential energy is</p>
+<div class="math">
+\[E = \sum_{ijk} v_{ijk}\]</div>
+<p>this routine evaluates <span class="math">\(v_{ijk}\)</span> for the given
+atoms i, j, and k.</p>
+<p>This routine evaluates an elemental <span class="math">\(v_{\alpha,ijk}\)</span>.</p>
+<p>To be consist the forces returned by <a class="reference internal" href="#evaluate_forces" title="evaluate_forces"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_forces()</span></tt></a> must be
+gradients of the energies returned by <a class="reference internal" href="#evaluate_energy" title="evaluate_energy"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy()</span></tt></a>.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of targets</dd>
+<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, n_targets-1)</em></dt>
+<dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
+<dt>distances: double precision  <em>intent(in)</em>    <em>size(n_targets-1)</em></dt>
+<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
+<dt><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the calculated energy <span class="math">\(v_{ijk}\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
 <dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
 </dl>
 </dd></dl>
@@ -1828,6 +2006,35 @@ gradients of the energies returned by <a class="reference internal" href="#evalu
 </dd></dl>
 
 <dl class="function">
+<dt id="evaluate_force_component">
+<tt class="descname">evaluate_force_component</tt><big>(</big><em>n_targets</em>, <em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>force</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_force_component" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates the forces due to an interaction between the given
+atoms. In other words, if the total force on atom <span class="math">\(\alpha\)</span> is</p>
+<div class="math">
+\[\mathbf{F}_\alpha = \sum_{ijk} -\nabla_\alpha v_{ijk} = \sum \mathbf{f}_{\alpha,ijk},\]</div>
+<p>this routine evaluates <span class="math">\(\mathbf{f}_{\alpha,ijk}\)</span> for <span class="math">\(\alpha = (i,j,k)\)</span> for the given
+atoms i, j, and k.</p>
+<p>This routine evaluates an elemental <span class="math">\(\mathbf{f}_{\alpha,ijk}\)</span>.</p>
+<p>To be consist the forces returned by <a class="reference internal" href="#evaluate_forces" title="evaluate_forces"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_forces()</span></tt></a> must be
+gradients of the energies returned by <a class="reference internal" href="#evaluate_energy" title="evaluate_energy"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy()</span></tt></a>.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of targets</dd>
+<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, n_targets-1)</em></dt>
+<dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
+<dt>distances: double precision  <em>intent(in)</em>    <em>size(n_targets-1)</em></dt>
+<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> containing the parameters</dd>
+<dt><strong>force</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_targets)</em></dt>
+<dd>the calculated force component <span class="math">\(\mathbf{f}_{\alpha,ijk}\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="evaluate_force_constant_force">
 <tt class="descname">evaluate_force_constant_force</tt><big>(</big><em>interaction</em>, <em>force</em><big>)</big><a class="headerlink" href="#evaluate_force_constant_force" title="Permalink to this definition">¶</a></dt>
 <dd><p>constant force</p>
@@ -1925,19 +2132,22 @@ gradients of the energies returned by <a class="reference internal" href="#evalu
 
 <dl class="function">
 <dt id="evaluate_forces">
-<tt class="descname">evaluate_forces</tt><big>(</big><em>n_targets</em>, <em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>force</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_forces" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">evaluate_forces</tt><big>(</big><em>n_targets</em>, <em>n_product</em>, <em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>force</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_forces" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluates the forces due to an interaction between the given
 atoms. In other words, if the total force on atom <span class="math">\(\alpha\)</span> is</p>
 <div class="math">
 \[\mathbf{F}_\alpha = \sum_{ijk} -\nabla_\alpha v_{ijk} = \sum \mathbf{f}_{\alpha,ijk},\]</div>
 <p>this routine evaluates <span class="math">\(\mathbf{f}_{\alpha,ijk}\)</span> for <span class="math">\(\alpha = (i,j,k)\)</span> for the given
 atoms i, j, and k.</p>
+<p>This routine can evaluate the contribution from a product potential.</p>
 <p>To be consist the forces returned by <a class="reference internal" href="#evaluate_forces" title="evaluate_forces"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_forces()</span></tt></a> must be
 gradients of the energies returned by <a class="reference internal" href="#evaluate_energy" title="evaluate_energy"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy()</span></tt></a>.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>number of targets</dd>
+<dt>n_product: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the number of potentials for a product potential</dd>
 <dt>separations: double precision  <em>intent(in)</em>    <em>size(3, n_targets-1)</em></dt>
 <dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
 <dt>distances: double precision  <em>intent(in)</em>    <em>size(n_targets-1)</em></dt>
@@ -2630,7 +2840,7 @@ returns the value of the gradient of the smoothening function.</p>
         <li class="right" >
           <a href="Core_f90.html" title="pysic_core (Core.f90)"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.3 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
           <li><a href="pysic_fortran.html" >Pysic Fortran module</a> &raquo;</li> 
       </ul>
     </div>

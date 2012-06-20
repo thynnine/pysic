@@ -123,6 +123,7 @@ must be updated accordingly.
     - :data:`descriptors_created`
     - :data:`mono_const_index`
     - :data:`mono_none_index`
+    - :data:`mono_qself_index`
     - :data:`n_bond_order_types`
     - :data:`n_max_params`
     - :data:`n_potential_types`
@@ -131,6 +132,7 @@ must be updated accordingly.
     - :data:`pair_exp_index`
     - :data:`pair_lj_index`
     - :data:`pair_power_index`
+    - :data:`pair_qpair_index`
     - :data:`pair_spring_index`
     - :data:`pair_table_index`
     - :data:`param_name_length`
@@ -183,6 +185,8 @@ must be updated accordingly.
     - :func:`create_potential_characterizer_bond_bending`
     - :func:`create_potential_characterizer_buckingham`
     - :func:`create_potential_characterizer_charge_exp`
+    - :func:`create_potential_characterizer_charge_pair`
+    - :func:`create_potential_characterizer_charge_self`
     - :func:`create_potential_characterizer_constant_force`
     - :func:`create_potential_characterizer_constant_potential`
     - :func:`create_potential_characterizer_dihedral`
@@ -203,11 +207,17 @@ must be updated accordingly.
     - :func:`evaluate_bond_order_gradient_triplet`
     - :func:`evaluate_electronegativity`
     - :func:`evaluate_electronegativity_charge_exp`
+    - :func:`evaluate_electronegativity_charge_pair`
+    - :func:`evaluate_electronegativity_charge_self`
+    - :func:`evaluate_electronegativity_component`
     - :func:`evaluate_energy`
     - :func:`evaluate_energy_LJ`
     - :func:`evaluate_energy_bond_bending`
     - :func:`evaluate_energy_buckingham`
     - :func:`evaluate_energy_charge_exp`
+    - :func:`evaluate_energy_charge_pair`
+    - :func:`evaluate_energy_charge_self`
+    - :func:`evaluate_energy_component`
     - :func:`evaluate_energy_constant_force`
     - :func:`evaluate_energy_constant_potential`
     - :func:`evaluate_energy_dihedral`
@@ -218,6 +228,7 @@ must be updated accordingly.
     - :func:`evaluate_force_bond_bending`
     - :func:`evaluate_force_buckingham`
     - :func:`evaluate_force_charge_exp`
+    - :func:`evaluate_force_component`
     - :func:`evaluate_force_constant_force`
     - :func:`evaluate_force_constant_potential`
     - :func:`evaluate_force_dihedral`
@@ -325,6 +336,14 @@ Full documentation of global variables in potentials
     
     internal index for the constant potential
     
+  .. data:: mono_qself_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 11
+    
+    
+    
   .. data:: n_bond_order_types
 
     integer    *scalar*  *parameter*  
@@ -345,7 +364,7 @@ Full documentation of global variables in potentials
 
     integer    *scalar*  *parameter*  
 
-    *initial value* = 10
+    *initial value* = 12
     
     number of different types of potentials known
     
@@ -388,6 +407,14 @@ Full documentation of global variables in potentials
     *initial value* = 9
     
     internal index for the power law potential
+    
+  .. data:: pair_qpair_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 12
+    
+    
     
   .. data:: pair_spring_index
 
@@ -607,6 +634,8 @@ Full documentation of custom types in potentials
         The internal index of the *actual potential*. This is needed when bond order factors are included so that the factors may be joint with the correct potentials.
     smoothened: logical    *scalar*
         logical switch specifying if a smooth cutoff is applied to the potential
+    n_product: integer    *scalar*
+        number of multipliers for a product potential
     filter_elements: logical    *scalar*
         a logical switch specifying whether the potential targets atoms based on the atomic symbols
     parameters: double precision  *pointer*  *size(:)*
@@ -631,6 +660,8 @@ Full documentation of custom types in potentials
         array for storing tabulated values
     original_elements: character(len=2)  *pointer*  *size(:)*
         The list of elements (atomic symbols) of the original :class:`~pysic.Potential` in the Python interface from which this potential was created. Whereas the apply_* lists are used for finding all pairs and triplets of atoms for which the potential could act on, the original_* lists specify the roles of atoms in the interaction.
+    multipliers: type(potential)  *pointer*  *size(:)*
+        additional potentials with the same targets and cutoff, for potential multiplication
     derived_parameters: double precision  *pointer*  *size(:)*
         numerical values for parameters calculated based on the parameters specified by the user
     apply_elements: character(len=2)  *pointer*  *size(:)*
@@ -1064,7 +1095,7 @@ Full documentation of subroutines in potentials
     index: integer  *intent(in)*    *scalar*  
         index of the bond order factor
             
-  .. function:: create_potential(n_targets, n_params, pot_name, parameters, cutoff, soft_cutoff, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index, new_potential, success)
+  .. function:: create_potential(n_targets, n_params, pot_name, parameters, cutoff, soft_cutoff, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index, n_multi, multipliers, new_potential, success)
 
     Returns a :data:`potential`.
     
@@ -1100,6 +1131,10 @@ Full documentation of subroutines in potentials
         The atom indices in the :class:`~pysic.Potential` used for generating the potential. This is needed to specify the roles of the atoms in the interaction.
     pot_index: integer  *intent(in)*    *scalar*  
         the internal index of the potential
+    n_multi: integer  *intent(in)*    *scalar*  
+        number of multiplying potentials
+    multipliers: type(potential)  *intent(in)*    *size(n_multi)*  
+        the multiplying potentials
     **new_potential**: type(potential)  **intent(out)**    *scalar*  
         the created :data:`potential`
     **success**: logical  **intent(out)**    *scalar*  
@@ -1138,6 +1173,26 @@ Full documentation of subroutines in potentials
   .. function:: create_potential_characterizer_charge_exp(index)
 
     charge exponential characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
+  .. function:: create_potential_characterizer_charge_pair(index)
+
+    charge self energy characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
+  .. function:: create_potential_characterizer_charge_self(index)
+
+    charge self energy characterizer initialization
     
 
     Parameters:
@@ -1436,7 +1491,7 @@ Full documentation of subroutines in potentials
     atoms: type(atom)  *intent(in)*    *size(3)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
-  .. function:: evaluate_electronegativity(n_targets, separations, distances, interaction, eneg, atoms)
+  .. function:: evaluate_electronegativity(n_targets, n_product, separations, distances, interaction, eneg, atoms)
 
     If a potential, say, :math:`U_{ijk}` depends on the charges of atoms :math:`q_i`
     it will not only create a force,
@@ -1448,6 +1503,8 @@ Full documentation of subroutines in potentials
     
        \chi_{\alpha,ijk} = -\mu_{\alpha,ijk} = -\frac{\partial U_{ijk}}{\partial q_\alpha}
     
+    This routine can evaluate the contribution from a product potential.
+    
     To be consist the forces returned by :func:`evaluate_electronegativity` must be
     derivatives of the energies returned by :func:`evaluate_energy`.
     
@@ -1456,6 +1513,8 @@ Full documentation of subroutines in potentials
 
     n_targets: integer  *intent(in)*    *scalar*  
         number of targets
+    n_product: integer  *intent(in)*    *scalar*  
+        the number of potentials for a product potential
     separations: double precision  *intent(in)*    *size(3, n_targets-1)*  
         atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
     distances: double precision  *intent(in)*    *size(n_targets-1)*  
@@ -1485,20 +1544,47 @@ Full documentation of subroutines in potentials
     atoms: type(atom)  *intent(in)*    *size(2)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
-  .. function:: evaluate_energy(n_targets, separations, distances, interaction, energy, atoms)
+  .. function:: evaluate_electronegativity_charge_pair(interaction, eneg, atoms)
 
-    Evaluates the potential energy due to an interaction between the given
-    atoms. In other words, if the total potential energy is
+    Charge pair energy electronegativity
+    
+
+    Parameters:
+
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **eneg**: double precision  **intent(out)**    *size(2)*  
+        the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+    atoms: type(atom)  *intent(in)*    *size(2)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_electronegativity_charge_self(interaction, eneg, atoms)
+
+    Charge self energy electronegativity
+    
+
+    Parameters:
+
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **eneg**: double precision  **intent(out)**    *size(1)*  
+        the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+    atoms: type(atom)  *intent(in)*    *size(1)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_electronegativity_component(n_targets, separations, distances, interaction, eneg, atoms)
+
+    If a potential, say, :math:`U_{ijk}` depends on the charges of atoms :math:`q_i`
+    it will not only create a force,
+    but also a difference in chemical potential :math:`\mu_i` for the atomic partial charges.
+    Similarly to :func:`evaluate_forces`, this function evaluates the chemical
+    'force' on the atomic charges
     
     .. math::
     
-       E = \sum_{ijk} v_{ijk}
+       \chi_{\alpha,ijk} = -\mu_{\alpha,ijk} = -\frac{\partial U_{ijk}}{\partial q_\alpha}
     
-    this routine evaluates :math:`v_{ijk}` for the given
-    atoms i, j, and k.
-    
-    To be consist the forces returned by :func:`evaluate_forces` must be
-    gradients of the energies returned by :func:`evaluate_energy`.
+    This routine evaluates an elemental :math:`\chi_{\alpha,ijk}`.
     
 
     Parameters:
@@ -1510,10 +1596,45 @@ Full documentation of subroutines in potentials
     distances: double precision  *intent(in)*    *size(n_targets-1)*  
         atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
     interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **eneg**: double precision  **intent(out)**    *size(n_targets)*  
+        the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+    atoms: type(atom)  *intent(in)*    *size(n_targets)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_energy(n_targets, n_product, separations, distances, interaction, energy, atoms)
+
+    Evaluates the potential energy due to an interaction between the given
+    atoms. In other words, if the total potential energy is
+    
+    .. math::
+    
+       E = \sum_{ijk} v_{ijk}
+    
+    this routine evaluates :math:`v_{ijk}` for the given
+    atoms i, j, and k.
+    
+    This routine can evaluate the contribution from a product potential.
+    
+    To be consist the forces returned by :func:`evaluate_forces` must be
+    gradients of the energies returned by :func:`evaluate_energy`.
+    
+
+    Parameters:
+
+    n_targets: integer  *intent(in)*    *scalar*  
+        number of targets
+    n_product: integer  *intent(in)*    *scalar*  
+        the number of potentials for a product potential
+    separations: double precision  *intent(in)*    *size(3, n_targets-1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(n_targets-1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
         a :data:`bond_order_parameters` containing the parameters
     **energy**: double precision  **intent(out)**    *scalar*  
         the calculated energy :math:`v_{ijk}`
-    atoms: type(atom)  *intent(in)*    *size(n_targets)*  *optional*
+    atoms: type(atom)  *intent(in)*    *size(n_targets)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
   .. function:: evaluate_energy_LJ(separations, distances, interaction, energy)
@@ -1582,6 +1703,67 @@ Full documentation of subroutines in potentials
     **energy**: double precision  **intent(out)**    *scalar*  
         the calculated energy :math:`v_{ijk}`
     atoms: type(atom)  *intent(in)*    *size(2)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_energy_charge_pair(interaction, energy, atoms)
+
+    Charge pair energy
+    
+
+    Parameters:
+
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+    atoms: type(atom)  *intent(in)*    *size(2)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_energy_charge_self(interaction, energy, atoms)
+
+    Charge self energy
+    
+
+    Parameters:
+
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+    atoms: type(atom)  *intent(in)*    *size(1)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_energy_component(n_targets, separations, distances, interaction, energy, atoms)
+
+    Evaluates the potential energy due to an interaction between the given
+    atoms. In other words, if the total potential energy is
+    
+    .. math::
+    
+       E = \sum_{ijk} v_{ijk}
+    
+    this routine evaluates :math:`v_{ijk}` for the given
+    atoms i, j, and k.
+    
+    This routine evaluates an elemental :math:`v_{\alpha,ijk}`.
+    
+    To be consist the forces returned by :func:`evaluate_forces` must be
+    gradients of the energies returned by :func:`evaluate_energy`.
+    
+
+    Parameters:
+
+    n_targets: integer  *intent(in)*    *scalar*  
+        number of targets
+    separations: double precision  *intent(in)*    *size(3, n_targets-1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(n_targets-1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+    atoms: type(atom)  *intent(in)*    *size(n_targets)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
   .. function:: evaluate_energy_constant_force(interaction, energy, atoms)
@@ -1744,6 +1926,39 @@ Full documentation of subroutines in potentials
     atoms: type(atom)  *intent(in)*    *size(2)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
+  .. function:: evaluate_force_component(n_targets, separations, distances, interaction, force, atoms)
+
+    Evaluates the forces due to an interaction between the given
+    atoms. In other words, if the total force on atom :math:`\alpha` is
+    
+    .. math::
+    
+       \mathbf{F}_\alpha = \sum_{ijk} -\nabla_\alpha v_{ijk} = \sum \mathbf{f}_{\alpha,ijk},
+    
+    this routine evaluates :math:`\mathbf{f}_{\alpha,ijk}` for :math:`\alpha = (i,j,k)` for the given
+    atoms i, j, and k.
+    
+    This routine evaluates an elemental :math:`\mathbf{f}_{\alpha,ijk}`.
+    
+    To be consist the forces returned by :func:`evaluate_forces` must be
+    gradients of the energies returned by :func:`evaluate_energy`.
+    
+
+    Parameters:
+
+    n_targets: integer  *intent(in)*    *scalar*  
+        number of targets
+    separations: double precision  *intent(in)*    *size(3, n_targets-1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(n_targets-1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **force**: double precision  **intent(out)**    *size(3, n_targets)*  
+        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+    atoms: type(atom)  *intent(in)*    *size(n_targets)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
   .. function:: evaluate_force_constant_force(interaction, force)
 
     constant force
@@ -1834,7 +2049,7 @@ Full documentation of subroutines in potentials
     **force**: double precision  **intent(out)**    *size(3, 2)*  
         the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
             
-  .. function:: evaluate_forces(n_targets, separations, distances, interaction, force, atoms)
+  .. function:: evaluate_forces(n_targets, n_product, separations, distances, interaction, force, atoms)
 
     Evaluates the forces due to an interaction between the given
     atoms. In other words, if the total force on atom :math:`\alpha` is
@@ -1846,6 +2061,8 @@ Full documentation of subroutines in potentials
     this routine evaluates :math:`\mathbf{f}_{\alpha,ijk}` for :math:`\alpha = (i,j,k)` for the given
     atoms i, j, and k.
     
+    This routine can evaluate the contribution from a product potential.
+    
     To be consist the forces returned by :func:`evaluate_forces` must be
     gradients of the energies returned by :func:`evaluate_energy`.
     
@@ -1854,6 +2071,8 @@ Full documentation of subroutines in potentials
 
     n_targets: integer  *intent(in)*    *scalar*  
         number of targets
+    n_product: integer  *intent(in)*    *scalar*  
+        the number of potentials for a product potential
     separations: double precision  *intent(in)*    *size(3, n_targets-1)*  
         atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
     distances: double precision  *intent(in)*    *size(n_targets-1)*  

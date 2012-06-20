@@ -1,0 +1,257 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.utility.error &mdash; Pysic 0.4.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.4 documentation" href="../../../index.html" />
+    <link rel="up" title="pysic" href="../../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.utility.error</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+
+
+<div class="viewcode-block" id="InvalidPotentialError"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.error.InvalidPotentialError">[docs]</a><span class="k">class</span> <span class="nc">InvalidPotentialError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An error raised when an invalid potential is about to be created or used.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    message: string</span>
+<span class="sd">        information describing why the error occurred</span>
+<span class="sd">    potential: :class:`~pysic.Potential`</span>
+<span class="sd">        the errorneous potential</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">message</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">potential</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potential</span> <span class="o">=</span> <span class="n">potential</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potential</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">messsage</span> <span class="o">+</span> <span class="s">&quot; </span><span class="se">\n</span><span class="s"> the Potential: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potential</span><span class="p">)</span>
+
+
+</div>
+<div class="viewcode-block" id="InvalidCoordinatorError"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.error.InvalidCoordinatorError">[docs]</a><span class="k">class</span> <span class="nc">InvalidCoordinatorError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An error raised when an invalid coordination calculator is about to be created or used.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    </span>
+<span class="sd">    message: string</span>
+<span class="sd">        information describing why the error occurred</span>
+<span class="sd">    coordinator: :class:`~pysic.Coordinator`</span>
+<span class="sd">        the errorneous coordinator</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">message</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">coordinator</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coordinator</span> <span class="o">=</span> <span class="n">coordinator</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinator</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">messsage</span> <span class="o">+</span> <span class="s">&quot; </span><span class="se">\n</span><span class="s">  the Coordinator: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">coordinator</span><span class="p">)</span>
+
+
+
+</div>
+<div class="viewcode-block" id="InvalidParametersError"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.error.InvalidParametersError">[docs]</a><span class="k">class</span> <span class="nc">InvalidParametersError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An error raised when an invalid set of parameters is about to be created.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    message: string</span>
+<span class="sd">        information describing why the error occurred</span>
+<span class="sd">    params: :class:`~pysic.BondOrderParameters`</span>
+<span class="sd">        the errorneous parameters</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">message</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">params</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">=</span> <span class="n">params</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">messsage</span> <span class="o">+</span> <span class="s">&quot; </span><span class="se">\n</span><span class="s">  the Parameters: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
+
+
+</div>
+<div class="viewcode-block" id="InvalidSummationError"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.error.InvalidSummationError">[docs]</a><span class="k">class</span> <span class="nc">InvalidSummationError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An error raised when an invalid coulomb summation is about to be created.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    message: string</span>
+<span class="sd">        information describing why the error occurred</span>
+<span class="sd">    params: :class:`~pysic.CoulombSummation`</span>
+<span class="sd">        the errorneous summation</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">message</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">summer</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summer</span> <span class="o">=</span> <span class="n">summer</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">summer</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">messsage</span> <span class="o">+</span> <span class="s">&quot; </span><span class="se">\n</span><span class="s">  the Summation: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">summer</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="InvalidRelaxationError"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.error.InvalidRelaxationError">[docs]</a><span class="k">class</span> <span class="nc">InvalidRelaxationError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An error raised when an invalid charge relaxation is about to be created.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        message: string</span>
+<span class="sd">            information describing why the error occurred</span>
+<span class="sd">        params: :class:`~pysic.ChargeRelaxation`</span>
+<span class="sd">            the errorneous parameters</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">message</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span><span class="n">relaxation</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">relaxation</span> <span class="o">=</span> <span class="n">relaxation</span>
+    
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span> <span class="o">==</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">messsage</span> <span class="o">+</span> <span class="s">&quot; </span><span class="se">\n</span><span class="s">  the Relaxation: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">relaxation</span><span class="p">)</span>
+
+
+
+</div>
+<div class="viewcode-block" id="MissingAtomsError"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.error.MissingAtomsError">[docs]</a><span class="k">class</span> <span class="nc">MissingAtomsError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An error raised when the core is being updated with per atom information before updating the atoms.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    message: string</span>
+<span class="sd">        information describing why the error occurred</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">message</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span>
+
+    </div>
+<div class="viewcode-block" id="MissingNeighborsError"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.error.MissingNeighborsError">[docs]</a><span class="k">class</span> <span class="nc">MissingNeighborsError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An error raised when a calculation is initiated without initializing the neighbor lists.</span>
+
+<span class="sd">    In principle :class:`~pysic.Pysic` should always take care of handling the neighbors automatically.</span>
+<span class="sd">    This error is an indication that there is loophole in the built-in preparations.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    message: string</span>
+<span class="sd">        information describing why the error occurred</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">message</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span>
+</div>
+<div class="viewcode-block" id="LockedCoreError"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.error.LockedCoreError">[docs]</a><span class="k">class</span> <span class="nc">LockedCoreError</span><span class="p">(</span><span class="ne">Exception</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An error raised when a :class:`~pysic.Pysic` tries to access the core which is locked</span>
+<span class="sd">    by another calculator.</span>
+
+<span class="sd">    Parameters:</span>
+
+<span class="sd">    message: string</span>
+<span class="sd">        information describing why the error occurred</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">message</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">message</span> <span class="o">=</span> <span class="n">message</span>
+
+    <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">message</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>
