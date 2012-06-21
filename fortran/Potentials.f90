@@ -2916,7 +2916,7 @@ contains
           ratio = 1.d0 / ( r1 * r2 )
 
           ! cos theta = (r_21 . r_23) / ( |r_21| |r_23| ) = r3*ratio
-          ! k ( cos theta - cos theta_0) =
+          ! k ( cos theta - cos theta_0 ) =
           r6 = interaction%parameters(1) * (r3 * ratio - interaction%derived_parameters(1))
 
           force(1:3,1) = -tmp3*ratio * r6 

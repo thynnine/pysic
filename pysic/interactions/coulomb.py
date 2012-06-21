@@ -71,7 +71,6 @@ class CoulombSummation:
                                                                                  s=str(self.scaler))
 
 
-# ToDo: make an InvalidSummationError
     def set_summation(self,method):
         """Sets the summation method.
             
@@ -87,7 +86,7 @@ class CoulombSummation:
             self.method = method
             self.initialize_parameters()
         else:
-            raise InvalidParametersError("no such summation mode "+method)
+            raise InvalidSummationError("no such summation mode "+method)
 
 
     def initialize_parameters(self):
@@ -125,7 +124,7 @@ class CoulombSummation:
         if self.parameters == None:
             self.initialize_parameters()
         if len(parameters) != len(self.parameters):
-            raise InvalidParametersError("The summation mode "+self.method+" requires "+
+            raise InvalidSummationError("The summation mode "+self.method+" requires "+
                                          len(self.parameters)+" parameters.")
         for key, value in zip(self.parameters.get_keys(), parameters):
             self.parameters[key] = parameters

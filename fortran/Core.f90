@@ -2865,7 +2865,7 @@ contains
 #endif
 
        if(evaluate_ewald)then
-          filter = .true.
+          filter = .true. ! currently, the atomic filtering option is not used
           call calculate_ewald_energy(n_atoms,atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
                ewald_epsilon,filter,ewald_scaler,.false.,energy)
 

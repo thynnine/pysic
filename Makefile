@@ -35,7 +35,7 @@ help:
 	@echo "  parallel  compile parallel version"
 
 test:
-	mkdir $(TMPDIR)	
+	mkdir -p $(TMPDIR)	
 	cp ./fortran/MPI.f90 $(TMPDIR)/MPI.F90
 	cp ./fortran/Quaternions.f90 $(TMPDIR)/Quaternions.F90
 	cp ./fortran/Utility.f90 $(TMPDIR)/Utility.F90
@@ -55,13 +55,11 @@ test:
 
 
 clean:
-	-rm -rf $(TMPDIR)/*
-	rmdir $(TMPDIR)
-	-rm -rf $(BUILDDIR)/*
-	rmdir $(BUILDDIR)
+	-rm -rf $(TMPDIR)
+	-rm -rf $(BUILDDIR)
 
 debug:
-	mkdir $(BUILDDIR)
+	mkdir -p $(BUILDDIR)
 	mkdir $(BUILDDIR)/pysic$(DEBUG_SUFFIX)
 	cp -r ./pysic/* $(BUILDDIR)/pysic$(DEBUG_SUFFIX)
 
@@ -85,11 +83,11 @@ debug:
 	@echo "Build finished. The module pysic$(DEBUG_SUFFIX) is in the directory $(BUILDDIR)."
 
 noopt:
-	mkdir $(BUILDDIR)
+	mkdir -p $(BUILDDIR)
 	mkdir $(BUILDDIR)/pysic$(NOOPT_SUFFIX)
 	cp -r ./pysic/* $(BUILDDIR)/pysic$(NOOPT_SUFFIX)
 
-	mkdir $(TMPDIR)	
+	mkdir -p $(TMPDIR)	
 	cp ./fortran/MPI.f90 $(TMPDIR)/MPI.F90
 	cp ./fortran/Quaternions.f90 $(TMPDIR)/Quaternions.F90
 	cp ./fortran/Utility.f90 $(TMPDIR)/Utility.F90
@@ -109,11 +107,11 @@ noopt:
 	@echo "Build finished. The module pysic$(NOOPT_SUFFIX) is in the directory $(BUILDDIR)."
 
 serial:
-	mkdir $(BUILDDIR)
+	mkdir -p $(BUILDDIR)
 	mkdir $(BUILDDIR)/pysic$(SERIAL_SUFFIX)
 	cp -r ./pysic/* $(BUILDDIR)/pysic$(SERIAL_SUFFIX)
 
-	mkdir $(TMPDIR)	
+	mkdir -p $(TMPDIR)	
 	cp ./fortran/MPI.f90 $(TMPDIR)/MPI.F90
 	cp ./fortran/Quaternions.f90 $(TMPDIR)/Quaternions.F90
 	cp ./fortran/Utility.f90 $(TMPDIR)/Utility.F90
@@ -134,11 +132,11 @@ serial:
 
 
 parallel:
-	mkdir $(BUILDDIR)
+	mkdir -p $(BUILDDIR)
 	mkdir $(BUILDDIR)/pysic
 	cp -r ./pysic/* $(BUILDDIR)/pysic
 
-	mkdir $(TMPDIR)	
+	mkdir -p $(TMPDIR)	
 	cp ./fortran/MPI.f90 $(TMPDIR)/MPI.F90
 	cp ./fortran/Quaternions.f90 $(TMPDIR)/Quaternions.F90
 	cp ./fortran/Utility.f90 $(TMPDIR)/Utility.F90

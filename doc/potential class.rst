@@ -123,6 +123,8 @@ Below is a list of potentials currently implemented.
 - :ref:`harmonic potential`
 - :ref:`Lennard-Jones potential`
 - :ref:`Buckingham potential`
+- :ref:`exponential potential`
+- :ref:`charged-pair potential`
 - :ref:`charge exponential potential`
 - :ref:`tabulated potential`
 - :ref:`bond bending potential`
