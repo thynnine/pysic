@@ -19,6 +19,7 @@ Version 0.4.4
 
 - Added the ability to calculate products of local potentials (see :class:`pysic.interactions.local.ProductPotential`)
 - Added the :ref:`charged-pair potential`
+- Separated the old charged exponential potential to :ref:`exponential potential` and :ref:`charge exponential potential`
 
 
 Version 0.4.3

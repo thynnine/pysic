@@ -132,6 +132,7 @@ must be updated accordingly.
     - :data:`pair_exp_index`
     - :data:`pair_lj_index`
     - :data:`pair_power_index`
+    - :data:`pair_qexp_index`
     - :data:`pair_qpair_index`
     - :data:`pair_spring_index`
     - :data:`pair_table_index`
@@ -190,6 +191,7 @@ must be updated accordingly.
     - :func:`create_potential_characterizer_constant_force`
     - :func:`create_potential_characterizer_constant_potential`
     - :func:`create_potential_characterizer_dihedral`
+    - :func:`create_potential_characterizer_exp`
     - :func:`create_potential_characterizer_power`
     - :func:`create_potential_characterizer_spring`
     - :func:`create_potential_characterizer_table`
@@ -221,17 +223,18 @@ must be updated accordingly.
     - :func:`evaluate_energy_constant_force`
     - :func:`evaluate_energy_constant_potential`
     - :func:`evaluate_energy_dihedral`
+    - :func:`evaluate_energy_exp`
     - :func:`evaluate_energy_power`
     - :func:`evaluate_energy_spring`
     - :func:`evaluate_energy_table`
     - :func:`evaluate_force_LJ`
     - :func:`evaluate_force_bond_bending`
     - :func:`evaluate_force_buckingham`
-    - :func:`evaluate_force_charge_exp`
     - :func:`evaluate_force_component`
     - :func:`evaluate_force_constant_force`
     - :func:`evaluate_force_constant_potential`
     - :func:`evaluate_force_dihedral`
+    - :func:`evaluate_force_exp`
     - :func:`evaluate_force_power`
     - :func:`evaluate_force_spring`
     - :func:`evaluate_force_table`
@@ -364,7 +367,7 @@ Full documentation of global variables in potentials
 
     integer    *scalar*  *parameter*  
 
-    *initial value* = 12
+    *initial value* = 13
     
     number of different types of potentials known
     
@@ -407,6 +410,14 @@ Full documentation of global variables in potentials
     *initial value* = 9
     
     internal index for the power law potential
+    
+  .. data:: pair_qexp_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 13
+    
+    
     
   .. data:: pair_qpair_index
 
@@ -1230,6 +1241,16 @@ Full documentation of subroutines in potentials
     index: integer  *intent(in)*    *scalar*  
         index of the potential
             
+  .. function:: create_potential_characterizer_exp(index)
+
+    exponential characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
   .. function:: create_potential_characterizer_power(index)
 
     Power law characterizer initialization
@@ -1526,17 +1547,13 @@ Full documentation of subroutines in potentials
     atoms: type(atom)  *intent(in)*    *size(n_targets)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
-  .. function:: evaluate_electronegativity_charge_exp(separations, distances, interaction, eneg, atoms)
+  .. function:: evaluate_electronegativity_charge_exp(interaction, eneg, atoms)
 
     Charge exp electronegativity
     
 
     Parameters:
 
-    separations: double precision  *intent(in)*    *size(3, 1)*  
-        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
-    distances: double precision  *intent(in)*    *size(1)*  
-        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
     interaction: type(potential)  *intent(in)*    *scalar*  
         a :data:`potential` containing the parameters
     **eneg**: double precision  **intent(out)**    *size(2)*  
@@ -1687,17 +1704,13 @@ Full documentation of subroutines in potentials
     **energy**: double precision  **intent(out)**    *scalar*  
         the calculated energy :math:`v_{ijk}`
             
-  .. function:: evaluate_energy_charge_exp(separations, distances, interaction, energy, atoms)
+  .. function:: evaluate_energy_charge_exp(interaction, energy, atoms)
 
     Charge exp energy
     
 
     Parameters:
 
-    separations: double precision  *intent(in)*    *size(3, 1)*  
-        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
-    distances: double precision  *intent(in)*    *size(1)*  
-        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
     interaction: type(potential)  *intent(in)*    *scalar*  
         a :data:`bond_order_parameters` containing the parameters
     **energy**: double precision  **intent(out)**    *scalar*  
@@ -1810,6 +1823,22 @@ Full documentation of subroutines in potentials
     atoms: type(atom)  *intent(in)*    *size(4)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
+  .. function:: evaluate_energy_exp(separations, distances, interaction, energy)
+
+    Exp energy
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+            
   .. function:: evaluate_energy_power(separations, distances, interaction, energy)
 
     Power energy
@@ -1908,24 +1937,6 @@ Full documentation of subroutines in potentials
     **force**: double precision  **intent(out)**    *size(3, 2)*  
         the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
             
-  .. function:: evaluate_force_charge_exp(separations, distances, interaction, force, atoms)
-
-    charge exp force
-    
-
-    Parameters:
-
-    separations: double precision  *intent(in)*    *size(3, 1)*  
-        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
-    distances: double precision  *intent(in)*    *size(1)*  
-        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
-    interaction: type(potential)  *intent(in)*    *scalar*  
-        a :data:`potential` containing the parameters
-    **force**: double precision  **intent(out)**    *size(3, 2)*  
-        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
-    atoms: type(atom)  *intent(in)*    *size(2)*  
-        a list of the actual :data:`atom` objects for which the term is calculated
-            
   .. function:: evaluate_force_component(n_targets, separations, distances, interaction, force, atoms)
 
     Evaluates the forces due to an interaction between the given
@@ -2000,6 +2011,22 @@ Full documentation of subroutines in potentials
         the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
     atoms: type(atom)  *intent(in)*    *size(4)*  
         a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_force_exp(separations, distances, interaction, force)
+
+    Exp force
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **force**: double precision  **intent(out)**    *size(3, 2)*  
+        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
             
   .. function:: evaluate_force_power(separations, distances, interaction, force)
 

@@ -446,6 +446,75 @@ Fortran routines:
 - :meth:`evaluate_force_buckingham`
 
 
+.. file:exponential potential
+
+.. _exponential potential:
+
+
+
+
+Exponential potential
+______________________________________
+
+2-body interaction defined as
+
+.. math::
+
+  V(q) & = \varepsilon \exp(-\zeta r) 
+
+where :math:`\varepsilon` is an energy scale constant and :math:`\zeta` is a length decay constant.
+
+
+Keywords::
+
+    >>> names_of_parameters('exponential')
+    ['epsilon', 'zeta']
+
+.. only:: html
+
+ .. plot::
+
+   import matplotlib.pyplot as plt
+   import math
+
+   x = []; y = []
+   start = 0.0
+   end = 10.0
+   steps = 100
+   dx = (end-start)/steps
+
+   eps = -1.0
+   zeta = 0.5
+
+   x = []
+   y = []
+   index = 0
+
+   for i in range(steps+1):
+           xval = start + i*dx
+           x.append( xval )
+           y.append( eps * math.exp(-zeta*xval) )
+       
+        
+   plt.plot(x,y)
+   
+   plt.title(r'Exponential potential: $\varepsilon = 1.0$, $\zeta = 0.5$')
+   plt.xlim(-0.0,10.0)
+   plt.ylim(-1.0,0.0)
+   plt.xlabel('$r$')
+   plt.ylabel('$V$')
+   plt.show()
+
+
+
+
+Fortran routines:
+
+- :meth:`create_potential_characterizer_exp`
+- :meth:`evaluate_energy_exp`
+- :meth:`evaluate_force_exp`
+
+
 .. file:charged-pair potential
 
 .. _charged-pair potential:
@@ -477,7 +546,7 @@ Defines the potential
 
 .. math::
 
-  V(q_1,q_2,r) = \varepsilon q_1^{n_1} q_2^{n_2} \frac{a^n}{r^n}
+  V(q_1,q_2,r) = \varepsilon q_1^{n_1} q_2^{n_2} \left(\frac{a}{r}\right)^n
 
 Keywords::
 
@@ -506,79 +575,21 @@ ______________________________________
 
 .. math::
 
-  V(r,q) & = \varepsilon_{ij} \exp\left(-\zeta_{ij} r + \frac{\xi_i D_i(q_i) + \xi_j D_j(q_j)}{2} \right) \\
+  V(q) & = \varepsilon_{ij} \exp\left(\frac{\xi_i D_i(q_i) + \xi_j D_j(q_j)}{2} \right) \\
   D_i(q) & = R_{i,\max} + | \beta_i (Q_{i,\max} - q) |^{\eta_i} \\
   \beta_i & = \frac{ (R_{i,\min} - R_{i,\max})^\frac{1}{\eta_i} }{ Q_{i,\max} - Q_{i,\min} }\\
   \eta_i  & = \frac{ \ln \frac{R_{i,\max}}{R_{i,\max} - R_{i,\min}} }{ \ln \frac{Q_{i,\max}}{Q_{i,\max} - Q_{i,\min}} },
 
-where :math:`\varepsilon` is an energy scale constant, :math:`\zeta` is a length decay constant, :math:`\xi_i` are charge decay constants, and :math:`R_{i,\min/\max}` and :math:`Q_{i,\min/\max}` are the changes in valence radii and charge, respectively, of the ions for the minimum and maximum charge. :math:`D_i(q)` is the effective atomic radius for the charge :math:`q`.
+where :math:`\varepsilon` is an energy scale constant, :math:`\xi_i` are charge decay constants, and :math:`R_{i,\min/\max}` and :math:`Q_{i,\min/\max}` are the changes in valence radii and charge, respectively, of the ions for the minimum and maximum charge. :math:`D_i(q)` is the effective atomic radius for the charge :math:`q`.
 
 
 Keywords::
 
     >>> names_of_parameters('exponential')
-    ['epsilon', 'zeta', 
+    ['epsilon', 
      'Rmax1', 'Rmin1', 'Qmax1', 'Qmin1', 
      'Rmax2', 'Rmin2', 'Qmax2', 'Qmin2', 
      'xi1', 'xi2']
-
-.. only:: html
-
- .. plot::
-
-   import matplotlib.pyplot as plt
-   import math
-
-   x = []; y = []
-   start = 0.0
-   end = 10.0
-   steps = 100
-   dx = (end-start)/steps
-
-   eps = -1.0
-   zeta = 0.5
-   xi1 = 2.0
-   xi2 = 4.0
-   Rmax1 = -0.15
-   Rmin1 = 0.15
-   Rmax2 = -1.5
-   Rmin2 = 0.5
-   Qmax1 = 2.0
-   Qmin1 = -6.0
-   Qmax2 = 6.0
-   Qmin2 = -2.0
-   eta1 = ( math.log((Rmax1)/(Rmax1-Rmin1)) ) / ( math.log((Qmax1)/(Qmax1-Qmin1)) )
-   eta2 = ( math.log((Rmax2)/(Rmax2-Rmin2)) ) / ( math.log((Qmax2)/(Qmax2-Qmin2)) )
-   beta1 = (Rmin1-Rmax1)**(1/eta1) / (Qmax1-Qmin1)
-   beta2 = (Rmin2-Rmax2)**(1/eta2) / (Qmax2-Qmin2)
-
-   x = [[] for i in range(3*3)]
-   y = [[] for i in range(3*3)]
-   index = 0
-
-   for dq1 in range(3):
-     for dq2 in range(3):
-       q1 = -1.0+dq1*1.0
-       q2 = -1.0+dq2*1.0
-       D1 = Rmax1 + (beta1 * (Qmax1 - q1))**eta1
-       D2 = Rmax2 + (beta2 * (Qmax2 - q2))**eta2
-
-       for i in range(steps+1):
-           xval = start + i*dx
-           x[index].append( xval )
-           y[index].append( eps * math.exp(-zeta*xval + 0.5*(D1*xi1 + D2*xi2)) )
-       
-        
-       plt.plot(x[index],y[index],color=str(index*0.1))
-       index += 1
-
-   plt.title(r'Charge dependent exponential potential:')
-   plt.xlim(-0.0,5.0)
-   plt.ylim(-1.0,0.0)
-   plt.xlabel('$r$')
-   plt.ylabel('$V$')
-   plt.show()
-
 
 
 
@@ -586,7 +597,6 @@ Fortran routines:
 
 - :meth:`create_potential_characterizer_charge_exp`
 - :meth:`evaluate_energy_charge_exp`
-- :meth:`evaluate_force_charge_exp`
 - :meth:`evaluate_electronegativity_charge_exp`
 
 .. file:tabulated potential

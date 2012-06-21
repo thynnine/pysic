@@ -120,7 +120,7 @@ module potentials
   ! *param_note_length maximum length allowed for the descriptions of parameters
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
-       n_potential_types = 12, &
+       n_potential_types = 13, &
        n_bond_order_types = 8, &
        n_max_params = 12, &
        pot_note_length = 500, &
@@ -165,7 +165,8 @@ module potentials
        pair_power_index = 9, &
        pair_table_index = 10, &
        mono_qself_index = 11, &
-       pair_qpair_index = 12
+       pair_qpair_index = 12, &
+       pair_qexp_index = 13
 
 
   !***********************************!
@@ -2005,8 +2006,11 @@ contains
     ! **** bond-bending potential ****
     call create_potential_characterizer_bond_bending(tri_bend_index)
 
+    ! **** exp potential ****
+    call create_potential_characterizer_exp(pair_exp_index)
+
     ! **** charge dependent exp potential ****
-    call create_potential_characterizer_charge_exp(pair_exp_index)
+    call create_potential_characterizer_charge_exp(pair_qexp_index)
 
     ! **** constant potential ****
     call create_potential_characterizer_constant_potential(mono_none_index)
@@ -2157,7 +2161,7 @@ contains
     select case (new_potential%type_index)
     case(tri_bend_index) ! bond bending
        call calculate_derived_parameters_bond_bending(n_params,parameters,new_potential)
-    case(pair_exp_index) ! charge-dep. exp.
+    case(pair_qexp_index) ! charge-dep. exp.
        call calculate_derived_parameters_charge_exp(n_params,parameters,new_potential)
     case(quad_dihedral_index) ! dihedral angle
        call calculate_derived_parameters_dihedral(n_params,parameters,new_potential)
@@ -2296,8 +2300,8 @@ contains
     ! This decides what kind of a function is applied and what 
     ! the parameters provided actually mean.
     select case (interaction%type_index)
-    case (pair_exp_index) ! charge-dependent exponential potential
-       call evaluate_electronegativity_charge_exp(separations(1:3,1),distances(1),interaction,eneg(1:2),atoms(1:2))
+    case (pair_qexp_index) ! charge-dependent exponential potential
+       call evaluate_electronegativity_charge_exp(interaction,eneg(1:2),atoms(1:2))
     case (mono_qself_index) ! charge-dependent self energy potential
        call evaluate_electronegativity_charge_self(interaction,eneg(1),atoms(1))
     case (pair_qpair_index) ! charge-dependent pair energy potential
@@ -2421,8 +2425,8 @@ contains
        call evaluate_force_constant_force(interaction,force(1:3,1))
     case (tri_bend_index) ! bond bending
        call evaluate_force_bond_bending(separations(1:3,1:2),distances(1:2),interaction,force(1:3,1:3),atoms(1:3))
-    case (pair_exp_index) ! charge-dependent exponential potential
-       call evaluate_force_charge_exp(separations(1:3,1),distances(1),interaction,force(1:3,1:2),atoms(1:2))
+    case (pair_exp_index) ! exponential potential
+       call evaluate_force_exp(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
     case (mono_none_index) ! constant potential
        call evaluate_force_constant_potential(interaction,force(1:3,1))
     case(pair_buck_index)  ! Buckingham potential
@@ -2535,8 +2539,10 @@ contains
        call evaluate_energy_constant_force(interaction,energy,atoms(1))
     case (tri_bend_index) ! bond-bending
        call evaluate_energy_bond_bending(separations(1:3,1:2),distances(1:2),interaction,energy,atoms(1:3))
-    case (pair_exp_index) ! charge-dependent exponential potential
-       call evaluate_energy_charge_exp(separations(1:3,1),distances(1),interaction,energy,atoms(1:2))
+    case (pair_exp_index) ! exponential potential
+       call evaluate_energy_exp(separations(1:3,1),distances(1),interaction,energy)
+    case (pair_qexp_index) ! charge-dependent exponential potential
+       call evaluate_energy_charge_exp(interaction,energy,atoms(1:2))
     case (mono_none_index) ! constant potential
        call evaluate_energy_constant_potential(interaction,energy)
     case(pair_buck_index) ! buckingham
@@ -3280,6 +3286,85 @@ contains
 
 
 
+  !***********************!
+  ! exponential potential !
+  !***********************!
+
+  ! exponential characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_exp(index)
+    implicit none
+    integer, intent(in) :: index
+
+    potential_descriptors(index)%type_index = index
+    call pad_string('exponential', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 2
+    potential_descriptors(index)%n_targets = 2
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+    call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('zeta', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('inverse decay length', param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('Exponential potential: '//&
+         'V(r) = epsilon exp(-zeta r)',&
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_exp
+
+
+
+
+
+  ! Exp force
+  !
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_force_exp(separations,distances,interaction,force)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,2)
+    double precision :: r1
+
+    r1 = distances(1)
+    force(1:3,1) = -interaction%parameters(2)*interaction%parameters(1)* &
+         exp(-interaction%parameters(2)*r1) * &
+         separations(1:3,1) / r1
+    force(1:3,2) = -force(1:3,1)
+
+  end subroutine evaluate_force_exp
+
+
+  ! Exp energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_energy_exp(separations,distances,interaction,energy)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    double precision :: r1
+
+    r1 = distances(1)
+    energy = interaction%parameters(1)* &
+         exp( -interaction%parameters(2)*r1 )
+
+  end subroutine evaluate_energy_exp
+
+
+
+
+
+
   !******************************!
   ! charge exponential potential !
   !******************************!
@@ -3292,47 +3377,45 @@ contains
     integer, intent(in) :: index
 
     potential_descriptors(index)%type_index = index
-    call pad_string('exponential', pot_name_length,potential_descriptors(index)%name)
-    potential_descriptors(index)%n_parameters = 12
+    call pad_string('charge_exp', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 11
     potential_descriptors(index)%n_targets = 2
     allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
     allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
     call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
     call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
-    call pad_string('zeta', param_name_length,potential_descriptors(index)%parameter_names(2))
-    call pad_string('inverse decay length', param_note_length,potential_descriptors(index)%parameter_notes(2))
-    call pad_string('Rmax1', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('Rmax1', param_name_length,potential_descriptors(index)%parameter_names(2))
     call pad_string('maximum covalent radius for atom i', &
-         param_note_length,potential_descriptors(index)%parameter_notes(3))
-    call pad_string('Rmin1', param_name_length,potential_descriptors(index)%parameter_names(4))
+         param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('Rmin1', param_name_length,potential_descriptors(index)%parameter_names(3))
     call pad_string('minimum covalent radius for atom i', &
-         param_note_length,potential_descriptors(index)%parameter_notes(4))
-    call pad_string('Qmax1', param_name_length,potential_descriptors(index)%parameter_names(5))
+         param_note_length,potential_descriptors(index)%parameter_notes(3))
+    call pad_string('Qmax1', param_name_length,potential_descriptors(index)%parameter_names(4))
     call pad_string('maximum covalent charge for atom i', &
-         param_note_length,potential_descriptors(index)%parameter_notes(5))
-    call pad_string('Qmin1', param_name_length,potential_descriptors(index)%parameter_names(6))
+         param_note_length,potential_descriptors(index)%parameter_notes(4))
+    call pad_string('Qmin1', param_name_length,potential_descriptors(index)%parameter_names(5))
     call pad_string('minimum covalent charge for atom i', &
-         param_note_length,potential_descriptors(index)%parameter_notes(6))
-    call pad_string('Rmax2', param_name_length,potential_descriptors(index)%parameter_names(7))
+         param_note_length,potential_descriptors(index)%parameter_notes(5))
+    call pad_string('Rmax2', param_name_length,potential_descriptors(index)%parameter_names(6))
     call pad_string('maximum covalent radius for atom j', &
-         param_note_length,potential_descriptors(index)%parameter_notes(7))
-    call pad_string('Rmin2', param_name_length,potential_descriptors(index)%parameter_names(8))
+         param_note_length,potential_descriptors(index)%parameter_notes(6))
+    call pad_string('Rmin2', param_name_length,potential_descriptors(index)%parameter_names(7))
     call pad_string('minimum covalent radius for atom j', &
-         param_note_length,potential_descriptors(index)%parameter_notes(8))
-    call pad_string('Qmax2', param_name_length,potential_descriptors(index)%parameter_names(9))
+         param_note_length,potential_descriptors(index)%parameter_notes(7))
+    call pad_string('Qmax2', param_name_length,potential_descriptors(index)%parameter_names(8))
     call pad_string('maximum covalent charge for atom j', &
-         param_note_length,potential_descriptors(index)%parameter_notes(9))
-    call pad_string('Qmin2', param_name_length,potential_descriptors(index)%parameter_names(10))
+         param_note_length,potential_descriptors(index)%parameter_notes(8))
+    call pad_string('Qmin2', param_name_length,potential_descriptors(index)%parameter_names(9))
     call pad_string('minimum covalent charge for atom j', &
-         param_note_length,potential_descriptors(index)%parameter_notes(10))
-    call pad_string('xi1', param_name_length,potential_descriptors(index)%parameter_names(11))
+         param_note_length,potential_descriptors(index)%parameter_notes(9))
+    call pad_string('xi1', param_name_length,potential_descriptors(index)%parameter_names(10))
     call pad_string('inverse charge decay for atom i', &
-         param_note_length,potential_descriptors(index)%parameter_notes(11))
-    call pad_string('xi2', param_name_length,potential_descriptors(index)%parameter_names(12))
+         param_note_length,potential_descriptors(index)%parameter_notes(10))
+    call pad_string('xi2', param_name_length,potential_descriptors(index)%parameter_names(11))
     call pad_string('inverse charge decay for atom j', &
-         param_note_length,potential_descriptors(index)%parameter_notes(12))
+         param_note_length,potential_descriptors(index)%parameter_notes(11))
     call pad_string('Charge-dependent exponential potential: '//&
-         'V(r,q) = epsilon exp(-zeta r + (xi_i D_i(q_i) + xi_j D_j(q_j))/2 ) '//&
+         'V(r,q) = epsilon exp( (xi_i D_i(q_i) + xi_j D_j(q_j))/2 ) '//&
          'D_i(q) = R_i,max + |beta_i (Q_i,max - q)|^eta_i '//&
          'beta_i = (R_i,min - R_i,max)^(1/eta_i) / (Q_i,max - Q_i,min) '//&
          'eta_i = ln [ R_i,max/(R_i,max - R_i,min) ] / ln [ Q_i,max/(Q_i,max - Q_i,min) ]',&
@@ -3354,15 +3437,15 @@ contains
     nullify(new_potential%derived_parameters)
     allocate(new_potential%derived_parameters(4))
     ! eta_i = [ln R_i,max/(R_i,max - R_i,min) ] / [ln Q_i,max/(Q_i,max - Q_i,min) ] 
-    new_potential%derived_parameters(1) = ( log(parameters(3)/(parameters(3)-parameters(4))) ) / &
-         ( log(parameters(5)/(parameters(5)-parameters(6))) ) 
-    new_potential%derived_parameters(2) = ( log(parameters(7)/(parameters(7)-parameters(8))) ) / &
-         ( log(parameters(9)/(parameters(9)-parameters(10))) )
+    new_potential%derived_parameters(1) = ( log(parameters(2)/(parameters(2)-parameters(3))) ) / &
+         ( log(parameters(4)/(parameters(4)-parameters(5))) ) 
+    new_potential%derived_parameters(2) = ( log(parameters(6)/(parameters(6)-parameters(7))) ) / &
+         ( log(parameters(8)/(parameters(8)-parameters(9))) )
     ! beta_i = (R_i,min - R_i,max)^(1/eta_i) / (Q_i,max - Q_i,min)
-    new_potential%derived_parameters(3) = (parameters(4) - parameters(3))**(1.d0/new_potential%derived_parameters(1)) / &
-         (parameters(5) - parameters(6))
-    new_potential%derived_parameters(4) = (parameters(8) - parameters(7))**(1.d0/new_potential%derived_parameters(2)) / &
-         (parameters(9) - parameters(10))
+    new_potential%derived_parameters(3) = (parameters(3) - parameters(2))**(1.d0/new_potential%derived_parameters(1)) / &
+         (parameters(4) - parameters(5))
+    new_potential%derived_parameters(4) = (parameters(7) - parameters(6))**(1.d0/new_potential%derived_parameters(2)) / &
+         (parameters(8) - parameters(9))
 
   end subroutine calculate_derived_parameters_charge_exp
 
@@ -3374,13 +3457,12 @@ contains
   ! *interaction a :data:`potential` containing the parameters
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
   ! *eneg the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
-  subroutine evaluate_electronegativity_charge_exp(separations,distances,interaction,eneg,atoms)
+  subroutine evaluate_electronegativity_charge_exp(interaction,eneg,atoms)
     implicit none
-    double precision, intent(in) :: separations(3,1), distances(1)
     type(potential), intent(in) :: interaction
     type(atom), intent(in) :: atoms(2)
     double precision, intent(out) :: eneg(2)
-    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, d1, d2, d3, d4, d5, d6
+    double precision :: r2, r3, r4, r5, r6, r7, r8, r9, d1, d2, d3, d4, d5, d6
     logical :: inverse_params
 
     ! If we have parameters for a pair A-B and we get a pair B-A, we
@@ -3402,118 +3484,41 @@ contains
        end if
     end if
 
-    r1 = distances(1)
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-       if(inverse_params)then
-          r2 = interaction%parameters(7) ! R_i,max
-          r3 = interaction%parameters(3) ! R_j,max
-          r4 = interaction%parameters(9) ! Q_i,max
-          r5 = interaction%parameters(5) ! Q_j,max
-          r6 = interaction%derived_parameters(2) ! eta_i
-          r7 = interaction%derived_parameters(1) ! eta_j
-          r8 = interaction%derived_parameters(4) ! beta_i
-          r9 = interaction%derived_parameters(3) ! beta_j
-          d3 = interaction%parameters(12) ! xi_i
-          d4 = interaction%parameters(11) ! xi_j
-       else
-          r2 = interaction%parameters(3) ! R_i,max
-          r3 = interaction%parameters(7) ! R_j,max
-          r4 = interaction%parameters(5) ! Q_i,max
-          r5 = interaction%parameters(9) ! Q_j,max
-          r6 = interaction%derived_parameters(1) ! eta_i
-          r7 = interaction%derived_parameters(2) ! eta_j
-          r8 = interaction%derived_parameters(3) ! beta_i
-          r9 = interaction%derived_parameters(4) ! beta_j
-          d3 = interaction%parameters(11) ! xi_i
-          d4 = interaction%parameters(12) ! xi_j
-       end if
-
-       d5 = r8 * (r4 - atoms(1)%charge)
-       d6 = r9 * (r5 - atoms(2)%charge)
-       d1 = r2 + abs(d5)**r6
-       d2 = r3 + abs(d6)**r7
-       eneg(1) = interaction%parameters(1)* &
-            exp(-interaction%parameters(2)*r1 + &
-            0.5d0*(d3*d1 + d4*d2) ) ! this is just the energy
-       eneg(2) = eneg(1) * d4 * 0.5d0 * r7 * abs(d6)**(r7-1.d0) * sign(1.d0,d6) * r9
-       eneg(1) = eneg(1) * d3 * 0.5d0 * r6 * abs(d5)**(r6-1.d0) * sign(1.d0,d5) * r8
+    if(inverse_params)then
+       r2 = interaction%parameters(6) ! R_i,max
+       r3 = interaction%parameters(2) ! R_j,max
+       r4 = interaction%parameters(8) ! Q_i,max
+       r5 = interaction%parameters(4) ! Q_j,max
+       r6 = interaction%derived_parameters(2) ! eta_i
+       r7 = interaction%derived_parameters(1) ! eta_j
+       r8 = interaction%derived_parameters(4) ! beta_i
+       r9 = interaction%derived_parameters(3) ! beta_j
+       d3 = interaction%parameters(11) ! xi_i
+       d4 = interaction%parameters(10) ! xi_j
+    else
+       r2 = interaction%parameters(2) ! R_i,max
+       r3 = interaction%parameters(6) ! R_j,max
+       r4 = interaction%parameters(4) ! Q_i,max
+       r5 = interaction%parameters(8) ! Q_j,max
+       r6 = interaction%derived_parameters(1) ! eta_i
+       r7 = interaction%derived_parameters(2) ! eta_j
+       r8 = interaction%derived_parameters(3) ! beta_i
+       r9 = interaction%derived_parameters(4) ! beta_j
+       d3 = interaction%parameters(10) ! xi_i
+       d4 = interaction%parameters(11) ! xi_j
     end if
-
+    
+    d5 = r8 * (r4 - atoms(1)%charge)
+    d6 = r9 * (r5 - atoms(2)%charge)
+    d1 = r2 + abs(d5)**r6
+    d2 = r3 + abs(d6)**r7
+    eneg(1) = interaction%parameters(1)* &
+         exp( 0.5d0*(d3*d1 + d4*d2) ) ! this is just the energy
+    eneg(2) = eneg(1) * d4 * 0.5d0 * r7 * abs(d6)**(r7-1.d0) * sign(1.d0,d6) * r9
+    eneg(1) = eneg(1) * d3 * 0.5d0 * r6 * abs(d5)**(r6-1.d0) * sign(1.d0,d5) * r8
+ 
   end subroutine evaluate_electronegativity_charge_exp
 
-
-  ! charge exp force
-  !
-  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
-  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
-  ! *interaction a :data:`potential` containing the parameters
-  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
-  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
-  subroutine evaluate_force_charge_exp(separations,distances,interaction,force,atoms)
-    implicit none
-    double precision, intent(in) :: separations(3,1), distances(1)
-    type(potential), intent(in) :: interaction
-    double precision, intent(out) :: force(3,2)
-    type(atom), intent(in) :: atoms(2)
-    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, d1, d2, d3, d4
-    logical :: inverse_params
-
-    ! If we have parameters for a pair A-B and we get a pair B-A, we
-    ! must flip the per atom parameters
-    inverse_params = .true.
-    if(interaction%filter_elements)then
-       if(interaction%original_elements(1) == atoms(1)%element)then
-          inverse_params = .false.
-       end if
-    end if
-    if(interaction%filter_tags)then
-       if(interaction%original_tags(1) == atoms(1)%tags)then
-          inverse_params = .false.
-       end if
-    end if
-    if(interaction%filter_indices)then
-       if(interaction%original_indices(1) == atoms(1)%index)then
-          inverse_params = .false.
-       end if
-    end if
-
-    r1 = distances(1)
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-       if(inverse_params)then
-          r2 = interaction%parameters(7) ! R_i,max
-          r3 = interaction%parameters(3) ! R_j,max
-          r4 = interaction%parameters(9) ! Q_i,max
-          r5 = interaction%parameters(5) ! Q_j,max
-          r6 = interaction%derived_parameters(2) ! eta_i
-          r7 = interaction%derived_parameters(1) ! eta_j
-          r8 = interaction%derived_parameters(4) ! beta_i
-          r9 = interaction%derived_parameters(3) ! beta_j
-          d3 = interaction%parameters(12) ! xi_i
-          d4 = interaction%parameters(11) ! xi_j
-       else
-          r2 = interaction%parameters(3) ! R_i,max
-          r3 = interaction%parameters(7) ! R_j,max
-          r4 = interaction%parameters(5) ! Q_i,max
-          r5 = interaction%parameters(9) ! Q_j,max
-          r6 = interaction%derived_parameters(1) ! eta_i
-          r7 = interaction%derived_parameters(2) ! eta_j
-          r8 = interaction%derived_parameters(3) ! beta_i
-          r9 = interaction%derived_parameters(4) ! beta_j
-          d3 = interaction%parameters(11) ! xi_i
-          d4 = interaction%parameters(12) ! xi_j
-       end if
-
-       d1 = r2 + abs(r8 * (r4 - atoms(1)%charge))**r6
-       d2 = r3 + abs(r9 * (r5 - atoms(2)%charge))**r7
-       force(1:3,1) = -interaction%parameters(2)*interaction%parameters(1)* &
-            exp(-interaction%parameters(2)*r1 + &
-            0.5d0*(d3*d1 + d4*d2) ) * &
-            separations(1:3,1) / r1
-       force(1:3,2) = -force(1:3,1)
-
-    end if
-
-  end subroutine evaluate_force_charge_exp
 
 
   ! Charge exp energy
@@ -3523,13 +3528,12 @@ contains
   ! *interaction a :data:`bond_order_parameters` containing the parameters
   ! *energy the calculated energy :math:`v_{ijk}`
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
-  subroutine evaluate_energy_charge_exp(separations,distances,interaction,energy,atoms)
+  subroutine evaluate_energy_charge_exp(interaction,energy,atoms)
     implicit none
-    double precision, intent(in) :: separations(3,1), distances(1)
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: energy
     type(atom), intent(in) :: atoms(2)
-    double precision :: r1, r2, r3, r4, r5, r6, r7, r8, r9, d1, d2, d3, d4
+    double precision :: r2, r3, r4, r5, r6, r7, r8, r9, d1, d2, d3, d4
     logical :: inverse_params
 
     ! If we have parameters for a pair A-B and we get a pair B-A, we
@@ -3551,40 +3555,40 @@ contains
        end if
     end if
 
-    r1 = distances(1)
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-       if(inverse_params)then
-          r2 = interaction%parameters(7) ! R_i,max
-          r3 = interaction%parameters(3) ! R_j,max
-          r4 = interaction%parameters(9) ! Q_i,max
-          r5 = interaction%parameters(5) ! Q_j,max
-          r6 = interaction%derived_parameters(2) ! eta_i
-          r7 = interaction%derived_parameters(1) ! eta_j
-          r8 = interaction%derived_parameters(4) ! beta_i
-          r9 = interaction%derived_parameters(3) ! beta_j
-          d3 = interaction%parameters(12) ! xi_i
-          d4 = interaction%parameters(11) ! xi_j
-       else
-          r2 = interaction%parameters(3) ! R_i,max
-          r3 = interaction%parameters(7) ! R_j,max
-          r4 = interaction%parameters(5) ! Q_i,max
-          r5 = interaction%parameters(9) ! Q_j,max
-          r6 = interaction%derived_parameters(1) ! eta_i
-          r7 = interaction%derived_parameters(2) ! eta_j
-          r8 = interaction%derived_parameters(3) ! beta_i
-          r9 = interaction%derived_parameters(4) ! beta_j
-          d3 = interaction%parameters(11) ! xi_i
-          d4 = interaction%parameters(12) ! xi_j
-       end if
-
-       d1 = r2 + abs(r8 * (r4 - atoms(1)%charge))**r6
-       d2 = r3 + abs(r9 * (r5 - atoms(2)%charge))**r7
-       energy = interaction%parameters(1)* &
-            exp(-interaction%parameters(2)*r1 + &
-            0.5d0*(d3*d1 + d4*d2) )
+    if(inverse_params)then
+       r2 = interaction%parameters(6) ! R_i,max
+       r3 = interaction%parameters(2) ! R_j,max
+       r4 = interaction%parameters(8) ! Q_i,max
+       r5 = interaction%parameters(4) ! Q_j,max
+       r6 = interaction%derived_parameters(2) ! eta_i
+       r7 = interaction%derived_parameters(1) ! eta_j
+       r8 = interaction%derived_parameters(4) ! beta_i
+       r9 = interaction%derived_parameters(3) ! beta_j
+       d3 = interaction%parameters(11) ! xi_i
+       d4 = interaction%parameters(10) ! xi_j
+    else
+       r2 = interaction%parameters(2) ! R_i,max
+       r3 = interaction%parameters(6) ! R_j,max
+       r4 = interaction%parameters(4) ! Q_i,max
+       r5 = interaction%parameters(8) ! Q_j,max
+       r6 = interaction%derived_parameters(1) ! eta_i
+       r7 = interaction%derived_parameters(2) ! eta_j
+       r8 = interaction%derived_parameters(3) ! beta_i
+       r9 = interaction%derived_parameters(4) ! beta_j
+       d3 = interaction%parameters(10) ! xi_i
+       d4 = interaction%parameters(11) ! xi_j
     end if
-
+    
+    d1 = r2 + abs(r8 * (r4 - atoms(1)%charge))**r6
+    d2 = r3 + abs(r9 * (r5 - atoms(2)%charge))**r7
+    energy = interaction%parameters(1)* &
+         exp( 0.5d0*(d3*d1 + d4*d2) )
+ 
   end subroutine evaluate_energy_charge_exp
+
+
+
+
 
 
   !********************!
