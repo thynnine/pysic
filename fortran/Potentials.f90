@@ -2834,15 +2834,19 @@ contains
 
     potential_descriptors(index)%type_index = index
     call pad_string('bond_bend', pot_name_length,potential_descriptors(index)%name)
-    potential_descriptors(index)%n_parameters = 2
+    potential_descriptors(index)%n_parameters = 4
     potential_descriptors(index)%n_targets = 3
     allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
     allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
-    call pad_string('k', param_name_length,potential_descriptors(index)%parameter_names(1))
-    call pad_string('bond angle spring constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
     call pad_string('theta_0', param_name_length,potential_descriptors(index)%parameter_names(2))
     call pad_string('equilibrium bond angle', param_note_length,potential_descriptors(index)%parameter_notes(2))
-    call pad_string('Bond bending potential: V(theta) = k/2 (cos theta - cos theta_0)^2', &
+    call pad_string('n', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('cosine exponent', param_note_length,potential_descriptors(index)%parameter_notes(3))
+    call pad_string('m', param_name_length,potential_descriptors(index)%parameter_names(4))
+    call pad_string('difference exponent', param_note_length,potential_descriptors(index)%parameter_notes(4))
+    call pad_string('Bond bending potential: V(theta) = epsilon (cos^n theta - cos^n theta_0)^m', &
          pot_note_length,potential_descriptors(index)%description)
 
   end subroutine create_potential_characterizer_bond_bending
@@ -2859,7 +2863,7 @@ contains
 
     nullify(new_potential%derived_parameters)
     allocate(new_potential%derived_parameters(1))
-    new_potential%derived_parameters(1) = cos(parameters(2))
+    new_potential%derived_parameters(1) = cos(parameters(2))**parameters(3)
 
   end subroutine calculate_derived_parameters_bond_bending
 
@@ -2877,7 +2881,8 @@ contains
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: force(3,3)
     type(atom), intent(in) :: atoms(3)
-    double precision :: r1, r2, r3, r4, r5, r6, ratio
+    integer :: m, n
+    double precision :: r1, r2, r3, r6, ratio, cospower, cosplain
     double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3)
 
     force = 0.d0
@@ -2905,27 +2910,26 @@ contains
     r1 = distances(1)
     r2 = distances(2)
 
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-       if(r2 < interaction%cutoff .and. r2 > 0.d0)then
-
-          tmp1 = -separations(1:3,1)
-          tmp2 = separations(1:3,2)
-          r3 = tmp1 .o. tmp2
-          tmp3 = tmp2 - r3 / ( r1 * r1 ) * tmp1 ! = r_23 - (r_21 . r_23)/|r_21|^2 * r_21
-          tmp4 = tmp1 - r3 / ( r2 * r2 ) * tmp2 ! = r_21 - (r_21 . r_23)/|r_23|^2 * r_23
-          ratio = 1.d0 / ( r1 * r2 )
-
-          ! cos theta = (r_21 . r_23) / ( |r_21| |r_23| ) = r3*ratio
-          ! k ( cos theta - cos theta_0 ) =
-          r6 = interaction%parameters(1) * (r3 * ratio - interaction%derived_parameters(1))
-
-          force(1:3,1) = -tmp3*ratio * r6 
-          force(1:3,2) = (tmp3+tmp4)*ratio * r6
-          force(1:3,3) = -tmp4*ratio * r6
-
-       end if
-    end if
-
+    n = interaction%parameters(3)
+    m = interaction%parameters(4)
+    tmp1 = -separations(1:3,1)
+    tmp2 = separations(1:3,2)
+    r3 = tmp1 .o. tmp2
+    tmp3 = tmp2 - r3 / ( r1 * r1 ) * tmp1 ! = r_23 - (r_21 . r_23)/|r_21|^2 * r_21
+    tmp4 = tmp1 - r3 / ( r2 * r2 ) * tmp2 ! = r_21 - (r_21 . r_23)/|r_23|^2 * r_23
+    ratio = 1.d0 / ( r1 * r2 )
+    cosplain = r3*ratio
+    cospower = cosplain**(n-1)
+    
+    ! cos theta = (r_21 . r_23) / ( |r_21| |r_23| ) = r3*ratio
+    ! epsilon * m * ( cos^n theta - cos^n theta_0 )^(m-1) * n * cos^(n-1) theta * (D cos theta)
+    r6 = interaction%parameters(1) * (m * n) * (cospower*cosplain - interaction%derived_parameters(1))**(m-1) * &
+         cospower
+    
+    force(1:3,1) = -tmp3*ratio * r6 
+    force(1:3,2) = (tmp3+tmp4)*ratio * r6
+    force(1:3,3) = -tmp4*ratio * r6
+    
   end subroutine evaluate_force_bond_bending
 
 
@@ -2943,7 +2947,8 @@ contains
     type(potential), intent(in) :: interaction
     type(atom), intent(in) :: atoms(3)
     double precision, intent(out) :: energy
-    double precision :: r1, r2, r3, r6
+    integer :: m, n
+    double precision :: r1, r2, r3, r6, ratio, cospower, cosplain
 
     energy = 0.d0
 
@@ -2969,17 +2974,14 @@ contains
     r1 = distances(1)
     r2 = distances(2)
 
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-       if(r2 < interaction%cutoff .and. r2 > 0.d0)then
+    n = interaction%parameters(3)
+    m = interaction%parameters(4)
 
-          r3 = (-separations(1:3,1)) .o. separations(1:3,2)
-          ! cos theta = (r_21 . r_23) / ( |r_21| |r_23| )
-          r6 = (r3  / ( r1 * r2 )  - interaction%derived_parameters(1))
-          ! k/2 ( cos theta - cos theta_0 )^2
-          energy = 0.5d0 * interaction%parameters(1) * r6*r6
-
-       end if
-    end if
+    r3 = (-separations(1:3,1)) .o. separations(1:3,2)
+    ! cos theta = (r_21 . r_23) / ( |r_21| |r_23| )
+    r6 = ( (r3  / ( r1 * r2 ))**n  - interaction%derived_parameters(1))
+    ! epsilon ( cos^n theta - cos^n theta_0 )^m
+    energy = interaction%parameters(1) * r6**m
 
   end subroutine evaluate_energy_bond_bending
 
