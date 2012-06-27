@@ -37,12 +37,12 @@ This class represents the algorithms used for evaluating the :math:`1/r` sums. I
 Charge scaling
 --------------
 
-Sometimes, you may want to scale the effective charges before calculating the Coulomb sum. Especially, you may want to exclude some atoms from the long range summation. This can be done by giving the :class:`~pysic.interactions.coulomb.CoulombSummation` a list of scaling values, one per atom. The actual charges of the atoms are then multiplied by the given scaling values before the Coulomb potential is calculated. If a scaling value is 0, the corresponding atom is always treated as if it had no charge.
+Sometimes, you may want to scale the effective charges before calculating the Coulomb sum. Especially, you may want to exclude some atoms from the long range summation. This can be done by giving the :class:`~pysic.interactions.coulomb.CoulombSummation` a list of scaling values, one per atom. The actual charges of the atoms are then multiplied by the given scaling values before the Coulomb potential is calculated. If a scaling value is 0, the corresponding atom is always treated as if it had no charge. Note though, that  scaling with unequal scaling constants may lead to the cell being effectively charged.
 
 Using the Python `map <http://docs.python.org/tutorial/datastructures.html#functional-programming-tools>`_ function is a convenient way to generate such atom-by-atom lists. For instance, if you want to generate a list by element::
 
   >>> atoms = ase.Atoms('H2O')  
-  >>> def ch_by_elem(elem):
+  >>> def by_elem(elem):
   ...     if elem == 'H':
   ...         return 0.1
   ...     elif elem == 'O':

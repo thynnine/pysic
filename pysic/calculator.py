@@ -299,7 +299,7 @@ class Pysic:
         if self.calculation_required(atoms,'electronegativities'):
             self.calculate_electronegativities()
         
-        return self.electronegativities
+        return np.copy(self.electronegativities)
     
 
     def get_electronegativity_differences(self, atoms=None):
@@ -330,7 +330,7 @@ class Pysic:
         if self.calculation_required(atoms,'forces'):
             self.calculate_forces()
 
-        return self.forces
+        return np.copy(self.forces)
 
 
     def get_potential_energy(self, atoms=None, force_consistent=False):
@@ -424,7 +424,7 @@ class Pysic:
         kinetic_stress[5] = np.dot( momenta[:,0], velocities[:,1] )
                 
         # ASE NPT simulator wants the pressure with an inversed sign
-        return -( kinetic_stress + self.stress ) / self.structure.get_volume()
+        return np.copy(-( kinetic_stress + self.stress ) / self.structure.get_volume())
 
     
     def set_atoms(self, atoms=None):

@@ -719,14 +719,14 @@ ______________________
 
 .. math::
 
-   V(\theta) = \frac{k}{2} ( \cos \theta - \cos \theta_0 )^2,
+   V(\theta) = \varepsilon ( \cos^n \theta - \cos^n \theta_0 )^m,
 
-where :math:`k` is an angular spring constant, :math:`\theta` is an angle defined by three points in space (atomic positions) and :math:`\theta_0` is the equilibrium angle. The potential therefore describes an angular spring force related to bending of bonds.
+where :math:`\varepsilon` is an energy scale constant, :math:`n` and :math:`m` are integer exponents, :math:`\theta` is an angle defined by three points in space (atomic positions) and :math:`\theta_0` is the equilibrium angle. As a apecial case, the cosine harmonic potential is obtined with :math:`\varepsilon = k/2, n=1, m=2`.
 
 Keywords::
 
     >>>	names_of_parameters('bond_bend')
-    ['k', 'theta_0']
+    ['epsilon', 'theta_0', 'n', 'm']
 
 Three bodies form a triangle and so there are three possible angles the potential could bend. To remove this ambiguousness, the angle is defined so that as the potential is given a list of targets, the middle target is considered to be at the tip of the angle. 
 
@@ -758,7 +758,7 @@ Also remember that the bond bending potential does not include any actual bondin
 
    plt.polar(theta,r1)
    plt.polar(theta,r2)   
-   plt.title(r'Bond bending potential: $k = 1.0$, [$\theta_0 = 0$; $\theta_0 = \pi/2$]')
+   plt.title(r'Bond bending potential: $\varepsilon = 0.5$, $m=2$, $n=1$, [$\theta_0 = 0$; $\theta_0 = \pi/2$]')
    plt.show()
 
 
