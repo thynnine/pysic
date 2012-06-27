@@ -882,10 +882,11 @@ class Pysic:
                 is_multiplier.append(rmul)
             master_potentials.extend([pots.get_potentials()[0]]*\
                                      len(pots.get_potentials()))
-    
+                    
         pot_index = 0
         for pot, mul, mpot in zip(elemental_potentials,is_multiplier, master_potentials):
     
+            multiplier_added = False
             group_index = -1
             if mpot.get_coordinator() != None:
                 group_index = pot_index
@@ -899,7 +900,10 @@ class Pysic:
             no_inds = np.array( n_targ*[-9] )
 
             try:
-                alltargets = mpot.get_symbols()
+                if mul:
+                    alltargets = [mpot.get_symbols()[0]]
+                else:
+                    alltargets = mpot.get_symbols()
                 for targets in alltargets:
                     int_orig_symbs = []
                     for orig_symbs in targets:
@@ -916,7 +920,8 @@ class Pysic:
                         for label in symbs:
                             int_symbs.append( pu.str2ints(label,2) )
 
-                        success = pf.pysic_interface.add_potential(pot.get_potential_type(),
+                        if not mul or not multiplier_added:
+                            success = pf.pysic_interface.add_potential(pot.get_potential_type(),
                                                          np.array( pot.get_parameter_values() ),
                                                          mpot.get_cutoff(),
                                                          mpot.get_soft_cutoff(),
@@ -928,13 +933,20 @@ class Pysic:
                                                          no_inds,
                                                          group_index,
                                                          mul )
+                            multiplier_added = True
+                        else:
+                            success = True
+
                         if not success:
                             raise InvalidPotentialError("")
             except:
                 if not mpot.get_symbols() is None:
                     raise InvalidPotentialError("Failed to create a potential in the core: "+str(mpot))
             try:
-                alltargets = mpot.get_tags()
+                if mul:
+                    alltargets = [mpot.get_tags()[0]]
+                else:
+                    alltargets = mpot.get_tags()
                 for targets in alltargets:
                     orig_tags = targets
 
@@ -945,7 +957,10 @@ class Pysic:
                         different = set(perms)
 
                     for tags in different:
-                        success = pf.pysic_interface.add_potential(pot.get_potential_type(),
+                                                
+                        if not mul or not multiplier_added:
+                        
+                            success = pf.pysic_interface.add_potential(pot.get_potential_type(),
                                                          np.array( pot.get_parameter_values() ),
                                                          mpot.get_cutoff(),
                                                          mpot.get_soft_cutoff(),
@@ -957,13 +972,21 @@ class Pysic:
                                                          no_inds,
                                                          group_index,
                                                          mul)
+                        
+                            multiplier_added = True
+                        else:
+                            success = True
+                        
                         if not success:
                             raise InvalidPotentialError("")
             except:
                 if not mpot.get_tags() is None:
                     raise InvalidPotentialError("Failed to create a potential in the core: "+str(mpot))
             try:
-                alltargets = mpot.get_indices()                
+                if mul:
+                    alltargets = [mpot.get_indices()[0]]
+                else:
+                    alltargets = mpot.get_indices()                
                 for targets in alltargets:
                     orig_inds = targets
                         
@@ -974,7 +997,10 @@ class Pysic:
                         different = set(perms)
 
                     for inds in different:
-                        success = pf.pysic_interface.add_potential(pot.get_potential_type(),
+                                                
+                        if not mul or not multiplier_added:
+                        
+                            success = pf.pysic_interface.add_potential(pot.get_potential_type(),
                                                          np.array( pot.get_parameter_values() ),
                                                          mpot.get_cutoff(),
                                                          mpot.get_soft_cutoff(),
@@ -986,6 +1012,11 @@ class Pysic:
                                                          np.array(orig_inds),
                                                          group_index,
                                                          mul )
+                            multiplier_added = True
+                        else:
+                            success = True
+
+
                         if not success:
                             raise InvalidPotentialError("")
             except:
