@@ -120,7 +120,7 @@ module potentials
   ! *param_note_length maximum length allowed for the descriptions of parameters
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
-       n_potential_types = 13, &
+       n_potential_types = 14, &
        n_bond_order_types = 8, &
        n_max_params = 12, &
        pot_note_length = 500, &
@@ -166,7 +166,8 @@ module potentials
        pair_table_index = 10, &
        mono_qself_index = 11, &
        pair_qpair_index = 12, &
-       pair_qexp_index = 13
+       pair_qexp_index = 13, &
+       pair_qabs_index = 14
 
 
   !***********************************!
@@ -1469,10 +1470,7 @@ contains
     energy(6) = 0.d0
     energy(7) = 0.d0
 
-    !write(*,'(A,F10.5,F10.5,F10.5,F10.5,F10.5)') "components", energy(1:5)
-
-    total_energy = total_energy + sum(energy)
-
+    total_energy = sum(energy)
 
   end subroutine calculate_ewald_energy
 
@@ -1806,94 +1804,91 @@ contains
           atom1 = atoms(index1)
           nbors1 = atom1%neighbor_list
           charge1 = atom1%charge*scaler(index1)
-
+          
           !
           ! calculate the real space sum
           !
-          if(charge1 /= 0.d0)then
-             ! loop over neighbors
-             do j = 1, nbors1%n_neighbors
-
-                ! neighboring atom
-                index2 = nbors1%neighbors(j)
-
-                ! prevent double counting (pick index1 < index2)
-                if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
-
-                   atom2 = atoms(index2)
-                   charge2 = atom2%charge*scaler(index2)
-                   ! calculate atom1-atom2 separation vector
-                   ! and distance
-                   call separation_vector(atom1%position, &
-                        atom2%position, &
-                        nbors1%pbc_offsets(1:3,j), &
-                        cell, &
-                        separation) ! in Geometry.f90
-                   distance = .norm.separation
-
-                   if(distance < real_cutoff)then
-
-                      ! q_j / r * erfc(r / (sqrt(2) sigma))
-                      tmp = -inv_eps_4pi/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
-
-                      tmp_enegs(index1) = tmp_enegs(index1) + charge2*tmp
-                      tmp_enegs(index2) = tmp_enegs(index2) + charge1*tmp
-
-                   end if
-
+          do j = 1, nbors1%n_neighbors
+             
+             ! neighboring atom
+             index2 = nbors1%neighbors(j)
+             
+             ! prevent double counting (pick index1 < index2)
+             if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
+                
+                atom2 = atoms(index2)
+                charge2 = atom2%charge*scaler(index2)
+                ! calculate atom1-atom2 separation vector
+                ! and distance
+                call separation_vector(atom1%position, &
+                     atom2%position, &
+                     nbors1%pbc_offsets(1:3,j), &
+                     cell, &
+                     separation) ! in Geometry.f90
+                distance = .norm.separation
+                
+                if(distance < real_cutoff)then
+                   
+                   ! q_j / r * erfc(r / (sqrt(2) sigma))
+                   tmp = -inv_eps_4pi/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
+                   
+                   tmp_enegs(index1) = tmp_enegs(index1) + charge2*tmp
+                   tmp_enegs(index2) = tmp_enegs(index2) + charge1*tmp
+                   
                 end if
-
-             end do
-
-             !
-             ! calculate the structure factors
-             !
-             do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
-                do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-                   do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
-                      if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
-
-                         k_vector = k1*cell%reciprocal_cell(1:3,1) + &
-                              k2*cell%reciprocal_cell(1:3,2) + &
-                              k3*cell%reciprocal_cell(1:3,3)
-                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
-                         sin_dot = sin(dot)
-                         cos_dot = cos(dot)
-
-                         ! this is the complex conjugate of S(k):
-                         ! S*(k) = q exp(- i k.r) = q [cos(k.r) - i sin(k.r)]
-                         tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
-                              (/ charge1 * cos_dot, - charge1 * sin_dot /)
-
-                         ! d S(k) = exp(i k.r) = [cos(k.r) + i sin(k.r)]
-                         tmp_diff_factor(1:2,index1,k1,k2,k3) = tmp_diff_factor(1:2,index1,k1,k2,k3) + &
-                              (/ cos_dot, sin_dot /)
-
-                      end if
-                   end do
+                
+             end if
+             
+          end do
+          
+          !
+          ! calculate the structure factors
+          !
+          do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+             do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+                do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                   if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
+                      
+                      k_vector = k1*cell%reciprocal_cell(1:3,1) + &
+                           k2*cell%reciprocal_cell(1:3,2) + &
+                           k3*cell%reciprocal_cell(1:3,3)
+                      dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                      sin_dot = sin(dot)
+                      cos_dot = cos(dot)
+                      
+                      ! this is the complex conjugate of S(k):
+                      ! S*(k) = q exp(- i k.r) = q [cos(k.r) - i sin(k.r)]
+                      tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
+                           (/ charge1 * cos_dot, - charge1 * sin_dot /)
+                      
+                      ! d S(k) = exp(i k.r) = [cos(k.r) + i sin(k.r)]
+                      tmp_diff_factor(1:2,index1,k1,k2,k3) = tmp_diff_factor(1:2,index1,k1,k2,k3) + &
+                           (/ cos_dot, sin_dot /)
+                      
+                   end if
                 end do
              end do
+          end do
 
-             !
-             ! calculate the self energy term
-             !
-             tmp_enegs(index1) = tmp_enegs(index1) + 2.d0*charge1 * inv_eps_4pi * inv_sigma_sqrt_2pi 
+          !
+          ! calculate the self energy term
+          !
+          tmp_enegs(index1) = tmp_enegs(index1) + 2.d0*charge1 * inv_eps_4pi * inv_sigma_sqrt_2pi 
 
-             !
-             ! calculate the total charge (charged background term)
-             !
-             tmp_qsum(1) = tmp_qsum(1) + charge1 
-
-             !
-             ! calculate the dipole correction
-             !
-             if(include_dipole_correction)then
-                tmp_qsum(2:4) = tmp_qsum(2:4) + charge1 * atom1%position(1:3)
-             end if
-
+          !
+          ! calculate the total charge (charged background term)
+          !
+          tmp_qsum(1) = tmp_qsum(1) + charge1 
+          
+          !
+          ! calculate the dipole correction
+          !
+          if(include_dipole_correction)then
+             tmp_qsum(2:4) = tmp_qsum(2:4) + charge1 * atom1%position(1:3)
           end if
-
+       
        end if
+
     end do
 
 #ifdef MPI
@@ -1918,7 +1913,7 @@ contains
           !
           ! calculate the total charged background and dipole correction terms
           !
-          tmp_enegs(index1) = tmp_enegs(index1) + scaler(index1) * inv_eps_2v * &
+          tmp_enegs(index1) = tmp_enegs(index1) - scaler(index1) * inv_eps_2v * &
                ( - gaussian_width*gaussian_width *qsum(1) )
           
           if(include_dipole_correction)then
@@ -2032,6 +2027,9 @@ contains
 
     ! **** Charge pair potential ****
     call create_potential_characterizer_charge_pair(pair_qpair_index)
+
+    ! **** Charge abs potential ****
+    call create_potential_characterizer_charge_pair_abs(pair_qabs_index)
 
     descriptors_created = .true.
 
@@ -2306,6 +2304,8 @@ contains
        call evaluate_electronegativity_charge_self(interaction,eneg(1),atoms(1))
     case (pair_qpair_index) ! charge-dependent pair energy potential
        call evaluate_electronegativity_charge_pair(interaction,eneg(1:2),atoms(1:2))
+    case (pair_qabs_index) ! charge-dependent pair energy potential
+       call evaluate_electronegativity_charge_pair(interaction,eneg(1:2),atoms(1:2))
     end select
 
   end subroutine evaluate_electronegativity_component
@@ -2556,6 +2556,8 @@ contains
     case (mono_qself_index) ! charge self energy potential
        call evaluate_energy_charge_self(interaction,energy,atoms(1))
     case (pair_qpair_index) ! charge pair energy potential
+       call evaluate_energy_charge_pair(interaction,energy,atoms(1:2))
+    case (pair_qabs_index) ! charge pair energy potential
        call evaluate_energy_charge_pair(interaction,energy,atoms(1:2))
     end select
 
@@ -3416,10 +3418,10 @@ contains
     call pad_string('xi2', param_name_length,potential_descriptors(index)%parameter_names(11))
     call pad_string('inverse charge decay for atom j', &
          param_note_length,potential_descriptors(index)%parameter_notes(11))
-    call pad_string('Charge-dependent exponential potential: '//&
-         'V(r,q) = epsilon exp( (xi_i D_i(q_i) + xi_j D_j(q_j))/2 ) '//&
-         'D_i(q) = R_i,max + |beta_i (Q_i,max - q)|^eta_i '//&
-         'beta_i = (R_i,min - R_i,max)^(1/eta_i) / (Q_i,max - Q_i,min) '//&
+    call pad_string('Charge-dependent exponential potential:  '//&
+         'V(r,q) = epsilon exp( (xi_i D_i(q_i) + xi_j D_j(q_j))/2 ),   '//&
+         'D_i(q) = R_i,max + |beta_i (Q_i,max - q)|^eta_i,   '//&
+         'beta_i = (R_i,min - R_i,max)^(1/eta_i) / (Q_i,max - Q_i,min),   '//&
          'eta_i = ln [ R_i,max/(R_i,max - R_i,min) ] / ln [ Q_i,max/(Q_i,max - Q_i,min) ]',&
          pot_note_length,potential_descriptors(index)%description)
 
@@ -4107,9 +4109,35 @@ contains
     type(atom), intent(in) :: atoms(2)
     double precision, intent(out) :: eneg(2)
     integer :: n1, n2
+    logical :: inverse_params
 
-    n1 = int(interaction%parameters(2))
-    n2 = int(interaction%parameters(3))
+    ! If we have parameters for a pair A-B and we get a pair B-A, we
+    ! must flip the per atom parameters
+    inverse_params = .true.
+    if(interaction%filter_elements)then
+       if(interaction%original_elements(1) == atoms(1)%element)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_tags)then
+       if(interaction%original_tags(1) == atoms(1)%tags)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_indices)then
+       if(interaction%original_indices(1) == atoms(1)%index)then
+          inverse_params = .false.
+       end if
+    end if
+
+    if(inverse_params)then
+       n1 = int(interaction%parameters(3))
+       n2 = int(interaction%parameters(2))
+    else
+       n1 = int(interaction%parameters(2))
+       n2 = int(interaction%parameters(3))
+    end if
+
     eneg(1) = -interaction%parameters(1) * & 
          ( n1 * atoms(1)%charge**(n1-1) * atoms(2)%charge**n2 )
     eneg(2) = -interaction%parameters(1) * & 
@@ -4132,13 +4160,231 @@ contains
     double precision, intent(out) :: energy
     type(atom), intent(in) :: atoms(2)
     integer :: n1, n2
+    logical :: inverse_params
 
-    n1 = int(interaction%parameters(2))
-    n2 = int(interaction%parameters(3))
+    ! If we have parameters for a pair A-B and we get a pair B-A, we
+    ! must flip the per atom parameters
+    inverse_params = .true.
+    if(interaction%filter_elements)then
+       if(interaction%original_elements(1) == atoms(1)%element)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_tags)then
+       if(interaction%original_tags(1) == atoms(1)%tags)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_indices)then
+       if(interaction%original_indices(1) == atoms(1)%index)then
+          inverse_params = .false.
+       end if
+    end if
+
+    if(inverse_params)then
+       n1 = int(interaction%parameters(3))
+       n2 = int(interaction%parameters(2))
+    else
+       n1 = int(interaction%parameters(2))
+       n2 = int(interaction%parameters(3))
+    end if
+
     energy = interaction%parameters(1) * & 
          ( atoms(1)%charge**n1 * atoms(2)%charge**n2 )
 
   end subroutine evaluate_energy_charge_pair
+
+
+
+  !*****************************!
+  ! charge abs energy potential !
+  !*****************************!
+
+  ! charge abs energy characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_charge_pair_abs(index)
+    implicit none
+    integer, intent(in) :: index
+
+    potential_descriptors(index)%type_index = index
+    call pad_string('charge_abs', pot_name_length,potential_descriptors(index)%name)
+    potential_descriptors(index)%n_parameters = 8
+    potential_descriptors(index)%n_targets = 2
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+    call pad_string('a1', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('offset constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('b1', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('scale constant', param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('Q1', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('offset constant', param_note_length,potential_descriptors(index)%parameter_notes(3))
+    call pad_string('n1', param_name_length,potential_descriptors(index)%parameter_names(4))
+    call pad_string('exponent', param_note_length,potential_descriptors(index)%parameter_notes(4))
+    call pad_string('a2', param_name_length,potential_descriptors(index)%parameter_names(5))
+    call pad_string('offset constant', param_note_length,potential_descriptors(index)%parameter_notes(5))
+    call pad_string('b2', param_name_length,potential_descriptors(index)%parameter_names(6))
+    call pad_string('scale constant', param_note_length,potential_descriptors(index)%parameter_notes(6))
+    call pad_string('Q2', param_name_length,potential_descriptors(index)%parameter_names(7))
+    call pad_string('offset constant', param_note_length,potential_descriptors(index)%parameter_notes(7))
+    call pad_string('n2', param_name_length,potential_descriptors(index)%parameter_names(8))
+    call pad_string('exponent', param_note_length,potential_descriptors(index)%parameter_notes(8))
+
+    call pad_string('Charge-dependent self energy potential: '//&
+         'V(q1,q2) = sqrt( f1(q1) f2(q2) ),   '//&
+         'fi(q) = ai - |bi (q - Qi)|^ni',&
+         pot_note_length,potential_descriptors(index)%description)
+         
+  end subroutine create_potential_characterizer_charge_pair_abs
+       
+
+  ! Charge pair abs energy electronegativity
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *eneg the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+  subroutine evaluate_electronegativity_charge_pair_abs(interaction,eneg,atoms)
+    implicit none
+    type(potential), intent(in) :: interaction
+    type(atom), intent(in) :: atoms(2)
+    double precision, intent(out) :: eneg(2)
+    double precision :: a1, a2, b1, b2, Q1, Q2, n1, n2, f1, f2, qq1, qq2, &
+         d1, d2, abs1, abs2, pow1, pow2, inv_sqrt
+
+    logical :: inverse_params
+
+    ! If we have parameters for a pair A-B and we get a pair B-A, we
+    ! must flip the per atom parameters
+    inverse_params = .true.
+    if(interaction%filter_elements)then
+       if(interaction%original_elements(1) == atoms(1)%element)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_tags)then
+       if(interaction%original_tags(1) == atoms(1)%tags)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_indices)then
+       if(interaction%original_indices(1) == atoms(1)%index)then
+          inverse_params = .false.
+       end if
+    end if
+
+    if(inverse_params)then
+       a1 = interaction%parameters(5)
+       b1 = interaction%parameters(6)
+       Q1 = interaction%parameters(7)
+       n1 = interaction%parameters(8)
+       a2 = interaction%parameters(1)
+       b2 = interaction%parameters(2)
+       Q2 = interaction%parameters(3)
+       n2 = interaction%parameters(4)
+    else
+       a1 = interaction%parameters(1)
+       b1 = interaction%parameters(2)
+       Q1 = interaction%parameters(3)
+       n1 = interaction%parameters(4)
+       a2 = interaction%parameters(5)
+       b2 = interaction%parameters(6)
+       Q2 = interaction%parameters(7)
+       n2 = interaction%parameters(8)
+    end if
+
+    qq1 = atoms(1)%charge
+    qq2 = atoms(2)%charge
+
+    abs1 = abs( b1 * (qq1 - Q1) )
+    abs2 = abs( b2 * (qq2 - Q2) )
+    pow1 = abs1**(n1-1)
+    pow2 = abs2**(n2-1)
+
+    f1 = a1 - pow1*abs1
+    f2 = a2 - pow2*abs2
+
+    d1 = - n1 * pow1 * sign(1.d0, b1 * (q1 - Q1)) * b1
+    d2 = - n2 * pow2 * sign(1.d0, b2 * (q2 - Q2)) * b2
+
+    inv_sqrt = 0.5 / sqrt(f1*f2)
+
+    write(*,*) a1, b1, Q1, n1, qq1, f1, d1
+    write(*,*) a2, b2, Q2, n2, qq2, f2, d2
+
+    eneg(1) = -inv_sqrt * d1
+    eneg(1) = -inv_sqrt * d2
+
+  end subroutine evaluate_electronegativity_charge_pair_abs
+
+
+
+  ! Charge pair abs energy
+  ! 
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  subroutine evaluate_energy_charge_pair_abs(interaction,energy,atoms)
+    implicit none
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    type(atom), intent(in) :: atoms(2)
+    double precision :: a1, a2, b1, b2, Q1, Q2, n1, n2, f1, f2, qq1, qq2
+
+    logical :: inverse_params
+
+    ! If we have parameters for a pair A-B and we get a pair B-A, we
+    ! must flip the per atom parameters
+    inverse_params = .true.
+    if(interaction%filter_elements)then
+       if(interaction%original_elements(1) == atoms(1)%element)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_tags)then
+       if(interaction%original_tags(1) == atoms(1)%tags)then
+          inverse_params = .false.
+       end if
+    end if
+    if(interaction%filter_indices)then
+       if(interaction%original_indices(1) == atoms(1)%index)then
+          inverse_params = .false.
+       end if
+    end if
+
+    if(inverse_params)then
+       a1 = interaction%parameters(5)
+       b1 = interaction%parameters(6)
+       Q1 = interaction%parameters(7)
+       n1 = interaction%parameters(8)
+       a2 = interaction%parameters(1)
+       b2 = interaction%parameters(2)
+       Q2 = interaction%parameters(3)
+       n2 = interaction%parameters(4)
+    else
+       a1 = interaction%parameters(1)
+       b1 = interaction%parameters(2)
+       Q1 = interaction%parameters(3)
+       n1 = interaction%parameters(4)
+       a2 = interaction%parameters(5)
+       b2 = interaction%parameters(6)
+       Q2 = interaction%parameters(7)
+       n2 = interaction%parameters(8)
+    end if
+
+    qq1 = atoms(1)%charge
+    qq2 = atoms(2)%charge
+
+    f1 = a1 - abs( b1 * (qq1 - Q1) )**n1
+    f2 = a2 - abs( b2 * (qq2 - Q2) )**n2
+
+    energy = sqrt( f1 * f2 )
+
+  end subroutine evaluate_energy_charge_pair_abs
 
 
 
