@@ -22,6 +22,8 @@ from itertools import permutations
 import copy
 import math
 
+import pysic.utility.debug as d
+
 
 
 neighbor_marginal = 0.5
@@ -82,6 +84,7 @@ class FastNeighborList(nbl.NeighborList):
         self.positions = atoms.get_positions()
         self.pbc = atoms.get_pbc()
         self.cell = atoms.get_cell()
+        
         
         pf.pysic_interface.generate_neighbor_lists(self.cutoffs)
                 
@@ -612,15 +615,16 @@ class Pysic:
         fastlist = True
         if cutoffs == None:
             cutoffs = self.get_individual_cutoffs(1.0)
-        max_cut = np.max(cutoffs)
+        max_cut = np.max(cutoffs)+marginal
         
+            
         for i in range(3):
             vec = self.structure.get_cell()[i]
             other_vec1 = self.structure.get_cell()[(i+1)%3]
             other_vec2 = self.structure.get_cell()[(i+2)%3]
             normal = np.cross(other_vec1,other_vec2)
             length = math.fabs(np.dot(vec,normal))/math.sqrt(np.dot(normal,normal))
-            if length < max_cut:
+            if length < max_cut:                
                 fastlist = False
                 
         if fastlist:
@@ -634,8 +638,8 @@ class Pysic:
 
         self.neighbor_lists_waiting = True
         self.set_cutoffs(cutoffs)
-
-
+        
+            
     def get_individual_cutoffs(self,scaler=1.0):
         """Get a list of maximum cutoffs for all atoms.
 
@@ -657,7 +661,7 @@ class Pysic:
             else:
                 return self.structure.get_number_of_atoms()*[self.coulomb.get_realspace_cutoff()]
         else:
-            cuts = []
+            cuts = []            
             # loop over all atoms, with symbol, tags, index containing the corresponding
             # info for a single atom at a time
             for symbol, tags, index in zip(self.structure.get_chemical_symbols(),
@@ -671,7 +675,7 @@ class Pysic:
                 
                 for potential in self.potentials:
                     active_potential = False
-                    
+
                     if potential.get_different_symbols().count(symbol) > 0 or potential.get_different_tags().count(tags) > 0 or potential.get_different_indices().count(index) > 0:
                         active_potential = True
                     
@@ -1142,7 +1146,7 @@ class Pysic:
 
         Pysic.core.set_atomic_positions(self.structure)
         Pysic.core.set_atomic_momenta(self.structure)
-
+                
         if not self.neighbor_lists_waiting:
             self.create_neighbor_lists(self.get_individual_cutoffs(1.0))
         
@@ -1185,13 +1189,14 @@ class Pysic:
         if not Pysic.core.atoms_ready(self.structure):
             raise MissingAtomsError("Creating neighbor lists before updating atoms in the core.")
         cutoffs = self.get_individual_cutoffs(1.0)
+                
         if not self.neighbor_lists_waiting:
             self.create_neighbor_lists(cutoffs)
             self.set_cutoffs(cutoffs)
             self.neighbor_lists_waiting = True
-    
+
         self.neighbor_list.update(self.structure)
-    
+
         if isinstance(self.neighbor_list,FastNeighborList):
             # if we used the fast list, the core is already updated
             pass
@@ -1206,6 +1211,7 @@ class Pysic:
 
     def initialize_fortran_core(self):
         """Fully initializes the Fortran core, creating the atoms, supercell, potentials, and neighbor lists."""
+        
         
         masses = np.array( self.structure.get_masses() )
         charges = np.array( self.structure.get_charges() )
@@ -1230,10 +1236,10 @@ class Pysic:
                 
         self.update_core_supercell()
         self.update_core_potentials()
-        self.update_core_neighbor_lists()
+        self.update_core_neighbor_lists()        
+                
         self.update_core_potential_lists()
         self.update_core_coulomb()
-
 
 
     def get_numerical_energy_gradient(self, atom_index, shift=0.0001, atoms=None):

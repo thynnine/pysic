@@ -1363,6 +1363,10 @@ contains
                         separation) ! in Geometry.f90
                    distance = .norm.separation
 
+                   if(distance == 0.d0)then
+                      distance = 0.1d-10
+                   end if
+
                    if(distance < real_cutoff)then
 
                       !write(*,'(A,I8,I8,F8.2,F8.2,F8.2,F10.3)') "    Ewald pair ", index1, index2, separation, distance
@@ -1569,6 +1573,11 @@ contains
                         cell, &
                         separation) ! in Geometry.f90
                    distance = .norm.separation
+
+                   if(distance == 0.d0)then
+                      distance = 0.1d-10
+                   end if
+
                    inv_dist = 1.d0 / distance
 
                    if(distance < real_cutoff)then
@@ -1827,6 +1836,10 @@ contains
                      separation) ! in Geometry.f90
                 distance = .norm.separation
                 
+                if(distance == 0.d0)then
+                   distance = 0.1d-10
+                end if
+
                 if(distance < real_cutoff)then
                    
                    ! q_j / r * erfc(r / (sqrt(2) sigma))
@@ -2408,6 +2421,9 @@ contains
     type(atom), intent(in) :: atoms(n_targets)
 
     force = 0.d0
+    if(minval(distances(:)) == 0.d0)then
+       return
+    end if
 
     !*********************************!
     ! EDIT WHEN ADDING NEW POTENTIALS !
@@ -2650,14 +2666,10 @@ contains
     double precision :: r1, r6, ratio
 
     r1 = distances(1)
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-       ratio = interaction%parameters(2) / r1
-       r6 = ratio*ratio*ratio*ratio*ratio*ratio
-       force(1:3,1) = interaction%parameters(1) * ( 6.d0*r6 - 12.d0*r6*r6 ) * separations(1:3,1) / (r1*r1)
-       force(1:3,2) = -force(1:3,1)
-    else
-       force = 0.d0
-    end if
+    ratio = interaction%parameters(2) / r1
+    r6 = ratio*ratio*ratio*ratio*ratio*ratio
+    force(1:3,1) = interaction%parameters(1) * ( 6.d0*r6 - 12.d0*r6*r6 ) * separations(1:3,1) / (r1*r1)
+    force(1:3,2) = -force(1:3,1)
 
   end subroutine evaluate_force_LJ
 
@@ -2676,12 +2688,10 @@ contains
     double precision :: r1, r6, ratio
 
     r1 = distances(1)
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then          
-       ratio = interaction%parameters(2) / r1
-       r6 = ratio*ratio*ratio*ratio*ratio*ratio
-       energy = interaction%parameters(1) * (r6*r6 - r6)
-    end if
-
+    ratio = interaction%parameters(2) / r1
+    r6 = ratio*ratio*ratio*ratio*ratio*ratio
+    energy = interaction%parameters(1) * (r6*r6 - r6)
+    
   end subroutine evaluate_energy_LJ
 
 
@@ -2727,12 +2737,10 @@ contains
     double precision :: r1, r2
 
     r1 = distances(1)
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-       r2 = (r1 - interaction%parameters(2))
-       force(1:3,1) = interaction%parameters(1) * r2 * separations(1:3,1) / r1
-       force(1:3,2) = -force(1:3,1)
-    end if
-
+    r2 = (r1 - interaction%parameters(2))
+    force(1:3,1) = interaction%parameters(1) * r2 * separations(1:3,1) / r1
+    force(1:3,2) = -force(1:3,1)
+    
   end subroutine evaluate_force_spring
 
 
@@ -2750,11 +2758,9 @@ contains
     double precision :: r1, r2, r6
 
     r1 = distances(1)
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-       r2 = (r1 - interaction%parameters(2))
-       r6 = (interaction%cutoff - interaction%parameters(2))
-       energy = interaction%parameters(1) * 0.5d0 * (r2*r2 - r6*r6)
-    end if
+    r2 = (r1 - interaction%parameters(2))
+    r6 = (interaction%cutoff - interaction%parameters(2))
+    energy = interaction%parameters(1) * 0.5d0 * (r2*r2 - r6*r6)
 
   end subroutine evaluate_energy_spring
 
@@ -3109,75 +3115,69 @@ contains
     r2 = distances(2)
     r3 = distances(3)
 
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-       if(r2 < interaction%cutoff .and. r2 > 0.d0)then
-          if(r3 < interaction%cutoff .and. r3 > 0.d0)then
 
-             v12 = separations(1:3,1)
-             v23 = separations(1:3,2)
-             v34 = separations(1:3,3)
-
-             ! get projections of r_34 and r_12 on the plane perpendicular to r_23 (p_ij)
-             inv_r2 = 1.d0 / (r2*r2)
-             projection1 = -(v12 - (v12 .o. v23) * inv_r2 *v23)
-             projection2 = (v34 - (v34 .o. v23) * inv_r2 *v23)
-
-             dot = projection1 .o. projection2 
-             inv_p1 = 1.d0 / (.norm.projection1)
-             inv_p2 = 1.d0 / (.norm.projection2)
-             ratio = inv_p1 * inv_p2
-
-             ! cos theta = (p_21 . p_34) / ( |p_21| |p_34| ) = dot*ratio
-             ! k ( cos theta - cos theta_0) =
-             r6 = interaction%parameters(1) * (dot * ratio - interaction%derived_parameters(1))
-             
-             ! D p.p' / (|p||p'|) =
-             ! D (p.p') / (|p||p'|) +
-             ! p.p' / (|p||p'|^2) D |p'| +
-             ! p.p' / (|p|^2|p'|) D |p|
-             
-             ! D (p.p') / (|p||p'|) :             
-             ddot = 0.d0
-             ddot(1:3,1) =  -( v34 - (v34 .o. v23) * inv_r2 * v23 )
-             ddot(1:3,2) =  ( v34 - &
-                  (v34 .o. v23) * inv_r2 * (v23 - v12) + &
-                  (v12 .o. v23) * inv_r2 * v34 - &
-                  2.d0 * (v12 .o. v23) * (v34 .o. v23) * inv_r2 * inv_r2 * v23 )
-             ddot(1:3,3) =  -( v12 + &
-                  (v34 .o. v23) * inv_r2 * v12 + &
-                  (v12 .o. v23) * inv_r2 * (v34 - v23) - &
-                  2.d0 * (v12 .o. v23) * (v34 .o. v23) * inv_r2 * inv_r2 * v23 )
-             ddot(1:3,4) =  ( v12 - (v12 .o. v23) *inv_r2 * v23 )
-             ddot = ddot
-
-             ! p.p' / (|p||p'|^2) D |p'| = p.p' / (2|p||p'|^3) D (p'.p')
-             dp2 = 0.d0
-             dp2(1:3,2) = (v34 .o. v23) * inv_r2 * v34 - &
-                  (v34 .o. v23)**2 * inv_r2 * inv_r2 * v23 
-             dp2(1:3,3) = -v34 + &
-                  (v34 .o. v23) * inv_r2 * (v23 - v34) + &
-                  (v34 .o. v23)**2 * inv_r2 * inv_r2 * v23
-             dp2(1:3,4) = v34 - (v34 .o. v23) * inv_r2 * v23
-             dp2 = dp2 * dot * inv_p2 * inv_p2
-             
-             ! p.p' / (|p|^2|p'|) D |p| = p.p' / (2|p|^3|p'|) D (p.p)
-             dp1 = 0.d0
-             dp1(1:3,1) = -v12 + (v12 .o. v23) * inv_r2 * v23
-             dp1(1:3,2) = v12 - &
-                  (v12 .o. v23) * inv_r2 * (v23 - v12) - &
-                  (v12 .o. v23)**2 * inv_r2 * inv_r2 * v23
-             dp1(1:3,3) = &
-                  -(v12 .o. v23) * inv_r2 * v12 + &
-                  (v12 .o. v23)**2 * inv_r2 * inv_r2 * v23
-             dp1 = dp1 * dot * inv_p1 * inv_p1
-             
-             force = interaction%parameters(1) * (dot*ratio - interaction%derived_parameters(1)) * &
-                  ratio * (ddot + dp1 + dp2)
-
-          end if
-       end if
-    end if
-
+    v12 = separations(1:3,1)
+    v23 = separations(1:3,2)
+    v34 = separations(1:3,3)
+    
+    ! get projections of r_34 and r_12 on the plane perpendicular to r_23 (p_ij)
+    inv_r2 = 1.d0 / (r2*r2)
+    projection1 = -(v12 - (v12 .o. v23) * inv_r2 *v23)
+    projection2 = (v34 - (v34 .o. v23) * inv_r2 *v23)
+    
+    dot = projection1 .o. projection2 
+    inv_p1 = 1.d0 / (.norm.projection1)
+    inv_p2 = 1.d0 / (.norm.projection2)
+    ratio = inv_p1 * inv_p2
+    
+    ! cos theta = (p_21 . p_34) / ( |p_21| |p_34| ) = dot*ratio
+    ! k ( cos theta - cos theta_0) =
+    r6 = interaction%parameters(1) * (dot * ratio - interaction%derived_parameters(1))
+    
+    ! D p.p' / (|p||p'|) =
+    ! D (p.p') / (|p||p'|) +
+    ! p.p' / (|p||p'|^2) D |p'| +
+    ! p.p' / (|p|^2|p'|) D |p|
+    
+    ! D (p.p') / (|p||p'|) :             
+    ddot = 0.d0
+    ddot(1:3,1) =  -( v34 - (v34 .o. v23) * inv_r2 * v23 )
+    ddot(1:3,2) =  ( v34 - &
+         (v34 .o. v23) * inv_r2 * (v23 - v12) + &
+         (v12 .o. v23) * inv_r2 * v34 - &
+         2.d0 * (v12 .o. v23) * (v34 .o. v23) * inv_r2 * inv_r2 * v23 )
+    ddot(1:3,3) =  -( v12 + &
+         (v34 .o. v23) * inv_r2 * v12 + &
+         (v12 .o. v23) * inv_r2 * (v34 - v23) - &
+         2.d0 * (v12 .o. v23) * (v34 .o. v23) * inv_r2 * inv_r2 * v23 )
+    ddot(1:3,4) =  ( v12 - (v12 .o. v23) *inv_r2 * v23 )
+    ddot = ddot
+    
+    ! p.p' / (|p||p'|^2) D |p'| = p.p' / (2|p||p'|^3) D (p'.p')
+    dp2 = 0.d0
+    dp2(1:3,2) = (v34 .o. v23) * inv_r2 * v34 - &
+         (v34 .o. v23)**2 * inv_r2 * inv_r2 * v23 
+    dp2(1:3,3) = -v34 + &
+         (v34 .o. v23) * inv_r2 * (v23 - v34) + &
+         (v34 .o. v23)**2 * inv_r2 * inv_r2 * v23
+    dp2(1:3,4) = v34 - (v34 .o. v23) * inv_r2 * v23
+    dp2 = dp2 * dot * inv_p2 * inv_p2
+    
+    ! p.p' / (|p|^2|p'|) D |p| = p.p' / (2|p|^3|p'|) D (p.p)
+    dp1 = 0.d0
+    dp1(1:3,1) = -v12 + (v12 .o. v23) * inv_r2 * v23
+    dp1(1:3,2) = v12 - &
+         (v12 .o. v23) * inv_r2 * (v23 - v12) - &
+         (v12 .o. v23)**2 * inv_r2 * inv_r2 * v23
+    dp1(1:3,3) = &
+         -(v12 .o. v23) * inv_r2 * v12 + &
+         (v12 .o. v23)**2 * inv_r2 * inv_r2 * v23
+    dp1 = dp1 * dot * inv_p1 * inv_p1
+    
+    force = interaction%parameters(1) * (dot*ratio - interaction%derived_parameters(1)) * &
+         ratio * (ddot + dp1 + dp2)
+    
+ 
   end subroutine evaluate_force_dihedral
 
 
@@ -3208,40 +3208,40 @@ contains
     ok = .false.
     if(interaction%filter_elements)then
        if(interaction%original_elements(1) == atoms(1)%element .and. & 
-          interaction%original_elements(2) == atoms(2)%element .and. &
-          interaction%original_elements(3) == atoms(3)%element .and. &
-          interaction%original_elements(4) == atoms(4)%element)then
+            interaction%original_elements(2) == atoms(2)%element .and. &
+            interaction%original_elements(3) == atoms(3)%element .and. &
+            interaction%original_elements(4) == atoms(4)%element)then
           ok = .true.
        else if(interaction%original_elements(1) == atoms(4)%element .and. &
-          interaction%original_elements(2) == atoms(3)%element .and. &
-          interaction%original_elements(3) == atoms(2)%element .and. &
-          interaction%original_elements(4) == atoms(1)%element)then
+            interaction%original_elements(2) == atoms(3)%element .and. &
+            interaction%original_elements(3) == atoms(2)%element .and. &
+            interaction%original_elements(4) == atoms(1)%element)then
           ok = .true.
        end if
     end if
     if(interaction%filter_tags)then
        if(interaction%original_tags(1) == atoms(1)%tags .and. &
-          interaction%original_tags(2) == atoms(2)%tags .and. &
-          interaction%original_tags(3) == atoms(3)%tags .and. &
-          interaction%original_tags(4) == atoms(4)%tags)then
+            interaction%original_tags(2) == atoms(2)%tags .and. &
+            interaction%original_tags(3) == atoms(3)%tags .and. &
+            interaction%original_tags(4) == atoms(4)%tags)then
           ok = .true.
        else if(interaction%original_tags(1) == atoms(4)%tags .and. &
-          interaction%original_tags(2) == atoms(3)%tags .and. &
-          interaction%original_tags(3) == atoms(2)%tags .and. &
-          interaction%original_tags(4) == atoms(1)%tags)then
+            interaction%original_tags(2) == atoms(3)%tags .and. &
+            interaction%original_tags(3) == atoms(2)%tags .and. &
+            interaction%original_tags(4) == atoms(1)%tags)then
           ok = .true.
        end if
     end if
     if(interaction%filter_indices)then
        if(interaction%original_indices(1) == atoms(1)%index .and. &
-          interaction%original_indices(2) == atoms(2)%index .and. &
-          interaction%original_indices(3) == atoms(3)%index .and. &
-          interaction%original_indices(4) == atoms(4)%index)then
+            interaction%original_indices(2) == atoms(2)%index .and. &
+            interaction%original_indices(3) == atoms(3)%index .and. &
+            interaction%original_indices(4) == atoms(4)%index)then
           ok = .true.
        else if(interaction%original_indices(1) == atoms(4)%index .and. &
-          interaction%original_indices(2) == atoms(3)%index .and. &
-          interaction%original_indices(3) == atoms(2)%index .and. &
-          interaction%original_indices(4) == atoms(1)%index)then
+            interaction%original_indices(2) == atoms(3)%index .and. &
+            interaction%original_indices(3) == atoms(2)%index .and. &
+            interaction%original_indices(4) == atoms(1)%index)then
           ok = .true.
        end if
     end if
@@ -3254,33 +3254,25 @@ contains
     r2 = distances(2)
     r3 = distances(3)
 
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then
-       if(r2 < interaction%cutoff .and. r2 > 0.d0)then
-          if(r3 < interaction%cutoff .and. r3 > 0.d0)then
 
-             v12 = separations(1:3,1)
-             v23 = separations(1:3,2)
-             v34 = separations(1:3,3)
+    v12 = separations(1:3,1)
+    v23 = separations(1:3,2)
+    v34 = separations(1:3,3)
 
-             ! get projections of r_34 and r_12 on the plane perpendicular to r_23
-             inv_r2 = 1.d0 / (r2*r2)
-             projection1 = -(v12 - (v12 .o. v23) * inv_r2 *v23)
-             projection2 = (v34 - (v34 .o. v23) * inv_r2 *v23)
+    ! get projections of r_34 and r_12 on the plane perpendicular to r_23
+    inv_r2 = 1.d0 / (r2*r2)
+    projection1 = -(v12 - (v12 .o. v23) * inv_r2 *v23)
+    projection2 = (v34 - (v34 .o. v23) * inv_r2 *v23)
 
-             dot = projection1 .o. projection2 
-             ratio = 1.d0 / ( (.norm.projection1) * (.norm.projection2) )
-             
-             ! cos theta = (p_21 . p_34) / ( |p_21| |p_34| ) = dot*ratio
-             ! (cos theta - cos theta_0) =
-             off = (dot * ratio - interaction%derived_parameters(1))
-             
-             ! k/2 (cos theta - cos theta_0)^2
-             energy = 0.5d0 * interaction%parameters(1) * off*off 
+    dot = projection1 .o. projection2 
+    ratio = 1.d0 / ( (.norm.projection1) * (.norm.projection2) )
 
-          end if
-       end if
-    end if
+    ! cos theta = (p_21 . p_34) / ( |p_21| |p_34| ) = dot*ratio
+    ! (cos theta - cos theta_0) =
+    off = (dot * ratio - interaction%derived_parameters(1))
 
+    ! k/2 (cos theta - cos theta_0)^2
+    energy = 0.5d0 * interaction%parameters(1) * off*off 
 
   end subroutine evaluate_energy_dihedral
 
@@ -3702,16 +3694,12 @@ contains
     double precision :: r1, r2, ratio, r6
 
     r1 = distances(1)
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then          
-       ratio = r1 / interaction%parameters(3)
-       r6 = 1.d0 / (ratio*ratio*ratio*ratio*ratio*ratio)
-       force(1:3,1) = ( -interaction%parameters(1)*ratio * exp(-ratio) &
-            + interaction%parameters(2) * 6.d0*r6 ) * separations(1:3,1) / (r1*r1)
-       force(1:3,2) = -force(1:3,1)
-    else
-       force = 0.d0
-    end if
-
+    ratio = r1 / interaction%parameters(3)
+    r6 = 1.d0 / (ratio*ratio*ratio*ratio*ratio*ratio)
+    force(1:3,1) = ( -interaction%parameters(1)*ratio * exp(-ratio) &
+         + interaction%parameters(2) * 6.d0*r6 ) * separations(1:3,1) / (r1*r1)
+    force(1:3,2) = -force(1:3,1)
+    
   end subroutine evaluate_force_buckingham
 
 
@@ -3730,12 +3718,10 @@ contains
     double precision :: r1, r2, ratio, r6
 
     r1 = distances(1)
-    if(r1 < interaction%cutoff .and. r1 > 0.d0)then          
-       ratio = r1 / interaction%parameters(3)
-       r6 = 1.d0 / (ratio*ratio*ratio*ratio*ratio*ratio)
-       energy = interaction%parameters(1) * exp(-ratio) - interaction%parameters(2) * r6
-    end if
-
+    ratio = r1 / interaction%parameters(3)
+    r6 = 1.d0 / (ratio*ratio*ratio*ratio*ratio*ratio)
+    energy = interaction%parameters(1) * exp(-ratio) - interaction%parameters(2) * r6
+    
   end subroutine evaluate_energy_buckingham
 
 
@@ -4956,14 +4942,12 @@ contains
     double precision :: r1, decay1
 
     r1 = distances(1)
-    if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
-       ! coordination is simply the number of neighbors
-       ! calculated as a sum of cutoff functions
-       call smoothening_factor(r1,bond_params(1)%cutoff,&
-            bond_params(1)%soft_cutoff,decay1)
-       factor = decay1 ! symmetric, so factor(1) = factor(2)
-    end if
-
+    ! coordination is simply the number of neighbors
+    ! calculated as a sum of cutoff functions
+    call smoothening_factor(r1,bond_params(1)%cutoff,&
+         bond_params(1)%soft_cutoff,decay1)
+    factor = decay1 ! symmetric, so factor(1) = factor(2)
+    
   end subroutine evaluate_bond_order_factor_coordination
 
 
@@ -4983,17 +4967,15 @@ contains
     double precision :: r1, tmp1(3)
 
     r1 = distances(1)
-    if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
-       call smoothening_gradient(separations(1:3,1) / r1,r1,&
-            bond_params(1)%cutoff,&
-            bond_params(1)%soft_cutoff,&
-            tmp1)
-       gradient(1:3,1,1) = -tmp1(1:3)
-       gradient(1:3,2,1) = -tmp1(1:3)
-       gradient(1:3,1,2) = tmp1(1:3)
-       gradient(1:3,2,2) = tmp1(1:3)
-    end if
-
+    call smoothening_gradient(separations(1:3,1) / r1,r1,&
+         bond_params(1)%cutoff,&
+         bond_params(1)%soft_cutoff,&
+         tmp1)
+    gradient(1:3,1,1) = -tmp1(1:3)
+    gradient(1:3,2,1) = -tmp1(1:3)
+    gradient(1:3,1,2) = tmp1(1:3)
+    gradient(1:3,2,2) = tmp1(1:3)
+    
   end subroutine evaluate_bond_order_gradient_coordination
 
 
@@ -5104,43 +5086,39 @@ contains
     r1 = distances(1)
     r2 = distances(2)
 
-    if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .and. &
-         ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
-
-       ! tmp1 and tmp2 are the vectors r_ij, r_ik
-       tmp1 = -separations(1:3,1)
-       tmp2 = separations(1:3,2)
-       ! cosine of the angle between ij and ik
-       cosine = (tmp1 .o. tmp2) / ( r1 * r2 )
-
-       ! bond_params: mu_i, a_ij, a_ik, &
-       !              c_ij^2, d_ij^2, h_ij, 
-       !              c_ik^2, d_ik^2, h_ik
-       mu = bond_params(1)%parameters(3,1)
-       a1 = bond_params(1)%parameters(1,2)
-       a2 = bond_params(2)%parameters(1,2)
-       cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
-       dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
-       h1 = bond_params(1)%parameters(4,2)
-       cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
-       dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
-       h2 = bond_params(2)%parameters(4,2)
-
-       call smoothening_factor(r2,bond_params(2)%cutoff,&
-            bond_params(2)%soft_cutoff,decay2)
-       call smoothening_factor(r1,bond_params(1)%cutoff,&
-            bond_params(1)%soft_cutoff,decay1)
-
-       xi1 = decay1 * decay2 * exp( (a1 * (r1-r2))**mu ) 
-       xi2 = decay1 * decay2 * exp( (a2 * (r2-r1))**mu ) 
-       gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
-       gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
-
-       ! only the middle atom gets a contribution, 
-       ! so factor(1) = factor(3) = 0.0
-       factor(2) = xi1*gee1 + xi2*gee2
-
-    end if
+    ! tmp1 and tmp2 are the vectors r_ij, r_ik
+    tmp1 = -separations(1:3,1)
+    tmp2 = separations(1:3,2)
+    ! cosine of the angle between ij and ik
+    cosine = (tmp1 .o. tmp2) / ( r1 * r2 )
+    
+    ! bond_params: mu_i, a_ij, a_ik, &
+    !              c_ij^2, d_ij^2, h_ij, 
+    !              c_ik^2, d_ik^2, h_ik
+    mu = bond_params(1)%parameters(3,1)
+    a1 = bond_params(1)%parameters(1,2)
+    a2 = bond_params(2)%parameters(1,2)
+    cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
+    dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
+    h1 = bond_params(1)%parameters(4,2)
+    cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
+    dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
+    h2 = bond_params(2)%parameters(4,2)
+    
+    call smoothening_factor(r2,bond_params(2)%cutoff,&
+         bond_params(2)%soft_cutoff,decay2)
+    call smoothening_factor(r1,bond_params(1)%cutoff,&
+         bond_params(1)%soft_cutoff,decay1)
+    
+    xi1 = decay1 * decay2 * exp( (a1 * (r1-r2))**mu ) 
+    xi2 = decay1 * decay2 * exp( (a2 * (r2-r1))**mu ) 
+    gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
+    gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
+    
+    ! only the middle atom gets a contribution, 
+    ! so factor(1) = factor(3) = 0.0
+    factor(2) = xi1*gee1 + xi2*gee2
+    
 
   end subroutine evaluate_bond_order_factor_tersoff
 
@@ -5193,104 +5171,99 @@ contains
     r1 = distances(1)
     r2 = distances(2)
 
-    if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .and. &
-         ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
 
-       tmp1 = -separations(1:3,1)
-       tmp2 = separations(1:3,2)
-       unitvector(1:3,1) = tmp1 / r1
-       unitvector(1:3,2) = tmp2 / r2
-       dot = (tmp1 .o. tmp2)
-       ratio = 1.d0 / ( r1 * r2 )
-       ! cosine of the angle between ij and ik, theta_ijk
-       cosine = dot * ratio 
-
-       ! gradients of the r_ij and r_ik vectors with 
-       ! respect to the positions 
-       ! of the three particles i, j, and k
-
-       ! gradient 1 affects atoms ij, so atoms 2 and 1
-       nablar1 = 0.d0
-       nablar1(1:3,2) = -unitvector(1:3,1)
-       nablar1(1:3,1) = unitvector(1:3,1)
-       ! gradient 2 affects atoms ik, so atoms 2 and 3
-       nablar2 = 0.d0
-       nablar2(1:3,2) = -unitvector(1:3,2)
-       nablar2(1:3,3) = unitvector(1:3,2)
-
-       ! gradient of the cos theta_ijk factor
-       nablacosine = 0.d0
-       tmp3 = tmp2 - dot / (r1*r1) * tmp1
-       tmp4 = tmp1 - dot / (r2*r2) * tmp2
-       nablacosine(1:3,1) = tmp3*ratio
-       nablacosine(1:3,2) = -(tmp3+tmp4)*ratio
-       nablacosine(1:3,3) = tmp4*ratio
-
-
-       ! bond_params: mu_i, a_ij, a_ik, &
-       !              c_ij^2, d_ij^2, h_ij, 
-       !              c_ik^2, d_ik^2, h_ik
-       mu = bond_params(1)%parameters(3,1)
-       a1 = bond_params(1)%parameters(1,2)
-       a2 = bond_params(2)%parameters(1,2)
-       cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
-       dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
-       h1 = bond_params(1)%parameters(4,2)
-       cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
-       dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
-       h2 = bond_params(2)%parameters(4,2)
-
-       call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay2)
-       call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(2)%soft_cutoff,decay1)
-       ! store the gradients of decay1 and decay2 in tmp5 and tmp6
-       call smoothening_gradient(unitvector(1:3,2),r2,&
-            bond_params(2)%cutoff,bond_params(2)%soft_cutoff,tmp6)
-       call smoothening_gradient(unitvector(1:3,1),r1,&
-            bond_params(1)%cutoff,bond_params(1)%soft_cutoff,tmp5)
-
-       ! tmpmat1 ad tmpmat2 store the gradients of decay1
-       ! and decay2 with respect to moving any atom i, j, or k
-
-       ! gradient 1 (tmp5) affects atoms ij, so it affects atoms 2 and 1
-       tmpmat1 = 0.d0
-       tmpmat1(1:3,1) = tmp5
-       tmpmat1(1:3,2) = -tmp5
-       ! gradient 2 (tmp6) affects atoms ik, so it affects atoms 2 and 3
-       tmpmat2 = 0.d0
-       tmpmat2(1:3,2) = -tmp6
-       tmpmat2(1:3,3) = tmp6
-
-       exponent1a = (a1 * (r1-r2))**(mu-1)
-       exponent2a = (a2 * (r2-r1))**(mu-1)
-       exponent1b = (a1 * (r1-r2))*exponent1a
-       exponent2b = (a2 * (r2-r1))*exponent2a
-       xi1 = exp( exponent1b ) 
-       xi2 = exp( exponent2b )
-       gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
-       gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
-       nablaxi1 = (tmpmat1 * decay2 + tmpmat2 * decay1) * xi1 + &
-            decay1*decay2*( exp( exponent1b ) * a1 * mu * exponent1a ) * (nablar1 - nablar2)
-       nablaxi2 = (tmpmat2 * decay1 + tmpmat1 * decay2) * xi2 + &
-            decay1*decay2*( exp( exponent2b ) * a2 * mu * exponent2a ) * (nablar2 - nablar1)
-       xi1 = xi1 * decay1 * decay2
-       xi2 = xi2 * decay1 * decay2
-       nablagee1 = - cc1 / ( (dd1+(h1-cosine)*(h1-cosine))*(dd1+(h1-cosine)*(h1-cosine)) ) * &
-            2.d0 * (h1-cosine) * nablacosine
-       nablagee2 = - cc2 / ( (dd2+(h2-cosine)*(h2-cosine))*(dd2+(h2-cosine)*(h2-cosine)) ) * &
-            2.d0 * (h2-cosine) * nablacosine
-
-       ! there is only contribution to the factor of the middle atom, so
-       ! also the gradients of atoms 1 and 3 are 0.
-       gradient(1:3,2,1) = nablaxi1(1:3,1) * gee1 + xi1 * nablagee1(1:3,1) + &
-            nablaxi2(1:3,1) * gee2 + xi2 * nablagee2(1:3,1)
-       gradient(1:3,2,2) = nablaxi1(1:3,2) * gee1 + xi1 * nablagee1(1:3,2) + &
-            nablaxi2(1:3,2) * gee2 + xi2 * nablagee2(1:3,2)
-       gradient(1:3,2,3) = nablaxi1(1:3,3) * gee1 + xi1 * nablagee1(1:3,3) + &
-            nablaxi2(1:3,3) * gee2 + xi2 * nablagee2(1:3,3)
-
-    end if
-
-
+    tmp1 = -separations(1:3,1)
+    tmp2 = separations(1:3,2)
+    unitvector(1:3,1) = tmp1 / r1
+    unitvector(1:3,2) = tmp2 / r2
+    dot = (tmp1 .o. tmp2)
+    ratio = 1.d0 / ( r1 * r2 )
+    ! cosine of the angle between ij and ik, theta_ijk
+    cosine = dot * ratio 
+    
+    ! gradients of the r_ij and r_ik vectors with 
+    ! respect to the positions 
+    ! of the three particles i, j, and k
+    
+    ! gradient 1 affects atoms ij, so atoms 2 and 1
+    nablar1 = 0.d0
+    nablar1(1:3,2) = -unitvector(1:3,1)
+    nablar1(1:3,1) = unitvector(1:3,1)
+    ! gradient 2 affects atoms ik, so atoms 2 and 3
+    nablar2 = 0.d0
+    nablar2(1:3,2) = -unitvector(1:3,2)
+    nablar2(1:3,3) = unitvector(1:3,2)
+    
+    ! gradient of the cos theta_ijk factor
+    nablacosine = 0.d0
+    tmp3 = tmp2 - dot / (r1*r1) * tmp1
+    tmp4 = tmp1 - dot / (r2*r2) * tmp2
+    nablacosine(1:3,1) = tmp3*ratio
+    nablacosine(1:3,2) = -(tmp3+tmp4)*ratio
+    nablacosine(1:3,3) = tmp4*ratio
+    
+    
+    ! bond_params: mu_i, a_ij, a_ik, &
+    !              c_ij^2, d_ij^2, h_ij, 
+    !              c_ik^2, d_ik^2, h_ik
+    mu = bond_params(1)%parameters(3,1)
+    a1 = bond_params(1)%parameters(1,2)
+    a2 = bond_params(2)%parameters(1,2)
+    cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
+    dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
+    h1 = bond_params(1)%parameters(4,2)
+    cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
+    dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
+    h2 = bond_params(2)%parameters(4,2)
+    
+    call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay2)
+    call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(2)%soft_cutoff,decay1)
+    ! store the gradients of decay1 and decay2 in tmp5 and tmp6
+    call smoothening_gradient(unitvector(1:3,2),r2,&
+         bond_params(2)%cutoff,bond_params(2)%soft_cutoff,tmp6)
+    call smoothening_gradient(unitvector(1:3,1),r1,&
+         bond_params(1)%cutoff,bond_params(1)%soft_cutoff,tmp5)
+    
+    ! tmpmat1 ad tmpmat2 store the gradients of decay1
+    ! and decay2 with respect to moving any atom i, j, or k
+    
+    ! gradient 1 (tmp5) affects atoms ij, so it affects atoms 2 and 1
+    tmpmat1 = 0.d0
+    tmpmat1(1:3,1) = tmp5
+    tmpmat1(1:3,2) = -tmp5
+    ! gradient 2 (tmp6) affects atoms ik, so it affects atoms 2 and 3
+    tmpmat2 = 0.d0
+    tmpmat2(1:3,2) = -tmp6
+    tmpmat2(1:3,3) = tmp6
+    
+    exponent1a = (a1 * (r1-r2))**(mu-1)
+    exponent2a = (a2 * (r2-r1))**(mu-1)
+    exponent1b = (a1 * (r1-r2))*exponent1a
+    exponent2b = (a2 * (r2-r1))*exponent2a
+    xi1 = exp( exponent1b ) 
+    xi2 = exp( exponent2b )
+    gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
+    gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
+    nablaxi1 = (tmpmat1 * decay2 + tmpmat2 * decay1) * xi1 + &
+         decay1*decay2*( exp( exponent1b ) * a1 * mu * exponent1a ) * (nablar1 - nablar2)
+    nablaxi2 = (tmpmat2 * decay1 + tmpmat1 * decay2) * xi2 + &
+         decay1*decay2*( exp( exponent2b ) * a2 * mu * exponent2a ) * (nablar2 - nablar1)
+    xi1 = xi1 * decay1 * decay2
+    xi2 = xi2 * decay1 * decay2
+    nablagee1 = - cc1 / ( (dd1+(h1-cosine)*(h1-cosine))*(dd1+(h1-cosine)*(h1-cosine)) ) * &
+         2.d0 * (h1-cosine) * nablacosine
+    nablagee2 = - cc2 / ( (dd2+(h2-cosine)*(h2-cosine))*(dd2+(h2-cosine)*(h2-cosine)) ) * &
+         2.d0 * (h2-cosine) * nablacosine
+    
+    ! there is only contribution to the factor of the middle atom, so
+    ! also the gradients of atoms 1 and 3 are 0.
+    gradient(1:3,2,1) = nablaxi1(1:3,1) * gee1 + xi1 * nablagee1(1:3,1) + &
+         nablaxi2(1:3,1) * gee2 + xi2 * nablagee2(1:3,1)
+    gradient(1:3,2,2) = nablaxi1(1:3,2) * gee1 + xi1 * nablagee1(1:3,2) + &
+         nablaxi2(1:3,2) * gee2 + xi2 * nablagee2(1:3,2)
+    gradient(1:3,2,3) = nablaxi1(1:3,3) * gee1 + xi1 * nablagee1(1:3,3) + &
+         nablaxi2(1:3,3) * gee2 + xi2 * nablagee2(1:3,3)
+    
   end subroutine evaluate_bond_order_gradient_tersoff
 
 
@@ -5529,12 +5502,7 @@ contains
     r1 = distances(1)
     r2 = distances(2)
 
-    if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .and. &
-         ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
-
-       factor(2) = factor(2) + 1.d0
-
-    end if
+    factor(2) = factor(2) + 1.d0
 
   end subroutine evaluate_bond_order_factor_triplet
 
@@ -5580,11 +5548,6 @@ contains
     r1 = distances(1)
     r2 = distances(2)
 
-    if( ( r2 < bond_params(2)%cutoff .and. r2 > 0.d0 ) .and. &
-         ( r1 < bond_params(1)%cutoff .and. r1 > 0.d0 ) )then
-
-
-    end if
 
 
   end subroutine evaluate_bond_order_gradient_triplet
@@ -5673,13 +5636,11 @@ contains
     double precision :: r1, decay1
 
     r1 = distances(1)
-    if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
-       ! sum f(r_ij) ( a_ij / r_ij )^n_ij
-       call smoothening_factor(r1,bond_params(1)%cutoff,&
-            bond_params(1)%soft_cutoff,decay1)
-       factor = decay1 * ( bond_params(1)%parameters(1,2) / r1 )**(bond_params(1)%parameters(2,2)) ! symmetric, so factor(1) = factor(2)
-    end if
-
+    ! sum f(r_ij) ( a_ij / r_ij )^n_ij
+    call smoothening_factor(r1,bond_params(1)%cutoff,&
+         bond_params(1)%soft_cutoff,decay1)
+    factor = decay1 * ( bond_params(1)%parameters(1,2) / r1 )**(bond_params(1)%parameters(2,2)) ! symmetric, so factor(1) = factor(2)
+    
   end subroutine evaluate_bond_order_factor_power
 
 
@@ -5699,30 +5660,28 @@ contains
     double precision :: r1, decay1, tmp1(3), n, a, ratio, ratio_n, inv_r1
 
     r1 = distances(1)
-    if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
 
-       n = bond_params(1)%parameters(2,2)
-       a = bond_params(1)%parameters(1,2)
-       inv_r1 = 1.d0/r1
-       ratio = a * inv_r1
-       ratio_n = ratio**n
-
-       ! D sum f(r_ij) ( a_ij / r_ij )^n_ij =
-       ! sum f'(r) ( a/r )^n + f(r) n ( a/r )^(n-1) ( -a/r^2 ) =
-       ! sum f'(r) ( a/r )^n + f(r) (-n) ( a/r )^n 1/r 
-       call smoothening_gradient(separations(1:3,1) * inv_r1,r1,&
-            bond_params(1)%cutoff,&
-            bond_params(1)%soft_cutoff,&
-            tmp1)
-       call smoothening_factor(r1,bond_params(1)%cutoff,&
-            bond_params(1)%soft_cutoff,decay1)
-
-       gradient(1:3,1,1) = -tmp1(1:3) * ratio_n + n * decay1 * ratio_n * inv_r1 * inv_r1 * separations(1:3,1)
-       gradient(1:3,2,1) = gradient(1:3,1,1)
-       gradient(1:3,1,2) = -gradient(1:3,1,1)
-       gradient(1:3,2,2) = -gradient(1:3,1,1)
-    end if
-
+    n = bond_params(1)%parameters(2,2)
+    a = bond_params(1)%parameters(1,2)
+    inv_r1 = 1.d0/r1
+    ratio = a * inv_r1
+    ratio_n = ratio**n
+    
+    ! D sum f(r_ij) ( a_ij / r_ij )^n_ij =
+    ! sum f'(r) ( a/r )^n + f(r) n ( a/r )^(n-1) ( -a/r^2 ) =
+    ! sum f'(r) ( a/r )^n + f(r) (-n) ( a/r )^n 1/r 
+    call smoothening_gradient(separations(1:3,1) * inv_r1,r1,&
+         bond_params(1)%cutoff,&
+         bond_params(1)%soft_cutoff,&
+         tmp1)
+    call smoothening_factor(r1,bond_params(1)%cutoff,&
+         bond_params(1)%soft_cutoff,decay1)
+    
+    gradient(1:3,1,1) = -tmp1(1:3) * ratio_n + n * decay1 * ratio_n * inv_r1 * inv_r1 * separations(1:3,1)
+    gradient(1:3,2,1) = gradient(1:3,1,1)
+    gradient(1:3,1,2) = -gradient(1:3,1,1)
+    gradient(1:3,2,2) = -gradient(1:3,1,1)
+ 
   end subroutine evaluate_bond_order_gradient_power
 
 
@@ -6031,33 +5990,31 @@ contains
     r1 = distances(1)
     factor = 0.d0
 
-    if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
-       call smoothening_factor(r1,bond_params(1)%cutoff,&
-            bond_params(1)%soft_cutoff,decay1)
-
-       n_values = size(bond_params(1)%table(:,1))
-       max_r = bond_params(1)%parameters(2,2)
-       dr = max_r / (n_values-1)
-       
-       r1 = distances(1)
-       if(r1 >= max_r)then
-          factor = bond_params(1)%table(n_values,1)
-          return
-       else 
-          lower_index = floor(r1/dr)+1
-          t = r1/dr-(lower_index-1)
-       end if
-       t2 = t*t
-       t3 = t2*t
-       
-       factor = bond_params(1)%parameters(3,2) * &
-            ( bond_params(1)%table(lower_index,1) * (2*t3 - 3*t2 + 1) + &
-            bond_params(1)%table(lower_index,2)*dr/max_r * (t3 - 2*t2 + t) + &
-            bond_params(1)%table(lower_index+1,1) * (3*t2 - 2*t3) + &
-            bond_params(1)%table(lower_index+1,2)*dr/max_r * (t3 - t2) ) * decay1
-
+    call smoothening_factor(r1,bond_params(1)%cutoff,&
+         bond_params(1)%soft_cutoff,decay1)
+    
+    n_values = size(bond_params(1)%table(:,1))
+    max_r = bond_params(1)%parameters(2,2)
+    dr = max_r / (n_values-1)
+    
+    r1 = distances(1)
+    if(r1 >= max_r)then
+       factor = bond_params(1)%table(n_values,1)
+       return
+    else 
+       lower_index = floor(r1/dr)+1
+       t = r1/dr-(lower_index-1)
     end if
-
+    t2 = t*t
+    t3 = t2*t
+    
+    factor = bond_params(1)%parameters(3,2) * &
+         ( bond_params(1)%table(lower_index,1) * (2*t3 - 3*t2 + 1) + &
+         bond_params(1)%table(lower_index,2)*dr/max_r * (t3 - 2*t2 + t) + &
+         bond_params(1)%table(lower_index+1,1) * (3*t2 - 2*t3) + &
+         bond_params(1)%table(lower_index+1,2)*dr/max_r * (t3 - t2) ) * decay1
+    
+ 
   end subroutine evaluate_bond_order_factor_table
 
 
@@ -6080,51 +6037,49 @@ contains
     
     r1 = distances(1)
     gradient = 0.d0
-    if(r1 < bond_params(1)%cutoff .and. r1 > 0.d0)then
 
-       inv_r1 = 1.d0/r1
-       call smoothening_gradient(separations(1:3,1) * inv_r1,r1,&
-            bond_params(1)%cutoff,&
-            bond_params(1)%soft_cutoff,&
-            tmp1)
-       call smoothening_factor(r1,bond_params(1)%cutoff,&
-            bond_params(1)%soft_cutoff,decay1)
-
-       n_values = size(bond_params(1)%table(:,1))
-       max_r = bond_params(1)%parameters(2,2)
-       dr = max_r / (n_values-1)
-       
-       r1 = distances(1)
-       if(r1 >= max_r)then
-          return 
-       else 
-          lower_index = floor(r1/dr)+1
-          t = r1/dr-(lower_index-1)
-       end if
-       t2 = t*t
-       
-       if(decay1 > 0.d0 .and. decay1 < 1.d0)then
-          factor = bond_params(1)%parameters(3,2) * &
-               ( bond_params(1)%table(lower_index,1) * (2*t3 - 3*t2 + 1) + &
-               bond_params(1)%table(lower_index,2)*dr/max_r * (t3 - 2*t2 + t) + &
-               bond_params(1)%table(lower_index+1,1) * (3*t2 - 2*t3) + &
-               bond_params(1)%table(lower_index+1,2)*dr/max_r * (t3 - t2) )
-       else
-          factor = 0.d0
-       end if
-
-       derivative = bond_params(1)%parameters(3,2) * &
-            ( bond_params(1)%table(lower_index,1)/dr * 6*(t2 - t) + &
-            bond_params(1)%table(lower_index,2)/max_r * (3*t2 - 4*t + 1) + &
-            bond_params(1)%table(lower_index+1,1)/dr * 6*(t - t2) + &
-            bond_params(1)%table(lower_index+1,2)/max_r * (3*t2 - 2*t) )
-       
-       gradient(1:3,1,1) = -tmp1(1:3) * factor - decay1 * derivative * inv_r1 * separations(1:3,1)
-       gradient(1:3,2,1) = gradient(1:3,1,1)
-       gradient(1:3,1,2) = -gradient(1:3,1,1)
-       gradient(1:3,2,2) = -gradient(1:3,1,1)
+    inv_r1 = 1.d0/r1
+    call smoothening_gradient(separations(1:3,1) * inv_r1,r1,&
+         bond_params(1)%cutoff,&
+         bond_params(1)%soft_cutoff,&
+         tmp1)
+    call smoothening_factor(r1,bond_params(1)%cutoff,&
+         bond_params(1)%soft_cutoff,decay1)
+    
+    n_values = size(bond_params(1)%table(:,1))
+    max_r = bond_params(1)%parameters(2,2)
+    dr = max_r / (n_values-1)
+    
+    r1 = distances(1)
+    if(r1 >= max_r)then
+       return 
+    else 
+       lower_index = floor(r1/dr)+1
+       t = r1/dr-(lower_index-1)
+    end if
+    t2 = t*t
+    
+    if(decay1 > 0.d0 .and. decay1 < 1.d0)then
+       factor = bond_params(1)%parameters(3,2) * &
+            ( bond_params(1)%table(lower_index,1) * (2*t3 - 3*t2 + 1) + &
+            bond_params(1)%table(lower_index,2)*dr/max_r * (t3 - 2*t2 + t) + &
+            bond_params(1)%table(lower_index+1,1) * (3*t2 - 2*t3) + &
+            bond_params(1)%table(lower_index+1,2)*dr/max_r * (t3 - t2) )
+    else
+       factor = 0.d0
     end if
 
+    derivative = bond_params(1)%parameters(3,2) * &
+         ( bond_params(1)%table(lower_index,1)/dr * 6*(t2 - t) + &
+         bond_params(1)%table(lower_index,2)/max_r * (3*t2 - 4*t + 1) + &
+         bond_params(1)%table(lower_index+1,1)/dr * 6*(t - t2) + &
+         bond_params(1)%table(lower_index+1,2)/max_r * (3*t2 - 2*t) )
+    
+    gradient(1:3,1,1) = -tmp1(1:3) * factor - decay1 * derivative * inv_r1 * separations(1:3,1)
+    gradient(1:3,2,1) = gradient(1:3,1,1)
+    gradient(1:3,1,2) = -gradient(1:3,1,1)
+    gradient(1:3,2,2) = -gradient(1:3,1,1)
+ 
   end subroutine evaluate_bond_order_gradient_table
 
 

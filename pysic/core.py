@@ -568,6 +568,7 @@ class CoreMirror:
         atoms: `ASE Atoms`_ object
             atomic structure to be saved"""
         self.structure = copy.deepcopy(atoms)
+        del self.structure.constraints
         self.potential_lists_ready = False
 
     def set_charges(self, charges):
@@ -599,7 +600,8 @@ class CoreMirror:
             atomic structure containing the momenta to be saved.
         """
         self.structure.set_momenta(atoms.get_momenta())
-        
+    
+    
     def set_cell(self, atoms):
         """Copies and stores the supercell in the `ASE Atoms`_ instance.
 
