@@ -65,7 +65,9 @@
 <li><a class="reference internal" href="#harmonic-potential">Harmonic potential</a></li>
 <li><a class="reference internal" href="#lennard-jones-potential">Lennard-Jones potential</a></li>
 <li><a class="reference internal" href="#buckingham-potential">Buckingham potential</a></li>
+<li><a class="reference internal" href="#exponential-potential">Exponential potential</a></li>
 <li><a class="reference internal" href="#charged-pair-potential">Charged-pair potential</a></li>
+<li><a class="reference internal" href="#absolute-charged-pair-potential">Absolute charged-pair potential</a></li>
 <li><a class="reference internal" href="#charge-dependent-exponential-potential">Charge dependent exponential potential</a></li>
 <li><a class="reference internal" href="#tabulated-potential">Tabulated potential</a></li>
 <li><a class="reference internal" href="#bond-bending-potential">Bond bending potential</a></li>
@@ -162,6 +164,9 @@ no smoothening is applied.</p>
 <li><a class="reference internal" href="#harmonic-potential"><em>Harmonic potential</em></a></li>
 <li><a class="reference internal" href="#lennard-jones-potential"><em>Lennard-Jones potential</em></a></li>
 <li><a class="reference internal" href="#buckingham-potential"><em>Buckingham potential</em></a></li>
+<li><a class="reference internal" href="#exponential-potential"><em>Exponential potential</em></a></li>
+<li><a class="reference internal" href="#charged-pair-potential"><em>Charged-pair potential</em></a></li>
+<li><a class="reference internal" href="#absolute-charged-pair-potential"><em>Absolute charged-pair potential</em></a></li>
 <li><a class="reference internal" href="#charge-exponential-potential"><em>Charge dependent exponential potential</em></a></li>
 <li><a class="reference internal" href="#tabulated-potential"><em>Tabulated potential</em></a></li>
 <li><a class="reference internal" href="#bond-bending-potential"><em>Bond bending potential</em></a></li>
@@ -314,8 +319,30 @@ number of atoms of required types.</p>
 <li><a class="reference internal" href="Potentials_f90.html#evaluate_force_buckingham" title="evaluate_force_buckingham"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_force_buckingham()</span></tt></a></li>
 </ul>
 </div>
+<div class="section" id="exponential-potential">
+<span id="id9"></span><h3>Exponential potential<a class="headerlink" href="#exponential-potential" title="Permalink to this headline">¶</a></h3>
+<p>2-body interaction defined as</p>
+<div class="math">
+\[\begin{split}V(q) &amp; = \varepsilon \exp(-\zeta r)\end{split}\]</div>
+<p>where <span class="math">\(\varepsilon\)</span> is an energy scale constant and <span class="math">\(\zeta\)</span> is a length decay constant.</p>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;exponential&#39;</span><span class="p">)</span>
+<span class="go">[&#39;epsilon&#39;, &#39;zeta&#39;]</span>
+</pre></div>
+</div>
+<p>[<a class="reference external" href="./plot_directive/inline/3b222165d1.hires.png">hires.png</a>, <a class="reference external" href="./plot_directive/inline/3b222165d1.pdf">pdf</a>]</p>
+<div class="figure">
+<img alt="_images/3b222165d1.png" src="_images/3b222165d1.png" />
+</div>
+<p>Fortran routines:</p>
+<ul class="simple">
+<li><a class="reference internal" href="Potentials_f90.html#create_potential_characterizer_exp" title="create_potential_characterizer_exp"><tt class="xref py py-meth docutils literal"><span class="pre">create_potential_characterizer_exp()</span></tt></a></li>
+<li><a class="reference internal" href="Potentials_f90.html#evaluate_energy_exp" title="evaluate_energy_exp"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_energy_exp()</span></tt></a></li>
+<li><a class="reference internal" href="Potentials_f90.html#evaluate_force_exp" title="evaluate_force_exp"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_force_exp()</span></tt></a></li>
+</ul>
+</div>
 <div class="section" id="charged-pair-potential">
-<span id="id9"></span><h3>Charged-pair potential<a class="headerlink" href="#charged-pair-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id10"></span><h3>Charged-pair potential<a class="headerlink" href="#charged-pair-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction defined as</p>
 <div class="math">
 \[V(q_1,q_2) = \varepsilon q_1^{n_1} q_2^{n_2}\]</div>
@@ -331,7 +358,7 @@ For instance:</p>
 </div>
 <p>Defines the potential</p>
 <div class="math">
-\[V(q_1,q_2,r) = \varepsilon q_1^{n_1} q_2^{n_2} \frac{a^n}{r^n}\]</div>
+\[V(q_1,q_2,r) = \varepsilon q_1^{n_1} q_2^{n_2} \left(\frac{a}{r}\right)^n\]</div>
 <p>Keywords:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;charge_pair&#39;</span><span class="p">)</span>
 <span class="go">[&#39;epsilon&#39;, &#39;n1&#39;, &#39;n2&#39;]</span>
@@ -344,37 +371,56 @@ For instance:</p>
 <li><a class="reference internal" href="Potentials_f90.html#evaluate_electronegativity_charge_pair" title="evaluate_electronegativity_charge_pair"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_electronegativity_charge_pair()</span></tt></a></li>
 </ul>
 </div>
+<div class="section" id="absolute-charged-pair-potential">
+<span id="id11"></span><h3>Absolute charged-pair potential<a class="headerlink" href="#absolute-charged-pair-potential" title="Permalink to this headline">¶</a></h3>
+<p>2-body interaction defined as</p>
+<div class="math">
+\[\begin{split}V(q_1,q_2) &amp; = \sqrt{ B_1(q_1) B_2(q_2)&nbsp;}\\
+B_i(q_i)   &amp; = a_i + b_i | q_i - Q_i |^{n_i}\end{split}\]</div>
+<p>where <span class="math">\(a_i\)</span> is an energy shift, <span class="math">\(b_i\)</span> is a scale constant, <span class="math">\(Q_i\)</span> is a charge shift,
+and <span class="math">\(n_i\)</span> are real exponents.</p>
+<p>This potential is similar to the <a class="reference internal" href="#charged-pair-potential"><em>Charged-pair potential</em></a>, but it affects the absolute
+values of charges. This allows one to use real valued exponents instead of just integers. Note though, that
+the product <span class="math">\(B_1(q_1) B_2(q_2)\)</span> must be positive for all relevant values of <span class="math">\(q_i\)</span>.</p>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;charge_abs&#39;</span><span class="p">)</span>
+<span class="go">[&#39;a1&#39;, &#39;b1&#39;, &#39;Q1&#39;, &#39;n1&#39;,</span>
+<span class="go"> &#39;a2&#39;, &#39;b2&#39;, &#39;Q2&#39;, &#39;n2&#39;]</span>
+</pre></div>
+</div>
+<p>Fortran routines:</p>
+<ul class="simple">
+<li><a class="reference internal" href="Potentials_f90.html#create_potential_characterizer_charge_pair_abs" title="create_potential_characterizer_charge_pair_abs"><tt class="xref py py-meth docutils literal"><span class="pre">create_potential_characterizer_charge_pair_abs()</span></tt></a></li>
+<li><a class="reference internal" href="Potentials_f90.html#evaluate_energy_charge_pair_abs" title="evaluate_energy_charge_pair_abs"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_energy_charge_pair_abs()</span></tt></a></li>
+<li><a class="reference internal" href="Potentials_f90.html#evaluate_electronegativity_charge_pair_abs" title="evaluate_electronegativity_charge_pair_abs"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_electronegativity_charge_pair_abs()</span></tt></a></li>
+</ul>
+</div>
 <div class="section" id="charge-dependent-exponential-potential">
 <span id="charge-exponential-potential"></span><h3>Charge dependent exponential potential<a class="headerlink" href="#charge-dependent-exponential-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction defined as</p>
 <div class="math">
-\[\begin{split}V(r,q) &amp; = \varepsilon_{ij} \exp\left(-\zeta_{ij} r + \frac{\xi_i D_i(q_i) + \xi_j D_j(q_j)}{2} \right) \\
+\[\begin{split}V(q) &amp; = \varepsilon_{ij} \exp\left(\frac{\xi_i D_i(q_i) + \xi_j D_j(q_j)}{2} \right) \\
 D_i(q) &amp; = R_{i,\max} + | \beta_i (Q_{i,\max} - q) |^{\eta_i} \\
 \beta_i &amp; = \frac{ (R_{i,\min} - R_{i,\max})^\frac{1}{\eta_i} }{ Q_{i,\max} - Q_{i,\min} }\\
 \eta_i  &amp; = \frac{ \ln \frac{R_{i,\max}}{R_{i,\max} - R_{i,\min}} }{ \ln \frac{Q_{i,\max}}{Q_{i,\max} - Q_{i,\min}} },\end{split}\]</div>
-<p>where <span class="math">\(\varepsilon\)</span> is an energy scale constant, <span class="math">\(\zeta\)</span> is a length decay constant, <span class="math">\(\xi_i\)</span> are charge decay constants, and <span class="math">\(R_{i,\min/\max}\)</span> and <span class="math">\(Q_{i,\min/\max}\)</span> are the changes in valence radii and charge, respectively, of the ions for the minimum and maximum charge. <span class="math">\(D_i(q)\)</span> is the effective atomic radius for the charge <span class="math">\(q\)</span>.</p>
+<p>where <span class="math">\(\varepsilon\)</span> is an energy scale constant, <span class="math">\(\xi_i\)</span> are charge decay constants, and <span class="math">\(R_{i,\min/\max}\)</span> and <span class="math">\(Q_{i,\min/\max}\)</span> are the changes in valence radii and charge, respectively, of the ions for the minimum and maximum charge. <span class="math">\(D_i(q)\)</span> is the effective atomic radius for the charge <span class="math">\(q\)</span>.</p>
 <p>Keywords:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;exponential&#39;</span><span class="p">)</span>
-<span class="go">[&#39;epsilon&#39;, &#39;zeta&#39;,</span>
+<span class="go">[&#39;epsilon&#39;,</span>
 <span class="go"> &#39;Rmax1&#39;, &#39;Rmin1&#39;, &#39;Qmax1&#39;, &#39;Qmin1&#39;,</span>
 <span class="go"> &#39;Rmax2&#39;, &#39;Rmin2&#39;, &#39;Qmax2&#39;, &#39;Qmin2&#39;,</span>
 <span class="go"> &#39;xi1&#39;, &#39;xi2&#39;]</span>
 </pre></div>
 </div>
-<p>[<a class="reference external" href="./plot_directive/inline/1db5685689.hires.png">hires.png</a>, <a class="reference external" href="./plot_directive/inline/1db5685689.pdf">pdf</a>]</p>
-<div class="figure">
-<img alt="_images/1db5685689.png" src="_images/1db5685689.png" />
-</div>
 <p>Fortran routines:</p>
 <ul class="simple">
 <li><a class="reference internal" href="Potentials_f90.html#create_potential_characterizer_charge_exp" title="create_potential_characterizer_charge_exp"><tt class="xref py py-meth docutils literal"><span class="pre">create_potential_characterizer_charge_exp()</span></tt></a></li>
 <li><a class="reference internal" href="Potentials_f90.html#evaluate_energy_charge_exp" title="evaluate_energy_charge_exp"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_energy_charge_exp()</span></tt></a></li>
-<li><a class="reference internal" href="Potentials_f90.html#evaluate_force_charge_exp" title="evaluate_force_charge_exp"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_force_charge_exp()</span></tt></a></li>
 <li><a class="reference internal" href="Potentials_f90.html#evaluate_electronegativity_charge_exp" title="evaluate_electronegativity_charge_exp"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_electronegativity_charge_exp()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="tabulated-potential">
-<span id="id10"></span><h3>Tabulated potential<a class="headerlink" href="#tabulated-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id12"></span><h3>Tabulated potential<a class="headerlink" href="#tabulated-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction of the type <span class="math">\(V(r)\)</span> defined with a tabulated list of values.</p>
 <p>The values of the potential are read from text files of the format:</p>
 <div class="highlight-python"><pre>V(0)     V'(0)*R
@@ -424,14 +470,14 @@ h_{11}(t) = &amp; t^3-t^2\end{split}\]</div>
 </ul>
 </div>
 <div class="section" id="bond-bending-potential">
-<span id="id11"></span><h3>Bond bending potential<a class="headerlink" href="#bond-bending-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id13"></span><h3>Bond bending potential<a class="headerlink" href="#bond-bending-potential" title="Permalink to this headline">¶</a></h3>
 <p>3-body interaction defined as</p>
 <div class="math">
-\[V(\theta) = \frac{k}{2} ( \cos \theta - \cos \theta_0 )^2,\]</div>
-<p>where <span class="math">\(k\)</span> is an angular spring constant, <span class="math">\(\theta\)</span> is an angle defined by three points in space (atomic positions) and <span class="math">\(\theta_0\)</span> is the equilibrium angle. The potential therefore describes an angular spring force related to bending of bonds.</p>
+\[V(\theta) = \varepsilon ( \cos^n \theta - \cos^n \theta_0 )^m,\]</div>
+<p>where <span class="math">\(\varepsilon\)</span> is an energy scale constant, <span class="math">\(n\)</span> and <span class="math">\(m\)</span> are integer exponents, <span class="math">\(\theta\)</span> is an angle defined by three points in space (atomic positions) and <span class="math">\(\theta_0\)</span> is the equilibrium angle. As a apecial case, the cosine harmonic potential is obtined with <span class="math">\(\varepsilon = k/2, n=1, m=2\)</span>.</p>
 <p>Keywords:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;bond_bend&#39;</span><span class="p">)</span>
-<span class="go">[&#39;k&#39;, &#39;theta_0&#39;]</span>
+<span class="go">[&#39;epsilon&#39;, &#39;theta_0&#39;, &#39;n&#39;, &#39;m&#39;]</span>
 </pre></div>
 </div>
 <p>Three bodies form a triangle and so there are three possible angles the potential could bend. To remove this ambiguousness, the angle is defined so that as the potential is given a list of targets, the middle target is considered to be at the tip of the angle.</p>
@@ -442,9 +488,9 @@ h_{11}(t) = &amp; t^3-t^2\end{split}\]</div>
 </div>
 <p>This creates a potential for H-O-H angles, but not for H-H-O angles.</p>
 <p>Also remember that the bond bending potential does not include any actual bonding potential between particles - it only generates an angular force component. It must be coupled with other potentials to build a full bonding potential.</p>
-<p>[<a class="reference external" href="./plot_directive/inline/ee5bcb3c7b.hires.png">hires.png</a>, <a class="reference external" href="./plot_directive/inline/ee5bcb3c7b.pdf">pdf</a>]</p>
+<p>[<a class="reference external" href="./plot_directive/inline/862181b6c9.hires.png">hires.png</a>, <a class="reference external" href="./plot_directive/inline/862181b6c9.pdf">pdf</a>]</p>
 <div class="figure">
-<img alt="_images/ee5bcb3c7b.png" src="_images/ee5bcb3c7b.png" />
+<img alt="_images/862181b6c9.png" src="_images/862181b6c9.png" />
 </div>
 <p>Fortran routines:</p>
 <ul class="simple">
@@ -454,7 +500,7 @@ h_{11}(t) = &amp; t^3-t^2\end{split}\]</div>
 </ul>
 </div>
 <div class="section" id="dihedral-angle-potential">
-<span id="id12"></span><h3>Dihedral angle potential<a class="headerlink" href="#dihedral-angle-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id14"></span><h3>Dihedral angle potential<a class="headerlink" href="#dihedral-angle-potential" title="Permalink to this headline">¶</a></h3>
 <p>4-body interaction defined as</p>
 <div class="math">
 \[V(r) = \frac{k}{2} (\cos \theta - \cos \theta_0)^2\]</div>

@@ -56,6 +56,7 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">CoulombSummation class</a><ul>
+<li><a class="reference internal" href="#charge-scaling">Charge scaling</a></li>
 <li><a class="reference internal" href="#list-of-currently-available-summation-algorithms">List of currently available summation algorithms</a><ul>
 <li><a class="reference internal" href="#ewald-summation">Ewald summation</a></li>
 </ul>
@@ -112,6 +113,25 @@
 </div></blockquote>
 <p>where the sum is over pairs of charges <span class="math">\(q_i, q_j\)</span> (charges of the entire system, not just the simulation cell) and the distance between the charges is <span class="math">\(r_{ij} = |\mathbf{r}_j - \mathbf{r}_i|\)</span>, does not work in general because the sum <a href="#equation-direct_sum">(1)</a> converges very slowly (it actually converges only conditionally). Therefore truncating the sum may lead to severe errors. More advanced techniques must be used in order to accurately evaluate such sums.</p>
 <p>This class represents the algorithms used for evaluating the <span class="math">\(1/r\)</span> sums. It wraps the summation parameters and activates the summation of Coulomb interactions. If an instance of <a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation" title="pysic.interactions.coulomb.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a> is given to the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator, Coulomb interactions between all charged atoms are automatically included in the calculations, regardless of possible <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> potentials the calculator may also contain. Otherwise the charges do not directly interact. This is due to two reasons: First, the direct Coulomb interaction is usually always required and it is convenient that it is easily enabled. Second, the specific potentials described by <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> are evaluated by direct summation and so the Coulomb summation is separate also on algorithm level in the core.</p>
+<div class="section" id="charge-scaling">
+<span id="coulomb-scaling"></span><h2>Charge scaling<a class="headerlink" href="#charge-scaling" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes, you may want to scale the effective charges before calculating the Coulomb sum. Especially, you may want to exclude some atoms from the long range summation. This can be done by giving the <a class="reference internal" href="#pysic.interactions.coulomb.CoulombSummation" title="pysic.interactions.coulomb.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a> a list of scaling values, one per atom. The actual charges of the atoms are then multiplied by the given scaling values before the Coulomb potential is calculated. If a scaling value is 0, the corresponding atom is always treated as if it had no charge. Note though, that  scaling with unequal scaling constants may lead to the cell being effectively charged.</p>
+<p>Using the Python <a class="reference external" href="http://docs.python.org/tutorial/datastructures.html#functional-programming-tools">map</a> function is a convenient way to generate such atom-by-atom lists. For instance, if you want to generate a list by element:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">atoms</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span><span class="p">(</span><span class="s">&#39;H2O&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">def</span> <span class="nf">by_elem</span><span class="p">(</span><span class="n">elem</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">if</span> <span class="n">elem</span> <span class="o">==</span> <span class="s">&#39;H&#39;</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="mf">0.1</span>
+<span class="gp">... </span>    <span class="k">elif</span> <span class="n">elem</span> <span class="o">==</span> <span class="s">&#39;O&#39;</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="o">-</span><span class="mf">0.2</span>
+<span class="gp">... </span>    <span class="k">else</span><span class="p">:</span>
+<span class="gp">... </span>        <span class="k">return</span> <span class="mf">0.0</span>
+<span class="gp">...</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">charges</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="n">atoms</span><span class="p">,</span> <span class="n">ch_by_elem</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">charges</span>
+<span class="go">[0.1, 0.1, -0.2]</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="list-of-currently-available-summation-algorithms">
 <span id="list-of-summation-modes"></span><h2>List of currently available summation algorithms<a class="headerlink" href="#list-of-currently-available-summation-algorithms" title="Permalink to this headline">¶</a></h2>
 <p>Below is a list of summation algorithms currently implemented.</p>

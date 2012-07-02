@@ -202,6 +202,8 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#pair_exp_index" title="pair_exp_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_exp_index</span></tt></a></li>
 <li><a class="reference internal" href="#pair_lj_index" title="pair_lj_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_lj_index</span></tt></a></li>
 <li><a class="reference internal" href="#pair_power_index" title="pair_power_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_power_index</span></tt></a></li>
+<li><a class="reference internal" href="#pair_qabs_index" title="pair_qabs_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_qabs_index</span></tt></a></li>
+<li><a class="reference internal" href="#pair_qexp_index" title="pair_qexp_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_qexp_index</span></tt></a></li>
 <li><a class="reference internal" href="#pair_qpair_index" title="pair_qpair_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_qpair_index</span></tt></a></li>
 <li><a class="reference internal" href="#pair_spring_index" title="pair_spring_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_spring_index</span></tt></a></li>
 <li><a class="reference internal" href="#pair_table_index" title="pair_table_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_table_index</span></tt></a></li>
@@ -259,10 +261,12 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#create_potential_characterizer_buckingham" title="create_potential_characterizer_buckingham"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_buckingham()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_charge_exp" title="create_potential_characterizer_charge_exp"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_charge_exp()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_charge_pair" title="create_potential_characterizer_charge_pair"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_charge_pair()</span></tt></a></li>
+<li><a class="reference internal" href="#create_potential_characterizer_charge_pair_abs" title="create_potential_characterizer_charge_pair_abs"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_charge_pair_abs()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_charge_self" title="create_potential_characterizer_charge_self"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_charge_self()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_constant_force" title="create_potential_characterizer_constant_force"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_constant_force()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_constant_potential" title="create_potential_characterizer_constant_potential"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_constant_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_dihedral" title="create_potential_characterizer_dihedral"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_dihedral()</span></tt></a></li>
+<li><a class="reference internal" href="#create_potential_characterizer_exp" title="create_potential_characterizer_exp"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_exp()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_power" title="create_potential_characterizer_power"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_power()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_spring" title="create_potential_characterizer_spring"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_spring()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_table" title="create_potential_characterizer_table"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_table()</span></tt></a></li>
@@ -281,6 +285,7 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#evaluate_electronegativity" title="evaluate_electronegativity"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_electronegativity_charge_exp" title="evaluate_electronegativity_charge_exp"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity_charge_exp()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_electronegativity_charge_pair" title="evaluate_electronegativity_charge_pair"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity_charge_pair()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_electronegativity_charge_pair_abs" title="evaluate_electronegativity_charge_pair_abs"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity_charge_pair_abs()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_electronegativity_charge_self" title="evaluate_electronegativity_charge_self"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity_charge_self()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_electronegativity_component" title="evaluate_electronegativity_component"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity_component()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy" title="evaluate_energy"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy()</span></tt></a></li>
@@ -289,22 +294,24 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#evaluate_energy_buckingham" title="evaluate_energy_buckingham"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_buckingham()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_charge_exp" title="evaluate_energy_charge_exp"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_charge_exp()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_charge_pair" title="evaluate_energy_charge_pair"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_charge_pair()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_energy_charge_pair_abs" title="evaluate_energy_charge_pair_abs"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_charge_pair_abs()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_charge_self" title="evaluate_energy_charge_self"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_charge_self()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_component" title="evaluate_energy_component"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_component()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_constant_force" title="evaluate_energy_constant_force"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_constant_force()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_constant_potential" title="evaluate_energy_constant_potential"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_constant_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_dihedral" title="evaluate_energy_dihedral"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_dihedral()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_energy_exp" title="evaluate_energy_exp"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_exp()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_power" title="evaluate_energy_power"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_power()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_spring" title="evaluate_energy_spring"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_spring()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_table" title="evaluate_energy_table"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_table()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_LJ" title="evaluate_force_LJ"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_LJ()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_bond_bending" title="evaluate_force_bond_bending"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_bond_bending()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_buckingham" title="evaluate_force_buckingham"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_buckingham()</span></tt></a></li>
-<li><a class="reference internal" href="#evaluate_force_charge_exp" title="evaluate_force_charge_exp"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_charge_exp()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_component" title="evaluate_force_component"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_component()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_constant_force" title="evaluate_force_constant_force"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_constant_force()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_constant_potential" title="evaluate_force_constant_potential"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_constant_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_dihedral" title="evaluate_force_dihedral"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_dihedral()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_force_exp" title="evaluate_force_exp"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_exp()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_power" title="evaluate_force_power"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_power()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_spring" title="evaluate_force_spring"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_spring()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_table" title="evaluate_force_table"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_table()</span></tt></a></li>
@@ -434,7 +441,7 @@ must be updated accordingly.</p>
 <dt id="n_potential_types">
 <tt class="descname">n_potential_types</tt><a class="headerlink" href="#n_potential_types" title="Permalink to this definition">¶</a></dt>
 <dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
-<p><em>initial value</em> = 12</p>
+<p><em>initial value</em> = 14</p>
 <p>number of different types of potentials known</p>
 </dd></dl>
 
@@ -475,6 +482,20 @@ must be updated accordingly.</p>
 <dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
 <p><em>initial value</em> = 9</p>
 <p>internal index for the power law potential</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="pair_qabs_index">
+<tt class="descname">pair_qabs_index</tt><a class="headerlink" href="#pair_qabs_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
+<p><em>initial value</em> = 14</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="pair_qexp_index">
+<tt class="descname">pair_qexp_index</tt><a class="headerlink" href="#pair_qexp_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
+<p><em>initial value</em> = 13</p>
 </dd></dl>
 
 <dl class="data">
@@ -1253,6 +1274,17 @@ and returns a potential type wrapping them in one package.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="create_potential_characterizer_charge_pair_abs">
+<tt class="descname">create_potential_characterizer_charge_pair_abs</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#create_potential_characterizer_charge_pair_abs" title="Permalink to this definition">¶</a></dt>
+<dd><p>charge abs energy characterizer initialization</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the potential</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="create_potential_characterizer_charge_self">
 <tt class="descname">create_potential_characterizer_charge_self</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#create_potential_characterizer_charge_self" title="Permalink to this definition">¶</a></dt>
 <dd><p>charge self energy characterizer initialization</p>
@@ -1289,6 +1321,17 @@ and returns a potential type wrapping them in one package.</p>
 <dt id="create_potential_characterizer_dihedral">
 <tt class="descname">create_potential_characterizer_dihedral</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#create_potential_characterizer_dihedral" title="Permalink to this definition">¶</a></dt>
 <dd><p>dihedral angle characterizer initialization</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the potential</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="create_potential_characterizer_exp">
+<tt class="descname">create_potential_characterizer_exp</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#create_potential_characterizer_exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>exponential characterizer initialization</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
@@ -1598,14 +1641,10 @@ derivatives of the energies returned by <a class="reference internal" href="#eva
 
 <dl class="function">
 <dt id="evaluate_electronegativity_charge_exp">
-<tt class="descname">evaluate_electronegativity_charge_exp</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>eneg</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_electronegativity_charge_exp" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">evaluate_electronegativity_charge_exp</tt><big>(</big><em>interaction</em>, <em>eneg</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_electronegativity_charge_exp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Charge exp electronegativity</p>
 <p>Parameters:</p>
 <dl class="docutils">
-<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 1)</em></dt>
-<dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
-<dt>distances: double precision  <em>intent(in)</em>    <em>size(1)</em></dt>
-<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
 <dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>a <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> containing the parameters</dd>
 <dt><strong>eneg</strong>: double precision  <strong>intent(out)</strong>    <em>size(2)</em></dt>
@@ -1619,6 +1658,21 @@ derivatives of the energies returned by <a class="reference internal" href="#eva
 <dt id="evaluate_electronegativity_charge_pair">
 <tt class="descname">evaluate_electronegativity_charge_pair</tt><big>(</big><em>interaction</em>, <em>eneg</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_electronegativity_charge_pair" title="Permalink to this definition">¶</a></dt>
 <dd><p>Charge pair energy electronegativity</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> containing the parameters</dd>
+<dt><strong>eneg</strong>: double precision  <strong>intent(out)</strong>    <em>size(2)</em></dt>
+<dd>the calculated electronegativity component <span class="math">\(\chi_{\alpha,ijk}\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(2)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_electronegativity_charge_pair_abs">
+<tt class="descname">evaluate_electronegativity_charge_pair_abs</tt><big>(</big><em>interaction</em>, <em>eneg</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_electronegativity_charge_pair_abs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Charge pair abs energy electronegativity</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
@@ -1759,14 +1813,10 @@ gradients of the energies returned by <a class="reference internal" href="#evalu
 
 <dl class="function">
 <dt id="evaluate_energy_charge_exp">
-<tt class="descname">evaluate_energy_charge_exp</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>energy</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_energy_charge_exp" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">evaluate_energy_charge_exp</tt><big>(</big><em>interaction</em>, <em>energy</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_energy_charge_exp" title="Permalink to this definition">¶</a></dt>
 <dd><p>Charge exp energy</p>
 <p>Parameters:</p>
 <dl class="docutils">
-<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 1)</em></dt>
-<dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
-<dt>distances: double precision  <em>intent(in)</em>    <em>size(1)</em></dt>
-<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
 <dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
 <dt><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
@@ -1780,6 +1830,21 @@ gradients of the energies returned by <a class="reference internal" href="#evalu
 <dt id="evaluate_energy_charge_pair">
 <tt class="descname">evaluate_energy_charge_pair</tt><big>(</big><em>interaction</em>, <em>energy</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_energy_charge_pair" title="Permalink to this definition">¶</a></dt>
 <dd><p>Charge pair energy</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
+<dt><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the calculated energy <span class="math">\(v_{ijk}\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(2)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_energy_charge_pair_abs">
+<tt class="descname">evaluate_energy_charge_pair_abs</tt><big>(</big><em>interaction</em>, <em>energy</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_energy_charge_pair_abs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Charge pair abs energy</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
@@ -1879,6 +1944,23 @@ gradients of the energies returned by <a class="reference internal" href="#evalu
 <dd>the calculated energy <span class="math">\(v_{ijk}\)</span></dd>
 <dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(4)</em></dt>
 <dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_energy_exp">
+<tt class="descname">evaluate_energy_exp</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>energy</em><big>)</big><a class="headerlink" href="#evaluate_energy_exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exp energy</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 1)</em></dt>
+<dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
+<dt>distances: double precision  <em>intent(in)</em>    <em>size(1)</em></dt>
+<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
+<dt><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the calculated energy <span class="math">\(v_{ijk}\)</span></dd>
 </dl>
 </dd></dl>
 
@@ -1987,25 +2069,6 @@ gradients of the energies returned by <a class="reference internal" href="#evalu
 </dd></dl>
 
 <dl class="function">
-<dt id="evaluate_force_charge_exp">
-<tt class="descname">evaluate_force_charge_exp</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>force</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_force_charge_exp" title="Permalink to this definition">¶</a></dt>
-<dd><p>charge exp force</p>
-<p>Parameters:</p>
-<dl class="docutils">
-<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 1)</em></dt>
-<dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
-<dt>distances: double precision  <em>intent(in)</em>    <em>size(1)</em></dt>
-<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
-<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
-<dd>a <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> containing the parameters</dd>
-<dt><strong>force</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, 2)</em></dt>
-<dd>the calculated force component <span class="math">\(\mathbf{f}_{\alpha,ijk}\)</span></dd>
-<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(2)</em></dt>
-<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
 <dt id="evaluate_force_component">
 <tt class="descname">evaluate_force_component</tt><big>(</big><em>n_targets</em>, <em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>force</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_force_component" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluates the forces due to an interaction between the given
@@ -2076,6 +2139,23 @@ gradients of the energies returned by <a class="reference internal" href="#evalu
 <dd>the calculated force component <span class="math">\(\mathbf{f}_{\alpha,ijk}\)</span></dd>
 <dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(4)</em></dt>
 <dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_force_exp">
+<tt class="descname">evaluate_force_exp</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>force</em><big>)</big><a class="headerlink" href="#evaluate_force_exp" title="Permalink to this definition">¶</a></dt>
+<dd><p>Exp force</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 1)</em></dt>
+<dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
+<dt>distances: double precision  <em>intent(in)</em>    <em>size(1)</em></dt>
+<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> containing the parameters</dd>
+<dt><strong>force</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, 2)</em></dt>
+<dd>the calculated force component <span class="math">\(\mathbf{f}_{\alpha,ijk}\)</span></dd>
 </dl>
 </dd></dl>
 
