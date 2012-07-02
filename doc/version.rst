@@ -21,6 +21,7 @@ Version 0.4.4
 - Added the :ref:`charged-pair potential`
 - Separated the old charged exponential potential to :ref:`exponential potential` and :ref:`charge exponential potential`
 - Changed the :ref:`bond bending potential` to allow more general expressions.
+- Added the :ref:`absolute charged-pair potential`
 
 
 Version 0.4.3

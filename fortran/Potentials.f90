@@ -2318,7 +2318,7 @@ contains
     case (pair_qpair_index) ! charge-dependent pair energy potential
        call evaluate_electronegativity_charge_pair(interaction,eneg(1:2),atoms(1:2))
     case (pair_qabs_index) ! charge-dependent pair energy potential
-       call evaluate_electronegativity_charge_pair(interaction,eneg(1:2),atoms(1:2))
+       call evaluate_electronegativity_charge_pair_abs(interaction,eneg(1:2),atoms(1:2))
     end select
 
   end subroutine evaluate_electronegativity_component
@@ -2574,7 +2574,7 @@ contains
     case (pair_qpair_index) ! charge pair energy potential
        call evaluate_energy_charge_pair(interaction,energy,atoms(1:2))
     case (pair_qabs_index) ! charge pair energy potential
-       call evaluate_energy_charge_pair(interaction,energy,atoms(1:2))
+       call evaluate_energy_charge_pair_abs(interaction,energy,atoms(1:2))
     end select
 
   end subroutine evaluate_energy_component
@@ -4218,7 +4218,7 @@ contains
 
     call pad_string('Charge-dependent self energy potential: '//&
          'V(q1,q2) = sqrt( f1(q1) f2(q2) ),   '//&
-         'fi(q) = ai - |bi (q - Qi)|^ni',&
+         'fi(q) = ai + bi | q - Qi |^ni',&
          pot_note_length,potential_descriptors(index)%description)
          
   end subroutine create_potential_characterizer_charge_pair_abs
@@ -4284,24 +4284,32 @@ contains
     qq1 = atoms(1)%charge
     qq2 = atoms(2)%charge
 
-    abs1 = abs( b1 * (qq1 - Q1) )
-    abs2 = abs( b2 * (qq2 - Q2) )
+!!$    abs1 = abs( b1 * (qq1 - Q1) )
+!!$    abs2 = abs( b2 * (qq2 - Q2) )
+!!$    pow1 = abs1**(n1-1)
+!!$    pow2 = abs2**(n2-1)
+!!$
+!!$    f1 = a1 - pow1*abs1
+!!$    f2 = a2 - pow2*abs2
+!!$
+!!$    d1 = - n1 * pow1 * sign(1.d0, b1 * (q1 - Q1)) * b1
+!!$    d2 = - n2 * pow2 * sign(1.d0, b2 * (q2 - Q2)) * b2
+
+    abs1 = abs( qq1 - Q1 )
+    abs2 = abs( qq2 - Q2 )
     pow1 = abs1**(n1-1)
     pow2 = abs2**(n2-1)
+    
+    f1 = a1 + b1 * abs1*pow1
+    f2 = a2 + b2 * abs2*pow2
 
-    f1 = a1 - pow1*abs1
-    f2 = a2 - pow2*abs2
-
-    d1 = - n1 * pow1 * sign(1.d0, b1 * (q1 - Q1)) * b1
-    d2 = - n2 * pow2 * sign(1.d0, b2 * (q2 - Q2)) * b2
+    d1 = - n1 * pow1 * sign(1.d0, (qq1 - Q1)) * b1
+    d2 = - n2 * pow2 * sign(1.d0, (qq2 - Q2)) * b2
 
     inv_sqrt = 0.5 / sqrt(f1*f2)
 
-    write(*,*) a1, b1, Q1, n1, qq1, f1, d1
-    write(*,*) a2, b2, Q2, n2, qq2, f2, d2
-
-    eneg(1) = -inv_sqrt * d1
-    eneg(1) = -inv_sqrt * d2
+    eneg(1) = inv_sqrt * d1*f2
+    eneg(2) = inv_sqrt * d2*f1
 
   end subroutine evaluate_electronegativity_charge_pair_abs
 
@@ -4365,8 +4373,10 @@ contains
     qq1 = atoms(1)%charge
     qq2 = atoms(2)%charge
 
-    f1 = a1 - abs( b1 * (qq1 - Q1) )**n1
-    f2 = a2 - abs( b2 * (qq2 - Q2) )**n2
+    !f1 = a1 - abs( b1 * (qq1 - Q1) )**n1
+    !f2 = a2 - abs( b2 * (qq2 - Q2) )**n2
+    f1 = a1 + b1 * abs( qq1 - Q1 )**n1
+    f2 = a2 + b2 * abs( qq2 - Q2 )**n2
 
     energy = sqrt( f1 * f2 )
 

@@ -132,6 +132,7 @@ must be updated accordingly.
     - :data:`pair_exp_index`
     - :data:`pair_lj_index`
     - :data:`pair_power_index`
+    - :data:`pair_qabs_index`
     - :data:`pair_qexp_index`
     - :data:`pair_qpair_index`
     - :data:`pair_spring_index`
@@ -187,6 +188,7 @@ must be updated accordingly.
     - :func:`create_potential_characterizer_buckingham`
     - :func:`create_potential_characterizer_charge_exp`
     - :func:`create_potential_characterizer_charge_pair`
+    - :func:`create_potential_characterizer_charge_pair_abs`
     - :func:`create_potential_characterizer_charge_self`
     - :func:`create_potential_characterizer_constant_force`
     - :func:`create_potential_characterizer_constant_potential`
@@ -210,6 +212,7 @@ must be updated accordingly.
     - :func:`evaluate_electronegativity`
     - :func:`evaluate_electronegativity_charge_exp`
     - :func:`evaluate_electronegativity_charge_pair`
+    - :func:`evaluate_electronegativity_charge_pair_abs`
     - :func:`evaluate_electronegativity_charge_self`
     - :func:`evaluate_electronegativity_component`
     - :func:`evaluate_energy`
@@ -218,6 +221,7 @@ must be updated accordingly.
     - :func:`evaluate_energy_buckingham`
     - :func:`evaluate_energy_charge_exp`
     - :func:`evaluate_energy_charge_pair`
+    - :func:`evaluate_energy_charge_pair_abs`
     - :func:`evaluate_energy_charge_self`
     - :func:`evaluate_energy_component`
     - :func:`evaluate_energy_constant_force`
@@ -367,7 +371,7 @@ Full documentation of global variables in potentials
 
     integer    *scalar*  *parameter*  
 
-    *initial value* = 13
+    *initial value* = 14
     
     number of different types of potentials known
     
@@ -410,6 +414,14 @@ Full documentation of global variables in potentials
     *initial value* = 9
     
     internal index for the power law potential
+    
+  .. data:: pair_qabs_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 14
+    
+    
     
   .. data:: pair_qexp_index
 
@@ -1201,6 +1213,16 @@ Full documentation of subroutines in potentials
     index: integer  *intent(in)*    *scalar*  
         index of the potential
             
+  .. function:: create_potential_characterizer_charge_pair_abs(index)
+
+    charge abs energy characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
   .. function:: create_potential_characterizer_charge_self(index)
 
     charge self energy characterizer initialization
@@ -1575,6 +1597,20 @@ Full documentation of subroutines in potentials
     atoms: type(atom)  *intent(in)*    *size(2)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
+  .. function:: evaluate_electronegativity_charge_pair_abs(interaction, eneg, atoms)
+
+    Charge pair abs energy electronegativity
+    
+
+    Parameters:
+
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **eneg**: double precision  **intent(out)**    *size(2)*  
+        the calculated electronegativity component :math:`\chi_{\alpha,ijk}`
+    atoms: type(atom)  *intent(in)*    *size(2)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
   .. function:: evaluate_electronegativity_charge_self(interaction, eneg, atoms)
 
     Charge self energy electronegativity
@@ -1721,6 +1757,20 @@ Full documentation of subroutines in potentials
   .. function:: evaluate_energy_charge_pair(interaction, energy, atoms)
 
     Charge pair energy
+    
+
+    Parameters:
+
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+    atoms: type(atom)  *intent(in)*    *size(2)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_energy_charge_pair_abs(interaction, energy, atoms)
+
+    Charge pair abs energy
     
 
     Parameters:

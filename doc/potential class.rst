@@ -125,6 +125,7 @@ Below is a list of potentials currently implemented.
 - :ref:`Buckingham potential`
 - :ref:`exponential potential`
 - :ref:`charged-pair potential`
+- :ref:`absolute charged-pair potential`
 - :ref:`charge exponential potential`
 - :ref:`tabulated potential`
 - :ref:`bond bending potential`
@@ -561,6 +562,44 @@ Fortran routines:
 - :meth:`create_potential_characterizer_charge_pair`
 - :meth:`evaluate_energy_charge_pair`
 - :meth:`evaluate_electronegativity_charge_pair`
+
+
+.. file:absolute charged-pair potential
+
+.. _absolute charged-pair potential:
+
+
+
+
+Absolute charged-pair potential
+_________________________________
+
+2-body interaction defined as
+
+.. math::
+
+    V(q_1,q_2) & = \sqrt{ B_1(q_1) B_2(q_2) }\\
+    B_i(q_i)   & = a_i + b_i | q_i - Q_i |^{n_i}
+
+where :math:`\a_i` is an energy shift, :math:`b_i` is a scale constant, :math:`Q_i` is a charge shift,
+and :math:`n_i` are real exponents.
+
+This potential is similar to the :ref:`charged-pair potential`, but it affects the absolute
+values of charges. This allows one to use real valued exponents instead of just integers. Note though, that
+the product :math:`B_1(q_1) B_2(q_2)` must be positive for all relevant values of :math:`q_i`.
+
+Keywords::
+
+    >>> names_of_parameters('charge_abs')
+    ['a1', 'b1', 'Q1', 'n1',
+     'a2', 'b2', 'Q2', 'n2']
+
+
+Fortran routines:
+
+- :meth:`create_potential_characterizer_charge_pair_abs`
+- :meth:`evaluate_energy_charge_pair_abs`
+- :meth:`evaluate_electronegativity_charge_pair_abs`
 
 
 .. file:charge exponential potential
