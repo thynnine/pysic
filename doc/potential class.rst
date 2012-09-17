@@ -581,7 +581,7 @@ _________________________________
     V(q_1,q_2) & = \sqrt{ B_1(q_1) B_2(q_2) }\\
     B_i(q_i)   & = a_i + b_i | q_i - Q_i |^{n_i}
 
-where :math:`\a_i` is an energy shift, :math:`b_i` is a scale constant, :math:`Q_i` is a charge shift,
+where :math:`a_i` is an energy shift, :math:`b_i` is a scale constant, :math:`Q_i` is a charge shift,
 and :math:`n_i` are real exponents.
 
 This potential is similar to the :ref:`charged-pair potential`, but it affects the absolute
@@ -626,7 +626,7 @@ where :math:`\varepsilon` is an energy scale constant, :math:`\xi_i` are charge 
 
 Keywords::
 
-    >>> names_of_parameters('exponential')
+    >>> names_of_parameters('charge_exp')
     ['epsilon', 
      'Rmax1', 'Rmin1', 'Qmax1', 'Qmin1', 
      'Rmax2', 'Rmin2', 'Qmax2', 'Qmin2', 

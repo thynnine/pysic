@@ -7,6 +7,7 @@ from pysic.interactions.coulomb import CoulombSummation
 import numpy as np
 import copy
 import atexit
+from pysic.utility.mpi import *
 
 # !!!: automatic initialization functions
 
@@ -38,32 +39,6 @@ def termination():
     pf.pysic_interface.finish_mpi()
 
 atexit.register(termination)
-
-
-def finish_mpi():
-    """Terminates the MPI framework.
-
-    If the Fortran core is compiled in MPI mode, :mod:`~pysic` will automatically
-    initialize MPI upon being imported. This method terminates the MPI.
-    """
-    pf.pysic_interface.finish_mpi()
-
-
-def sync_mpi():
-    """Calls MPI barrier from the Fortran core MPI framework."""
-
-    pf.pysic_interface.sync_mpi()
-
-def get_number_of_cpus():
-    """Gets the number of cpus from the Fortran MPI.
-    """
-    return pf.pysic_interface.get_number_of_cpus()
-
-
-def get_cpu_id():
-    """Gets the cpu ID from the Fortran MPI.
-    """
-    return pf.pysic_interface.get_cpu_id()
 
 
 def list_potentials():
