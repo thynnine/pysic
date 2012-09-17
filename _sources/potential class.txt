@@ -626,7 +626,7 @@ where :math:`\varepsilon` is an energy scale constant, :math:`\xi_i` are charge 
 
 Keywords::
 
-    >>> names_of_parameters('exponential')
+    >>> names_of_parameters('charge_exp')
     ['epsilon', 
      'Rmax1', 'Rmin1', 'Qmax1', 'Qmin1', 
      'Rmax2', 'Rmin2', 'Qmax2', 'Qmin2', 
