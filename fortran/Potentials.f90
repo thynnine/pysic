@@ -120,7 +120,7 @@ module potentials
   ! *param_note_length maximum length allowed for the descriptions of parameters
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
-       n_potential_types = 14, &
+       n_potential_types = 15, &
        n_bond_order_types = 8, &
        n_max_params = 12, &
        pot_note_length = 500, &
@@ -167,7 +167,8 @@ module potentials
        mono_qself_index = 11, &
        pair_qpair_index = 12, &
        pair_qexp_index = 13, &
-       pair_qabs_index = 14
+       pair_qabs_index = 14, &
+       pair_shift_index = 15
 
 
   !***********************************!
@@ -2044,6 +2045,9 @@ contains
     ! **** Charge abs potential ****
     call create_potential_characterizer_charge_pair_abs(pair_qabs_index)
 
+    ! **** Shifted potential ****
+    call create_potential_characterizer_shift(pair_shift_index)
+
     descriptors_created = .true.
 
   end subroutine initialize_potential_characterizers
@@ -2453,6 +2457,8 @@ contains
        call evaluate_force_power(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
     case (pair_table_index) ! tabulated potential
        call evaluate_force_table(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
+    case (pair_shift_index) ! shifted potential
+       call evaluate_force_shift(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
     end select
 
   end subroutine evaluate_force_component
@@ -2575,6 +2581,8 @@ contains
        call evaluate_energy_charge_pair(interaction,energy,atoms(1:2))
     case (pair_qabs_index) ! charge pair energy potential
        call evaluate_energy_charge_pair_abs(interaction,energy,atoms(1:2))
+    case (pair_shift_index) ! lennard-jones
+       call evaluate_energy_shift(separations(1:3,1),distances(1),interaction,energy)
     end select
 
   end subroutine evaluate_energy_component
@@ -3836,6 +3844,9 @@ contains
 
 
 
+
+
+
   !*********************!
   ! Tabulated potential !
   !*********************!
@@ -4381,6 +4392,118 @@ contains
     energy = sqrt( f1 * f2 )
 
   end subroutine evaluate_energy_charge_pair_abs
+
+
+
+
+
+  !*****************!
+  ! Shift potential !
+  !*****************!
+
+  ! Shift characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_shift(index)
+    implicit none
+    integer, intent(in) :: index
+
+    ! Record type index
+    potential_descriptors(index)%type_index = index
+
+    ! Record the name of the potential.
+    ! This is a keyword used for accessing the type of potential
+    ! in pysic, also in the python interface.
+    call pad_string('shift_power', pot_name_length,potential_descriptors(index)%name)
+
+    ! Record the number of parameters
+    potential_descriptors(index)%n_parameters = 4
+
+    ! Record the number of targets (i.e., is the potential 1-body, 2-body etc.)
+    potential_descriptors(index)%n_targets = 2
+
+    ! Allocate space for storing the parameter names and descriptions.
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+
+    ! Record parameter names and descriptions.
+    ! Names are keywords with which one can intuitively 
+    ! and easily access the parameters in the python
+    ! interface.
+    ! Descriptions are short descriptions of the
+    ! physical or mathematical meaning of the parameters.
+    ! They can be viewed from the python interface to
+    ! remind the user how to parameterize the potential.
+    call pad_string('epsilon', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy scale constant', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('r1', param_name_length,potential_descriptors(index)%parameter_names(2))
+    call pad_string('upper limit', param_note_length,potential_descriptors(index)%parameter_notes(2))
+    call pad_string('r2', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('lower limit', param_note_length,potential_descriptors(index)%parameter_notes(3))
+    call pad_string('n', param_name_length,potential_descriptors(index)%parameter_names(4))
+    call pad_string('exponent', param_note_length,potential_descriptors(index)%parameter_notes(4))
+
+    ! Record a description of the entire potential.
+    ! This description can also be viewed in the python
+    ! interface as a reminder of the properties of the
+    ! potential.
+    ! The description should contain the mathematical
+    ! formulation of the potential as well as a short
+    ! verbal description.
+    call pad_string('A shifted power potential: V(r) = epsilon * ( (r1-r)/(r1-r2) )^n', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_shift
+
+
+  ! Shift force
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  subroutine evaluate_force_shift(separations,distances,interaction,force)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,2)
+    double precision :: rr, r1, r2, n
+
+    rr = distances(1)
+    r1 = interaction%parameters(2)
+    r2 = interaction%parameters(3)
+    n = interaction%parameters(4)
+    
+    force(1:3,1) = -interaction%parameters(1) * n/(r1 - r2) * ( (r1 - rr)/(r1 - r2) )**(n-1) * separations(1:3,1) / (rr)
+    force(1:3,2) = -force(1:3,1)
+
+  end subroutine evaluate_force_shift
+
+
+  ! Shift energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  subroutine evaluate_energy_shift(separations,distances,interaction,energy)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    double precision :: r1, r2, n, rr
+
+
+    rr = distances(1)
+    r1 = interaction%parameters(2)
+    r2 = interaction%parameters(3)
+    n = interaction%parameters(4)
+
+    energy = interaction%parameters(1) * ( (r1 - rr)/(r1 - r2) )**n
+    
+  end subroutine evaluate_energy_shift
+
 
 
 
