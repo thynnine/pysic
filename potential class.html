@@ -62,6 +62,7 @@
 <li><a class="reference internal" href="#constant-force-potential">Constant force potential</a></li>
 <li><a class="reference internal" href="#charge-self-energy-potential">Charge self energy potential</a></li>
 <li><a class="reference internal" href="#power-decay-potential">Power decay potential</a></li>
+<li><a class="reference internal" href="#shifted-power-potential">Shifted power potential</a></li>
 <li><a class="reference internal" href="#harmonic-potential">Harmonic potential</a></li>
 <li><a class="reference internal" href="#lennard-jones-potential">Lennard-Jones potential</a></li>
 <li><a class="reference internal" href="#buckingham-potential">Buckingham potential</a></li>
@@ -161,6 +162,7 @@ no smoothening is applied.</p>
 <li><a class="reference internal" href="#constant-force-potential"><em>Constant force potential</em></a></li>
 <li><a class="reference internal" href="#charge-self-energy-potential"><em>Charge self energy potential</em></a></li>
 <li><a class="reference internal" href="#power-decay-potential"><em>Power decay potential</em></a></li>
+<li><a class="reference internal" href="#shifted-power-potential"><em>Shifted power potential</em></a></li>
 <li><a class="reference internal" href="#harmonic-potential"><em>Harmonic potential</em></a></li>
 <li><a class="reference internal" href="#lennard-jones-potential"><em>Lennard-Jones potential</em></a></li>
 <li><a class="reference internal" href="#buckingham-potential"><em>Buckingham potential</em></a></li>
@@ -253,8 +255,30 @@ number of atoms of required types.</p>
 <li><a class="reference internal" href="Potentials_f90.html#evaluate_force_power" title="evaluate_force_power"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_force_power()</span></tt></a></li>
 </ul>
 </div>
+<div class="section" id="shifted-power-potential">
+<span id="id6"></span><h3>Shifted power potential<a class="headerlink" href="#shifted-power-potential" title="Permalink to this headline">¶</a></h3>
+<p>2-body interaction defined as</p>
+<div class="math">
+\[V(r) = \varepsilon \left( \frac{r_1 - r}{r_1 - r_2} \right)^n\]</div>
+<p>where <span class="math">\(\varepsilon\)</span> is an energy scale constant, <span class="math">\(r1\)</span> and <span class="math">\(r2\)</span> are a lenght scale constants, and <span class="math">\(n\)</span> is an exponent.</p>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;shift&#39;</span><span class="p">)</span>
+<span class="go">[&#39;epsilon&#39;, &#39;r1&#39;, &#39;r2&#39;, &#39;n&#39;]</span>
+</pre></div>
+</div>
+<p>[<a class="reference external" href="./plot_directive/inline/5322c7b4a3.hires.png">hires.png</a>, <a class="reference external" href="./plot_directive/inline/5322c7b4a3.pdf">pdf</a>]</p>
+<div class="figure">
+<img alt="_images/5322c7b4a3.png" src="_images/5322c7b4a3.png" />
+</div>
+<p>Fortran routines:</p>
+<ul class="simple">
+<li><a class="reference internal" href="Potentials_f90.html#create_potential_characterizer_shift" title="create_potential_characterizer_shift"><tt class="xref py py-meth docutils literal"><span class="pre">create_potential_characterizer_shift()</span></tt></a></li>
+<li><a class="reference internal" href="Potentials_f90.html#evaluate_energy_shift" title="evaluate_energy_shift"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_energy_shift()</span></tt></a></li>
+<li><a class="reference internal" href="Potentials_f90.html#evaluate_force_shift" title="evaluate_force_shift"><tt class="xref py py-meth docutils literal"><span class="pre">evaluate_force_shift()</span></tt></a></li>
+</ul>
+</div>
 <div class="section" id="harmonic-potential">
-<span id="id6"></span><h3>Harmonic potential<a class="headerlink" href="#harmonic-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id7"></span><h3>Harmonic potential<a class="headerlink" href="#harmonic-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction defined as</p>
 <div class="math">
 \[V(r) = \frac{1}{2} k (r-R_0)^{2} - \frac{1}{2} k (r_\mathrm{cut}-R_0)^2,\]</div>
@@ -276,7 +300,7 @@ number of atoms of required types.</p>
 </ul>
 </div>
 <div class="section" id="lennard-jones-potential">
-<span id="id7"></span><h3>Lennard-Jones potential<a class="headerlink" href="#lennard-jones-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id8"></span><h3>Lennard-Jones potential<a class="headerlink" href="#lennard-jones-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction defined as</p>
 <div class="math">
 \[V(r) = \varepsilon \left[ \left( \frac{\sigma}{r} \right)^{12} - \left( \frac{\sigma}{r} \right)^{6} \right],\]</div>
@@ -298,7 +322,7 @@ number of atoms of required types.</p>
 </ul>
 </div>
 <div class="section" id="buckingham-potential">
-<span id="id8"></span><h3>Buckingham potential<a class="headerlink" href="#buckingham-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id9"></span><h3>Buckingham potential<a class="headerlink" href="#buckingham-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction defined as</p>
 <div class="math">
 \[V(r) = A e^{-\frac{r}{\sigma}} - C \left( \frac{\sigma}{r} \right)^6\]</div>
@@ -320,7 +344,7 @@ number of atoms of required types.</p>
 </ul>
 </div>
 <div class="section" id="exponential-potential">
-<span id="id9"></span><h3>Exponential potential<a class="headerlink" href="#exponential-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id10"></span><h3>Exponential potential<a class="headerlink" href="#exponential-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction defined as</p>
 <div class="math">
 \[\begin{split}V(q) &amp; = \varepsilon \exp(-\zeta r)\end{split}\]</div>
@@ -342,7 +366,7 @@ number of atoms of required types.</p>
 </ul>
 </div>
 <div class="section" id="charged-pair-potential">
-<span id="id10"></span><h3>Charged-pair potential<a class="headerlink" href="#charged-pair-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id11"></span><h3>Charged-pair potential<a class="headerlink" href="#charged-pair-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction defined as</p>
 <div class="math">
 \[V(q_1,q_2) = \varepsilon q_1^{n_1} q_2^{n_2}\]</div>
@@ -372,7 +396,7 @@ For instance:</p>
 </ul>
 </div>
 <div class="section" id="absolute-charged-pair-potential">
-<span id="id11"></span><h3>Absolute charged-pair potential<a class="headerlink" href="#absolute-charged-pair-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id12"></span><h3>Absolute charged-pair potential<a class="headerlink" href="#absolute-charged-pair-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction defined as</p>
 <div class="math">
 \[\begin{split}V(q_1,q_2) &amp; = \sqrt{ B_1(q_1) B_2(q_2)&nbsp;}\\
@@ -420,7 +444,7 @@ D_i(q) &amp; = R_{i,\max} + | \beta_i (Q_{i,\max} - q) |^{\eta_i} \\
 </ul>
 </div>
 <div class="section" id="tabulated-potential">
-<span id="id12"></span><h3>Tabulated potential<a class="headerlink" href="#tabulated-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id13"></span><h3>Tabulated potential<a class="headerlink" href="#tabulated-potential" title="Permalink to this headline">¶</a></h3>
 <p>2-body interaction of the type <span class="math">\(V(r)\)</span> defined with a tabulated list of values.</p>
 <p>The values of the potential are read from text files of the format:</p>
 <div class="highlight-python"><pre>V(0)     V'(0)*R
@@ -470,7 +494,7 @@ h_{11}(t) = &amp; t^3-t^2\end{split}\]</div>
 </ul>
 </div>
 <div class="section" id="bond-bending-potential">
-<span id="id13"></span><h3>Bond bending potential<a class="headerlink" href="#bond-bending-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id14"></span><h3>Bond bending potential<a class="headerlink" href="#bond-bending-potential" title="Permalink to this headline">¶</a></h3>
 <p>3-body interaction defined as</p>
 <div class="math">
 \[V(\theta) = \varepsilon ( \cos^n \theta - \cos^n \theta_0 )^m,\]</div>
@@ -500,7 +524,7 @@ h_{11}(t) = &amp; t^3-t^2\end{split}\]</div>
 </ul>
 </div>
 <div class="section" id="dihedral-angle-potential">
-<span id="id14"></span><h3>Dihedral angle potential<a class="headerlink" href="#dihedral-angle-potential" title="Permalink to this headline">¶</a></h3>
+<span id="id15"></span><h3>Dihedral angle potential<a class="headerlink" href="#dihedral-angle-potential" title="Permalink to this headline">¶</a></h3>
 <p>4-body interaction defined as</p>
 <div class="math">
 \[V(r) = \frac{k}{2} (\cos \theta - \cos \theta_0)^2\]</div>

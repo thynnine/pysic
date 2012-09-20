@@ -120,6 +120,7 @@ Below is a list of potentials currently implemented.
 - :ref:`constant force potential`
 - :ref:`charge self energy potential`
 - :ref:`power decay potential`
+- :ref:`shifted power potential`
 - :ref:`harmonic potential`
 - :ref:`Lennard-Jones potential`
 - :ref:`Buckingham potential`
@@ -283,6 +284,60 @@ Fortran routines:
 - :meth:`create_potential_characterizer_power`
 - :meth:`evaluate_energy_power`
 - :meth:`evaluate_force_power`
+
+
+.. file:shifted power potential
+
+.. _shifted power potential:
+
+
+
+
+Shifted power potential
+_______________________
+
+2-body interaction defined as
+
+.. math::
+
+    V(r) = \varepsilon \left( \frac{r_1 - r}{r_1 - r_2} \right)^n
+
+where :math:`\varepsilon` is an energy scale constant, :math:`r1` and :math:`r2` are a lenght scale constants, and :math:`n` is an exponent.
+
+Keywords::
+
+    >>> names_of_parameters('shift')
+    ['epsilon', 'r1', 'r2', 'n']
+
+.. only:: html
+
+ .. plot::
+   
+   import matplotlib.pyplot as plt
+   from math import exp
+   x = []; y = []
+   start = 0.9
+   end = 5.0
+   steps = 100
+   dx = (end-start)/steps
+   for i in range(steps+1):
+       xval = start + i*dx
+       x.append( xval )
+       y.append( (10.0 - xval) / (10.0 - 2.0) * (10.0 - xval) / (10.0 - 2.0) )
+   plt.plot(x,y)
+   plt.title(r'Power decay potential: $\varepsilon = 1.0$, $r1 = 10.0$, $r2 = 2.0$, $n = 2.0$')
+   plt.xlim(0.9,5.0)
+   #plt.ylim(0.0,1.0)
+   plt.xlabel('$r$')
+   plt.ylabel('$V$')
+   plt.show()
+
+
+Fortran routines:
+
+- :meth:`create_potential_characterizer_shift`
+- :meth:`evaluate_energy_shift`
+- :meth:`evaluate_force_shift`
 
 
 .. file:harmonic potential

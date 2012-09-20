@@ -135,6 +135,7 @@ must be updated accordingly.
     - :data:`pair_qabs_index`
     - :data:`pair_qexp_index`
     - :data:`pair_qpair_index`
+    - :data:`pair_shift_index`
     - :data:`pair_spring_index`
     - :data:`pair_table_index`
     - :data:`param_name_length`
@@ -195,6 +196,7 @@ must be updated accordingly.
     - :func:`create_potential_characterizer_dihedral`
     - :func:`create_potential_characterizer_exp`
     - :func:`create_potential_characterizer_power`
+    - :func:`create_potential_characterizer_shift`
     - :func:`create_potential_characterizer_spring`
     - :func:`create_potential_characterizer_table`
     - :func:`evaluate_bond_order_factor`
@@ -229,6 +231,7 @@ must be updated accordingly.
     - :func:`evaluate_energy_dihedral`
     - :func:`evaluate_energy_exp`
     - :func:`evaluate_energy_power`
+    - :func:`evaluate_energy_shift`
     - :func:`evaluate_energy_spring`
     - :func:`evaluate_energy_table`
     - :func:`evaluate_force_LJ`
@@ -240,6 +243,7 @@ must be updated accordingly.
     - :func:`evaluate_force_dihedral`
     - :func:`evaluate_force_exp`
     - :func:`evaluate_force_power`
+    - :func:`evaluate_force_shift`
     - :func:`evaluate_force_spring`
     - :func:`evaluate_force_table`
     - :func:`evaluate_forces`
@@ -371,7 +375,7 @@ Full documentation of global variables in potentials
 
     integer    *scalar*  *parameter*  
 
-    *initial value* = 14
+    *initial value* = 15
     
     number of different types of potentials known
     
@@ -436,6 +440,14 @@ Full documentation of global variables in potentials
     integer    *scalar*  *parameter*  
 
     *initial value* = 12
+    
+    
+    
+  .. data:: pair_shift_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 15
     
     
     
@@ -1283,6 +1295,16 @@ Full documentation of subroutines in potentials
     index: integer  *intent(in)*    *scalar*  
         index of the potential
             
+  .. function:: create_potential_characterizer_shift(index)
+
+    Shift characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
   .. function:: create_potential_characterizer_spring(index)
 
     spring characterizer initialization
@@ -1905,6 +1927,22 @@ Full documentation of subroutines in potentials
     **energy**: double precision  **intent(out)**    *scalar*  
         the calculated energy :math:`v_{ijk}`
             
+  .. function:: evaluate_energy_shift(separations, distances, interaction, energy)
+
+    Shift energy
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+            
   .. function:: evaluate_energy_spring(separations, distances, interaction, energy)
 
     spring energy
@@ -2081,6 +2119,22 @@ Full documentation of subroutines in potentials
   .. function:: evaluate_force_power(separations, distances, interaction, force)
 
     Power force
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **force**: double precision  **intent(out)**    *size(3, 2)*  
+        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+            
+  .. function:: evaluate_force_shift(separations, distances, interaction, force)
+
+    Shift force
     
 
     Parameters:
