@@ -52,19 +52,35 @@ class ProductPotential:
     
     def add_potential(self,potential):
         """Adds a potential in the product.
+        
+        If another ProductPotential is given as an argument, the
+        individual potentials in the product are added one by one to this
+        product.
+        
+        Also a list of potentials can be given. Then all the listed potentials
+        are added to the product.
             
         Parameters:
             
         potential: a :class:`~pysic.interactions.local.Potential` object
             the potential to be added
             """
-        if self.n_targets is None:
-            self.n_targets = potential.get_number_of_targets()
         
-        elif self.n_targets != potential.get_number_of_targets():
-            raise InvalidPotentialError("You may only multiply potentials with the same number of targets.")
+        if isinstance(potential, list):
+            potlist = potential
+        else:
+            potlist = [potlist]
+            
+        for potti in potlist:
+            if self.n_targets is None:
+                self.n_targets = potti.get_number_of_targets()
+        
+            elif self.n_targets != potti.get_number_of_targets():
+                raise InvalidPotentialError("You may only multiply potentials with the same number of targets.")
 
-        self.potentials.append(copy.deepcopy(potential))
+            # in case a product potential is given, add the individual potentials
+            for pot in potti.get_potentials():
+                self.potentials.append(copy.deepcopy(pot))
 
 
     def get_symbols(self):

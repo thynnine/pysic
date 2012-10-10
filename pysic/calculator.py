@@ -489,13 +489,18 @@ class Pysic:
 
     def set_potentials(self, potentials):
         """Assign a list of potentials to the calculator.
+        
+        Also a single potential object can be given, instead of a list.
+        Note that this method does not conserve any potentials that were
+        already known by the calculator. To add potentials to the list
+        of known potentials, use :meth:`~pysic.calculator.Pysic.add_potential`.
 
         Parameters:
 
         potentials: list of :class:`~pysic.interactions.local.Potential` objects
             a list of potentials to describe interactinos
         """
-        if potentials == None:
+        if potentials is None:
             pass
         else:
             self.forces = None
@@ -515,6 +520,9 @@ class Pysic:
     
     def add_potential(self, potential):
         """Add a potential to the list of potentials.
+        
+        Also a list of potentials can be given as an argument.
+        In that case, the potentials are added one by one.
 
         Parameters:
 
@@ -522,14 +530,21 @@ class Pysic:
             a new potential to describe interactions
         """
 
-        if self.potentials == None:
+        if self.potentials is None:
             self.potentials = []
 
-        self.potentials.append(potential)
-        self.forces = None
-        self.energy = None
-        self.stress = None
-        self.electronegativities = None
+        if isinstance(potential,list):
+           pots = potential
+        else:
+            pots = [potential]
+    
+        for pot in pots:
+            self.potentials.append(pot)
+            self.forces = None
+            self.energy = None
+            self.stress = None
+            self.electronegativities = None
+
         new_cutoffs = self.get_individual_cutoffs(1.0)
         self.neighbor_lists_waiting = not self.neighbor_lists_expanded(new_cutoffs)
     
