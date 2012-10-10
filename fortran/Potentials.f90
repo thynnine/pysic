@@ -5716,7 +5716,7 @@ contains
 
     ! Record the number of parameters
     bond_order_descriptors(index)%n_parameters(1) = 0 ! no 1-body params
-    bond_order_descriptors(index)%n_parameters(2) = 2 ! no 2-body params
+    bond_order_descriptors(index)%n_parameters(2) = 2 ! 2 2-body params
     max_params = 2 ! maxval(bond_order_descriptors(index)%n_parameters)
 
     ! Allocate space for storing the parameter names and descriptions.

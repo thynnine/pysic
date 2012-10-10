@@ -265,7 +265,7 @@ class ProductPotential:
         return self.potentials[0].accepts_target_list(targets)
 
 
-class Potential:
+class Potential(object):
     """Class for representing a potential.
 
     Several types of potentials can be defined by specifying the type of the potential
@@ -299,6 +299,10 @@ class Potential:
         a list of parameters for characterizing the potential; their meaning depends on the type of potential
     cutoff: double
         the maximum atomic separation at which the potential is applied
+    cutoff_margin: double
+        the margin in which the potential is smoothly truncated to zero
+    coordinator: :class:`~pysic.interactions.bondorder.Coordinator` object
+        the coordinator defining a bond order factor for scaling the potential
     """
 
     def __init__(self,potential_type,symbols=None,tags=None,indices=None,parameters=None,cutoff=0.0,cutoff_margin=0.0,coordinator=None):
@@ -316,7 +320,7 @@ class Potential:
             self.set_symbols(symbols)
             self.set_tags(tags)
             self.set_indices(indices)
-            if(parameters == None):
+            if(parameters is None):
                 self.parameters = len(self.names_of_params)*[0.0]
             else:
                 self.parameters = parameters
@@ -325,7 +329,7 @@ class Potential:
                 raise InvalidPotentialError(
                     'The potential "{pot}" requires {num} parameters: {par}'.format(
                     pot=potential_type,
-                    num=str(number_of_parameters(potential_type)),
+                    num=str(self.get_number_of_parameters()),
                     par=str(names_of_parameters(potential_type))
                     ) )
             self.set_coordinator(coordinator)
@@ -370,7 +374,12 @@ class Potential:
                                                marg=str(self.cutoff_margin),
                                                coord=str(self.coordinator))
     
-                                          
+    
+    def get_number_of_parameters(self):
+        """Return the number of parameters the potential expects.
+            """
+        return number_of_parameters(self.potential_type)
+    
     def get_symbols(self):
         """Return a list of the chemical symbols (elements) on which the potential
         acts on."""
@@ -641,12 +650,12 @@ class Potential:
         values: list of doubles
             list of values to be assigned to parameters
         """
-        if len(values) == number_of_parameters(self.potential_type):
+        if len(values) == self.get_number_of_parameters():
             self.parameters = values
         else:
             raise InvalidPotentialError("The potential '{pot}' takes {n_par} parameters, not {n_in}.".
                                         format(pot=self.potential_type,
-                                               n_par=number_of_parameters(self.potential_type),
+                                               n_par=self.get_number_of_parameters(),
                                                n_in=len(values)))
 
     def set_parameter_value(self,parameter_name,value):

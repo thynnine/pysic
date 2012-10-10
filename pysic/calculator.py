@@ -532,7 +532,23 @@ class Pysic:
         self.electronegativities = None
         new_cutoffs = self.get_individual_cutoffs(1.0)
         self.neighbor_lists_waiting = not self.neighbor_lists_expanded(new_cutoffs)
-        
+    
+    
+    def remove_potential(self, potential):
+        """Remove a potential from the list of potentials.
+            
+        Parameters:
+            
+        potential: :class:`~pysic.interactions.local.Potential` object
+            the potential to be removed
+        """
+
+        # cannot just remove a potential due to the cutoffs and other
+        # changing factors
+        new_pots = self.get_potentials().copy()
+        new_pots.remove(potential)
+        self.set_potentials(new_pots)
+
     
     def set_coulomb_summation(self,coulomb):
         """Set the Coulomb summation algorithm for the calculator.
@@ -1277,7 +1293,7 @@ class Pysic:
 
         self.energy == None
         self.get_potential_energy(orig_system)
-        
+                
         return [ -(energy_xp-energy_xm)/(2.0*shift),
                  -(energy_yp-energy_ym)/(2.0*shift),
                  -(energy_zp-energy_zm)/(2.0*shift) ]
