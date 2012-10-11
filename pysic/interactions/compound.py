@@ -50,6 +50,10 @@ class CompoundPotential(Potential):
         self.indices = None
         self.cutoff = cutoff
         self.cutoff_margin = 0.0
+        if parameters is None:
+            self.parameters = [0.0]*n_params
+        else:
+            self.parameters = parameters
         self.set_cutoff_margin(cutoff_margin)
         self.set_symbols(symbols)
         self.set_tags(tags)
@@ -59,6 +63,8 @@ class CompoundPotential(Potential):
         self.description_of_params = ["description missing"]*n_params
         self.description = "This compound potential has no description."
         self.pieces = []
+        self.define_elements()
+
     
     def __eq__(self,other):
         try:
@@ -88,9 +94,22 @@ class CompoundPotential(Potential):
         return not self.__eq__(other)
 
     def get_number_of_parameters(self):
+        """Returns the number of parameters the potential accepts.
+        """
         return self.n_params
 
     def set_potential_type(self,type):
+        """Sets the name of the potential.
+        
+        This can be used by subclasses to set the name of the potential.
+        Since normal potentials are distinguished by their names (keywords)
+        compound potentials should also have a name for consistency.
+        
+        Parameters:
+        
+        type: string
+            The name of the potential
+        """
         self.potential_type = type
 
     def get_elements(self):
@@ -100,31 +119,89 @@ class CompoundPotential(Potential):
     
     def build(self,calculator):
         """Constructs the potential for the calculator as a collection of elemental potentials.
+        
+        The method adds all the elemental potentials it consists of one by one through
+        the :meth:`pysic.calculator.Pysic.add_potential` method.
             
-            Parameters:
+        Parameters:
             
-            calculator: :class:`~pysic.calculator.Pysic` object
-                the Pysic calculator to which the potential is added
-            """
+        calculator: :class:`~pysic.calculator.Pysic` object
+            the Pysic calculator to which the potential is added
+        """
         
         for potential in self.pieces:
             calculator.add_potential(potential)
 
     def remove(self,calculator):
-        """Constructs the potential for the calculator as a collection of elemental potentials.
+        """Removes the elemental potentials this compound contains from the calculator.
+        
+        The method removes all the elemental potentials it consists of one by one through
+        the :meth:`pysic.calculator.Pysic.remove_potential` method.
+        If a match is not found in the set of potentials in the calculator, a message will be 
+        printed but the removal process continues.
+        
+        Parameters:
                         
-            Parameters:
-                        
-            calculator: :class:`~pysic.calculator.Pysic` object
-                the Pysic calculator from which the potential is removed
+        calculator: :class:`~pysic.calculator.Pysic` object
+            the Pysic calculator from which the potential is removed
         """
 
         for pot in self.pieces:
-            calculator.remove(pot)
+            try:
+                calculator.remove_potential(pot)
+            except:
+                print "Could not remove a potential "+pot.get_potential_type+" from the calculator."
 
 
     def define_elements(self):
+        """Fills the compound potential with the elemental potentials it is made of.
+        
+        This method just stores an empty list. Any subclass to be used as a compound potential
+        should re-implement this method.
+        """
         self.pieces = []
 
 
-# !!!: implement describe()
+    def describe(self):
+        """Prints a description of the potential on-screen.
+        """
+    
+        message = """
+potential '{pot}'
+    
+{n_targ}-body interaction
+
+{descr}
+parameters ({n_par}):
+""".format(pot=self.potential_type,
+            n_targ=str(self.n_targets),
+            descr=self.description,
+            n_par=str(self.n_params))
+
+        for para, note, val in zip(self.names_of_params,
+                                self.descriptions_of_params,
+                                self.parameters):
+            message += "{pa} : {no} = {va}\n".format(pa=para,no=note,va=val)
+
+        message += "\ncutoff = {cut}\n".format(cut=str(self.cutoff))
+
+        message += "\ntargeted symbols:"
+        if not self.symbols is None:
+            for ele in self.symbols:
+                message += " {0} ".format(str(ele))
+            message += "\n"
+
+        if not self.tags is None:
+            message += "\ntargeted tags:"
+            for tag in self.tags:
+                message += " {0} ".format(str(tag))
+            message += "\n"
+
+        if not self.indices is None:
+            message += "\ntargeted indices:"
+            for indy in self.indices:
+                message += " {0} ".format(str(indy))
+            message += "\n"
+            
+        print message
+

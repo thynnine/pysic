@@ -401,7 +401,7 @@ _____________________________
 
 .. math::
 
-   b_i = \sum_{j \ne i} f(r_{ij}) \varepsilon_{ij} (\frac{a_{ij}}{r_{ij}})^{n_{ij}}.
+   b_i = \sum_{j \ne i} f(r_{ij})  \left(\frac{a_{ij}}{r_{ij}}\right)^{n_{ij}}.
 
 This is a density-like bond factor, where the contributions of atomic pairs decay with 
 interatomic distance according to a power law. In form, it is similar to the :ref:`power decay potential` potential.
@@ -409,7 +409,7 @@ interatomic distance according to a power law. In form, it is similar to the :re
 Keywords::
 
     >>> names_of_parameters('power_bond')
-    [[], [epsilon, a, n]]
+    [[], [a, n]]
 
 .. file:tabulated bond order factor
 

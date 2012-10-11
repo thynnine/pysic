@@ -61,7 +61,7 @@ where
 and r are the interatomic distances.
 """
 
-    def define_elements(self):
+    def define_elements(self):        
 
         # initialize the collection of elemental potentials
         self.pieces = []

@@ -145,6 +145,7 @@ The graph below show the main dependancies between the Python and Fortran classe
  - :class:`pysic.interactions.coulomb.CoulombSummation`
  - :class:`pysic.interactions.bondorder.Coordinator`
  - :class:`pysic.interactions.bondorder.BondOrderParameters`
+ - :class:`pysic.interactions.compound.CompoundPotential`
  - :class:`pysic.charges.relaxation.ChargeRelaxation`
  - :class:`pysic.calculator.FastNeighborList`
  - :class:`pysic.core.CoreMirror`

@@ -69,7 +69,7 @@ class ProductPotential:
         if isinstance(potential, list):
             potlist = potential
         else:
-            potlist = [potlist]
+            potlist = [potential]
             
         for potti in potlist:
             if self.n_targets is None:

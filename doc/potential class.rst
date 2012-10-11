@@ -302,7 +302,7 @@ _______________________
 
     V(r) = \varepsilon \left( \frac{r_1 - r}{r_1 - r_2} \right)^n
 
-where :math:`\varepsilon` is an energy scale constant, :math:`r1` and :math:`r2` are a lenght scale constants, and :math:`n` is an exponent.
+where :math:`\varepsilon` is an energy scale constant, :math:`r_1` and :math:`r_2` are a lenght scale constants, and :math:`n` is an exponent.
 
 Keywords::
 
@@ -325,7 +325,7 @@ Keywords::
        x.append( xval )
        y.append( (10.0 - xval) / (10.0 - 2.0) * (10.0 - xval) / (10.0 - 2.0) )
    plt.plot(x,y)
-   plt.title(r'Power decay potential: $\varepsilon = 1.0$, $r1 = 10.0$, $r2 = 2.0$, $n = 2.0$')
+   plt.title(r'Power decay potential: $\varepsilon = 1.0$, $r_1 = 10.0$, $r_2 = 2.0$, $n = 2.0$')
    plt.xlim(0.9,5.0)
    #plt.ylim(0.0,1.0)
    plt.xlabel('$r$')
@@ -922,6 +922,7 @@ ____________________
 
 - :meth:`~pysic.interactions.local.Potential.get_cutoff`
 - :meth:`~pysic.interactions.local.Potential.get_cutoff_margin`
+- :meth:`~pysic.interactions.local.Potential.get_number_of_parameters`
 - :meth:`~pysic.interactions.local.Potential.get_parameter_names`
 - :meth:`~pysic.interactions.local.Potential.get_parameter_value`
 - :meth:`~pysic.interactions.local.Potential.get_parameter_values`

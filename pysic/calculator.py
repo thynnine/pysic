@@ -7,7 +7,8 @@ and calculators.
 
 from pysic.core import *
 from pysic.utility.error import *
-from pysic.interactions.local import Potential
+from pysic.interactions.local import Potential, ProductPotential
+from pysic.interactions.compound import CompoundPotential
 from pysic.interactions.bondorder import Coordinator, BondOrderParameters
 from pysic.interactions.coulomb import CoulombSummation
 from pysic.charges.relaxation import ChargeRelaxation
@@ -524,6 +525,10 @@ class Pysic:
         Also a list of potentials can be given as an argument.
         In that case, the potentials are added one by one.
 
+        If a :class:`~pysic.interactions.compound.CompoundPotential` is given,
+        the addition is done through its 
+        :meth:`~pysic.interactions.compound.CompoundPotential.build` method.
+
         Parameters:
 
         potential: :class:`.interactions.local.Potential` object
@@ -534,16 +539,20 @@ class Pysic:
             self.potentials = []
 
         if isinstance(potential,list):
-           pots = potential
+            pots = potential
         else:
             pots = [potential]
     
         for pot in pots:
-            self.potentials.append(pot)
-            self.forces = None
-            self.energy = None
-            self.stress = None
-            self.electronegativities = None
+            if isinstance(pot,CompoundPotential):
+                pot.build(self)
+            else:
+                self.potentials.append(pot)
+    
+        self.forces = None
+        self.energy = None
+        self.stress = None
+        self.electronegativities = None
 
         new_cutoffs = self.get_individual_cutoffs(1.0)
         self.neighbor_lists_waiting = not self.neighbor_lists_expanded(new_cutoffs)
@@ -551,6 +560,10 @@ class Pysic:
     
     def remove_potential(self, potential):
         """Remove a potential from the list of potentials.
+            
+        If a :class:`~pysic.interactions.compound.CompoundPotential` is given,
+        the removal is done through its 
+        :meth:`~pysic.interactions.compound.CompoundPotential.remove` method.
             
         Parameters:
             
@@ -560,9 +573,12 @@ class Pysic:
 
         # cannot just remove a potential due to the cutoffs and other
         # changing factors
-        new_pots = self.get_potentials().copy()
-        new_pots.remove(potential)
-        self.set_potentials(new_pots)
+        if isinstance(potential, CompoundPotential):
+            potential.remove(self)
+        else:
+            new_pots = self.get_potentials().copy()
+            new_pots.remove(potential)
+            self.set_potentials(new_pots)
 
     
     def set_coulomb_summation(self,coulomb):
