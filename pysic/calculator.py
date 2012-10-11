@@ -514,9 +514,12 @@ class Pysic:
 
             try:
                 assert isinstance(potentials,list)
-                self.potentials = potentials
+                potlist = potentials
             except:
-                self.potentials = [potentials]
+                potlist = [potentials]
+
+            for pot in potlist:
+                self.add_potential(pot)
     
     
     def add_potential(self, potential):
