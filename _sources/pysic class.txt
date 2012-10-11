@@ -98,6 +98,7 @@ __________________
 - :meth:`~pysic.calculator.Pysic.add_potential`
 - :meth:`~pysic.calculator.Pysic.get_individual_cutoffs`
 - :meth:`~pysic.calculator.Pysic.get_potentials`
+- :meth:`~pysic.calculator.Pysic.remove_potential`
 - :meth:`~pysic.calculator.Pysic.set_potentials`
 
 Coulomb handling

@@ -41,6 +41,7 @@ Classes of the pysic module
    coulombsummation class
    coordinator class
    bondorderparameters class
+   compoundpotential class
    chargerelaxation class
    fastneighborlist class
    coremirror class

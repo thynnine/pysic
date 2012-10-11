@@ -320,6 +320,11 @@ list of additional indices on which the potential acts</p>
 <dt id="pysic.interactions.local.ProductPotential.add_potential">
 <tt class="descname">add_potential</tt><big>(</big><em>potential</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#ProductPotential.add_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.ProductPotential.add_potential" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adds a potential in the product.</p>
+<p>If another ProductPotential is given as an argument, the
+individual potentials in the product are added one by one to this
+product.</p>
+<p>Also a list of potentials can be given. Then all the listed potentials
+are added to the product.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>potential: a <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> object</dt>

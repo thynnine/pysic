@@ -1,0 +1,379 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>CompoundPotential class &mdash; Pysic 0.4.4 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.4.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
+    <link rel="up" title="Pysic module" href="pysic.html" />
+    <link rel="next" title="ChargeRelaxation class" href="chargerelaxation class.html" />
+    <link rel="prev" title="BondOrderParameters class" href="bondorderparameters class.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="chargerelaxation class.html" title="ChargeRelaxation class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="bondorderparameters class.html" title="BondOrderParameters class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CompoundPotential class</a><ul>
+<li><a class="reference internal" href="#using-compoundpotential">Using CompoundPotential</a></li>
+<li><a class="reference internal" href="#defining-new-wrappers">Defining new wrappers</a></li>
+<li><a class="reference internal" href="#list-of-methods">List of methods</a><ul>
+<li><a class="reference internal" href="#interaction-handling">Interaction handling</a></li>
+<li><a class="reference internal" href="#coordinator-handling">Coordinator handling</a></li>
+<li><a class="reference internal" href="#target-handling">Target handling</a></li>
+<li><a class="reference internal" href="#description">Description</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#full-documentation-of-the-compoundpotential-class">Full documentation of the CompoundPotential class</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="bondorderparameters class.html"
+                        title="previous chapter">BondOrderParameters class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="chargerelaxation class.html"
+                        title="next chapter">ChargeRelaxation class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/compoundpotential class.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="compoundpotential-class"></span><div class="section" id="compoundpotential-class-description">
+<span id="id1"></span><h1>CompoundPotential class<a class="headerlink" href="#compoundpotential-class-description" title="Permalink to this headline">¶</a></h1>
+<p>This class defines an interaction as a collection of <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>s,
+<a class="reference internal" href="productpotential class.html#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a>s, <a class="reference internal" href="coordinator class.html#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a>s, and
+<a class="reference internal" href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters" title="pysic.interactions.bondorder.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">BondOrderParameters</span></tt></a>. It is a wrapper to ease the handling of complicated potentials.</p>
+<div class="section" id="using-compoundpotential">
+<span id="id2"></span><h2>Using CompoundPotential<a class="headerlink" href="#using-compoundpotential" title="Permalink to this headline">¶</a></h2>
+<p>The <a class="reference internal" href="#pysic.interactions.compound.CompoundPotential" title="pysic.interactions.compound.CompoundPotential"><tt class="xref py py-class docutils literal"><span class="pre">CompoundPotential</span></tt></a> class does not define a potential itself, but it defines an abstract superclass which can be used for defining particular potentials as subclasses. One such subclass is the Sutton-Chen potential, which will be used as an example here.</p>
+<p>Sutton-Chen potential combines a simple power-law potential with a similar density-like term</p>
+<div class="math">
+\[\begin{split}U &amp; = \varepsilon \left[ \sum_{i,j} \left( \frac{a}{r_{ij}} \right)^n - c \sum_i \sqrt{\rho_i} \right] \\
+\rho_i &amp; = \sum_j \left( \frac{a}{r_{ij}} \right)^m\end{split}\]</div>
+<p>In Pysic, this can be defined by a structure like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">power_pot</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;power&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rho</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;power_bond&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">root</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;sqrt_scale&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sqrt_rho</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Coordinator</span><span class="p">([</span><span class="n">root</span><span class="p">,</span> <span class="n">rho</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">rho_pot</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;constant&#39;</span><span class="p">,</span> <span class="n">coordinator</span><span class="o">=</span><span class="n">sqrt_rho</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">calc</span><span class="o">.</span><span class="n">set_potentials</span><span class="p">([</span><span class="n">power_pot</span><span class="p">,</span> <span class="n">rho_pot</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>but this is already somewhat cumbersome. It is much nicer to wrap the definitions in a container:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sutton_chen_pot</span> <span class="o">=</span> <span class="n">SuttonChenPotential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">calc</span><span class="o">.</span><span class="n">set_potentials</span><span class="p">(</span><span class="n">sutton_chen_pot</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>This is the purpose of <a class="reference internal" href="#pysic.interactions.compound.CompoundPotential" title="pysic.interactions.compound.CompoundPotential"><tt class="xref py py-class docutils literal"><span class="pre">CompoundPotential</span></tt></a> and its
+subclasses.</p>
+<p>The central classes such as <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">pysic.interactions.local.Potential</span></tt></a> are imported
+automatically with the <a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a> module, which is why you can refer to them with <tt class="docutils literal"><span class="pre">pysic.Potential</span></tt>.
+Compound potentials are not, so you need to manually import them, for instance like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysic.interactions.suttonchen</span> <span class="kn">import</span> <span class="n">SuttonChenPotential</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">sutton_chen_pot</span> <span class="o">=</span> <span class="n">SuttonChenPotential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The potentials provided with pysic are all found in <cite>pysic.interactions.x</cite> where <cite>x</cite> is
+the name of the submodule containing the potential.</p>
+</div>
+<div class="section" id="defining-new-wrappers">
+<span id="defining-compoundpotentials"></span><h2>Defining new wrappers<a class="headerlink" href="#defining-new-wrappers" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference internal" href="#pysic.interactions.compound.CompoundPotential" title="pysic.interactions.compound.CompoundPotential"><tt class="xref py py-class docutils literal"><span class="pre">CompoundPotential</span></tt></a> inherits the interface of
+<a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> and it is used in a similar fashion.
+A subclass of <a class="reference internal" href="#pysic.interactions.compound.CompoundPotential" title="pysic.interactions.compound.CompoundPotential"><tt class="xref py py-class docutils literal"><span class="pre">CompoundPotential</span></tt></a> then also
+inherits the interface, and so it is easy to create new potentials this way without
+having to care about the interface. Defining a subclass in Python is done like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">class</span> <span class="nc">SuttonChenPotential</span><span class="p">(</span><span class="n">CompoundPotential</span><span class="p">):</span>
+<span class="gp">... </span>    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">...</span><span class="p">):</span>
+<span class="gp">... </span>        <span class="nb">super</span><span class="p">(</span><span class="n">SuttonChenPotential</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+<p>The brackets in the class definition, <tt class="docutils literal"><span class="pre">(CompoundPotential)</span></tt>, tell that the class
+derives from another class and inherits its functionality. In the constructor, <tt class="docutils literal"><span class="pre">__init__</span></tt>,
+the superclass constructor is called with <tt class="docutils literal"><span class="pre">super(SuttonChenPotential,</span> <span class="pre">self).__init__(...)</span></tt>,
+but it is also possible to extend the constructor with additional commands.</p>
+<p>Compound potentials store their components in a list called <tt class="docutils literal"><span class="pre">self.pieces</span></tt>, and this is
+done in the method <a class="reference internal" href="#pysic.interactions.compound.CompoundPotential.define_elements" title="pysic.interactions.compound.CompoundPotential.define_elements"><tt class="xref py py-meth docutils literal"><span class="pre">define_elements()</span></tt></a>.
+The components are passed to the calculator via the
+<a class="reference internal" href="#pysic.interactions.compound.CompoundPotential.build" title="pysic.interactions.compound.CompoundPotential.build"><tt class="xref py py-meth docutils literal"><span class="pre">build()</span></tt></a> method. This is automatically
+called a compound potential is given to the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.add_potential" title="pysic.calculator.Pysic.add_potential"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.calculator.Pysic.add_potential()</span></tt></a> method,
+so that the interface is similar to that of simple potentials.
+For the Sutton-Chen example, the definitions could look something like this:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="o">...</span>     <span class="k">def</span> <span class="nf">define_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="o">...</span>         <span class="n">power_pot</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;power&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="o">...</span>         <span class="n">rho</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;power_bond&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="o">...</span>         <span class="n">root</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;sqrt_scale&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
+<span class="o">...</span>         <span class="n">sqrt_rho</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Coordinator</span><span class="p">([</span><span class="n">root</span><span class="p">,</span> <span class="n">rho</span><span class="p">])</span>
+<span class="o">...</span>         <span class="n">rho_pot</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;constant&#39;</span><span class="p">,</span> <span class="n">coordinator</span><span class="o">=</span><span class="n">sqrt_rho</span><span class="p">)</span>
+<span class="o">...</span>         <span class="bp">self</span><span class="o">.</span><span class="n">pieces</span> <span class="o">=</span> <span class="p">[</span><span class="n">power_pot</span><span class="p">,</span> <span class="n">rho_pot</span><span class="p">]</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>In principle, this is the only method that a new potential has to override, since the rest is done
+automatically. Of course, it is possible
+to override other methods as well or write new ones. The potentials can be made very general,
+accepting free parameters and target lists, but it is also possible to hard code the parameters.
+The latter tends to be easier since handling arbitrary lists of parameters becomes easily a code-intensive
+task.</p>
+</div>
+<div class="section" id="list-of-methods">
+<span id="compoundpotential-class-autogenerated"></span><h2>List of methods<a class="headerlink" href="#list-of-methods" title="Permalink to this headline">¶</a></h2>
+<p>Below is a list of methods in <a class="reference internal" href="#pysic.interactions.compound.CompoundPotential" title="pysic.interactions.compound.CompoundPotential"><tt class="xref py py-class docutils literal"><span class="pre">CompoundPotential</span></tt></a>, grouped according to
+the type of functionality. Note that most methods are inherited from the <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> class.</p>
+<div class="section" id="interaction-handling">
+<h3>Interaction handling<a class="headerlink" href="#interaction-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.interactions.compound.CompoundPotential.build" title="pysic.interactions.compound.CompoundPotential.build"><tt class="xref py py-meth docutils literal"><span class="pre">build()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_cutoff" title="pysic.interactions.local.Potential.get_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.interactions.local.Potential.get_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_cutoff_margin" title="pysic.interactions.local.Potential.get_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.interactions.local.Potential.get_cutoff_margin()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.compound.CompoundPotential.get_elements" title="pysic.interactions.compound.CompoundPotential.get_elements"><tt class="xref py py-meth docutils literal"><span class="pre">get_elements()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.compound.CompoundPotential.get_number_of_parameters" title="pysic.interactions.compound.CompoundPotential.get_number_of_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">get_number_of_parameters()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_parameter_names" title="pysic.interactions.local.Potential.get_parameter_names"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.interactions.local.Potential.get_parameter_names()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_parameter_value" title="pysic.interactions.local.Potential.get_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.interactions.local.Potential.get_parameter_value()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_parameter_values" title="pysic.interactions.local.Potential.get_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.interactions.local.Potential.get_parameter_values()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.compound.CompoundPotential.set_potential_type" title="pysic.interactions.compound.CompoundPotential.set_potential_type"><tt class="xref py py-meth docutils literal"><span class="pre">set_potential_type()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_soft_cutoff" title="pysic.interactions.local.Potential.get_soft_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.interactions.local.Potential.get_soft_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.compound.CompoundPotential.remove" title="pysic.interactions.compound.CompoundPotential.remove"><tt class="xref py py-meth docutils literal"><span class="pre">remove()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.set_cutoff" title="pysic.interactions.local.Potential.set_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.interactions.local.Potential.set_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.set_cutoff_margin" title="pysic.interactions.local.Potential.set_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.interactions.local.Potential.set_cutoff_margin()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.set_parameter_value" title="pysic.interactions.local.Potential.set_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.interactions.local.Potential.set_parameter_value()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.set_parameter_values" title="pysic.interactions.local.Potential.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.interactions.local.Potential.set_parameter_values()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.set_soft_cutoff" title="pysic.interactions.local.Potential.set_soft_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.interactions.local.Potential.set_soft_cutoff()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="coordinator-handling">
+<h3>Coordinator handling<a class="headerlink" href="#coordinator-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_coordinator" title="pysic.interactions.local.Potential.get_coordinator"><tt class="xref py py-meth docutils literal"><span class="pre">get_coordinator()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.set_coordinator" title="pysic.interactions.local.Potential.set_coordinator"><tt class="xref py py-meth docutils literal"><span class="pre">set_coordinator()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="target-handling">
+<h3>Target handling<a class="headerlink" href="#target-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.accepts_target_list" title="pysic.interactions.local.Potential.accepts_target_list"><tt class="xref py py-meth docutils literal"><span class="pre">accepts_target_list()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.add_indices" title="pysic.interactions.local.Potential.add_indices"><tt class="xref py py-meth docutils literal"><span class="pre">add_indices()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.add_symbols" title="pysic.interactions.local.Potential.add_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">add_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.add_tags" title="pysic.interactions.local.Potential.add_tags"><tt class="xref py py-meth docutils literal"><span class="pre">add_tags()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_different_indices" title="pysic.interactions.local.Potential.get_different_indices"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_indices()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_different_symbols" title="pysic.interactions.local.Potential.get_different_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_different_tags" title="pysic.interactions.local.Potential.get_different_tags"><tt class="xref py py-meth docutils literal"><span class="pre">get_different_tags()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_indices" title="pysic.interactions.local.Potential.get_indices"><tt class="xref py py-meth docutils literal"><span class="pre">get_indices()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_number_of_targets" title="pysic.interactions.local.Potential.get_number_of_targets"><tt class="xref py py-meth docutils literal"><span class="pre">get_number_of_targets()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_symbols" title="pysic.interactions.local.Potential.get_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">get_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_tags" title="pysic.interactions.local.Potential.get_tags"><tt class="xref py py-meth docutils literal"><span class="pre">get_tags()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.set_indices" title="pysic.interactions.local.Potential.set_indices"><tt class="xref py py-meth docutils literal"><span class="pre">set_indices()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.set_symbols" title="pysic.interactions.local.Potential.set_symbols"><tt class="xref py py-meth docutils literal"><span class="pre">set_symbols()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.set_tags" title="pysic.interactions.local.Potential.set_tags"><tt class="xref py py-meth docutils literal"><span class="pre">set_tags()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="description">
+<h3>Description<a class="headerlink" href="#description" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.interactions.compound.CompoundPotential.describe" title="pysic.interactions.compound.CompoundPotential.describe"><tt class="xref py py-meth docutils literal"><span class="pre">describe()</span></tt></a></li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.is_multiplier" title="pysic.interactions.local.Potential.is_multiplier"><tt class="xref py py-meth docutils literal"><span class="pre">is_multiplier()</span></tt></a> (meant for internal use)</li>
+<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential.get_potentials" title="pysic.interactions.local.Potential.get_potentials"><tt class="xref py py-meth docutils literal"><span class="pre">get_potentials()</span></tt></a> (meant for internal use)</li>
+</ul>
+</div>
+</div>
+<div class="section" id="full-documentation-of-the-compoundpotential-class">
+<h2>Full documentation of the CompoundPotential class<a class="headerlink" href="#full-documentation-of-the-compoundpotential-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pysic.interactions.compound.CompoundPotential">
+<em class="property">class </em><tt class="descclassname">pysic.interactions.compound.</tt><tt class="descname">CompoundPotential</tt><big>(</big><em>n_targets</em>, <em>n_params</em>, <em>symbols=None</em>, <em>tags=None</em>, <em>indices=None</em>, <em>parameters=None</em>, <em>cutoff=0.0</em>, <em>cutoff_margin=0.0</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/compound.html#CompoundPotential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.compound.CompoundPotential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class representing an interaction constructed of several <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> and <a class="reference internal" href="productpotential class.html#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a> objects.</p>
+<p>This class implements the framework for wrapping complicated potentials as
+Python objects.
+The class itself implements an empty potential. To utilize the compound potential
+for real calculations, subclasses should be used for defining the actual contents
+of the potential.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_targets: integer</dt>
+<dd>number of targets the potential acts on</dd>
+<dt>n_params: integer</dt>
+<dd>number of parameters needed for describing the potential</dd>
+<dt>symbols: list of string</dt>
+<dd>the chemical symbols (elements) on which the potential acts</dd>
+<dt>tags: integer</dt>
+<dd>atoms with specific tags on which the potential acts</dd>
+<dt>indices: list of integers</dt>
+<dd>atoms with specific indices on which the potential acts</dd>
+<dt>parameters: list of doubles</dt>
+<dd>a list of parameters for characterizing the potential; their meaning depends on the type of potential</dd>
+<dt>cutoff: double</dt>
+<dd>the maximum atomic separation at which the potential is applied</dd>
+<dt>cutoff_margin: double</dt>
+<dd>the margin in which the potential is smoothly truncated to zero</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.interactions.compound.CompoundPotential.build">
+<tt class="descname">build</tt><big>(</big><em>calculator</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/compound.html#CompoundPotential.build"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.compound.CompoundPotential.build" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructs the potential for the calculator as a collection of elemental potentials.</p>
+<p>The method adds all the elemental potentials it consists of one by one through
+the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.add_potential" title="pysic.calculator.Pysic.add_potential"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.calculator.Pysic.add_potential()</span></tt></a> method.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>calculator: <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> object</dt>
+<dd>the Pysic calculator to which the potential is added</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.compound.CompoundPotential.define_elements">
+<tt class="descname">define_elements</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/compound.html#CompoundPotential.define_elements"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.compound.CompoundPotential.define_elements" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fills the compound potential with the elemental potentials it is made of.</p>
+<p>This method just stores an empty list. Any subclass to be used as a compound potential
+should re-implement this method.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.compound.CompoundPotential.describe">
+<tt class="descname">describe</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.interactions.compound.CompoundPotential.describe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints a description of the potential on-screen.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.compound.CompoundPotential.get_elements">
+<tt class="descname">get_elements</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/compound.html#CompoundPotential.get_elements"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.compound.CompoundPotential.get_elements" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the elemental potentials this compund potential consists of.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.compound.CompoundPotential.get_number_of_parameters">
+<tt class="descname">get_number_of_parameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/compound.html#CompoundPotential.get_number_of_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.compound.CompoundPotential.get_number_of_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the number of parameters the potential accepts.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.compound.CompoundPotential.remove">
+<tt class="descname">remove</tt><big>(</big><em>calculator</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/compound.html#CompoundPotential.remove"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.compound.CompoundPotential.remove" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes the elemental potentials this compound contains from the calculator.</p>
+<p>The method removes all the elemental potentials it consists of one by one through
+the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.remove_potential" title="pysic.calculator.Pysic.remove_potential"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.calculator.Pysic.remove_potential()</span></tt></a> method.
+If a match is not found in the set of potentials in the calculator, a message will be 
+printed but the removal process continues.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>calculator: <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> object</dt>
+<dd>the Pysic calculator from which the potential is removed</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.compound.CompoundPotential.set_potential_type">
+<tt class="descname">set_potential_type</tt><big>(</big><em>type</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/compound.html#CompoundPotential.set_potential_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.compound.CompoundPotential.set_potential_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets the name of the potential.</p>
+<p>This can be used by subclasses to set the name of the potential.
+Since normal potentials are distinguished by their names (keywords)
+compound potentials should also have a name for consistency.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>type: string</dt>
+<dd>The name of the potential</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="chargerelaxation class.html" title="ChargeRelaxation class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="bondorderparameters class.html" title="BondOrderParameters class"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

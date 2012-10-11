@@ -133,6 +133,7 @@ the type of functionality.</p>
 <li><a class="reference internal" href="#pysic.calculator.Pysic.add_potential" title="pysic.calculator.Pysic.add_potential"><tt class="xref py py-meth docutils literal"><span class="pre">add_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#pysic.calculator.Pysic.get_individual_cutoffs" title="pysic.calculator.Pysic.get_individual_cutoffs"><tt class="xref py py-meth docutils literal"><span class="pre">get_individual_cutoffs()</span></tt></a></li>
 <li><a class="reference internal" href="#pysic.calculator.Pysic.get_potentials" title="pysic.calculator.Pysic.get_potentials"><tt class="xref py py-meth docutils literal"><span class="pre">get_potentials()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.calculator.Pysic.remove_potential" title="pysic.calculator.Pysic.remove_potential"><tt class="xref py py-meth docutils literal"><span class="pre">remove_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#pysic.calculator.Pysic.set_potentials" title="pysic.calculator.Pysic.set_potentials"><tt class="xref py py-meth docutils literal"><span class="pre">set_potentials()</span></tt></a></li>
 </ul>
 </div>
@@ -214,6 +215,11 @@ consulting the <a class="reference internal" href="#pysic.calculator.Pysic.core"
 <dt id="pysic.calculator.Pysic.add_potential">
 <tt class="descname">add_potential</tt><big>(</big><em>potential</em><big>)</big><a class="reference internal" href="_modules/pysic/calculator.html#Pysic.add_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.calculator.Pysic.add_potential" title="Permalink to this definition">¶</a></dt>
 <dd><p>Add a potential to the list of potentials.</p>
+<p>Also a list of potentials can be given as an argument.
+In that case, the potentials are added one by one.</p>
+<p>If a <a class="reference internal" href="compoundpotential class.html#pysic.interactions.compound.CompoundPotential" title="pysic.interactions.compound.CompoundPotential"><tt class="xref py py-class docutils literal"><span class="pre">CompoundPotential</span></tt></a> is given,
+the addition is done through its 
+<a class="reference internal" href="compoundpotential class.html#pysic.interactions.compound.CompoundPotential.build" title="pysic.interactions.compound.CompoundPotential.build"><tt class="xref py py-meth docutils literal"><span class="pre">build()</span></tt></a> method.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>potential: <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">interactions.local.Potential</span></tt></a> object</dt>
@@ -500,6 +506,20 @@ to check if the cutoffs have changed.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="pysic.calculator.Pysic.remove_potential">
+<tt class="descname">remove_potential</tt><big>(</big><em>potential</em><big>)</big><a class="headerlink" href="#pysic.calculator.Pysic.remove_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a potential from the list of potentials.</p>
+<p>If a <a class="reference internal" href="compoundpotential class.html#pysic.interactions.compound.CompoundPotential" title="pysic.interactions.compound.CompoundPotential"><tt class="xref py py-class docutils literal"><span class="pre">CompoundPotential</span></tt></a> is given,
+the removal is done through its 
+<a class="reference internal" href="compoundpotential class.html#pysic.interactions.compound.CompoundPotential.remove" title="pysic.interactions.compound.CompoundPotential.remove"><tt class="xref py py-meth docutils literal"><span class="pre">remove()</span></tt></a> method.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>potential: <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> object</dt>
+<dd>the potential to be removed</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="pysic.calculator.Pysic.set_atoms">
 <tt class="descname">set_atoms</tt><big>(</big><em>atoms=None</em><big>)</big><a class="reference internal" href="_modules/pysic/calculator.html#Pysic.set_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.calculator.Pysic.set_atoms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assigns the calculator with the given structure.</p>
@@ -585,6 +605,10 @@ new cutoffs</p>
 <dt id="pysic.calculator.Pysic.set_potentials">
 <tt class="descname">set_potentials</tt><big>(</big><em>potentials</em><big>)</big><a class="reference internal" href="_modules/pysic/calculator.html#Pysic.set_potentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.calculator.Pysic.set_potentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assign a list of potentials to the calculator.</p>
+<p>Also a single potential object can be given, instead of a list.
+Note that this method does not conserve any potentials that were
+already known by the calculator. To add potentials to the list
+of known potentials, use <a class="reference internal" href="#pysic.calculator.Pysic.add_potential" title="pysic.calculator.Pysic.add_potential"><tt class="xref py py-meth docutils literal"><span class="pre">add_potential()</span></tt></a>.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>potentials: list of <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects</dt>

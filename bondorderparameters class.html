@@ -28,7 +28,7 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="up" title="Pysic module" href="pysic.html" />
-    <link rel="next" title="ChargeRelaxation class" href="chargerelaxation class.html" />
+    <link rel="next" title="CompoundPotential class" href="compoundpotential class.html" />
     <link rel="prev" title="Coordinator class" href="coordinator class.html" /> 
   </head>
   <body>
@@ -42,7 +42,7 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="chargerelaxation class.html" title="ChargeRelaxation class"
+          <a href="compoundpotential class.html" title="CompoundPotential class"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="coordinator class.html" title="Coordinator class"
@@ -82,8 +82,8 @@
   <p class="topless"><a href="coordinator class.html"
                         title="previous chapter">Coordinator class</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="chargerelaxation class.html"
-                        title="next chapter">ChargeRelaxation class</a></p>
+  <p class="topless"><a href="compoundpotential class.html"
+                        title="next chapter">CompoundPotential class</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/bondorderparameters class.txt"
@@ -364,12 +364,12 @@ This is a parameterless (besides cutoffs) 2-body bond order factor.</p>
 <span id="id7"></span><h3>Power decay bond order factor<a class="headerlink" href="#power-decay-bond-order-factor" title="Permalink to this headline">¶</a></h3>
 <p>2-body bond order factor defined as</p>
 <div class="math">
-\[b_i = \sum_{j \ne i} f(r_{ij}) \varepsilon_{ij} (\frac{a_{ij}}{r_{ij}})^{n_{ij}}.\]</div>
+\[b_i = \sum_{j \ne i} f(r_{ij})  \left(\frac{a_{ij}}{r_{ij}}\right)^{n_{ij}}.\]</div>
 <p>This is a density-like bond factor, where the contributions of atomic pairs decay with
 interatomic distance according to a power law. In form, it is similar to the <a class="reference internal" href="potential class.html#power-decay-potential"><em>Power decay potential</em></a> potential.</p>
 <p>Keywords:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;power_bond&#39;</span><span class="p">)</span>
-<span class="go">[[], [epsilon, a, n]]</span>
+<span class="go">[[], [a, n]]</span>
 </pre></div>
 </div>
 </div>
@@ -702,7 +702,7 @@ soft cutoff.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="chargerelaxation class.html" title="ChargeRelaxation class"
+          <a href="compoundpotential class.html" title="CompoundPotential class"
              >next</a> |</li>
         <li class="right" >
           <a href="coordinator class.html" title="Coordinator class"

@@ -260,15 +260,15 @@ number of atoms of required types.</p>
 <p>2-body interaction defined as</p>
 <div class="math">
 \[V(r) = \varepsilon \left( \frac{r_1 - r}{r_1 - r_2} \right)^n\]</div>
-<p>where <span class="math">\(\varepsilon\)</span> is an energy scale constant, <span class="math">\(r1\)</span> and <span class="math">\(r2\)</span> are a lenght scale constants, and <span class="math">\(n\)</span> is an exponent.</p>
+<p>where <span class="math">\(\varepsilon\)</span> is an energy scale constant, <span class="math">\(r_1\)</span> and <span class="math">\(r_2\)</span> are a lenght scale constants, and <span class="math">\(n\)</span> is an exponent.</p>
 <p>Keywords:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;shift&#39;</span><span class="p">)</span>
 <span class="go">[&#39;epsilon&#39;, &#39;r1&#39;, &#39;r2&#39;, &#39;n&#39;]</span>
 </pre></div>
 </div>
-<p>[<a class="reference external" href="./plot_directive/inline/5322c7b4a3.hires.png">hires.png</a>, <a class="reference external" href="./plot_directive/inline/5322c7b4a3.pdf">pdf</a>]</p>
+<p>[<a class="reference external" href="./plot_directive/inline/b164f07ab5.hires.png">hires.png</a>, <a class="reference external" href="./plot_directive/inline/b164f07ab5.pdf">pdf</a>]</p>
 <div class="figure">
-<img alt="_images/5322c7b4a3.png" src="_images/5322c7b4a3.png" />
+<img alt="_images/b164f07ab5.png" src="_images/b164f07ab5.png" />
 </div>
 <p>Fortran routines:</p>
 <ul class="simple">
@@ -557,6 +557,7 @@ the type of functionality.</p>
 <ul class="simple">
 <li><a class="reference internal" href="#pysic.interactions.local.Potential.get_cutoff" title="pysic.interactions.local.Potential.get_cutoff"><tt class="xref py py-meth docutils literal"><span class="pre">get_cutoff()</span></tt></a></li>
 <li><a class="reference internal" href="#pysic.interactions.local.Potential.get_cutoff_margin" title="pysic.interactions.local.Potential.get_cutoff_margin"><tt class="xref py py-meth docutils literal"><span class="pre">get_cutoff_margin()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.interactions.local.Potential.get_number_of_parameters" title="pysic.interactions.local.Potential.get_number_of_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">get_number_of_parameters()</span></tt></a></li>
 <li><a class="reference internal" href="#pysic.interactions.local.Potential.get_parameter_names" title="pysic.interactions.local.Potential.get_parameter_names"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameter_names()</span></tt></a></li>
 <li><a class="reference internal" href="#pysic.interactions.local.Potential.get_parameter_value" title="pysic.interactions.local.Potential.get_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameter_value()</span></tt></a></li>
 <li><a class="reference internal" href="#pysic.interactions.local.Potential.get_parameter_values" title="pysic.interactions.local.Potential.get_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">get_parameter_values()</span></tt></a></li>
@@ -638,6 +639,10 @@ a list of lists of n values where n is the number of targets. For example, if:</
 <dd>a list of parameters for characterizing the potential; their meaning depends on the type of potential</dd>
 <dt>cutoff: double</dt>
 <dd>the maximum atomic separation at which the potential is applied</dd>
+<dt>cutoff_margin: double</dt>
+<dd>the margin in which the potential is smoothly truncated to zero</dd>
+<dt>coordinator: <a class="reference internal" href="coordinator class.html#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">Coordinator</span></tt></a> object</dt>
+<dd>the coordinator defining a bond order factor for scaling the potential</dd>
 </dl>
 <dl class="method">
 <dt id="pysic.interactions.local.Potential.accepts_target_list">
@@ -736,6 +741,12 @@ and returns True or False accordingly.</p>
 <dt id="pysic.interactions.local.Potential.get_indices">
 <tt class="descname">get_indices</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/local.html#Potential.get_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.local.Potential.get_indices" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a list of indices on which the potential acts on.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.local.Potential.get_number_of_parameters">
+<tt class="descname">get_number_of_parameters</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.interactions.local.Potential.get_number_of_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the number of parameters the potential expects.</p>
 </dd></dl>
 
 <dl class="method">
