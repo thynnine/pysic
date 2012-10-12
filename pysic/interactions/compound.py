@@ -63,7 +63,6 @@ class CompoundPotential(Potential):
         self.description_of_params = ["description missing"]*n_params
         self.description = "This compound potential has no description."
         self.pieces = []
-        self.define_elements()
 
     
     def __eq__(self,other):
@@ -129,6 +128,7 @@ class CompoundPotential(Potential):
             the Pysic calculator to which the potential is added
         """
         
+        self.define_elements()
         for potential in self.pieces:
             calculator.add_potential(potential)
 
@@ -146,6 +146,7 @@ class CompoundPotential(Potential):
             the Pysic calculator from which the potential is removed
         """
 
+        self.define_elements()
         for pot in self.pieces:
             try:
                 calculator.remove_potential(pot)

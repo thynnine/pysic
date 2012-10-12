@@ -114,7 +114,7 @@ no smoothening is applied.
 List of currently available potentials
 --------------------------------------
 
-Below is a list of potentials currently implemented.
+Below is a list of potentials currently implemented. Also see the :ref:`available compoundpotentials`.
 
 - :ref:`constant potential`
 - :ref:`constant force potential`

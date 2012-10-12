@@ -42,6 +42,7 @@ class SuttonChenPotential(CompoundPotential):
                                                  parameters=parameters,
                                                  cutoff=cutoff,
                                                  cutoff_margin=cutoff_margin)
+        self.density_symbols = None
         self.set_potential_type('suttonchen')
         self.names_of_params = ['epsilon', 'a', 'c', 'n', 'm']
         self.descriptions_of_params = ['energy scale constant',
@@ -52,14 +53,17 @@ class SuttonChenPotential(CompoundPotential):
         self.description = """
 A potential of type
             
- U(r,rho) = epsilon [ sum_ij (a/r)^n - c sum_i sqrt(rho) ],
+ U = epsilon [ sum_ij (a/r)^n - c sum_i sqrt(rho) ],
             
 where
             
  rho = sum_j (a/r)^m.
             
-and r are the interatomic distances.
+and r is the interatomic distance.
 """
+
+    def set_density_symbols(self,symbols):
+        self.density_symbols = symbols
 
     def define_elements(self):        
 
@@ -124,28 +128,45 @@ and r are the interatomic distances.
 
 
         # set up potential sets with the correct set of symbols/tags/indices to avoid excess loops
-        for symbol in all_symbols:
+        lists = [all_symbols, all_tags, all_indices]
+        for type in [0,1,2]: # loop over symbols, tags, indices
+            for symbol in lists[type]:
 
-            # create the density potential as a combination of a unit potential and a bond order term
-            SC_density_potential = Potential('constant',
-                                             parameters = [self.parameters[0]] )
+                # create the density potential as a combination of a unit potential and a bond order term
+                SC_density_potential = Potential('constant',
+                                                 parameters = [self.parameters[0]] )
     
-            # create the bond factor
-            SC_density_scaler = BondOrderParameters('sqrt_scale')
-            SC_density_scaler.set_parameter_value('epsilon',-self.parameters[2])
+                # check that the density term should be created for this symbol
+                if self.density_symbols is None or self.density_symbols.count(symbol) > 0:
+                
+                    # create the bond factor
+                    SC_density_scaler = BondOrderParameters('sqrt_scale')
+                    SC_density_scaler.set_parameter_value('epsilon',-self.parameters[2])
 
-            for pair in symbol_pairs:
-                if pair[0] == symbol:
-
+                    # pick the pairs where this symbol is the leader
+                    right_pairs = []
+                    for pair in symbol_pairs:
+                        if pair[0] == symbol:
+                            right_pairs.append(pair)
+                    
                     SC_density_factor = BondOrderParameters('power_bond',
                                                             cutoff=self.cutoff,
                                                             cutoff_margin=self.cutoff_margin)
                     SC_density_factor.set_parameter_value('a',self.parameters[1])
                     SC_density_factor.set_parameter_value('n',self.parameters[4])
 
-                    SC_density_potential.set_symbols([[symbol]])
-                    SC_density_scaler.set_symbols([[symbol]])
-                    SC_density_factor.set_symbols([pair])
+                    if type == 0:
+                        SC_density_potential.set_symbols([[symbol]])
+                        SC_density_scaler.set_symbols([[symbol]])
+                        SC_density_factor.set_symbols(right_pairs)
+                    elif type == 1:
+                        SC_density_potential.set_tags([[symbol]])
+                        SC_density_scaler.set_tags([[symbol]])
+                        SC_density_factor.set_tags(right_pairs)
+                    else:
+                        SC_density_potential.set_indices([[symbol]])
+                        SC_density_scaler.set_indices([[symbol]])
+                        SC_density_factor.set_indices(right_pairs)
                 
                     SC_density_coordinator = Coordinator([SC_density_scaler,SC_density_factor])
                     SC_density_potential.set_coordinator(SC_density_coordinator)
@@ -153,65 +174,11 @@ and r are the interatomic distances.
                     # add the potential to the list of pieces
                     self.pieces.append(SC_density_potential)
 
+    def describe(self):
+        super(SuttonChenPotential,self).describe()
+        if not self.density_symbols is None:
+            message = "density target symbols: "
+            for ele in self.density_symbols:
+                message += " '{0}' ".format(str(ele))
 
-        # set up potential sets with the correct set of symbols/tags/indices to avoid excess loops
-        for symbol in all_tags:
-    
-            # create the density potential as a combination of a unit potential and a bond order term
-            SC_density_potential = Potential('constant',
-                                             parameters = [self.parameters[0]] )
-    
-            # create the bond factor
-            SC_density_scaler = BondOrderParameters('sqrt_scale')
-            SC_density_scaler.set_parameter_value('epsilon',-self.parameters[2])
-    
-            for pair in tag_pairs:
-                if pair[0] == symbol:
-            
-                    SC_density_factor = BondOrderParameters('power_bond',
-                                                            cutoff=self.cutoff,
-                                                            cutoff_margin=self.cutoff_margin)
-                    SC_density_factor.set_parameter_value('a',self.parameters[1])
-                    SC_density_factor.set_parameter_value('n',self.parameters[4])
-            
-                    SC_density_potential.set_symbols([[symbol]])
-                    SC_density_scaler.set_symbols([[symbol]])
-                    SC_density_factor.set_symbols([pair])
-            
-                    SC_density_coordinator = Coordinator([SC_density_scaler,SC_density_factor])
-                    SC_density_potential.set_coordinator(SC_density_coordinator)
-            
-                    # add the potential to the list of pieces
-                    self.pieces.append(SC_density_potential)
-
-
-
-        # set up potential sets with the correct set of symbols/tags/indices to avoid excess loops
-        for symbol in all_indices:
-    
-            # create the density potential as a combination of a unit potential and a bond order term
-            SC_density_potential = Potential('constant',
-                                             parameters = [self.parameters[0]] )
-    
-            # create the bond factor
-            SC_density_scaler = BondOrderParameters('sqrt_scale')
-            SC_density_scaler.set_parameter_value('epsilon',-self.parameters[2])
-    
-            for pair in index_pairs:
-                if pair[0] == symbol:
-            
-                    SC_density_factor = BondOrderParameters('power_bond',
-                                                            cutoff=self.cutoff,
-                                                            cutoff_margin=self.cutoff_margin)
-                    SC_density_factor.set_parameter_value('a',self.parameters[1])
-                    SC_density_factor.set_parameter_value('n',self.parameters[4])
-            
-                    SC_density_potential.set_symbols([[symbol]])
-                    SC_density_scaler.set_symbols([[symbol]])
-                    SC_density_factor.set_symbols([pair])
-            
-                    SC_density_coordinator = Coordinator([SC_density_scaler,SC_density_factor])
-                    SC_density_potential.set_coordinator(SC_density_coordinator)
-            
-                    # add the potential to the list of pieces
-                    self.pieces.append(SC_density_potential)
+            print message
