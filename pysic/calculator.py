@@ -501,6 +501,7 @@ class Pysic:
         potentials: list of :class:`~pysic.interactions.local.Potential` objects
             a list of potentials to describe interactinos
         """
+        self.potentials = []
         if potentials is None:
             pass
         else:
@@ -890,10 +891,17 @@ class Pysic:
         for pot in self.potentials:
 
             # grab the coordinators associated with the potentials
+            # but check that each coordinator is included only once
+            # to prevent multiple evaluations of the same bond order factors
             coord = pot.get_coordinator()
-            if(coord != None):
-                coord_list.append([coord,pot_index])
-            pot_index += 1
+            if(not coord is None):
+                repeat_coord = False
+                for crd in coord_list:
+                    if crd[0] == coord:
+                        repeat_coord = True
+                if not repeat_coord:
+                    coord_list.append([coord,pot_index])
+                pot_index += 1
             
             try:
                 alltargets = pot.get_symbols()
@@ -942,9 +950,18 @@ class Pysic:
     
             multiplier_added = False
             group_index = -1
-            if mpot.get_coordinator() != None:
-                group_index = pot_index
-                mpot.get_coordinator().set_group_index(pot_index)
+            if not mpot.get_coordinator() is None:
+                # pick the potential index of the first coordinator that matches
+                # that of the master potential - this is done to prevent
+                # creation of multiple equal bond factors that would then be
+                # evaluated repeatedly
+                for crd in coord_list:
+                    # only check the bond parameters since the group indices are
+                    # manipulated here so the coordinators don't exactly match
+                    if mpot.get_coordinator().get_bond_order_parameters() == crd[0].get_bond_order_parameters() and group_index < 0:
+                        group_index = crd[1]
+                #group_index = pot_index # the old method assigns a new coordinator to each potential
+                mpot.get_coordinator().set_group_index(group_index)
             if not mul:
                 pot_index += 1
 
