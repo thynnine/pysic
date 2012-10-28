@@ -150,7 +150,7 @@ class ChargeRelaxation:
         """Creates a dictionary of parameters and initializes all values to 0.0.
         """        
         self.parameters = {}
-        for param in CoulombSummation.summation_parameters[self.relaxation]:
+        for param in ChargeRelaxation.relaxation_parameters[self.relaxation]:
             self.parameters[param] = 0.0
 
 
