@@ -2267,10 +2267,12 @@ contains
           energy = energy * multi_energy(i)          
        end do
 
-       do i = 1, n_product
-          eneg(1:n_targets) = eneg(1:n_targets) + &
-               energy / multi_energy(i) * multi_eneg(1:n_targets,i)
-       end do
+       if(energy /= 0.0)then
+          do i = 1, n_product
+             eneg(1:n_targets) = eneg(1:n_targets) + &
+                  energy / multi_energy(i) * multi_eneg(1:n_targets,i)
+          end do
+       end if
 
     else
        call evaluate_electronegativity_component(n_targets,separations,distances,interaction,&
@@ -2382,10 +2384,12 @@ contains
           energy = energy * multi_energy(i)          
        end do
 
-       do i = 1, n_product
-          force(1:3,1:n_targets) = force(1:3,1:n_targets) + &
-               energy / multi_energy(i) * multi_force(1:3,1:n_targets,i)
-       end do
+       if(energy /= 0.0)then
+          do i = 1, n_product
+             force(1:3,1:n_targets) = force(1:3,1:n_targets) + &
+                  energy / multi_energy(i) * multi_force(1:3,1:n_targets,i)
+          end do
+       end if
 
     else
        call evaluate_force_component(n_targets,separations,distances,interaction,&

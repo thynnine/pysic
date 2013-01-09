@@ -257,8 +257,7 @@ class ChargeRelaxation:
         """
         return self.atoms
     
-    # ToDo: save charge velocities
-    # ToDo: compare performance to pure Fortran dynamics
+    # ToDo: compare performance to pure Fortran dynamics?
     def charge_relaxation(self):
         """Performs the charge relaxation.
 
