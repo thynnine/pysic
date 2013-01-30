@@ -156,7 +156,7 @@ no smoothening is applied.</p>
 </div>
 <div class="section" id="list-of-currently-available-potentials">
 <span id="list-of-potentials"></span><h2>List of currently available potentials<a class="headerlink" href="#list-of-currently-available-potentials" title="Permalink to this headline">¶</a></h2>
-<p>Below is a list of potentials currently implemented.</p>
+<p>Below is a list of potentials currently implemented. Also see the <a class="reference internal" href="compoundpotential class.html#available-compoundpotentials"><em>List of corrently available compound potentials</em></a>.</p>
 <ul class="simple">
 <li><a class="reference internal" href="#constant-potential"><em>Constant potential</em></a></li>
 <li><a class="reference internal" href="#constant-force-potential"><em>Constant force potential</em></a></li>
@@ -218,7 +218,7 @@ number of atoms of required types.</p>
 <span id="id4"></span><h3>Charge self energy potential<a class="headerlink" href="#charge-self-energy-potential" title="Permalink to this headline">¶</a></h3>
 <p>1-body potential defined as</p>
 <div class="math">
-\[V(q) = - \varepsilon q^n,\]</div>
+\[V(q) = \varepsilon q^n,\]</div>
 <p>where <span class="math">\(\varepsilon\)</span> is an energy scale constant and <span class="math">\(n\)</span> an integer exponent. Note that only the integer part of the exponent is taken if a real number is given. This is because you must expect negative values for <span class="math">\(q\)</span> and so a non-integer <span class="math">\(n\)</span> would be ill-defined.</p>
 <p>Keywords:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;charge_self&#39;</span><span class="p">)</span>

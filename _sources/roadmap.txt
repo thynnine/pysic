@@ -26,7 +26,6 @@ Version 0.6
 Other planned features
 ----------------------
 
-- Extensive library of potentials, including tabulated potentials
 - Option for other charge relaxation algorithms
 - Option for other long range interaction summation algorithms
 - Convenience tools for generating parameters for Ewald summation

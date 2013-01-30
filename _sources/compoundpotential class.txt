@@ -38,6 +38,8 @@ Sutton-Chen potential combines a simple power-law potential with a similar densi
   U & = \varepsilon \left[ \sum_{i,j} \left( \frac{a}{r_{ij}} \right)^n - c \sum_i \sqrt{\rho_i} \right] \\
   \rho_i & = \sum_j \left( \frac{a}{r_{ij}} \right)^m
 
+where :math:`r_{ij}` is the interatomic distance, and :math:`\varepsilon, a, c, m, n` are parameters.
+
 In Pysic, this can be defined by a structure like this::
 
  >>> power_pot = pysic.Potential('power', ...)
@@ -48,7 +50,8 @@ In Pysic, this can be defined by a structure like this::
  >>> calc = pysic.Pysic()
  >>> calc.set_potentials([power_pot, rho_pot])
 
-but this is already somewhat cumbersome. It is much nicer to wrap the definitions in a container::
+but this is already somewhat cumbersome and requires :ref:`mixing bond order types`.
+It would be much nicer to wrap the definitions in a container::
 
  >>> sutton_chen_pot = SuttonChenPotential(...)
  >>> calc = pysic.Pysic()
@@ -64,8 +67,6 @@ Compound potentials are not, so you need to manually import them, for instance l
  >>> from pysic.interactions.suttonchen import SuttonChenPotential
  >>> sutton_chen_pot = SuttonChenPotential(...)
 
-The potentials provided with pysic are all found in `pysic.interactions.x` where `x` is
-the name of the submodule containing the potential.
 
 
 
@@ -98,7 +99,7 @@ Compound potentials store their components in a list called ``self.pieces``, and
 done in the method :meth:`~pysic.interactions.compound.CompoundPotential.define_elements`.
 The components are passed to the calculator via the 
 :meth:`~pysic.interactions.compound.CompoundPotential.build` method. This is automatically
-called a compound potential is given to the :meth:`pysic.calculator.Pysic.add_potential` method,
+called when a compound potential is given to the :meth:`pysic.calculator.Pysic.add_potential` method,
 so that the interface is similar to that of simple potentials.
 For the Sutton-Chen example, the definitions could look something like this::
 
@@ -115,9 +116,28 @@ In principle, this is the only method that a new potential has to override, sinc
 automatically. Of course, it is possible
 to override other methods as well or write new ones. The potentials can be made very general,
 accepting free parameters and target lists, but it is also possible to hard code the parameters.
-The latter tends to be easier since handling arbitrary lists of parameters becomes easily a code-intensive 
+The latter tends to be easier since handling arbitrary lists of parameters can be a code-intensive 
 task.
 
+
+
+
+.. file:available compoundpotentials
+
+.. _available compoundpotentials:
+
+
+
+List of corrently available compound potentials
+------------------------------------------------
+
+The potentials provided with Pysic are all found in ``pysic.interactions.x`` where ``x`` is
+the name of the submodule containing the potential.
+
+.. toctree::
+  :maxdepth: 1
+
+  suttonchenpotential class
 
 
 

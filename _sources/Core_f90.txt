@@ -409,7 +409,7 @@ Full documentation of subroutines in pysic_core
     the potential as specified in the Python interface. These are
     to be given in the 'orig_*' lists.
     
-    If product potentials are created, the first all but one of the potentials
+    If product potentials are created, all but the first one of the potentials
     are created with ``is_multiplier == .true.``. This leads to the potentials
     being stored in the global temporary array ``multipliers``. The last potential
     of a group should be created with ``is_multiplier = .false.`` and the stored

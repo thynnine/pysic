@@ -1,0 +1,314 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.interactions.suttonchen &mdash; Pysic 0.4.4 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.4.4',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.4.4 documentation" href="../../../index.html" />
+    <link rel="up" title="pysic" href="../../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.interactions.suttonchen</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+
+<span class="kn">from</span> <span class="nn">pysic.core</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">pysic.utility.error</span> <span class="kn">import</span> <span class="n">InvalidPotentialError</span>
+<span class="kn">from</span> <span class="nn">pysic.interactions.local</span> <span class="kn">import</span> <span class="n">Potential</span><span class="p">,</span> <span class="n">ProductPotential</span>
+<span class="kn">from</span> <span class="nn">pysic.interactions.compound</span> <span class="kn">import</span> <span class="n">CompoundPotential</span>
+<span class="kn">from</span> <span class="nn">pysic.interactions.bondorder</span> <span class="kn">import</span> <span class="n">Coordinator</span><span class="p">,</span> <span class="n">BondOrderParameters</span>
+<span class="kn">from</span> <span class="nn">pysic.interactions.coulomb</span> <span class="kn">import</span> <span class="n">CoulombSummation</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+<div class="viewcode-block" id="SuttonChenPotential"><a class="viewcode-back" href="../../../suttonchenpotential class.html#pysic.interactions.suttonchen.SuttonChenPotential">[docs]</a><span class="k">class</span> <span class="nc">SuttonChenPotential</span><span class="p">(</span><span class="n">CompoundPotential</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Class representing the Sutton-Chen potential as a :class:`~pysic.interactions.local.CompoundPotential` object.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        symbols: list of string</span>
+<span class="sd">            the chemical symbols (elements) on which the potential acts</span>
+<span class="sd">        tags: integer</span>
+<span class="sd">            atoms with specific tags on which the potential acts</span>
+<span class="sd">        indices: list of integers</span>
+<span class="sd">            atoms with specific indices on which the potential acts</span>
+<span class="sd">        parameters: list of doubles</span>
+<span class="sd">            a list of parameters for characterizing the potential; their meaning depends on the type of potential</span>
+<span class="sd">        cutoff: double</span>
+<span class="sd">            the maximum atomic separation at which the potential is applied</span>
+<span class="sd">        cutoff_margin: double</span>
+<span class="sd">            the margin in which the potential is smoothly truncated to zero</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">symbols</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">tags</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">indices</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">parameters</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">cutoff</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                 <span class="n">cutoff_margin</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">SuttonChenPotential</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="n">n_params</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                                                 <span class="n">n_targets</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                                                 <span class="n">symbols</span><span class="o">=</span><span class="n">symbols</span><span class="p">,</span>
+                                                 <span class="n">tags</span><span class="o">=</span><span class="n">tags</span><span class="p">,</span>
+                                                 <span class="n">indices</span><span class="o">=</span><span class="n">indices</span><span class="p">,</span>
+                                                 <span class="n">parameters</span><span class="o">=</span><span class="n">parameters</span><span class="p">,</span>
+                                                 <span class="n">cutoff</span><span class="o">=</span><span class="n">cutoff</span><span class="p">,</span>
+                                                 <span class="n">cutoff_margin</span><span class="o">=</span><span class="n">cutoff_margin</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_potential_type</span><span class="p">(</span><span class="s">&#39;suttonchen&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">names_of_params</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;epsilon&#39;</span><span class="p">,</span> <span class="s">&#39;a&#39;</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">,</span> <span class="s">&#39;n&#39;</span><span class="p">,</span> <span class="s">&#39;m&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">descriptions_of_params</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;energy scale constant&#39;</span><span class="p">,</span>
+                                       <span class="s">&#39;lenght scale or lattice constant&#39;</span><span class="p">,</span>
+                                       <span class="s">&#39;density coefficient&#39;</span><span class="p">,</span>
+                                       <span class="s">&#39;power decay exponent&#39;</span><span class="p">,</span>
+                                       <span class="s">&#39;density decay exponent&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
+<span class="s">A potential of type</span>
+<span class="s">            </span>
+<span class="s"> U(r,rho) = epsilon [ sum_ij (a/r)^n - c sum_i sqrt(rho) ],</span>
+<span class="s">            </span>
+<span class="s">where</span>
+<span class="s">            </span>
+<span class="s"> rho = sum_j (a/r)^m.</span>
+<span class="s">            </span>
+<span class="s">and r are the interatomic distances.</span>
+<span class="s">&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="SuttonChenPotential.define_elements"><a class="viewcode-back" href="../../../suttonchenpotential class.html#pysic.interactions.suttonchen.SuttonChenPotential.define_elements">[docs]</a>    <span class="k">def</span> <span class="nf">define_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>        
+
+        <span class="c"># initialize the collection of elemental potentials</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pieces</span> <span class="o">=</span> <span class="p">[]</span>
+        
+        <span class="c"># create the pairwise power decay potential</span>
+        <span class="n">SC_pairwise_potential</span> <span class="o">=</span> <span class="n">Potential</span><span class="p">(</span><span class="s">&#39;power&#39;</span><span class="p">,</span>
+                                                <span class="n">cutoff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">,</span>
+                                                <span class="n">cutoff_margin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span><span class="p">,</span>
+                                                <span class="n">symbols</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">,</span>
+                                                <span class="n">tags</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="p">,</span>
+                                                <span class="n">indices</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">)</span>
+        <span class="n">SC_pairwise_potential</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;epsilon&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">SC_pairwise_potential</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">SC_pairwise_potential</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;n&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="c"># add the potential to the list of pieces</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pieces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SC_pairwise_potential</span><span class="p">)</span>
+
+
+        <span class="c"># get the possible targets of the potential:</span>
+        <span class="c"># all different symbols, tags, indices</span>
+        <span class="n">all_symbols</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">symbol_pairs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">symblist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">symbols</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">symb</span> <span class="ow">in</span> <span class="n">symblist</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">all_symbols</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">symb</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">all_symbols</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">symb</span><span class="p">)</span>
+                <span class="n">symbol_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">symblist</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">symblist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">symblist</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">symblist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">symbol_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">symblist</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">symblist</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+             
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">all_tags</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">tag_pairs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">taglist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">tags</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">tagi</span> <span class="ow">in</span> <span class="n">taglist</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">all_tags</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">tagi</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">all_tags</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tagi</span><span class="p">)</span>
+                <span class="n">tag_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">taglist</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">taglist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">taglist</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">taglist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">tag_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">taglist</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">taglist</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">all_indices</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">index_pairs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">indlist</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">ind</span> <span class="ow">in</span> <span class="n">indlist</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">all_indices</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">all_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ind</span><span class="p">)</span>
+                <span class="n">ind_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">indlist</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">indlist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">indlist</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">indlist</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">ind_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">indlist</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">indlist</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+
+
+        <span class="c"># set up potential sets with the correct set of symbols/tags/indices to avoid excess loops</span>
+        <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">all_symbols</span><span class="p">:</span>
+
+            <span class="c"># create the density potential as a combination of a unit potential and a bond order term</span>
+            <span class="n">SC_density_potential</span> <span class="o">=</span> <span class="n">Potential</span><span class="p">(</span><span class="s">&#39;constant&#39;</span><span class="p">,</span>
+                                             <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="p">)</span>
+    
+            <span class="c"># create the bond factor</span>
+            <span class="n">SC_density_scaler</span> <span class="o">=</span> <span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;sqrt_scale&#39;</span><span class="p">)</span>
+            <span class="n">SC_density_scaler</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;epsilon&#39;</span><span class="p">,</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+
+            <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">symbol_pairs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">symbol</span><span class="p">:</span>
+
+                    <span class="n">SC_density_factor</span> <span class="o">=</span> <span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;power_bond&#39;</span><span class="p">,</span>
+                                                            <span class="n">cutoff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">,</span>
+                                                            <span class="n">cutoff_margin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span><span class="p">)</span>
+                    <span class="n">SC_density_factor</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">SC_density_factor</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;n&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+
+                    <span class="n">SC_density_potential</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">([[</span><span class="n">symbol</span><span class="p">]])</span>
+                    <span class="n">SC_density_scaler</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">([[</span><span class="n">symbol</span><span class="p">]])</span>
+                    <span class="n">SC_density_factor</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">([</span><span class="n">pair</span><span class="p">])</span>
+                
+                    <span class="n">SC_density_coordinator</span> <span class="o">=</span> <span class="n">Coordinator</span><span class="p">([</span><span class="n">SC_density_scaler</span><span class="p">,</span><span class="n">SC_density_factor</span><span class="p">])</span>
+                    <span class="n">SC_density_potential</span><span class="o">.</span><span class="n">set_coordinator</span><span class="p">(</span><span class="n">SC_density_coordinator</span><span class="p">)</span>
+                        
+                    <span class="c"># add the potential to the list of pieces</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pieces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SC_density_potential</span><span class="p">)</span>
+
+
+        <span class="c"># set up potential sets with the correct set of symbols/tags/indices to avoid excess loops</span>
+        <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">all_tags</span><span class="p">:</span>
+    
+            <span class="c"># create the density potential as a combination of a unit potential and a bond order term</span>
+            <span class="n">SC_density_potential</span> <span class="o">=</span> <span class="n">Potential</span><span class="p">(</span><span class="s">&#39;constant&#39;</span><span class="p">,</span>
+                                             <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="p">)</span>
+    
+            <span class="c"># create the bond factor</span>
+            <span class="n">SC_density_scaler</span> <span class="o">=</span> <span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;sqrt_scale&#39;</span><span class="p">)</span>
+            <span class="n">SC_density_scaler</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;epsilon&#39;</span><span class="p">,</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    
+            <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">tag_pairs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">symbol</span><span class="p">:</span>
+            
+                    <span class="n">SC_density_factor</span> <span class="o">=</span> <span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;power_bond&#39;</span><span class="p">,</span>
+                                                            <span class="n">cutoff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">,</span>
+                                                            <span class="n">cutoff_margin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span><span class="p">)</span>
+                    <span class="n">SC_density_factor</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">SC_density_factor</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;n&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+            
+                    <span class="n">SC_density_potential</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">([[</span><span class="n">symbol</span><span class="p">]])</span>
+                    <span class="n">SC_density_scaler</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">([[</span><span class="n">symbol</span><span class="p">]])</span>
+                    <span class="n">SC_density_factor</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">([</span><span class="n">pair</span><span class="p">])</span>
+            
+                    <span class="n">SC_density_coordinator</span> <span class="o">=</span> <span class="n">Coordinator</span><span class="p">([</span><span class="n">SC_density_scaler</span><span class="p">,</span><span class="n">SC_density_factor</span><span class="p">])</span>
+                    <span class="n">SC_density_potential</span><span class="o">.</span><span class="n">set_coordinator</span><span class="p">(</span><span class="n">SC_density_coordinator</span><span class="p">)</span>
+            
+                    <span class="c"># add the potential to the list of pieces</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pieces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SC_density_potential</span><span class="p">)</span>
+
+
+
+        <span class="c"># set up potential sets with the correct set of symbols/tags/indices to avoid excess loops</span>
+        <span class="k">for</span> <span class="n">symbol</span> <span class="ow">in</span> <span class="n">all_indices</span><span class="p">:</span>
+    
+            <span class="c"># create the density potential as a combination of a unit potential and a bond order term</span>
+            <span class="n">SC_density_potential</span> <span class="o">=</span> <span class="n">Potential</span><span class="p">(</span><span class="s">&#39;constant&#39;</span><span class="p">,</span>
+                                             <span class="n">parameters</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="p">)</span>
+    
+            <span class="c"># create the bond factor</span>
+            <span class="n">SC_density_scaler</span> <span class="o">=</span> <span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;sqrt_scale&#39;</span><span class="p">)</span>
+            <span class="n">SC_density_scaler</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;epsilon&#39;</span><span class="p">,</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+    
+            <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">index_pairs</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">symbol</span><span class="p">:</span>
+            
+                    <span class="n">SC_density_factor</span> <span class="o">=</span> <span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;power_bond&#39;</span><span class="p">,</span>
+                                                            <span class="n">cutoff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span><span class="p">,</span>
+                                                            <span class="n">cutoff_margin</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cutoff_margin</span><span class="p">)</span>
+                    <span class="n">SC_density_factor</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;a&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">SC_density_factor</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;n&#39;</span><span class="p">,</span><span class="bp">self</span><span class="o">.</span><span class="n">parameters</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+            
+                    <span class="n">SC_density_potential</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">([[</span><span class="n">symbol</span><span class="p">]])</span>
+                    <span class="n">SC_density_scaler</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">([[</span><span class="n">symbol</span><span class="p">]])</span>
+                    <span class="n">SC_density_factor</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">([</span><span class="n">pair</span><span class="p">])</span>
+            
+                    <span class="n">SC_density_coordinator</span> <span class="o">=</span> <span class="n">Coordinator</span><span class="p">([</span><span class="n">SC_density_scaler</span><span class="p">,</span><span class="n">SC_density_factor</span><span class="p">])</span>
+                    <span class="n">SC_density_potential</span><span class="o">.</span><span class="n">set_coordinator</span><span class="p">(</span><span class="n">SC_density_coordinator</span><span class="p">)</span>
+            
+                    <span class="c"># add the potential to the list of pieces</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">pieces</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">SC_density_potential</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2012, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

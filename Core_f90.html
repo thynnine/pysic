@@ -497,7 +497,7 @@ triplets (A-B-C), the interaction is not symmetric for all the atoms.
 Therefore it is necessary to also store the original targets of
 the potential as specified in the Python interface. These are
 to be given in the &#8216;orig_*&#8217; lists.</p>
-<p>If product potentials are created, the first all but one of the potentials
+<p>If product potentials are created, all but the first one of the potentials
 are created with <tt class="docutils literal"><span class="pre">is_multiplier</span> <span class="pre">==</span> <span class="pre">.true.</span></tt>. This leads to the potentials
 being stored in the global temporary array <tt class="docutils literal"><span class="pre">multipliers</span></tt>. The last potential
 of a group should be created with <tt class="docutils literal"><span class="pre">is_multiplier</span> <span class="pre">=</span> <span class="pre">.false.</span></tt> and the stored

@@ -28,7 +28,7 @@
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
     <link rel="up" title="Pysic module" href="pysic.html" />
-    <link rel="next" title="ChargeRelaxation class" href="chargerelaxation class.html" />
+    <link rel="next" title="SuttonChenPotential class" href="suttonchenpotential class.html" />
     <link rel="prev" title="BondOrderParameters class" href="bondorderparameters class.html" /> 
   </head>
   <body>
@@ -42,7 +42,7 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="chargerelaxation class.html" title="ChargeRelaxation class"
+          <a href="suttonchenpotential class.html" title="SuttonChenPotential class"
              accesskey="N">next</a> |</li>
         <li class="right" >
           <a href="bondorderparameters class.html" title="BondOrderParameters class"
@@ -58,6 +58,9 @@
 <li><a class="reference internal" href="#">CompoundPotential class</a><ul>
 <li><a class="reference internal" href="#using-compoundpotential">Using CompoundPotential</a></li>
 <li><a class="reference internal" href="#defining-new-wrappers">Defining new wrappers</a></li>
+<li><a class="reference internal" href="#list-of-corrently-available-compound-potentials">List of corrently available compound potentials</a><ul>
+</ul>
+</li>
 <li><a class="reference internal" href="#list-of-methods">List of methods</a><ul>
 <li><a class="reference internal" href="#interaction-handling">Interaction handling</a></li>
 <li><a class="reference internal" href="#coordinator-handling">Coordinator handling</a></li>
@@ -74,8 +77,8 @@
   <p class="topless"><a href="bondorderparameters class.html"
                         title="previous chapter">BondOrderParameters class</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="chargerelaxation class.html"
-                        title="next chapter">ChargeRelaxation class</a></p>
+  <p class="topless"><a href="suttonchenpotential class.html"
+                        title="next chapter">SuttonChenPotential class</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
     <li><a href="_sources/compoundpotential class.txt"
@@ -114,6 +117,7 @@
 <div class="math">
 \[\begin{split}U &amp; = \varepsilon \left[ \sum_{i,j} \left( \frac{a}{r_{ij}} \right)^n - c \sum_i \sqrt{\rho_i} \right] \\
 \rho_i &amp; = \sum_j \left( \frac{a}{r_{ij}} \right)^m\end{split}\]</div>
+<p>where <span class="math">\(r_{ij}\)</span> is the interatomic distance, and <span class="math">\(\varepsilon, a, c, m, n\)</span> are parameters.</p>
 <p>In Pysic, this can be defined by a structure like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">power_pot</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;power&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">rho</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="p">(</span><span class="s">&#39;power_bond&#39;</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
@@ -124,7 +128,8 @@
 <span class="gp">&gt;&gt;&gt; </span><span class="n">calc</span><span class="o">.</span><span class="n">set_potentials</span><span class="p">([</span><span class="n">power_pot</span><span class="p">,</span> <span class="n">rho_pot</span><span class="p">])</span>
 </pre></div>
 </div>
-<p>but this is already somewhat cumbersome. It is much nicer to wrap the definitions in a container:</p>
+<p>but this is already somewhat cumbersome and requires <a class="reference internal" href="coordinator class.html#mixing-bond-order-types"><em>Bond order mixing</em></a>.
+It would be much nicer to wrap the definitions in a container:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">sutton_chen_pot</span> <span class="o">=</span> <span class="n">SuttonChenPotential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">calc</span><span class="o">.</span><span class="n">set_potentials</span><span class="p">(</span><span class="n">sutton_chen_pot</span><span class="p">)</span>
@@ -139,8 +144,6 @@ Compound potentials are not, so you need to manually import them, for instance l
 <span class="gp">&gt;&gt;&gt; </span><span class="n">sutton_chen_pot</span> <span class="o">=</span> <span class="n">SuttonChenPotential</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>The potentials provided with pysic are all found in <cite>pysic.interactions.x</cite> where <cite>x</cite> is
-the name of the submodule containing the potential.</p>
 </div>
 <div class="section" id="defining-new-wrappers">
 <span id="defining-compoundpotentials"></span><h2>Defining new wrappers<a class="headerlink" href="#defining-new-wrappers" title="Permalink to this headline">¶</a></h2>
@@ -163,7 +166,7 @@ but it is also possible to extend the constructor with additional commands.</p>
 done in the method <a class="reference internal" href="#pysic.interactions.compound.CompoundPotential.define_elements" title="pysic.interactions.compound.CompoundPotential.define_elements"><tt class="xref py py-meth docutils literal"><span class="pre">define_elements()</span></tt></a>.
 The components are passed to the calculator via the
 <a class="reference internal" href="#pysic.interactions.compound.CompoundPotential.build" title="pysic.interactions.compound.CompoundPotential.build"><tt class="xref py py-meth docutils literal"><span class="pre">build()</span></tt></a> method. This is automatically
-called a compound potential is given to the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.add_potential" title="pysic.calculator.Pysic.add_potential"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.calculator.Pysic.add_potential()</span></tt></a> method,
+called when a compound potential is given to the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.add_potential" title="pysic.calculator.Pysic.add_potential"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.calculator.Pysic.add_potential()</span></tt></a> method,
 so that the interface is similar to that of simple potentials.
 For the Sutton-Chen example, the definitions could look something like this:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="o">...</span>     <span class="k">def</span> <span class="nf">define_elements</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -180,8 +183,18 @@ For the Sutton-Chen example, the definitions could look something like this:</p>
 automatically. Of course, it is possible
 to override other methods as well or write new ones. The potentials can be made very general,
 accepting free parameters and target lists, but it is also possible to hard code the parameters.
-The latter tends to be easier since handling arbitrary lists of parameters becomes easily a code-intensive
+The latter tends to be easier since handling arbitrary lists of parameters can be a code-intensive
 task.</p>
+</div>
+<div class="section" id="list-of-corrently-available-compound-potentials">
+<span id="available-compoundpotentials"></span><h2>List of corrently available compound potentials<a class="headerlink" href="#list-of-corrently-available-compound-potentials" title="Permalink to this headline">¶</a></h2>
+<p>The potentials provided with Pysic are all found in <tt class="docutils literal"><span class="pre">pysic.interactions.x</span></tt> where <tt class="docutils literal"><span class="pre">x</span></tt> is
+the name of the submodule containing the potential.</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="suttonchenpotential class.html">SuttonChenPotential class</a></li>
+</ul>
+</div>
 </div>
 <div class="section" id="list-of-methods">
 <span id="compoundpotential-class-autogenerated"></span><h2>List of methods<a class="headerlink" href="#list-of-methods" title="Permalink to this headline">¶</a></h2>
@@ -362,7 +375,7 @@ compound potentials should also have a name for consistency.</p>
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="chargerelaxation class.html" title="ChargeRelaxation class"
+          <a href="suttonchenpotential class.html" title="SuttonChenPotential class"
              >next</a> |</li>
         <li class="right" >
           <a href="bondorderparameters class.html" title="BondOrderParameters class"
