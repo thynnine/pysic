@@ -258,6 +258,7 @@ contains
           call mpi_get_count(mpistatus,mpi_integer,swap_count,mpistat)
 
           do j = 1, swap_count
+
              is_my_atom(atom_buffer(j)) = .true.
              my_atoms = my_atoms + 1
           end do

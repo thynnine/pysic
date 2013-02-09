@@ -213,7 +213,7 @@ _____________________________
 1-body potential defined as
 
 .. math ::
-   V(q) = - \varepsilon q^n,
+   V(q) = \varepsilon q^n,
 
 where :math:`\varepsilon` is an energy scale constant and :math:`n` an integer exponent. Note that only the integer part of the exponent is taken if a real number is given. This is because you must expect negative values for :math:`q` and so a non-integer :math:`n` would be ill-defined.
 

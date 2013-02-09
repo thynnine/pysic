@@ -2857,6 +2857,10 @@ contains
        !*****************************!
 
 #ifdef MPI
+       ! In MPI, calculate the loads for all cpus and try to balance the loads
+       call record_load(stopwatch_0)
+       call balance_loads()
+
        ! collect data from all cpus in MPI
        call mpi_allreduce(energy,total_energy,1,mpi_double_precision,mpi_sum,&
             mpi_comm_world,mpistat)
@@ -2911,7 +2915,7 @@ contains
 #ifdef MPI
        ! In MPI, calculate the loads for all cpus and try to balance the loads
        call record_load(stopwatch_0)
-       !call balance_loads()
+       call balance_loads()
 
        ! collect data from all cpus in MPI
        call mpi_allreduce(enegs,total_enegs,size(enegs),mpi_double_precision,&

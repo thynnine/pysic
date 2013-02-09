@@ -1316,7 +1316,7 @@ contains
          tmp_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
          -reciprocal_cutoff(2):reciprocal_cutoff(2), &
          -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         k_vector(3), dot, coords2(3)
+         k_vector(3), dot, coords2(3), t1, t2
     integer :: index1, index2, j, k1, k2, k3, offset(3)
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
@@ -1332,6 +1332,11 @@ contains
     inv_eps_2v = 1.d0 / (2.d0 * cell%volume * electric_constant)
     inv_sigma_sqrt_2 = 1.d0 / (sqrt(2.d0) * gaussian_width)
     inv_sigma_sqrt_2pi = 1.d0 / (sqrt(2.d0 * pi) * gaussian_width)
+
+
+#ifdef MPI
+          call start_timer()
+#endif
 
     ! loop over atoms
     do index1 = 1, n_atoms
@@ -1425,6 +1430,9 @@ contains
     end do
 
 #ifdef MPI
+	call timer(t1)
+	call record_load(t1)
+
     ! collect structure factors from all cpus in MPI
     call mpi_allreduce(tmp_factor,s_factor,size(s_factor),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
@@ -1437,6 +1445,7 @@ contains
     ! collect energies from all cpus in MPI (energy -> tmp_energy)
     call mpi_allreduce(energy,tmp_energy,size(energy),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
+
 #else
     tmp_energy = energy
 #endif
@@ -1520,7 +1529,7 @@ contains
          -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
          nabla_factor(3,2), stress(6), &
          k_vector(3), dot, &
-         dipole(1:3), tmp_dipole(1:3)
+         dipole(1:3), tmp_dipole(1:3), t1, t2
     integer :: index1, index2, j, k1, k2, k3
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
@@ -1546,6 +1555,11 @@ contains
     !
     ! calculate the real space sum
     !
+
+
+#ifdef MPI
+          call start_timer()
+#endif
 
     ! loop over atoms
     do index1 = 1, n_atoms
@@ -1651,6 +1665,9 @@ contains
     end do
 
 #ifdef MPI
+
+    call timer(t1)
+
     ! collect structure factors from all cpus in MPI (tmp_factor -> factor)
     call mpi_allreduce(tmp_factor,s_factor,size(s_factor),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
@@ -1658,6 +1675,9 @@ contains
        call mpi_allreduce(tmp_dipole,dipole,1,mpi_double_precision,&
             mpi_sum,mpi_comm_world,mpistat)
     end if
+
+	call start_timer()
+
 #else
     s_factor = tmp_factor
     dipole = tmp_dipole
@@ -1725,6 +1745,10 @@ contains
     end do
 
 #ifdef MPI
+
+	call timer(t2)
+	call record_load(t1+t2)
+
     ! collect forces from all cpus in MPI
     call mpi_allreduce(forces,sum_forces,size(forces),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
@@ -1739,11 +1763,9 @@ contains
     total_stress = stress
 #endif
 
+	!write(*,*) t1+t2, cpu_id, my_atoms, reciprocal_cutoff
 
   end subroutine calculate_ewald_forces
-
-
-  ! ToDo: calculate_ewald_electronegativities
 
 
   ! Calculates the electronegativities due to long ranged :math:`\frac{1}{r}` potentials.
@@ -1788,7 +1810,7 @@ contains
          tmp_diff_factor(2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
          -reciprocal_cutoff(2):reciprocal_cutoff(2), &
          -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         k_vector(3), dot, sin_dot, cos_dot, coords2(3)
+         k_vector(3), dot, sin_dot, cos_dot, coords2(3), t1, t2
     integer :: index1, index2, j, k1, k2, k3, offset(3)
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
@@ -1807,6 +1829,11 @@ contains
     inv_eps_2v = 1.d0 / (2.d0 * cell%volume * electric_constant)
     inv_sigma_sqrt_2 = 1.d0 / (sqrt(2.d0) * gaussian_width)
     inv_sigma_sqrt_2pi = 1.d0 / (sqrt(2.d0 * pi) * gaussian_width)
+
+
+#ifdef MPI
+          call start_timer()
+#endif
 
     ! loop over atoms
     do index1 = 1, n_atoms
@@ -1906,6 +1933,9 @@ contains
     end do
 
 #ifdef MPI
+
+	call timer(t1)
+
     ! collect structure factors from all cpus in MPI
     call mpi_allreduce(tmp_factor,s_factor,size(s_factor),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
@@ -1913,6 +1943,9 @@ contains
          mpi_sum,mpi_comm_world,mpistat)
     call mpi_allreduce(tmp_qsum,qsum,size(qsum),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
+         
+    call start_timer()
+         
 #else
     s_factor = tmp_factor
     diff_factor = tmp_diff_factor
@@ -1970,6 +2003,10 @@ contains
     end do
 
 #ifdef MPI
+
+	call timer(t2)
+	call record_load(t1+t2)
+
     ! collect electronegativities from all cpus in MPI
     call mpi_allreduce(tmp_enegs,total_enegs,size(enegs),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
