@@ -4363,11 +4363,11 @@ contains
     if(f1 < 0.0)then
     	f1 = 0.0
     	inv_sqrt = 0.0
-    end
+    end if
     if(f2 < 0.0)then
     	f2 = 0.0
     	inv_sqrt = 0.0
-    end
+    end if
 
     eneg(1) = inv_sqrt * d1*f2
     eneg(2) = inv_sqrt * d2*f1
@@ -4441,10 +4441,10 @@ contains
 
     if(f1 < 0.0)then
     	f1 = 0.0
-    end
+    end if
     if(f2 < 0.0)then
     	f2 = 0.0
-    end
+    end if
     
     energy = sqrt( f1 * f2 )
 
