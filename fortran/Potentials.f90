@@ -1530,7 +1530,7 @@ contains
          nabla_factor(3,2), stress(6), &
          k_vector(3), dot, &
          dipole(1:3), tmp_dipole(1:3), t1, t2
-    integer :: index1, index2, j, k1, k2, k3
+    integer :: index1, index2, j, k1, k2, k3, count
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
 
@@ -1763,7 +1763,7 @@ contains
     total_stress = stress
 #endif
 
-	!write(*,*) t1+t2, cpu_id, my_atoms, reciprocal_cutoff
+	!write(*,*) t1, t2, t1+t2, cpu_id, my_atoms, reciprocal_cutoff
 
   end subroutine calculate_ewald_forces
 
@@ -4360,6 +4360,15 @@ contains
 
     inv_sqrt = 0.5 / sqrt(f1*f2)
 
+    if(f1 < 0.0)then
+    	f1 = 0.0
+    	inv_sqrt = 0.0
+    end
+    if(f2 < 0.0)then
+    	f2 = 0.0
+    	inv_sqrt = 0.0
+    end
+
     eneg(1) = inv_sqrt * d1*f2
     eneg(2) = inv_sqrt * d2*f1
 
@@ -4430,6 +4439,13 @@ contains
     f1 = a1 + b1 * abs( qq1 - Q1 )**n1
     f2 = a2 + b2 * abs( qq2 - Q2 )**n2
 
+    if(f1 < 0.0)then
+    	f1 = 0.0
+    end
+    if(f2 < 0.0)then
+    	f2 = 0.0
+    end
+    
     energy = sqrt( f1 * f2 )
 
   end subroutine evaluate_energy_charge_pair_abs
