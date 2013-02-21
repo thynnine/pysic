@@ -1170,7 +1170,7 @@ class Pysic:
                 scales = self.coulomb.get_scaling_factors()
                 
                 # calculate the truncation limits for the k-space sum
-                reci_cell = self.structure.get_reciprocal_cell()
+                reci_cell = np.multiply(2.0*math.pi,self.structure.get_reciprocal_cell())
                 volume = np.dot( reci_cell[0], np.cross( reci_cell[1], reci_cell[2] ) )
                 k1 = int( kcut * np.linalg.norm( np.cross( reci_cell[1], reci_cell[2] ) ) / volume + 0.5 )
                 k2 = int( kcut * np.linalg.norm( np.cross( reci_cell[0], reci_cell[2] ) ) / volume + 0.5 )
