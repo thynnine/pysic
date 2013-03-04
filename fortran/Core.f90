@@ -2988,6 +2988,11 @@ contains
              ! 1-body energy (atom1) !
              !***********************!
 
+             ! evaluate the 1-body energy involving atom1
+             call evaluate_energy(1,interaction%n_product,dummy_sep,dummy_dist,&
+                  interaction,tmp_energy,atoms(index1:index1)) ! in Potentials.f90
+
+
              ! If there is a bond order factor associated with the potential,
              ! we add the contribution is brings:
              !
@@ -2996,14 +3001,13 @@ contains
                 call core_get_bond_order_factors(n_atoms,&
                      interaction%pot_index,&
                      bo_factors)
+                     
+                 energy = energy + tmp_energy*bo_factors(index1)
              else
-                bo_factors = 1.d0
+                !bo_factors = 1.d0
+                
+                 energy = energy + tmp_energy
              end if
-
-             ! evaluate the 1-body energy involving atom1
-             call evaluate_energy(1,interaction%n_product,dummy_sep,dummy_dist,&
-                  interaction,tmp_energy,atoms(index1:index1)) ! in Potentials.f90
-             energy = energy + tmp_energy*bo_factors(index1)
 
           case(force_evaluation_index)
 
@@ -3011,7 +3015,7 @@ contains
              ! 1-body force (atom1) !
              !**********************!
 
-             ! evaluate the 1-body energy involving atom1
+             ! evaluate the 1-body force involving atom1
              call evaluate_forces(1,interaction%n_product,dummy_sep,dummy_dist,&
                   interaction,tmp_forces(1:3,1),atoms(index1:index1)) ! in Potentials.f90
 
@@ -3041,15 +3045,20 @@ contains
                 forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) - &
                      tmp_energy*bo_gradients(1:3,1:n_atoms,1)
 
+                 ! Add the force due to potential gradient             
+                 forces(1:3,index1) = forces(1:3,index1) + &
+                      tmp_forces(1:3,1)*bo_factors(index1)
+
              else
-                bo_factors = 1.d0
-                bo_sums = 0.d0
-                bo_gradients = 0.d0
+                !bo_factors = 1.d0
+                !bo_sums = 0.d0
+                !bo_gradients = 0.d0
+
+                 ! Add the force due to potential gradient             
+                 forces(1:3,index1) = forces(1:3,index1) + &
+                      tmp_forces(1:3,1)
              end if
 
-             ! Add the force due to potential gradient
-             forces(1:3,index1) = forces(1:3,index1) + &
-                  tmp_forces(1:3,1)*bo_factors(index1)
 
           case(electronegativity_evaluation_index)
 
@@ -3068,12 +3077,15 @@ contains
                      interaction%pot_index,&
                      bo_factors)
 
+                 ! Add the electronegativity due to potential gradient
+                 enegs(index1) = enegs(index1) + tmp_enegs(1)*bo_factors(index1)
              else
-                bo_factors = 1.d0
+                !bo_factors = 1.d0
+
+                 ! Add the electronegativity due to potential gradient
+                 enegs(index1) = enegs(index1) + tmp_enegs(1)
              end if
 
-             ! Add the electronegativity due to potential gradient
-             enegs(index1) = enegs(index1) + tmp_enegs(1)*bo_factors(index1)
 
           end select
 
@@ -3148,7 +3160,7 @@ contains
                         interaction%pot_index,&
                         bo_factors)
                 else
-                   bo_factors = 1.d0
+                   !bo_factors = 1.d0
                 end if
 
                 ! If a smooth cutoff is present, we add the
@@ -3169,8 +3181,12 @@ contains
                      interaction,tmp_energy,atom_doublet)  ! in Potentials.f90
 
                 ! add the term: b_ij v_ij f(rij)
-                energy = energy + tmp_energy*cut_factors(1)*&
-                     (bo_factors(index1)+bo_factors(index2))*0.5d0
+                if(interaction%pot_index > -1)then
+                    energy = energy + tmp_energy*cut_factors(1)*&
+                         (bo_factors(index1)+bo_factors(index2))*0.5d0
+                else
+                    energy = energy + tmp_energy*cut_factors(1)
+                end if
 
              case(force_evaluation_index)
 
@@ -3253,24 +3269,31 @@ contains
                         (bo_virial(1:6,1) + bo_virial(1:6,2))*0.5d0
 
                 else
-                   bo_factors = 1.d0
-                   bo_sums = 0.d0
-                   bo_gradients = 0.d0
+                   !bo_factors = 1.d0
+                   !bo_sums = 0.d0
+                   !bo_gradients = 0.d0
                 end if
 
                 ! evaluate the 2-body force involving atom1-atom2 interaction
                 call evaluate_forces(2,interaction%n_product,separations(1:3,1),distances(1),&
                      interaction,tmp_forces(1:3,1:2),atom_doublet) ! in Potentials.f90
 
-                ! force on atom 1:                 
-                     pair_forces(1:3,1) = ( tmp_forces(1:3,1) * cut_factors(1) + &
-                     tmp_energy * cut_gradients(1:3,1) ) * &
-                     ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
+                if(interaction%pot_index > -1)then
+                    ! force on atom 1:                 
+                    pair_forces(1:3,1) = ( tmp_forces(1:3,1) * cut_factors(1) + &
+                         tmp_energy * cut_gradients(1:3,1) ) * &
+                         ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
 
-                ! force on atom 2:
-                     pair_forces(1:3,2) = ( tmp_forces(1:3,2) * cut_factors(1) - &
-                     tmp_energy * cut_gradients(1:3,1) ) * &
-                     ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
+                    ! force on atom 2:
+                    pair_forces(1:3,2) = ( tmp_forces(1:3,2) * cut_factors(1) - &
+                         tmp_energy * cut_gradients(1:3,1) ) * &
+                         ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
+                else
+                    pair_forces(1:3,1) = ( tmp_forces(1:3,1) * cut_factors(1) + &
+                         tmp_energy * cut_gradients(1:3,1) )
+                    pair_forces(1:3,2) = ( tmp_forces(1:3,2) * cut_factors(1) - &
+                         tmp_energy * cut_gradients(1:3,1) )
+                end if
 
                 forces(1:3,index1) = forces(1:3,index1) + pair_forces(1:3,1)
                 forces(1:3,index2) = forces(1:3,index2) + pair_forces(1:3,2)
@@ -3312,23 +3335,34 @@ contains
                         interaction%pot_index,&
                         bo_factors)
                 else
-                   bo_factors = 1.d0
+                   !bo_factors = 1.d0
                 end if
 
                 ! evaluate the 2-body e-neg involving atom1-atom2 interaction
                 call evaluate_electronegativity(2,interaction%n_product,separations(1:3,1),distances(1),&
                      interaction,tmp_enegs(1:2),atom_doublet) ! in Potentials.f90
 
-                ! e-neg on atom 1:
-                enegs(index1) = enegs(index1) + &
+
+                if(interaction%pot_index > -1)then
+                    ! e-neg on atom 1:
+                    enegs(index1) = enegs(index1) + &
                      ( tmp_enegs(1) * cut_factors(1) ) * &
                      ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
 
-                ! e-neg on atom 2:
-                enegs(index2) = enegs(index2) + &
+                    ! e-neg on atom 2:
+                    enegs(index2) = enegs(index2) + &
                      ( tmp_enegs(2) * cut_factors(1) ) * &
                      ( bo_factors(index1) +  bo_factors(index2) ) * 0.5d0
+                else
+                    ! e-neg on atom 1:
+                    enegs(index1) = enegs(index1) + &
+                     ( tmp_enegs(1) * cut_factors(1) ) 
 
+                    ! e-neg on atom 2:
+                    enegs(index2) = enegs(index2) + &
+                     ( tmp_enegs(2) * cut_factors(1) ) 
+                
+                end if
              end select
 
           else if(n_targets > 2)then
@@ -3544,9 +3578,9 @@ contains
                            + bo_virial(1:6,3) )/3.d0
 
                    else
-                      bo_factors = 1.d0
-                      bo_sums = 0.d0
-                      bo_gradients = 0.d0
+                      !bo_factors = 1.d0
+                      !bo_sums = 0.d0
+                      !bo_gradients = 0.d0
                    end if
 
                    ! evaluate the 3-body force
@@ -3554,27 +3588,43 @@ contains
                         tmp_forces(1:3,1:3),atom_triplet) ! in Potentials.f90
 
 
-                   ! force on atom 1:
-                   triplet_forces(1:3,1) = ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2) + &
+                   if(interaction%pot_index > -1)then
+                    ! force on atom 1:
+                    triplet_forces(1:3,1) = ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2) + &
                         cut_gradients(1:3,1)*cut_factors(2)*tmp_energy ) * &
                         ( bo_factors(index1) &
                         + bo_factors(index2) &
                         + bo_factors(index3) )/3.d0
 
-                   ! force on atom 2:
-                   triplet_forces(1:3,2) = ( tmp_forces(1:3,2)*cut_factors(1)*cut_factors(2) + &
+                    ! force on atom 2:
+                    triplet_forces(1:3,2) = ( tmp_forces(1:3,2)*cut_factors(1)*cut_factors(2) + &
                         (-cut_gradients(1:3,1)*cut_factors(2) + &
                         cut_gradients(1:3,2)*cut_factors(1)) * tmp_energy ) * &
                         ( bo_factors(index1) &
                         + bo_factors(index2) &
                         + bo_factors(index3) )/3.d0
 
-                   ! force on atom 3:
-                   triplet_forces(1:3,3) = ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2) - &
+                    ! force on atom 3:
+                    triplet_forces(1:3,3) = ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2) - &
                         cut_gradients(1:3,2)*cut_factors(1)*tmp_energy ) * &
                         ( bo_factors(index1) &
                         + bo_factors(index2) &
                         + bo_factors(index3) )/3.d0
+                   else
+                    ! force on atom 1:
+                    triplet_forces(1:3,1) = ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2) + &
+                        cut_gradients(1:3,1)*cut_factors(2)*tmp_energy ) 
+
+                    ! force on atom 2:
+                    triplet_forces(1:3,2) = ( tmp_forces(1:3,2)*cut_factors(1)*cut_factors(2) + &
+                        (-cut_gradients(1:3,1)*cut_factors(2) + &
+                        cut_gradients(1:3,2)*cut_factors(1)) * tmp_energy ) 
+
+                    ! force on atom 3:
+                    triplet_forces(1:3,3) = ( tmp_forces(1:3,3)*cut_factors(1)*cut_factors(2) - &
+                        cut_gradients(1:3,2)*cut_factors(1)*tmp_energy ) 
+                   
+                   end if
 
                    forces(1:3,index1) = forces(1:3,index1) + triplet_forces(1:3,1)
                    forces(1:3,index2) = forces(1:3,index2) + triplet_forces(1:3,2)
