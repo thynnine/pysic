@@ -241,7 +241,7 @@ module potentials
   type bond_order_descriptor
      character(len=pot_name_length) :: name
      character(len=param_name_length), pointer :: parameter_names(:,:)
-     integer :: n_targets, type_index
+     integer :: n_targets, type_index, n_level
      integer, pointer :: n_parameters(:)
      character(len=pot_note_length) :: description
      character(len=param_note_length), pointer :: parameter_notes(:,:)
@@ -312,7 +312,7 @@ module potentials
   ! *includes_post_processing a logical switch specifying if there is a scaling function :math:`s_i` attached to the factor
   ! *table array for storing tabulated values
   type bond_order_parameters
-     integer :: type_index, group_index
+     integer :: type_index, group_index, n_level
      double precision, pointer :: parameters(:,:), derived_parameters(:,:), table(:,:)
      double precision :: cutoff, soft_cutoff
      integer, pointer :: n_params(:)
@@ -4771,7 +4771,7 @@ contains
     allocate(new_bond%original_elements(n_targets))
     new_bond%original_elements = orig_elements
     new_bond%includes_post_processing = descriptor%includes_post_processing
-
+    new_bond%n_level = descriptor%n_level
 
     !***********************************!
     ! EDIT WHEN ADDING NEW BOND FACTORS !
@@ -4817,6 +4817,8 @@ contains
 
 
 
+
+
   ! !!!: evaluate_bond_order_factor
 
   ! Returns a bond order factor term.
@@ -4855,8 +4857,6 @@ contains
     select case (bond_params(1)%type_index)
     case(coordination_index) ! number of neighbors
        call evaluate_bond_order_factor_coordination(separations(1:3,1),distances(1),bond_params(1),factor)
-    case(tersoff_index) ! tersoff bond-order factor
-       call evaluate_bond_order_factor_tersoff(separations(1:3,1:2),distances(1:2),bond_params(1:2),factor,atoms(1:3))
     case(triplet_index) ! triplet search
        call evaluate_bond_order_factor_triplet(separations(1:3,1:2),distances(1:2),bond_params(1:2),factor,atoms(1:3))
     case(power_index) ! power law
@@ -4867,6 +4867,50 @@ contains
     end select
 
   end subroutine evaluate_bond_order_factor
+
+
+
+  ! !!!: evaluate_pair_bond_order_factor
+
+  ! Returns a bond order factor term.
+  ! 
+  ! By a bond order factor term, we mean the contribution from
+  ! specific atoms, :math:`c_{ijk}`, appearing in the factor
+  !
+  ! .. math::
+  !
+  !       b_ij = f(\sum_{k} c_{ijk})
+  ! 
+  ! This routine evaluates the term :math:`c_{ijk}` for the given
+  ! atoms :math:`ijk` according to the given parameters.
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *bond_params a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *factor the calculated bond order term :math:`c`
+  subroutine evaluate_pair_bond_order_factor(n_targets,separations,distances,bond_params,factor,atoms)
+    implicit none
+    integer, intent(in) :: n_targets
+    double precision, intent(in) :: separations(3,n_targets-1), &
+         distances(n_targets-1)
+    type(bond_order_parameters), intent(in) :: bond_params
+    double precision, intent(out) :: factor
+    type(atom), intent(in) :: atoms(n_targets)
+
+    factor = 0.d0
+
+    !***********************************!
+    ! EDIT WHEN ADDING NEW BOND FACTORS !
+    !***********************************!
+
+    select case (bond_params%type_index)
+    case(tersoff_index) ! tersoff bond-order factor
+       call evaluate_pair_bond_order_factor_tersoff(separations(1:3,1:2),distances(1:2),bond_params,factor,atoms(1:3))
+    end select
+
+  end subroutine evaluate_pair_bond_order_factor
 
 
   ! !!!: evaluate_bond_order_gradient
@@ -4915,12 +4959,6 @@ contains
             distances(1),&
             bond_params(1),&
             gradient(1:3,1:2,1:2))
-    case(tersoff_index) ! tersoff bond-order factor
-       call evaluate_bond_order_gradient_tersoff(separations(1:3,1:2),&
-            distances(1:2),&
-            bond_params(1:2),&
-            gradient(1:3,1:3,1:3),&
-            atoms(1:3))
     case(triplet_index) ! triplet bond-order factor
        call evaluate_bond_order_gradient_triplet(separations(1:3,1:2),&
             distances(1:2),&
@@ -4940,6 +4978,61 @@ contains
     end select
 
   end subroutine evaluate_bond_order_gradient
+
+
+
+  ! !!!: evaluate_pair_bond_order_gradient
+
+  ! Returns the gradients of bond order terms with respect to moving an atom.
+  ! 
+  ! By a bond order factor term, we mean the contribution from
+  ! specific atoms, c_ijk, appearing in the factor
+  !
+  ! .. math::
+  !
+  !       b_ij = f(\sum_{k} c_{ijk})
+  ! 
+  ! This routine evaluates the gradient term
+  ! :math:`\nabla_\alpha c_{ijk}` for the given atoms :math:`ijk` according to the given parameters.
+  !
+  ! The returned array has two dimensions:
+  ! gradient( coordinates, atom with respect to which we differentiate ).
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *bond_params a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *gradient the calculated bond order term :math:`\nabla_\alpha c`
+  subroutine evaluate_pair_bond_order_gradient(n_targets,separations,distances,bond_params,gradient,atoms)
+    implicit none
+    integer, intent(in) :: n_targets
+    double precision, intent(in) :: separations(3,n_targets-1), &
+         distances(n_targets-1)
+    type(bond_order_parameters), intent(in) :: bond_params
+    double precision, intent(out) :: gradient(3,n_targets)
+    type(atom), intent(in) :: atoms(n_targets)
+
+    gradient = 0.d0
+
+    !***********************************!
+    ! EDIT WHEN ADDING NEW BOND FACTORS !
+    !***********************************!
+
+    select case (bond_params%type_index)
+    case(tersoff_index) ! tersoff bond-order factor
+       call evaluate_pair_bond_order_gradient_tersoff(separations(1:3,1:2),&
+            distances(1:2),&
+            bond_params,&
+            gradient(1:3,1:3),&
+            atoms(1:3))
+    end select
+
+  end subroutine evaluate_pair_bond_order_gradient
+
+
+
+
 
 
   ! !!!: post_process_bond_order_factor
@@ -5091,6 +5184,7 @@ contains
 
     ! Record the number of targets
     bond_order_descriptors(index)%n_targets = 2 
+    bond_order_descriptors(index)%n_level = 1
 
     ! Allocate space for storing the numbers of parameters (for 1-body, 2-body etc.).
     allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
@@ -5186,6 +5280,7 @@ contains
     bond_order_descriptors(index)%type_index = index
     call pad_string('tersoff',pot_name_length,bond_order_descriptors(index)%name)
     bond_order_descriptors(index)%n_targets = 3
+    bond_order_descriptors(index)%n_level = 2
     allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
     bond_order_descriptors(index)%n_parameters(1) = 3 ! 3 1-body parameters
     bond_order_descriptors(index)%n_parameters(2) = 4 ! 4 2-body parameters
@@ -5220,7 +5315,7 @@ contains
     call pad_string('h',param_name_length,bond_order_descriptors(index)%parameter_names(4,2))
     call pad_string('angle term denominator 2',param_note_length,bond_order_descriptors(index)%parameter_notes(4,2))
 
-    call pad_string('Tersoff bond-order: b_i = [ 1+( beta_i sum xi_ijk*g_ijk)^eta_i ]^(-1/eta_i), \n'//&
+    call pad_string('Tersoff bond-order: b_ij = [ 1+( beta_i sum xi_ijk*g_ijk)^eta_i ]^(-1/eta_i), \n'//&
          'xi_ijk = f(r_ik)*exp(alpha_ij^m_i (r_ij-r_ik)^m_i), \n'// &
          'g_ijk = 1+c_ij^2/d_ij^2-c_ij^2/(d_ij^2+(h_ij^2-cos theta_ijk))', &
          pot_note_length,bond_order_descriptors(index)%description)
@@ -5234,42 +5329,26 @@ contains
   ! *bond_params a :data:`bond_order_parameters` containing the parameters
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
   ! *factor the calculated bond order term :math:`c`
-  subroutine evaluate_bond_order_factor_tersoff(separations,distances,bond_params,factor,atoms)
+  subroutine evaluate_pair_bond_order_factor_tersoff(separations,distances,bond_params,factor,atoms)
     double precision, intent(in) :: separations(3,2), &
          distances(2)
-    type(bond_order_parameters), intent(in) :: bond_params(2)
-    double precision, intent(out) :: factor(3)
+    type(bond_order_parameters), intent(in) :: bond_params
+    double precision, intent(out) :: factor
     type(atom), intent(in) :: atoms(3)
-    double precision :: r1, r2, cosine, decay1, decay2, &
-         xi1, xi2, gee1, gee2, &
-         mu, a1, a2, cc1, dd1, h1, cc2, dd2, h2
+    double precision :: r1, r2, cosine, decay1, &
+         xi1, gee1, &
+         mu, a1, cc1, dd1, h1
     double precision :: tmp1(3), tmp2(3)
 
     factor = 0.d0
 
-    ! note that the given distances and separation vectors 
-    ! must be for index pairs ij and ik (in the notation 
-    ! described in the documentation) since these are needed.
-    !
-    ! bond_params(1) should contain the ij parameters and 
-    ! bond_params(2) the ik ones
-
-    if(bond_params(1)%type_index /= bond_params(2)%type_index)then
+    if(bond_params%original_elements(1) /= atoms(2)%element)then
        return
     end if
-
-    ! check that bond_params(1) is for indices (ij)
-    if(bond_params(1)%original_elements(1) /= atoms(2)%element)then
+    if(bond_params%original_elements(2) /= atoms(1)%element)then
        return
     end if
-    if(bond_params(1)%original_elements(2) /= atoms(1)%element)then
-       return
-    end if
-    ! check that bond_params(2) is for indices (ik)
-    if(bond_params(2)%original_elements(1) /= atoms(2)%element)then
-       return
-    end if
-    if(bond_params(2)%original_elements(2) /= atoms(3)%element)then
+    if(bond_params%original_elements(3) /= atoms(3)%element)then
        return
     end if
 
@@ -5285,35 +5364,25 @@ contains
     ! bond_params: mu_i, a_ij, a_ik, &
     !              c_ij^2, d_ij^2, h_ij, 
     !              c_ik^2, d_ik^2, h_ik
-    mu = bond_params(1)%parameters(3,1)
-    a1 = bond_params(1)%parameters(1,2)
-    a2 = bond_params(2)%parameters(1,2)
-    cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
-    dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
-    h1 = bond_params(1)%parameters(4,2)
-    cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
-    dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
-    h2 = bond_params(2)%parameters(4,2)
+    mu = bond_params%parameters(3,1)
+    a1 = bond_params%parameters(1,2)
+    cc1 = bond_params%parameters(2,2)*bond_params%parameters(2,2)
+    dd1 = bond_params%parameters(3,2)*bond_params%parameters(3,2)
+    h1 = bond_params%parameters(4,2)
     
-    call smoothening_factor(r2,bond_params(2)%cutoff,&
-         bond_params(2)%soft_cutoff,decay2)
-    call smoothening_factor(r1,bond_params(1)%cutoff,&
-         bond_params(1)%soft_cutoff,decay1)
+    call smoothening_factor(r2,bond_params%cutoff,&
+         bond_params%soft_cutoff,decay1)
     
-    xi1 = decay1 * decay2 * exp( (a1 * (r1-r2))**mu ) 
-    xi2 = decay1 * decay2 * exp( (a2 * (r2-r1))**mu ) 
+    xi1 = decay1 * exp( (a1 * (r1-r2))**mu ) 
     gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
-    gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
     
     ! only the middle atom gets a contribution, 
-    ! so factor(1) = factor(3) = 0.0
-    factor(2) = xi1*gee1 + xi2*gee2
+    factor = xi1*gee1
     
+  end subroutine evaluate_pair_bond_order_factor_tersoff
 
-  end subroutine evaluate_bond_order_factor_tersoff
 
-
-  ! Coordination bond order factor gradient
+  ! Tersoff bond order factor gradient
   !
   ! *n_targets number of targets
   ! *separations atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
@@ -5321,40 +5390,31 @@ contains
   ! *bond_params a :data:`bond_order_parameters` containing the parameters
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
   ! *gradient the calculated bond order term :math:`c`
-  subroutine evaluate_bond_order_gradient_tersoff(separations,distances,bond_params,gradient,atoms)
+  subroutine evaluate_pair_bond_order_gradient_tersoff(separations,distances,bond_params,gradient,atoms)
     double precision, intent(in) :: separations(3,2), &
          distances(2)
-    type(bond_order_parameters), intent(in) :: bond_params(2)
-    double precision, intent(out) :: gradient(3,3,3)
+    type(bond_order_parameters), intent(in) :: bond_params
+    double precision, intent(out) :: gradient(3,3)
     type(atom), intent(in) :: atoms(3)
     double precision :: r1, r2, nablar1(3,3), nablar2(3,3), &
-         cosine, nablacosine(3,3), decay1, decay2,&
+         cosine, nablacosine(3,3), decay1, &
          nabladecay(3,3), unitvector(3,2), xi1, gee1, &
          nablaxi1(3,3), nablagee1(3,3), &
-         xi2, gee2, nablaxi2(3,3), nablagee2(3,3), &
-         mu, a1, a2, cc1, dd1, h1, cc2, dd2, h2, dot, &
+         mu, a1, cc1, dd1, h1, dot, &
          ratio, exponent1a, exponent1b, exponent2a, exponent2b
     double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3), &
-         tmp5(3), tmp6(3), tmpmat1(3,3), tmpmat2(3,3)
+         tmp6(3), tmpmat2(3,3)
 
     gradient = 0.d0
 
-    if(bond_params(1)%type_index /= bond_params(2)%type_index)then
-       return
-    end if
-
     ! check that bond_params(1) is for indices (ij)
-    if(bond_params(1)%original_elements(1) /= atoms(2)%element)then
+    if(bond_params%original_elements(1) /= atoms(2)%element)then
        return
     end if
-    if(bond_params(1)%original_elements(2) /= atoms(1)%element)then
+    if(bond_params%original_elements(2) /= atoms(1)%element)then
        return
     end if
-    ! check that bond_params(2) is for indices (ik)
-    if(bond_params(2)%original_elements(1) /= atoms(2)%element)then
-       return
-    end if
-    if(bond_params(2)%original_elements(2) /= atoms(3)%element)then
+    if(bond_params%original_elements(3) /= atoms(3)%element)then
        return
     end if
 
@@ -5396,72 +5456,44 @@ contains
     ! bond_params: mu_i, a_ij, a_ik, &
     !              c_ij^2, d_ij^2, h_ij, 
     !              c_ik^2, d_ik^2, h_ik
-    mu = bond_params(1)%parameters(3,1)
-    a1 = bond_params(1)%parameters(1,2)
-    a2 = bond_params(2)%parameters(1,2)
-    cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
-    dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
-    h1 = bond_params(1)%parameters(4,2)
-    cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
-    dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
-    h2 = bond_params(2)%parameters(4,2)
+    mu = bond_params%parameters(3,1)
+    a1 = bond_params%parameters(1,2)
+    cc1 = bond_params%parameters(2,2)*bond_params%parameters(2,2)
+    dd1 = bond_params%parameters(3,2)*bond_params%parameters(3,2)
+    h1 = bond_params%parameters(4,2)
     
-    call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay2)
-    call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(2)%soft_cutoff,decay1)
-    ! store the gradients of decay1 and decay2 in tmp5 and tmp6
+    call smoothening_factor(r2,bond_params%cutoff,bond_params%soft_cutoff,decay1)
+    ! store the gradient of decay1 in tmp6
     call smoothening_gradient(unitvector(1:3,2),r2,&
-         bond_params(2)%cutoff,bond_params(2)%soft_cutoff,tmp6)
-    call smoothening_gradient(unitvector(1:3,1),r1,&
-         bond_params(1)%cutoff,bond_params(1)%soft_cutoff,tmp5)
-    
-    ! tmpmat1 ad tmpmat2 store the gradients of decay1
-    ! and decay2 with respect to moving any atom i, j, or k
-    
-    ! gradient 1 (tmp5) affects atoms ij, so it affects atoms 2 and 1
-    tmpmat1 = 0.d0
-    tmpmat1(1:3,1) = tmp5
-    tmpmat1(1:3,2) = -tmp5
-    ! gradient 2 (tmp6) affects atoms ik, so it affects atoms 2 and 3
+         bond_params%cutoff,bond_params%soft_cutoff,tmp6)
+        
+    ! gradient (tmp6) affects atoms ik, so it affects atoms 2 and 3
     tmpmat2 = 0.d0
     tmpmat2(1:3,2) = -tmp6
     tmpmat2(1:3,3) = tmp6
     
     exponent1a = (a1 * (r1-r2))**(mu-1)
-    exponent2a = (a2 * (r2-r1))**(mu-1)
     exponent1b = (a1 * (r1-r2))*exponent1a
-    exponent2b = (a2 * (r2-r1))*exponent2a
     xi1 = exp( exponent1b ) 
-    xi2 = exp( exponent2b )
     gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
-    gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
-    nablaxi1 = (tmpmat1 * decay2 + tmpmat2 * decay1) * xi1 + &
-         decay1*decay2*( exp( exponent1b ) * a1 * mu * exponent1a ) * (nablar1 - nablar2)
-    nablaxi2 = (tmpmat2 * decay1 + tmpmat1 * decay2) * xi2 + &
-         decay1*decay2*( exp( exponent2b ) * a2 * mu * exponent2a ) * (nablar2 - nablar1)
-    xi1 = xi1 * decay1 * decay2
-    xi2 = xi2 * decay1 * decay2
+    nablaxi1 = tmpmat2 * xi1 + &
+         decay1*( exp( exponent1b ) * a1 * mu * exponent1a ) * (nablar1 - nablar2)
+    xi1 = xi1 * decay1
     nablagee1 = - cc1 / ( (dd1+(h1-cosine)*(h1-cosine))*(dd1+(h1-cosine)*(h1-cosine)) ) * &
          2.d0 * (h1-cosine) * nablacosine
-    nablagee2 = - cc2 / ( (dd2+(h2-cosine)*(h2-cosine))*(dd2+(h2-cosine)*(h2-cosine)) ) * &
-         2.d0 * (h2-cosine) * nablacosine
     
-    ! there is only contribution to the factor of the middle atom, so
-    ! also the gradients of atoms 1 and 3 are 0.
-    gradient(1:3,2,1) = nablaxi1(1:3,1) * gee1 + xi1 * nablagee1(1:3,1) + &
-         nablaxi2(1:3,1) * gee2 + xi2 * nablagee2(1:3,1)
-    gradient(1:3,2,2) = nablaxi1(1:3,2) * gee1 + xi1 * nablagee1(1:3,2) + &
-         nablaxi2(1:3,2) * gee2 + xi2 * nablagee2(1:3,2)
-    gradient(1:3,2,3) = nablaxi1(1:3,3) * gee1 + xi1 * nablagee1(1:3,3) + &
-         nablaxi2(1:3,3) * gee2 + xi2 * nablagee2(1:3,3)
+    gradient(1:3,1) = nablaxi1(1:3,1) * gee1 + xi1 * nablagee1(1:3,1) 
+    gradient(1:3,2) = nablaxi1(1:3,2) * gee1 + xi1 * nablagee1(1:3,2) 
+    gradient(1:3,3) = nablaxi1(1:3,3) * gee1 + xi1 * nablagee1(1:3,3) 
     
-  end subroutine evaluate_bond_order_gradient_tersoff
+  end subroutine evaluate_pair_bond_order_gradient_tersoff
 
 
   ! Tersoff post process factor
   !
-  ! *raw_sum the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+  ! *raw_sum the precalculated bond order sum, :math:`\sum_k c_{ijk}` in the above example
   ! *bond_params a :data:`bond_order_parameters` specifying the parameters
-  ! *factor_out the calculated bond order factor :math:`b_i`
+  ! *factor_out the calculated bond order factor :math:`b_{ij}`
   subroutine post_process_bond_order_factor_tersoff(raw_sum, bond_params, factor_out)
     implicit none
     double precision, intent(in) :: raw_sum
@@ -5535,6 +5567,8 @@ contains
     call pad_string('c_scale',pot_name_length,bond_order_descriptors(index)%name)
 
     bond_order_descriptors(index)%n_targets = 1
+    bond_order_descriptors(index)%n_level = 1
+
     allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
     bond_order_descriptors(index)%n_parameters(1) = 4 ! 4 1-body parameters
 
@@ -5619,6 +5653,8 @@ contains
     bond_order_descriptors(index)%type_index = index
     call pad_string('triplet',pot_name_length,bond_order_descriptors(index)%name)
     bond_order_descriptors(index)%n_targets = 3
+    bond_order_descriptors(index)%n_level = 1
+
     allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
     bond_order_descriptors(index)%n_parameters(1) = 0 ! 3 1-body parameters
     bond_order_descriptors(index)%n_parameters(2) = 0 ! 4 2-body parameters
@@ -5767,6 +5803,7 @@ contains
 
     ! Record the number of targets
     bond_order_descriptors(index)%n_targets = 2 
+    bond_order_descriptors(index)%n_level = 1
 
     ! Allocate space for storing the numbers of parameters (for 1-body, 2-body etc.).
     allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
@@ -5896,6 +5933,8 @@ contains
     call pad_string('sqrt_scale',pot_name_length,bond_order_descriptors(index)%name)
 
     bond_order_descriptors(index)%n_targets = 1
+    bond_order_descriptors(index)%n_level = 1
+
     allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
     bond_order_descriptors(index)%n_parameters(1) = 1 ! 4 1-body parameters
 
@@ -5978,6 +6017,8 @@ contains
     call pad_string('table_scale',pot_name_length,bond_order_descriptors(index)%name)
 
     bond_order_descriptors(index)%n_targets = 1
+    bond_order_descriptors(index)%n_level = 1
+
     allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
     bond_order_descriptors(index)%n_parameters(1) = 3
 
@@ -6114,6 +6155,7 @@ contains
 
     ! Record the number of targets
     bond_order_descriptors(index)%n_targets = 2 
+    bond_order_descriptors(index)%n_level = 1
 
     ! Allocate space for storing the numbers of parameters (for 1-body, 2-body etc.).
     allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
