@@ -50,7 +50,7 @@ class BondOrderParameters:
         self.n_params = number_of_parameters(bond_order_type)
 
         if parameters == None:
-            self.parameters = self.n_targets*[[]]
+            self.parameters = 2*[[]]
             for index in range(len(self.parameters)): 
                 self.parameters[index] = self.n_params[index]*[0.0]
         else:  
@@ -118,7 +118,7 @@ class BondOrderParameters:
     def get_number_of_targets(self):
         """Returns the (maximum) number of targets the bond order factor affects.
         """
-        return len(self.n_params)
+        return self.n_targets
 
     def get_parameters_as_list(self):
         """Returns the parameters of the bond order factor as a single list.

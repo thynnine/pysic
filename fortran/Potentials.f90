@@ -5187,11 +5187,12 @@ contains
     bond_order_descriptors(index)%n_level = 1
 
     ! Allocate space for storing the numbers of parameters (for 1-body, 2-body etc.).
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
 
     ! Record the number of parameters
-    bond_order_descriptors(index)%n_parameters(1) = 0 ! no 1-body params
-    bond_order_descriptors(index)%n_parameters(2) = 0 ! no 2-body params
+    bond_order_descriptors(index)%n_parameters(1) = 0 ! no scaling params
+    bond_order_descriptors(index)%n_parameters(2) = 0 ! no local params
 
     ! Record if the bond factor includes post processing (per-atom scaling)
     bond_order_descriptors(index)%includes_post_processing = .false.
@@ -5281,16 +5282,18 @@ contains
     call pad_string('tersoff',pot_name_length,bond_order_descriptors(index)%name)
     bond_order_descriptors(index)%n_targets = 3
     bond_order_descriptors(index)%n_level = 2
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
-    bond_order_descriptors(index)%n_parameters(1) = 3 ! 3 1-body parameters
-    bond_order_descriptors(index)%n_parameters(2) = 4 ! 4 2-body parameters
-    bond_order_descriptors(index)%n_parameters(3) = 0 ! no 3-body parameters
-    max_params = 4 ! maxval(bond_order_descriptors(index)%n_parameters)
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
+    bond_order_descriptors(index)%n_parameters(1) = 2 ! 3 scaling parameters
+    bond_order_descriptors(index)%n_parameters(2) = 5 ! 4 local parameters
+    max_params = 5 ! maxval(bond_order_descriptors(index)%n_parameters)
     bond_order_descriptors(index)%includes_post_processing = .true.
 
     ! Allocate space for storing the parameter names and descriptions.
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
 
     ! Record parameter names and descriptions.
     ! Names are keywords with which one can intuitively 
@@ -5304,8 +5307,8 @@ contains
     call pad_string('prefactor',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
     call pad_string('eta',param_name_length,bond_order_descriptors(index)%parameter_names(2,1))
     call pad_string('overall exponent',param_note_length,bond_order_descriptors(index)%parameter_notes(2,1))
-    call pad_string('mu',param_name_length,bond_order_descriptors(index)%parameter_names(3,1))
-    call pad_string('decay exponent',param_note_length,bond_order_descriptors(index)%parameter_notes(3,1))
+    call pad_string('mu',param_name_length,bond_order_descriptors(index)%parameter_names(5,2))
+    call pad_string('decay exponent',param_note_length,bond_order_descriptors(index)%parameter_notes(5,2))
     call pad_string('a',param_name_length,bond_order_descriptors(index)%parameter_names(1,2))
     call pad_string('inverse decay factor',param_note_length,bond_order_descriptors(index)%parameter_notes(1,2))
     call pad_string('c',param_name_length,bond_order_descriptors(index)%parameter_names(2,2))
@@ -5315,9 +5318,9 @@ contains
     call pad_string('h',param_name_length,bond_order_descriptors(index)%parameter_names(4,2))
     call pad_string('angle term denominator 2',param_note_length,bond_order_descriptors(index)%parameter_notes(4,2))
 
-    call pad_string('Tersoff bond-order: b_ij = [ 1+( beta_i sum xi_ijk*g_ijk)^eta_i ]^(-1/eta_i), \n'//&
-         'xi_ijk = f(r_ik)*exp(alpha_ij^m_i (r_ij-r_ik)^m_i), \n'// &
-         'g_ijk = 1+c_ij^2/d_ij^2-c_ij^2/(d_ij^2+(h_ij^2-cos theta_ijk))', &
+    call pad_string('Tersoff bond-order: b_ij = [ 1+( beta sum xi_ijk*g_ijk)^eta ]^(-1/eta), \n'//&
+         'xi_ijk = f(r_ik)*exp(alpha^m (r_ij-r_ik)^m), \n'// &
+         'g_ijk = 1+c^2/d^2-c^2/(d^2+(h^2-cos theta_ijk))', &
          pot_note_length,bond_order_descriptors(index)%description)
 
   end subroutine create_bond_order_factor_characterizer_tersoff
@@ -5364,7 +5367,7 @@ contains
     ! bond_params: mu_i, a_ij, a_ik, &
     !              c_ij^2, d_ij^2, h_ij, 
     !              c_ik^2, d_ik^2, h_ik
-    mu = bond_params%parameters(3,1)
+    mu = bond_params%parameters(5,2)
     a1 = bond_params%parameters(1,2)
     cc1 = bond_params%parameters(2,2)*bond_params%parameters(2,2)
     dd1 = bond_params%parameters(3,2)*bond_params%parameters(3,2)
@@ -5456,7 +5459,7 @@ contains
     ! bond_params: mu_i, a_ij, a_ik, &
     !              c_ij^2, d_ij^2, h_ij, 
     !              c_ik^2, d_ik^2, h_ik
-    mu = bond_params%parameters(3,1)
+    mu = bond_params%parameters(5,2)
     a1 = bond_params%parameters(1,2)
     cc1 = bond_params%parameters(2,2)*bond_params%parameters(2,2)
     dd1 = bond_params%parameters(3,2)*bond_params%parameters(3,2)
@@ -5569,14 +5572,20 @@ contains
     bond_order_descriptors(index)%n_targets = 1
     bond_order_descriptors(index)%n_level = 1
 
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
-    bond_order_descriptors(index)%n_parameters(1) = 4 ! 4 1-body parameters
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
+    
+    bond_order_descriptors(index)%n_parameters(1) = 4 ! 4 scaling parameters
+    bond_order_descriptors(index)%n_parameters(2) = 0 ! 0 local parameters
+
 
     bond_order_descriptors(index)%includes_post_processing = .true.
     max_params = 4 ! maxval(bond_order_descriptors(index)%n_parameters)
 
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
     call pad_string('epsilon',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
     call pad_string('energy scale constant',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
     call pad_string('N',param_name_length,bond_order_descriptors(index)%parameter_names(2,1))
@@ -5655,16 +5664,19 @@ contains
     bond_order_descriptors(index)%n_targets = 3
     bond_order_descriptors(index)%n_level = 1
 
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
-    bond_order_descriptors(index)%n_parameters(1) = 0 ! 3 1-body parameters
-    bond_order_descriptors(index)%n_parameters(2) = 0 ! 4 2-body parameters
-    bond_order_descriptors(index)%n_parameters(3) = 0 ! no 3-body parameters
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
+    
+    bond_order_descriptors(index)%n_parameters(1) = 0 ! 0 scaling parameters
+    bond_order_descriptors(index)%n_parameters(2) = 0 ! 0 local parameters
     max_params = 0 ! maxval(bond_order_descriptors(index)%n_parameters)
     bond_order_descriptors(index)%includes_post_processing = .false.
 
     ! Allocate space for storing the parameter names and descriptions.
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
 
     ! Record parameter names and descriptions.
     ! Names are keywords with which one can intuitively 
@@ -5806,16 +5818,19 @@ contains
     bond_order_descriptors(index)%n_level = 1
 
     ! Allocate space for storing the numbers of parameters (for 1-body, 2-body etc.).
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
 
     ! Record the number of parameters
-    bond_order_descriptors(index)%n_parameters(1) = 0 ! no 1-body params
-    bond_order_descriptors(index)%n_parameters(2) = 2 ! 2 2-body params
+    bond_order_descriptors(index)%n_parameters(1) = 0 ! no scaling params
+    bond_order_descriptors(index)%n_parameters(2) = 2 ! 2 local params
     max_params = 2 ! maxval(bond_order_descriptors(index)%n_parameters)
 
     ! Allocate space for storing the parameter names and descriptions.
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
 
     ! Record if the bond factor includes post processing (per-atom scaling)
     bond_order_descriptors(index)%includes_post_processing = .false.
@@ -5935,14 +5950,20 @@ contains
     bond_order_descriptors(index)%n_targets = 1
     bond_order_descriptors(index)%n_level = 1
 
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
-    bond_order_descriptors(index)%n_parameters(1) = 1 ! 4 1-body parameters
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
+
+    bond_order_descriptors(index)%n_parameters(1) = 1 ! 1 scaling parameter
+    bond_order_descriptors(index)%n_parameters(2) = 0 ! no local parameter
 
     bond_order_descriptors(index)%includes_post_processing = .true.
     max_params = 1 ! maxval(bond_order_descriptors(index)%n_parameters)
 
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
+    
     call pad_string('epsilon',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
     call pad_string('energy scale constant',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
 
@@ -6019,14 +6040,20 @@ contains
     bond_order_descriptors(index)%n_targets = 1
     bond_order_descriptors(index)%n_level = 1
 
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
+
     bond_order_descriptors(index)%n_parameters(1) = 3
+    bond_order_descriptors(index)%n_parameters(2) = 0
 
     bond_order_descriptors(index)%includes_post_processing = .true.
     max_params = 3 ! maxval(bond_order_descriptors(index)%n_parameters)
 
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
+    
     call pad_string('id',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
     call pad_string('file identifier',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
     call pad_string('range',param_name_length,bond_order_descriptors(index)%parameter_names(2,1))
@@ -6159,15 +6186,18 @@ contains
 
     ! Allocate space for storing the numbers of parameters (for 1-body, 2-body etc.).
     allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
 
     ! Record the number of parameters
-    bond_order_descriptors(index)%n_parameters(1) = 0 ! no 1-body params
-    bond_order_descriptors(index)%n_parameters(2) = 3 ! no 2-body params
+    bond_order_descriptors(index)%n_parameters(1) = 0 ! no scaling params
+    bond_order_descriptors(index)%n_parameters(2) = 3 ! 3 local params
     max_params = 3 ! maxval(bond_order_descriptors(index)%n_parameters)
 
     ! Allocate space for storing the parameter names and descriptions.
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
 
     ! Record if the bond factor includes post processing (per-atom scaling)
     bond_order_descriptors(index)%includes_post_processing = .false.

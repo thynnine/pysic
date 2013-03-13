@@ -1099,15 +1099,23 @@ class Pysic:
                 pf.pysic_interface.clear_potential_multipliers()
 
         n_bonds = 0
+        permutate = False
         for coord in coord_list:
             try:
                 allbonds = coord[0].get_bond_order_parameters()
                 for bond in allbonds:
                     alltargets = bond.get_symbols()
                     for targets in alltargets:
-                        perms = permutations(targets)
-                        different = set(perms)
-                        n_bonds += len(different)
+                    
+                        if(permutate):
+                            # permutate bond factor symbols
+                            perms = permutations(targets)
+                            different = set(perms)
+                            n_bonds += len(different)
+
+                        else:
+                            # do not permutate the bond factor symbols
+                            n_bonds += 1
             except:
                 raise InvalidParametersError("Invalid bond order parameter indices: "+str(bond.get_symbols()))
 
@@ -1123,9 +1131,14 @@ class Pysic:
                         int_orig_symbs = []
                         for orig_symbs in targets:
                             int_orig_symbs.append( pu.str2ints(orig_symbs,2) )
-                        
-                        perms = permutations(targets)
-                        different = set(perms)
+                    
+                        if(permutate):
+                            # permutate bond factor symbols
+                            perms = permutations(targets)
+                            different = set(perms)
+                        else:
+                            # do not permutate the bond factor symbols
+                            different = [targets]
 
                         for symbs in different:
                             int_symbs = []

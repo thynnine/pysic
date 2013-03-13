@@ -78,6 +78,8 @@ to Python are simply calling routines here.
     - :func:`core_calculate_electronegativities`
     - :func:`core_calculate_energy`
     - :func:`core_calculate_forces`
+    - :func:`core_calculate_pair_bond_order_factor`
+    - :func:`core_calculate_pair_bond_order_gradients`
     - :func:`core_clear_atoms`
     - :func:`core_clear_bond_order_factors`
     - :func:`core_clear_bond_order_storage`
@@ -108,6 +110,8 @@ to Python are simply calling routines here.
     - :func:`core_post_process_bond_order_factors`
     - :func:`core_post_process_bond_order_gradients`
     - :func:`core_post_process_bond_order_gradients_of_factor`
+    - :func:`core_post_process_pair_bond_order_factor`
+    - :func:`core_post_process_pair_bond_order_gradients`
     - :func:`core_release_all_memory`
     - :func:`core_set_ewald_parameters`
     - :func:`core_update_atom_charges`
@@ -714,6 +718,83 @@ Full documentation of subroutines in pysic_core
     **total_stress**: double precision  **intent(out)**    *size(6)*  
         as array containing the calculated stress tensor
             
+  .. function:: core_calculate_pair_bond_order_factor(atom_pair, separation, distance, direction, group_index, bond_order_sum)
+
+    Calculates the bond order sum for a given pair of atoms for the given group.
+    
+    For a factor such as
+    
+    .. math::
+    
+         b_ij = f(\sum_k c_{ijk})
+    
+    The routine calculates
+    
+    .. math::
+    
+         \sum_k c_{ijk}.
+    
+    The full bond order factor is then obtained by applying the
+    scaling function :math:`f`. This is done with
+    :func:`core_post_process_bond_order_factors`.
+    
+
+    Parameters:
+
+    atom_pair: integer  *intent(in)*    *size(2)*  
+        
+    separation: double precision  *intent(in)*    *size(3)*  
+        
+    distance: double precision  *intent(in)*    *scalar*  
+        
+    direction: double precision  *intent(in)*    *size(3)*  
+        
+    group_index: integer  *intent(in)*    *scalar*  
+        an index denoting the potential to which the factor is connected
+    **bond_order_sum**: double precision  **intent(out)**    *size(2)*  
+        the calculated bond order sums
+            
+  .. function:: core_calculate_pair_bond_order_gradients(n_atoms, atom_pair, separation, distance, direction, group_index, raw_sums, total_gradient, total_virial)
+
+    Returns the gradients of a pair bond order factor.
+    
+    For a factor such as
+    
+    .. math::
+    
+         b_{ij} = f(\sum_k c_{ijk})
+    
+    The routine calculates
+    
+    .. math::
+    
+        \nabla_\alpha b_{ij} = f'(\sum_k c_{ijk}) \nabla_\alpha \sum_k c_{ijk}.
+    
+    By default, the gradients the factor :math:`ij` is calculated with respect
+    to moving all atoms :math:`\alpha`.
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        number of atoms
+    atom_pair: integer  *intent(in)*    *size(2)*  
+        
+    separation: double precision  *intent(in)*    *size(3)*  
+        
+    distance: double precision  *intent(in)*    *scalar*  
+        
+    direction: double precision  *intent(in)*    *size(3)*  
+        
+    group_index: integer  *intent(in)*    *scalar*  
+        an index denoting the potential to which the factor is connected
+    raw_sums: double precision  *intent(in)*    *size(2)*  
+        precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
+    **total_gradient**: double precision  **intent(out)**    *size(3, n_atoms, 2)*  
+        the calculated bond order gradients :math:`\nabla_\alpha b_i`
+    **total_virial**: double precision  **intent(out)**    *size(6, 2)*  
+        the components of the virial due to the bond order gradient
+            
   .. function:: core_clear_atoms()
 
     Deallocates the array of atoms in the core, if allocated.
@@ -1308,6 +1389,81 @@ Full documentation of subroutines in pysic_core
         an index denoting the potential to which the factor is connected
     atom_index: integer  *intent(in)*    *scalar*  
         the index of the atom whose factor is differentiated (:math:`i`)
+    raw_sum: double precision  *intent(in)*    *scalar*  
+        precalculated bond order sum for the given atom, :math:`\sum_j c_{ij}`, in the above example
+    raw_gradients: double precision  *intent(in)*    *size(3, n_atoms)*  
+        precalculated gradients of bond order sums, :math:`\nabla_\alpha \sum_j c_{ij}`, in the above example
+    **total_bond_gradients**: double precision  **intent(out)**    *size(3, n_atoms)*  
+        the calculated bond order gradients :math:`\nabla_\alpha b_i`
+    raw_virial: double precision  *intent(in)*    *size(6)*  
+        the precalculated virial due to the bond order gradient
+    **total_virial**: double precision  **intent(out)**    *size(6)*  
+        the scaled  virial due to the bond order gradient
+    mpi_split: logical  *intent(in)*    *scalar*  *optional*
+        A switch for enabling MPI parallelization. By default the routine is sequential since the calculation may be called from within an already parallelized routine.
+            
+  .. function:: core_post_process_pair_bond_order_factor(atom1, group_index, raw_sum, total_bond_order)
+
+    Bond-order post processing, i.e., application of per-atom scaling functions.
+    
+    By post processing, we mean any operations done after calculating the
+    sum of pair- and many-body terms. That is, if a factor is, say,
+    
+    .. math::
+    
+         b_{ij} = f(\sum_k c_{ijk}) = 1 + \sum_k c_{ijk},
+    
+    the :math:`\sum_k c_{ijk}` would have been calculated already
+    (with :func:`core_calculate_pair_bond_order_factor`)
+    and the operation :math:`f(x) = 1 + x`
+    remains to be carried out.
+    
+
+    Parameters:
+
+    atom1: type(atom)  *intent(in)*    *scalar*  
+        
+    group_index: integer  *intent(in)*    *scalar*  
+        an index denoting the potential to which the factor is connected
+    raw_sum: double precision  *intent(in)*    *scalar*  
+        
+    **total_bond_order**: double precision  **intent(out)**    *scalar*  
+        
+            
+  .. function:: core_post_process_pair_bond_order_gradients(n_atoms, group_index, atom1, raw_sum, raw_gradients, total_bond_gradients, raw_virial, total_virial, mpi_split)
+
+    Bond-order post processing, i.e., application of per-pair scaling functions.
+    This routine does the scaling for the bond order factor of the given pair
+    with respect to moving all atoms
+    with the given bond order sum for the factor and
+    the gradients of the sum with respect to moving all atoms.
+    
+    By post processing, we mean any operations done after calculating the
+    sum of pair- and many-body terms. That is, if a factor is, say,
+    
+    .. math::
+    
+         b_{ij} = f(\sum_k c_{ijk}) = 1 + \sum_k c_{ijk},
+    
+    the :math:`\sum_k c_{ijk}` would have been calculated already and the operation :math:`f(x) = 1 + x`
+    remains to be carried out.
+    The post processing is done per pair.
+    
+    For gradients, one needs to evaluate
+    
+    .. math::
+    
+        \nabla_\alpha b_{ij} = f'(\sum_k c_{ijk}) \nabla_\alpha \sum_k c_{ijk}
+    
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        number of atoms
+    group_index: integer  *intent(in)*    *scalar*  
+        an index denoting the potential to which the factor is connected
+    atom1: type(atom)  *intent(in)*    *scalar*  
+        
     raw_sum: double precision  *intent(in)*    *scalar*  
         precalculated bond order sum for the given atom, :math:`\sum_j c_{ij}`, in the above example
     raw_gradients: double precision  *intent(in)*    *size(3, n_atoms)*  

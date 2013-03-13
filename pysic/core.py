@@ -228,8 +228,8 @@ def number_of_parameters(potential_name,as_list=False):
             return n_params
     elif(is_bond_order_factor(potential_name)):
         n_targets = pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
-        n_params = [ [""] ]*n_targets
-        for i in range(n_targets):
+        n_params = [ [""] ]*2
+        for i in range(2):
             n_params[i] = pf.pysic_interface.number_of_parameters_of_bond_order_factor(potential_name,i+1)
         return n_params
     elif(is_charge_relaxation(potential_name)):
@@ -277,11 +277,11 @@ def names_of_parameters(potential_name):
 
     elif(is_bond_order_factor(potential_name)):
         n_targets = pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
-        param_codes = [ [0] ]*n_targets
-        param_names = [ [] ]*n_targets
+        param_codes = [ [0] ]*2
+        param_names = [ [] ]*2
         n_params = number_of_parameters(potential_name)
 
-        for i in range(n_targets):
+        for i in range(2):
             param_codes[i] = pf.pysic_interface.names_of_parameters_of_bond_order_factor(potential_name,i+1).transpose()
             param_names[i] = [""]*n_params[i]
 
