@@ -203,13 +203,11 @@ must be updated accordingly.
     - :func:`evaluate_bond_order_factor_coordination`
     - :func:`evaluate_bond_order_factor_power`
     - :func:`evaluate_bond_order_factor_table`
-    - :func:`evaluate_bond_order_factor_tersoff`
     - :func:`evaluate_bond_order_factor_triplet`
     - :func:`evaluate_bond_order_gradient`
     - :func:`evaluate_bond_order_gradient_coordination`
     - :func:`evaluate_bond_order_gradient_power`
     - :func:`evaluate_bond_order_gradient_table`
-    - :func:`evaluate_bond_order_gradient_tersoff`
     - :func:`evaluate_bond_order_gradient_triplet`
     - :func:`evaluate_electronegativity`
     - :func:`evaluate_electronegativity_charge_exp`
@@ -247,6 +245,10 @@ must be updated accordingly.
     - :func:`evaluate_force_spring`
     - :func:`evaluate_force_table`
     - :func:`evaluate_forces`
+    - :func:`evaluate_pair_bond_order_factor`
+    - :func:`evaluate_pair_bond_order_factor_tersoff`
+    - :func:`evaluate_pair_bond_order_gradient`
+    - :func:`evaluate_pair_bond_order_gradient_tersoff`
     - :func:`get_bond_descriptor`
     - :func:`get_description_of_bond_order_factor`
     - :func:`get_description_of_potential`
@@ -605,18 +607,20 @@ Full documentation of custom types in potentials
         Descriptions of the parameters. The descriptions should be very short indicators such as 'spring constant' or 'energy coefficient'. For more detailed explanations, the proper documentation should be used.
     n_parameters: integer  *pointer*  *size(:)*
         number of parameters for each number of bodies (1-body parameters, 2-body parameters etc.)
-    includes_post_processing: logical    *scalar*
-        a logical tag specifying if there is a scaling function :math:`s_i` attached to the factor.
+    n_level: integer    *scalar*
+        
+    name: character(len=pot_name_length)    *scalar*
+        The name of the bond order factor: this is a keyword according to which the factor may be recognized.
     description: character(len=pot_note_length)    *scalar*
         A description of the bond order factor. This should contain the mathematical formulation as well as a short verbal explanation.
+    includes_post_processing: logical    *scalar*
+        a logical tag specifying if there is a scaling function :math:`s_i` attached to the factor.
     type_index: integer    *scalar*
         The internal index of the bond order factor. This can also be used for recognizing the factor and must therefore match the name. For instance, if name = 'neighbors', type_index = :data:`coordination_index`.
     n_targets: integer    *scalar*
         number of targets, i.e., interacting bodies
     parameter_names: character(len=param_name_length)  *pointer*  *size(:, :)*
         The names of the parameters of the bond order factor: these are keywords according to which the parameters may be recognized.
-    name: character(len=pot_name_length)    *scalar*
-        The name of the bond order factor: this is a keyword according to which the factor may be recognized.
   .. data:: bond_order_parameters
 
     Defines a particular bond order factor.
@@ -632,14 +636,16 @@ Full documentation of custom types in potentials
 
     cutoff: double precision    *scalar*
         The hard cutoff for the bond order factor. If the atoms are farther away from each other than this, they do not contribute to the total bond order factor does not affect them.
-    includes_post_processing: logical    *scalar*
-        a logical switch specifying if there is a scaling function :math:`s_i` attached to the factor
+    n_level: integer    *scalar*
+        
     soft_cutoff: double precision    *scalar*
         The soft cutoff for the bond order factor. If this is smaller than the hard cutoff, the bond contribution is scaled to zero continuously when the interatomic distances grow from the soft to the hard cutoff.
     parameters: double precision  *pointer*  *size(:, :)*
         numerical values for parameters
     group_index: integer    *scalar*
         The internal index of the *potential* the bond order factor is modifying.
+    includes_post_processing: logical    *scalar*
+        a logical switch specifying if there is a scaling function :math:`s_i` attached to the factor
     type_index: integer    *scalar*
         The internal index of the bond order factor *type*. This is used for recognizing the factor. Note that the bond order parameters instance does not have a name. If the name is needed, it can be obtained from the :data:`bond_order_descriptor` of the correct index.
     n_params: integer  *pointer*  *size(:)*
@@ -1403,22 +1409,6 @@ Full documentation of subroutines in potentials
     **factor**: double precision  **intent(out)**    *size(2)*  
         the calculated bond order term :math:`c`
             
-  .. function:: evaluate_bond_order_factor_tersoff(separations, distances, bond_params, factor, atoms)
-
-
-    Parameters:
-
-    separations: double precision  *intent(in)*    *size(3, 2)*  
-        atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
-    distances: double precision  *intent(in)*    *size(2)*  
-        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
-    bond_params: type(bond_order_parameters)  *intent(in)*    *size(2)*  
-        a :data:`bond_order_parameters` containing the parameters
-    **factor**: double precision  **intent(out)**    *size(3)*  
-        the calculated bond order term :math:`c`
-    atoms: type(atom)  *intent(in)*    *size(3)*  
-        a list of the actual :data:`atom` objects for which the term is calculated
-            
   .. function:: evaluate_bond_order_factor_triplet(separations, distances, bond_params, factor, atoms)
 
     Triplet bond factor
@@ -1519,24 +1509,6 @@ Full documentation of subroutines in potentials
         a :data:`bond_order_parameters` containing the parameters
     **gradient**: double precision  **intent(out)**    *size(3, 2, 2)*  
         the calculated bond order term :math:`c`
-            
-  .. function:: evaluate_bond_order_gradient_tersoff(separations, distances, bond_params, gradient, atoms)
-
-    Coordination bond order factor gradient
-    
-
-    Parameters:
-
-    separations: double precision  *intent(in)*    *size(3, 2)*  
-        atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
-    distances: double precision  *intent(in)*    *size(2)*  
-        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
-    bond_params: type(bond_order_parameters)  *intent(in)*    *size(2)*  
-        a :data:`bond_order_parameters` containing the parameters
-    **gradient**: double precision  **intent(out)**    *size(3, 3, 3)*  
-        the calculated bond order term :math:`c`
-    atoms: type(atom)  *intent(in)*    *size(3)*  
-        a list of the actual :data:`atom` objects for which the term is calculated
             
   .. function:: evaluate_bond_order_gradient_triplet(separations, distances, bond_params, gradient, atoms)
 
@@ -2215,6 +2187,103 @@ Full documentation of subroutines in potentials
     atoms: type(atom)  *intent(in)*    *size(n_targets)*  
         a list of the actual :data:`atom` objects for which the term is calculated
             
+  .. function:: evaluate_pair_bond_order_factor(n_targets, separations, distances, bond_params, factor, atoms)
+
+    Returns a bond order factor term.
+    
+    By a bond order factor term, we mean the contribution from
+    specific atoms, :math:`c_{ijk}`, appearing in the factor
+    
+    .. math::
+    
+          b_ij = f(\sum_{k} c_{ijk})
+    
+    This routine evaluates the term :math:`c_{ijk}` for the given
+    atoms :math:`ijk` according to the given parameters.
+    
+
+    Parameters:
+
+    n_targets: integer  *intent(in)*    *scalar*  
+        number of targets
+    separations: double precision  *intent(in)*    *size(3, n_targets-1)*  
+        atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(n_targets-1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    bond_params: type(bond_order_parameters)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **factor**: double precision  **intent(out)**    *scalar*  
+        the calculated bond order term :math:`c`
+    atoms: type(atom)  *intent(in)*    *size(n_targets)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_pair_bond_order_factor_tersoff(separations, distances, bond_params, factor, atoms)
+
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 2)*  
+        atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(2)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    bond_params: type(bond_order_parameters)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **factor**: double precision  **intent(out)**    *scalar*  
+        the calculated bond order term :math:`c`
+    atoms: type(atom)  *intent(in)*    *size(3)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_pair_bond_order_gradient(n_targets, separations, distances, bond_params, gradient, atoms)
+
+    Returns the gradients of bond order terms with respect to moving an atom.
+    
+    By a bond order factor term, we mean the contribution from
+    specific atoms, c_ijk, appearing in the factor
+    
+    .. math::
+    
+          b_ij = f(\sum_{k} c_{ijk})
+    
+    This routine evaluates the gradient term
+    :math:`\nabla_\alpha c_{ijk}` for the given atoms :math:`ijk` according to the given parameters.
+    
+    The returned array has two dimensions:
+    gradient( coordinates, atom with respect to which we differentiate ).
+    
+
+    Parameters:
+
+    n_targets: integer  *intent(in)*    *scalar*  
+        number of targets
+    separations: double precision  *intent(in)*    *size(3, n_targets-1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(n_targets-1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    bond_params: type(bond_order_parameters)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **gradient**: double precision  **intent(out)**    *size(3, n_targets)*  
+        the calculated bond order term :math:`\nabla_\alpha c`
+    atoms: type(atom)  *intent(in)*    *size(n_targets)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
+  .. function:: evaluate_pair_bond_order_gradient_tersoff(separations, distances, bond_params, gradient, atoms)
+
+    Tersoff bond order factor gradient
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 2)*  
+        atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(2)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    bond_params: type(bond_order_parameters)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **gradient**: double precision  **intent(out)**    *size(3, 3)*  
+        the calculated bond order term :math:`c`
+    atoms: type(atom)  *intent(in)*    *size(3)*  
+        a list of the actual :data:`atom` objects for which the term is calculated
+            
   .. function:: get_bond_descriptor(bond_name, descriptor)
 
     Returns the :data:`bond_order_descriptor` of a given name.
@@ -2626,11 +2695,11 @@ Full documentation of subroutines in potentials
     Parameters:
 
     raw_sum: double precision  *intent(in)*    *scalar*  
-        the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+        the precalculated bond order sum, :math:`\sum_k c_{ijk}` in the above example
     bond_params: type(bond_order_parameters)  *intent(in)*    *scalar*  
         a :data:`bond_order_parameters` specifying the parameters
     **factor_out**: double precision  **intent(out)**    *scalar*  
-        the calculated bond order factor :math:`b_i`
+        the calculated bond order factor :math:`b_{ij}`
             
   .. function:: post_process_bond_order_gradient(raw_sum, raw_gradient, bond_params, factor_out)
 

@@ -276,13 +276,11 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#evaluate_bond_order_factor_coordination" title="evaluate_bond_order_factor_coordination"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_factor_coordination()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_bond_order_factor_power" title="evaluate_bond_order_factor_power"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_factor_power()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_bond_order_factor_table" title="evaluate_bond_order_factor_table"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_factor_table()</span></tt></a></li>
-<li><a class="reference internal" href="#evaluate_bond_order_factor_tersoff" title="evaluate_bond_order_factor_tersoff"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_factor_tersoff()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_bond_order_factor_triplet" title="evaluate_bond_order_factor_triplet"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_factor_triplet()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_bond_order_gradient" title="evaluate_bond_order_gradient"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_gradient()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_bond_order_gradient_coordination" title="evaluate_bond_order_gradient_coordination"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_gradient_coordination()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_bond_order_gradient_power" title="evaluate_bond_order_gradient_power"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_gradient_power()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_bond_order_gradient_table" title="evaluate_bond_order_gradient_table"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_gradient_table()</span></tt></a></li>
-<li><a class="reference internal" href="#evaluate_bond_order_gradient_tersoff" title="evaluate_bond_order_gradient_tersoff"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_gradient_tersoff()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_bond_order_gradient_triplet" title="evaluate_bond_order_gradient_triplet"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_gradient_triplet()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_electronegativity" title="evaluate_electronegativity"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_electronegativity_charge_exp" title="evaluate_electronegativity_charge_exp"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_electronegativity_charge_exp()</span></tt></a></li>
@@ -320,6 +318,10 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#evaluate_force_spring" title="evaluate_force_spring"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_spring()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_table" title="evaluate_force_table"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_table()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_forces" title="evaluate_forces"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_forces()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_pair_bond_order_factor" title="evaluate_pair_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_pair_bond_order_factor()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_pair_bond_order_factor_tersoff" title="evaluate_pair_bond_order_factor_tersoff"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_pair_bond_order_factor_tersoff()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_pair_bond_order_gradient" title="evaluate_pair_bond_order_gradient"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_pair_bond_order_gradient()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_pair_bond_order_gradient_tersoff" title="evaluate_pair_bond_order_gradient_tersoff"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_pair_bond_order_gradient_tersoff()</span></tt></a></li>
 <li><a class="reference internal" href="#get_bond_descriptor" title="get_bond_descriptor"><tt class="xref py py-func docutils literal"><span class="pre">get_bond_descriptor()</span></tt></a></li>
 <li><a class="reference internal" href="#get_description_of_bond_order_factor" title="get_description_of_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">get_description_of_bond_order_factor()</span></tt></a></li>
 <li><a class="reference internal" href="#get_description_of_potential" title="get_description_of_potential"><tt class="xref py py-func docutils literal"><span class="pre">get_description_of_potential()</span></tt></a></li>
@@ -668,18 +670,21 @@ the python interface fetch.</p>
 <dd>Descriptions of the parameters. The descriptions should be very short indicators such as &#8216;spring constant&#8217; or &#8216;energy coefficient&#8217;. For more detailed explanations, the proper documentation should be used.</dd>
 <dt>n_parameters: integer  <em>pointer</em>  <em>size(:)</em></dt>
 <dd>number of parameters for each number of bodies (1-body parameters, 2-body parameters etc.)</dd>
-<dt>includes_post_processing: logical    <em>scalar</em></dt>
-<dd>a logical tag specifying if there is a scaling function <span class="math">\(s_i\)</span> attached to the factor.</dd>
+</dl>
+<p>n_level: integer    <em>scalar</em></p>
+<dl class="docutils">
+<dt>name: character(len=pot_name_length)    <em>scalar</em></dt>
+<dd>The name of the bond order factor: this is a keyword according to which the factor may be recognized.</dd>
 <dt>description: character(len=pot_note_length)    <em>scalar</em></dt>
 <dd>A description of the bond order factor. This should contain the mathematical formulation as well as a short verbal explanation.</dd>
+<dt>includes_post_processing: logical    <em>scalar</em></dt>
+<dd>a logical tag specifying if there is a scaling function <span class="math">\(s_i\)</span> attached to the factor.</dd>
 <dt>type_index: integer    <em>scalar</em></dt>
 <dd>The internal index of the bond order factor. This can also be used for recognizing the factor and must therefore match the name. For instance, if name = &#8216;neighbors&#8217;, type_index = <a class="reference internal" href="#coordination_index" title="coordination_index"><tt class="xref py py-data docutils literal"><span class="pre">coordination_index</span></tt></a>.</dd>
 <dt>n_targets: integer    <em>scalar</em></dt>
 <dd>number of targets, i.e., interacting bodies</dd>
 <dt>parameter_names: character(len=param_name_length)  <em>pointer</em>  <em>size(:, :)</em></dt>
 <dd>The names of the parameters of the bond order factor: these are keywords according to which the parameters may be recognized.</dd>
-<dt>name: character(len=pot_name_length)    <em>scalar</em></dt>
-<dd>The name of the bond order factor: this is a keyword according to which the factor may be recognized.</dd>
 </dl>
 </dd></dl>
 
@@ -697,14 +702,17 @@ interface when calculations are invoked.</p>
 <dl class="docutils">
 <dt>cutoff: double precision    <em>scalar</em></dt>
 <dd>The hard cutoff for the bond order factor. If the atoms are farther away from each other than this, they do not contribute to the total bond order factor does not affect them.</dd>
-<dt>includes_post_processing: logical    <em>scalar</em></dt>
-<dd>a logical switch specifying if there is a scaling function <span class="math">\(s_i\)</span> attached to the factor</dd>
+</dl>
+<p>n_level: integer    <em>scalar</em></p>
+<dl class="docutils">
 <dt>soft_cutoff: double precision    <em>scalar</em></dt>
 <dd>The soft cutoff for the bond order factor. If this is smaller than the hard cutoff, the bond contribution is scaled to zero continuously when the interatomic distances grow from the soft to the hard cutoff.</dd>
 <dt>parameters: double precision  <em>pointer</em>  <em>size(:, :)</em></dt>
 <dd>numerical values for parameters</dd>
 <dt>group_index: integer    <em>scalar</em></dt>
 <dd>The internal index of the <em>potential</em> the bond order factor is modifying.</dd>
+<dt>includes_post_processing: logical    <em>scalar</em></dt>
+<dd>a logical switch specifying if there is a scaling function <span class="math">\(s_i\)</span> attached to the factor</dd>
 <dt>type_index: integer    <em>scalar</em></dt>
 <dd>The internal index of the bond order factor <em>type</em>. This is used for recognizing the factor. Note that the bond order parameters instance does not have a name. If the name is needed, it can be obtained from the <a class="reference internal" href="#bond_order_descriptor" title="bond_order_descriptor"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_descriptor</span></tt></a> of the correct index.</dd>
 <dt>n_params: integer  <em>pointer</em>  <em>size(:)</em></dt>
@@ -1473,24 +1481,6 @@ atoms <span class="math">\(ij\)</span> or <span class="math">\(ijk\)</span> acco
 </dd></dl>
 
 <dl class="function">
-<dt id="evaluate_bond_order_factor_tersoff">
-<tt class="descname">evaluate_bond_order_factor_tersoff</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>bond_params</em>, <em>factor</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_bond_order_factor_tersoff" title="Permalink to this definition">¶</a></dt>
-<dd><p>Parameters:</p>
-<dl class="docutils">
-<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 2)</em></dt>
-<dd>atom-atom separation vectors <span class="math">\(\mathbf{r}_{12}\)</span>, <span class="math">\(\mathbf{r}_{23}\)</span> etc. for the atoms 123...</dd>
-<dt>distances: double precision  <em>intent(in)</em>    <em>size(2)</em></dt>
-<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
-<dt>bond_params: type(bond_order_parameters)  <em>intent(in)</em>    <em>size(2)</em></dt>
-<dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
-<dt><strong>factor</strong>: double precision  <strong>intent(out)</strong>    <em>size(3)</em></dt>
-<dd>the calculated bond order term <span class="math">\(c\)</span></dd>
-<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(3)</em></dt>
-<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
 <dt id="evaluate_bond_order_factor_triplet">
 <tt class="descname">evaluate_bond_order_factor_triplet</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>bond_params</em>, <em>factor</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_bond_order_factor_triplet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Triplet bond factor</p>
@@ -1588,25 +1578,6 @@ the x-coordinate (1), of the factor for atom2 (2), with respect to moving atom3 
 <dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
 <dt><strong>gradient</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, 2, 2)</em></dt>
 <dd>the calculated bond order term <span class="math">\(c\)</span></dd>
-</dl>
-</dd></dl>
-
-<dl class="function">
-<dt id="evaluate_bond_order_gradient_tersoff">
-<tt class="descname">evaluate_bond_order_gradient_tersoff</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>bond_params</em>, <em>gradient</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_bond_order_gradient_tersoff" title="Permalink to this definition">¶</a></dt>
-<dd><p>Coordination bond order factor gradient</p>
-<p>Parameters:</p>
-<dl class="docutils">
-<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 2)</em></dt>
-<dd>atom-atom separation vectors <span class="math">\(\mathbf{r}_{12}\)</span>, <span class="math">\(\mathbf{r}_{23}\)</span> etc. for the atoms 123...</dd>
-<dt>distances: double precision  <em>intent(in)</em>    <em>size(2)</em></dt>
-<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
-<dt>bond_params: type(bond_order_parameters)  <em>intent(in)</em>    <em>size(2)</em></dt>
-<dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
-<dt><strong>gradient</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, 3, 3)</em></dt>
-<dd>the calculated bond order term <span class="math">\(c\)</span></dd>
-<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(3)</em></dt>
-<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
 </dl>
 </dd></dl>
 
@@ -2298,6 +2269,99 @@ gradients of the energies returned by <a class="reference internal" href="#evalu
 </dd></dl>
 
 <dl class="function">
+<dt id="evaluate_pair_bond_order_factor">
+<tt class="descname">evaluate_pair_bond_order_factor</tt><big>(</big><em>n_targets</em>, <em>separations</em>, <em>distances</em>, <em>bond_params</em>, <em>factor</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_pair_bond_order_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a bond order factor term.</p>
+<p>By a bond order factor term, we mean the contribution from
+specific atoms, <span class="math">\(c_{ijk}\)</span>, appearing in the factor</p>
+<div class="math">
+\[b_ij = f(\sum_{k} c_{ijk})\]</div>
+<p>This routine evaluates the term <span class="math">\(c_{ijk}\)</span> for the given
+atoms <span class="math">\(ijk\)</span> according to the given parameters.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of targets</dd>
+<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, n_targets-1)</em></dt>
+<dd>atom-atom separation vectors <span class="math">\(\mathbf{r}_{12}\)</span>, <span class="math">\(\mathbf{r}_{23}\)</span> etc. for the atoms 123...</dd>
+<dt>distances: double precision  <em>intent(in)</em>    <em>size(n_targets-1)</em></dt>
+<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
+<dt>bond_params: type(bond_order_parameters)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
+<dt><strong>factor</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the calculated bond order term <span class="math">\(c\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_pair_bond_order_factor_tersoff">
+<tt class="descname">evaluate_pair_bond_order_factor_tersoff</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>bond_params</em>, <em>factor</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_pair_bond_order_factor_tersoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<dl class="docutils">
+<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 2)</em></dt>
+<dd>atom-atom separation vectors <span class="math">\(\mathbf{r}_{12}\)</span>, <span class="math">\(\mathbf{r}_{23}\)</span> etc. for the atoms 123...</dd>
+<dt>distances: double precision  <em>intent(in)</em>    <em>size(2)</em></dt>
+<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
+<dt>bond_params: type(bond_order_parameters)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
+<dt><strong>factor</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the calculated bond order term <span class="math">\(c\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_pair_bond_order_gradient">
+<tt class="descname">evaluate_pair_bond_order_gradient</tt><big>(</big><em>n_targets</em>, <em>separations</em>, <em>distances</em>, <em>bond_params</em>, <em>gradient</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_pair_bond_order_gradient" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the gradients of bond order terms with respect to moving an atom.</p>
+<p>By a bond order factor term, we mean the contribution from
+specific atoms, c_ijk, appearing in the factor</p>
+<div class="math">
+\[b_ij = f(\sum_{k} c_{ijk})\]</div>
+<p>This routine evaluates the gradient term
+<span class="math">\(\nabla_\alpha c_{ijk}\)</span> for the given atoms <span class="math">\(ijk\)</span> according to the given parameters.</p>
+<p>The returned array has two dimensions:
+gradient( coordinates, atom with respect to which we differentiate ).</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of targets</dd>
+<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, n_targets-1)</em></dt>
+<dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
+<dt>distances: double precision  <em>intent(in)</em>    <em>size(n_targets-1)</em></dt>
+<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
+<dt>bond_params: type(bond_order_parameters)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
+<dt><strong>gradient</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_targets)</em></dt>
+<dd>the calculated bond order term <span class="math">\(\nabla_\alpha c\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(n_targets)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_pair_bond_order_gradient_tersoff">
+<tt class="descname">evaluate_pair_bond_order_gradient_tersoff</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>bond_params</em>, <em>gradient</em>, <em>atoms</em><big>)</big><a class="headerlink" href="#evaluate_pair_bond_order_gradient_tersoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tersoff bond order factor gradient</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 2)</em></dt>
+<dd>atom-atom separation vectors <span class="math">\(\mathbf{r}_{12}\)</span>, <span class="math">\(\mathbf{r}_{23}\)</span> etc. for the atoms 123...</dd>
+<dt>distances: double precision  <em>intent(in)</em>    <em>size(2)</em></dt>
+<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
+<dt>bond_params: type(bond_order_parameters)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
+<dt><strong>gradient</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, 3)</em></dt>
+<dd>the calculated bond order term <span class="math">\(c\)</span></dd>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>a list of the actual <a class="reference internal" href="Geometry_f90.html#atom" title="atom"><tt class="xref py py-data docutils literal"><span class="pre">atom</span></tt></a> objects for which the term is calculated</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="get_bond_descriptor">
 <tt class="descname">get_bond_descriptor</tt><big>(</big><em>bond_name</em>, <em>descriptor</em><big>)</big><a class="headerlink" href="#get_bond_descriptor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the <a class="reference internal" href="#bond_order_descriptor" title="bond_order_descriptor"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_descriptor</span></tt></a> of a given name.</p>
@@ -2730,11 +2794,11 @@ bond order sum accoding to the given parameters.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>raw_sum: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
-<dd>the precalculated bond order sum, <span class="math">\(\sum_j c_ij\)</span> in the above example</dd>
+<dd>the precalculated bond order sum, <span class="math">\(\sum_k c_{ijk}\)</span> in the above example</dd>
 <dt>bond_params: type(bond_order_parameters)  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> specifying the parameters</dd>
 <dt><strong>factor_out</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
-<dd>the calculated bond order factor <span class="math">\(b_i\)</span></dd>
+<dd>the calculated bond order factor <span class="math">\(b_{ij}\)</span></dd>
 </dl>
 </dd></dl>
 

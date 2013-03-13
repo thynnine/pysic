@@ -165,6 +165,8 @@ to Python are simply calling routines here.</p>
 <li><a class="reference internal" href="#core_calculate_electronegativities" title="core_calculate_electronegativities"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_electronegativities()</span></tt></a></li>
 <li><a class="reference internal" href="#core_calculate_energy" title="core_calculate_energy"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_energy()</span></tt></a></li>
 <li><a class="reference internal" href="#core_calculate_forces" title="core_calculate_forces"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_forces()</span></tt></a></li>
+<li><a class="reference internal" href="#core_calculate_pair_bond_order_factor" title="core_calculate_pair_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_pair_bond_order_factor()</span></tt></a></li>
+<li><a class="reference internal" href="#core_calculate_pair_bond_order_gradients" title="core_calculate_pair_bond_order_gradients"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_pair_bond_order_gradients()</span></tt></a></li>
 <li><a class="reference internal" href="#core_clear_atoms" title="core_clear_atoms"><tt class="xref py py-func docutils literal"><span class="pre">core_clear_atoms()</span></tt></a></li>
 <li><a class="reference internal" href="#core_clear_bond_order_factors" title="core_clear_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">core_clear_bond_order_factors()</span></tt></a></li>
 <li><a class="reference internal" href="#core_clear_bond_order_storage" title="core_clear_bond_order_storage"><tt class="xref py py-func docutils literal"><span class="pre">core_clear_bond_order_storage()</span></tt></a></li>
@@ -195,6 +197,8 @@ to Python are simply calling routines here.</p>
 <li><a class="reference internal" href="#core_post_process_bond_order_factors" title="core_post_process_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">core_post_process_bond_order_factors()</span></tt></a></li>
 <li><a class="reference internal" href="#core_post_process_bond_order_gradients" title="core_post_process_bond_order_gradients"><tt class="xref py py-func docutils literal"><span class="pre">core_post_process_bond_order_gradients()</span></tt></a></li>
 <li><a class="reference internal" href="#core_post_process_bond_order_gradients_of_factor" title="core_post_process_bond_order_gradients_of_factor"><tt class="xref py py-func docutils literal"><span class="pre">core_post_process_bond_order_gradients_of_factor()</span></tt></a></li>
+<li><a class="reference internal" href="#core_post_process_pair_bond_order_factor" title="core_post_process_pair_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">core_post_process_pair_bond_order_factor()</span></tt></a></li>
+<li><a class="reference internal" href="#core_post_process_pair_bond_order_gradients" title="core_post_process_pair_bond_order_gradients"><tt class="xref py py-func docutils literal"><span class="pre">core_post_process_pair_bond_order_gradients()</span></tt></a></li>
 <li><a class="reference internal" href="#core_release_all_memory" title="core_release_all_memory"><tt class="xref py py-func docutils literal"><span class="pre">core_release_all_memory()</span></tt></a></li>
 <li><a class="reference internal" href="#core_set_ewald_parameters" title="core_set_ewald_parameters"><tt class="xref py py-func docutils literal"><span class="pre">core_set_ewald_parameters()</span></tt></a></li>
 <li><a class="reference internal" href="#core_update_atom_charges" title="core_update_atom_charges"><tt class="xref py py-func docutils literal"><span class="pre">core_update_atom_charges()</span></tt></a></li>
@@ -772,6 +776,65 @@ first to set up the calculation.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="core_calculate_pair_bond_order_factor">
+<tt class="descname">core_calculate_pair_bond_order_factor</tt><big>(</big><em>atom_pair</em>, <em>separation</em>, <em>distance</em>, <em>direction</em>, <em>group_index</em>, <em>bond_order_sum</em><big>)</big><a class="headerlink" href="#core_calculate_pair_bond_order_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the bond order sum for a given pair of atoms for the given group.</p>
+<p>For a factor such as</p>
+<div class="math">
+\[b_ij = f(\sum_k c_{ijk})\]</div>
+<p>The routine calculates</p>
+<div class="math">
+\[\sum_k c_{ijk}.\]</div>
+<p>The full bond order factor is then obtained by applying the
+scaling function <span class="math">\(f\)</span>. This is done with
+<a class="reference internal" href="#core_post_process_bond_order_factors" title="core_post_process_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">core_post_process_bond_order_factors()</span></tt></a>.</p>
+<p>Parameters:</p>
+<p>atom_pair: integer  <em>intent(in)</em>    <em>size(2)</em></p>
+<p>separation: double precision  <em>intent(in)</em>    <em>size(3)</em></p>
+<p>distance: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+<p>direction: double precision  <em>intent(in)</em>    <em>size(3)</em></p>
+<dl class="docutils">
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>an index denoting the potential to which the factor is connected</dd>
+<dt><strong>bond_order_sum</strong>: double precision  <strong>intent(out)</strong>    <em>size(2)</em></dt>
+<dd>the calculated bond order sums</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_calculate_pair_bond_order_gradients">
+<tt class="descname">core_calculate_pair_bond_order_gradients</tt><big>(</big><em>n_atoms</em>, <em>atom_pair</em>, <em>separation</em>, <em>distance</em>, <em>direction</em>, <em>group_index</em>, <em>raw_sums</em>, <em>total_gradient</em>, <em>total_virial</em><big>)</big><a class="headerlink" href="#core_calculate_pair_bond_order_gradients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the gradients of a pair bond order factor.</p>
+<p>For a factor such as</p>
+<div class="math">
+\[b_{ij} = f(\sum_k c_{ijk})\]</div>
+<p>The routine calculates</p>
+<div class="math">
+\[\nabla_\alpha b_{ij} = f'(\sum_k c_{ijk}) \nabla_\alpha \sum_k c_{ijk}.\]</div>
+<p>By default, the gradients the factor <span class="math">\(ij\)</span> is calculated with respect
+to moving all atoms <span class="math">\(\alpha\)</span>.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+</dl>
+<p>atom_pair: integer  <em>intent(in)</em>    <em>size(2)</em></p>
+<p>separation: double precision  <em>intent(in)</em>    <em>size(3)</em></p>
+<p>distance: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+<p>direction: double precision  <em>intent(in)</em>    <em>size(3)</em></p>
+<dl class="docutils">
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>an index denoting the potential to which the factor is connected</dd>
+<dt>raw_sums: double precision  <em>intent(in)</em>    <em>size(2)</em></dt>
+<dd>precalculated bond order sums, <span class="math">\(\sum_j c_{ij}\)</span>, in the above example.</dd>
+<dt><strong>total_gradient</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms, 2)</em></dt>
+<dd>the calculated bond order gradients <span class="math">\(\nabla_\alpha b_i\)</span></dd>
+<dt><strong>total_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6, 2)</em></dt>
+<dd>the components of the virial due to the bond order gradient</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="core_clear_atoms">
 <tt class="descname">core_clear_atoms</tt><big>(</big><big>)</big><a class="headerlink" href="#core_clear_atoms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Deallocates the array of atoms in the core, if allocated.</p>
@@ -1310,6 +1373,70 @@ bond factor is of a pair or many body type.</p>
 <dd>an index denoting the potential to which the factor is connected</dd>
 <dt>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>the index of the atom whose factor is differentiated (<span class="math">\(i\)</span>)</dd>
+<dt>raw_sum: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>precalculated bond order sum for the given atom, <span class="math">\(\sum_j c_{ij}\)</span>, in the above example</dd>
+<dt>raw_gradients: double precision  <em>intent(in)</em>    <em>size(3, n_atoms)</em></dt>
+<dd>precalculated gradients of bond order sums, <span class="math">\(\nabla_\alpha \sum_j c_{ij}\)</span>, in the above example</dd>
+<dt><strong>total_bond_gradients</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
+<dd>the calculated bond order gradients <span class="math">\(\nabla_\alpha b_i\)</span></dd>
+<dt>raw_virial: double precision  <em>intent(in)</em>    <em>size(6)</em></dt>
+<dd>the precalculated virial due to the bond order gradient</dd>
+<dt><strong>total_virial</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></dt>
+<dd>the scaled  virial due to the bond order gradient</dd>
+<dt>mpi_split: logical  <em>intent(in)</em>    <em>scalar</em>  <em>optional</em></dt>
+<dd>A switch for enabling MPI parallelization. By default the routine is sequential since the calculation may be called from within an already parallelized routine.</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_post_process_pair_bond_order_factor">
+<tt class="descname">core_post_process_pair_bond_order_factor</tt><big>(</big><em>atom1</em>, <em>group_index</em>, <em>raw_sum</em>, <em>total_bond_order</em><big>)</big><a class="headerlink" href="#core_post_process_pair_bond_order_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bond-order post processing, i.e., application of per-atom scaling functions.</p>
+<p>By post processing, we mean any operations done after calculating the
+sum of pair- and many-body terms. That is, if a factor is, say,</p>
+<div class="math">
+\[b_{ij} = f(\sum_k c_{ijk}) = 1 + \sum_k c_{ijk},\]</div>
+<p>the <span class="math">\(\sum_k c_{ijk}\)</span> would have been calculated already
+(with <a class="reference internal" href="#core_calculate_pair_bond_order_factor" title="core_calculate_pair_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">core_calculate_pair_bond_order_factor()</span></tt></a>)
+and the operation <span class="math">\(f(x) = 1 + x\)</span>
+remains to be carried out.</p>
+<p>Parameters:</p>
+<p>atom1: type(atom)  <em>intent(in)</em>    <em>scalar</em></p>
+<dl class="docutils">
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>an index denoting the potential to which the factor is connected</dd>
+</dl>
+<p>raw_sum: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+<p><strong>total_bond_order</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_post_process_pair_bond_order_gradients">
+<tt class="descname">core_post_process_pair_bond_order_gradients</tt><big>(</big><em>n_atoms</em>, <em>group_index</em>, <em>atom1</em>, <em>raw_sum</em>, <em>raw_gradients</em>, <em>total_bond_gradients</em>, <em>raw_virial</em>, <em>total_virial</em>, <em>mpi_split</em><big>)</big><a class="headerlink" href="#core_post_process_pair_bond_order_gradients" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bond-order post processing, i.e., application of per-pair scaling functions.
+This routine does the scaling for the bond order factor of the given pair
+with respect to moving all atoms
+with the given bond order sum for the factor and
+the gradients of the sum with respect to moving all atoms.</p>
+<p>By post processing, we mean any operations done after calculating the
+sum of pair- and many-body terms. That is, if a factor is, say,</p>
+<div class="math">
+\[b_{ij} = f(\sum_k c_{ijk}) = 1 + \sum_k c_{ijk},\]</div>
+<p>the <span class="math">\(\sum_k c_{ijk}\)</span> would have been calculated already and the operation <span class="math">\(f(x) = 1 + x\)</span>
+remains to be carried out.
+The post processing is done per pair.</p>
+<p>For gradients, one needs to evaluate</p>
+<div class="math">
+\[\nabla_\alpha b_{ij} = f'(\sum_k c_{ijk}) \nabla_\alpha \sum_k c_{ijk}\]</div>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>number of atoms</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>an index denoting the potential to which the factor is connected</dd>
+</dl>
+<p>atom1: type(atom)  <em>intent(in)</em>    <em>scalar</em></p>
+<dl class="docutils">
 <dt>raw_sum: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>precalculated bond order sum for the given atom, <span class="math">\(\sum_j c_{ij}\)</span>, in the above example</dd>
 <dt>raw_gradients: double precision  <em>intent(in)</em>    <em>size(3, n_atoms)</em></dt>
