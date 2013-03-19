@@ -702,7 +702,7 @@ contains
   ! Returns the names of parameters of a bond order factor as a list of strings.
   !
   ! *bond_name name of the bond order factor
-  ! *n_targets number of targets
+  ! *n_targets 1 for scaling, 2 for local sum parameters
   ! *param_names names of the parameters
   subroutine get_names_of_parameters_of_bond_order_factor(bond_name, n_targets, param_names)
     implicit none
@@ -713,7 +713,7 @@ contains
     integer :: i
 
     call get_bond_descriptor(bond_name,descriptor)
-    if(descriptor%n_targets < n_targets)then
+    if(n_targets > 2)then
        return
     end if
     nullify(param_names)
@@ -756,7 +756,7 @@ contains
   ! as a list of strings.
   ! 
   ! *bond_name name of the bond order factor
-  ! *n_targets number of targets
+  ! *n_targets 1 for scaling, 2 for local sum parameters
   ! *param_notes descriptions of the parameters
   subroutine get_descriptions_of_parameters_of_bond_order_factor(bond_name, &
        n_targets, param_notes)
@@ -768,7 +768,7 @@ contains
     integer :: i
 
     call get_bond_descriptor(bond_name,descriptor)
-    if(descriptor%n_targets < n_targets)then
+    if(n_targets > 2)then
        return
     end if
     nullify(param_notes)
@@ -801,11 +801,10 @@ contains
 
   ! !!!: get_number_of_parameters_of_bond_order_factor
 
-  ! Returns the number of parameters of a bond order factor as a list of strings,
-  ! each element showing the number of parameters for that number of bodies.
+  ! Returns the number of parameters of a bond order factor as an integer.
   !
   ! *bond_name name of the bond order factor
-  ! *n_targets number of targets
+  ! *n_targets 1 for scaling parameters, 2 for local sum parameters
   ! *n_params number of parameters
   subroutine get_number_of_parameters_of_bond_order_factor(bond_name,n_targets,n_params)
     implicit none
@@ -992,13 +991,13 @@ contains
 
   ! Returns the index of a parameter of a bond order factor in the
   ! internal list of parameters. Since bond order factors can have
-  ! parameters for different number of targets, also the number of
-  ! targets of this parameter is returned.
+  ! parameters for different number of targets, also the type
+  ! (scaling vs. local sum) of this parameter is returned.
   !
   ! *bond_name name of the bond order factor
   ! *param_name name of the parameter
   ! *index index of the parameter
-  ! *n_targets number of targets of the parameter
+  ! *n_targets 1 for scaling, 2 for local sum parameters
   subroutine get_index_of_parameter_of_bond_order_factor(bond_name,param_name,index,n_targets)
     implicit none
     character(len=*), intent(in) :: bond_name
@@ -1012,7 +1011,7 @@ contains
 
     index = 0
     n_targets = 0
-    do j = 1, descriptor%n_targets
+    do j = 1, 2
        do i = 1, descriptor%n_parameters(j)
           if (descriptor%parameter_names(i,j) == param_name) then
              index = i

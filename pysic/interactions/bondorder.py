@@ -58,6 +58,7 @@ class BondOrderParameters:
             self.set_parameters(parameters)
 
         self.symbols = None
+        
         self.set_symbols(symbols)
 
         

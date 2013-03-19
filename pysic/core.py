@@ -287,13 +287,15 @@ def names_of_parameters(potential_name):
                 index += 1
                 
         return param_names
-
+    
     elif(is_bond_order_factor(potential_name)):
+
         n_targets = pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
         param_codes = [ [0] ]*2
         param_names = [ [] ]*2
+        
         n_params = number_of_parameters(potential_name)
-
+        
         for i in range(2):
             param_codes[i] = pf.pysic_interface.names_of_parameters_of_bond_order_factor(potential_name,i+1).transpose()
             param_names[i] = [""]*n_params[i]
