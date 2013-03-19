@@ -903,6 +903,69 @@ class Pysic:
                     coord_list.append([coord,pot_index])
                 pot_index += 1
             
+                # check the collection of bond order parameters for this potential
+                bond_level = 0
+                scaling_elements = []
+                noted_scaling = False
+
+                for bond in coord.get_bond_order_parameters():
+
+                    # !!!: check for overriding scaling
+                    if len(scaling_elements) == 0:
+                        if bond.includes_scaling():
+                            for elems in bond.get_symbols():
+                                scaling_elements.append(elems[0])
+                    else:
+                        if bond.includes_scaling() and not noted_scaling:
+
+                            # gather all targets of the new scaler
+                            new_elems = []
+                            for elems in bond.get_symbols():
+                                new_elems.append(elems[0])
+
+                            override = False
+
+                            # if the target already exists, we are overriding scaling
+                            for ne in new_elems:
+                                for elems in scaling_elements:
+                                    if ne == elems:
+                                        override = True
+
+                            # add the elements to the list of scaling targets
+                            for ne in new_elems:
+                                scaling_elements.append(ne)
+                                
+                            if override:
+                                noted_scaling = True
+                                warn("You are overriding bond order scaling in \n"+str(coord),3)
+                                    
+                    # !!!: check for redundancy (elements not in the potential)
+                    for elems in bond.get_symbols():
+                        for symbols in pot.get_symbols():
+                            found_symbol = False
+                            for symb in symbols:
+                                if elems[0] == symb:
+                                    found_symbol = True
+                            if not found_symbol:
+                                warn("You are applying a bond order factor on "+elems[0]+\
+                                    " to a potential which does not target this element.\n\n"+\
+                                    str(pot)+"\n\n"+str(bond),2)
+
+                    # check for different levels of bond factors
+                    if bond_level > 0:
+                        if bond_level != bond.get_level():
+                            warn("You are mixing per-atom and per-bond bond order factors for potential \n"+\
+                                str(pot),2)
+                    else:
+                        bond_level = bond.get_level()
+                
+                    # check that pairwise factors are only applied on pair potentials
+                    if bond.get_level() > 1:
+                        if pot.get_number_of_targets() != bond.get_level():
+                            warn("You are applying a level "+str(bond.get_level())+\
+                                " bond order factor on a "+str(pot.get_number_of_targets())+\
+                                "-body potential: it will be zero!",1)
+            
             try:
                 alltargets = pot.get_symbols()
                 for targets in alltargets:
@@ -937,6 +1000,11 @@ class Pysic:
         is_multiplier = []
         master_potentials = []
         for pots in self.potentials:
+        
+            # warn for missing cutoffs
+            if pots.get_number_of_targets() > 1 and pots.get_cutoff() < 0.01:
+                warn("Potential with zero cutoff present: \n\n"+str(pots),1)
+        
             # reverse the lists so that the master potentials come last
             for rpot in reversed(pots.get_potentials()):
                 elemental_potentials.append(rpot)
@@ -971,6 +1039,7 @@ class Pysic:
             no_inds = np.array( n_targ*[-9] )
 
             try:
+                        
                 if mul:
                     alltargets = [mpot.get_symbols()[0]]
                 else:
@@ -1104,6 +1173,11 @@ class Pysic:
             try:
                 allbonds = coord[0].get_bond_order_parameters()
                 for bond in allbonds:
+                
+                    # warn for missing cutoffs
+                    if (bond.get_number_of_targets() > 1 and bond.get_cutoff() < 0.01):
+                        warn("Bond order factor with zero cutoff present: \n\n"+str(bond),1)
+                
                     alltargets = bond.get_symbols()
                     for targets in alltargets:
                     
@@ -1117,7 +1191,7 @@ class Pysic:
                             # do not permutate the bond factor symbols
                             n_bonds += 1
             except:
-                raise InvalidParametersError("Invalid bond order parameter indices: "+str(bond.get_symbols()))
+                raise InvalidParametersError("Invalid bond order parameter symbols: "+str(bond.get_symbols()))
 
         pf.pysic_interface.allocate_bond_order_factors(n_bonds)
 

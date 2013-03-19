@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 from pysic.core import *
-from pysic.utility.error import InvalidParametersError, InvalidCoordinatorError
+from pysic.utility.error import InvalidParametersError, InvalidCoordinatorError, warn
 import pysic.pysic_fortran as pf
 
 class BondOrderParameters:
@@ -48,6 +48,7 @@ class BondOrderParameters:
         self.n_targets = number_of_targets(bond_order_type)
         self.names_of_params = names_of_parameters(bond_order_type)
         self.n_params = number_of_parameters(bond_order_type)
+        self.level = level_of_factor(bond_order_type)
 
         if parameters == None:
             self.parameters = 2*[[]]
@@ -114,6 +115,16 @@ class BondOrderParameters:
         """
         return self.n_params
 
+
+    def includes_scaling(self):
+        """Returns True iff there are scaling paramters.
+        """
+        return self.n_params[0] > 0
+
+    def get_level(self):
+        """Returns the level of the factor, i.e., is it a per-atom or par-pair factor.
+        """
+        return self.level
 
     def get_number_of_targets(self):
         """Returns the (maximum) number of targets the bond order factor affects.
@@ -349,7 +360,17 @@ class BondOrderParameters:
         if self.accepts_parameters(params):
             self.parameters = params
         else:
-            raise InvalidParametersError('The bond order factor "{bof}" requires {num} parameters.'.format(bof=bond_order_type,num=str(self.n_params)))
+            new_params = [[],[]]
+            if len(params) == self.n_params[0]+self.n_params[1]:
+                new_params[0] = params[0:self.n_params[0]]
+                new_params[1] = params[self.n_params[0]:self.n_params[1]]
+            
+            if self.accepts_parameters(new_params):
+                warn("Using parameters \n"+str(new_params)+\
+                    "\ninstead of \n"+str(params),3)
+                self.parameters = new_params
+            else:
+                raise InvalidParametersError('The bond order factor "{bof}" requires {num} parameters.'.format(bof=self.bond_order_type,num=str(self.n_params)))
 
 
         

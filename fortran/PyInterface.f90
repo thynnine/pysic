@@ -823,6 +823,22 @@ contains
 
   end subroutine number_of_targets_of_bond_order_factor
 
+
+  ! Tells the level of a bond order factor has, i.e., is it per-atom or per-pair
+  ! 
+  ! Calls :func:`get_level_of_bond_order_factor`
+  !
+  ! *bond_name name of the bond order factor
+  ! *n_target number of targets
+  subroutine level_of_bond_order_factor(bond_name, n_target)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    integer, intent(out) :: n_target
+
+    call get_level_of_bond_order_factor(bond_name,n_target) ! in Potentials.f90
+
+  end subroutine level_of_bond_order_factor
+
   ! Tells how many numeric parameters a potential incorporates
   ! 
   ! Calls :func:`get_number_of_parameters_of_potential`

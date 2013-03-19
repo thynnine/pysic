@@ -859,11 +859,11 @@ contains
 
   ! !!!: get_number_of_targets_of_potential_index
 
-  ! Returns the number of targets (i.e., bodies) of a potential 
+  ! Returns the number of targets (i.e., bodies) of a potential
   ! specified by its index.
-  ! 
+  !
   ! *pot_index index of the potential
-  ! *n_target numner of targets
+  ! *n_target number of targets
   subroutine get_number_of_targets_of_potential_index(pot_index,n_target)
     implicit none
     integer, intent(in) :: pot_index
@@ -872,7 +872,6 @@ contains
     n_target = potential_descriptors(pot_index)%n_targets
 
   end subroutine get_number_of_targets_of_potential_index
-
 
   ! !!!: get_number_of_targets_of_bond_order_factor_index
 
@@ -889,6 +888,26 @@ contains
     n_target = bond_order_descriptors(bond_index)%n_targets
 
   end subroutine get_number_of_targets_of_bond_order_factor_index
+
+
+
+  ! !!!: get_level_of_bond_order_factor
+
+  ! Returns the level of a bond order factor (i.e., is the factor per-atom or per-pair).
+  !
+  ! *bond_name name of the bond order factor
+  ! *level level of the factor
+  subroutine get_level_of_bond_order_factor(bond_name,level)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    integer, intent(out) :: level
+    type(bond_order_descriptor) :: descriptor
+
+    call get_bond_descriptor(bond_name,descriptor)
+    level = descriptor%n_level
+
+  end subroutine get_level_of_bond_order_factor
+
 
 
   ! !!!: is_valid_potential

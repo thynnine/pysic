@@ -201,6 +201,19 @@ def number_of_targets(potential_name):
         return 0
 
 
+def level_of_factor(bond_order_name):
+    """Tells the level of a bond order factor, i.e., is it a per-atom or per-pair factor.
+    
+    Parameters:
+
+    bond_order_name: string
+        the name of the bond order factor
+    """
+    if(is_bond_order_factor(bond_order_name)):
+        return pf.pysic_interface.level_of_bond_order_factor(bond_order_name)
+    else:
+        return 0
+
 
 def number_of_parameters(potential_name,as_list=False):
     """Tells how many parameters a potential, bond order factor, charge relaxation mode or coulomb summation mode incorporates.
