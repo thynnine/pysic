@@ -126,10 +126,9 @@ class CoulombSummation:
         if len(parameters) != len(self.parameters):
             raise InvalidSummationError("The summation mode "+self.method+" requires "+
                                          len(self.parameters)+" parameters.")
-        for key, value in zip(self.parameters.get_keys(), parameters):
-            self.parameters[key] = parameters
-    
-
+        for key, value in zip(CoulombSummation.summation_parameters[self.method], parameters):
+            self.parameters[key] = value
+        
     def set_parameter_value(self, parameter_name, value):
         """Sets a given parameter to the desired value.
         

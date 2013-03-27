@@ -86,7 +86,7 @@ module pysic_core
   ! *ewald_allocated logical tag for tracking allocation of the arrays
   logical :: evaluate_ewald = .false.
   integer :: ewald_k_cutoffs(3)
-  double precision :: ewald_cutoff, ewald_sigma, ewald_epsilon
+  double precision :: ewald_cutoff, ewald_k_radius, ewald_sigma, ewald_epsilon
   double precision, pointer :: ewald_scaler(:)
   logical :: ewald_allocated = .false.
 
@@ -3888,7 +3888,7 @@ contains
        t00 = t0
 
        if(evaluate_ewald)then
-          call calculate_ewald_energy(atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
+          call calculate_ewald_energy(atoms,cell,ewald_cutoff,ewald_k_radius,ewald_k_cutoffs,ewald_sigma,&
                ewald_epsilon,ewald_scaler,.false.,energy)
 
           total_energy = total_energy + energy
@@ -3923,7 +3923,7 @@ contains
        t00 = t0
 
        if(evaluate_ewald)then
-          call calculate_ewald_forces(atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
+          call calculate_ewald_forces(atoms,cell,ewald_cutoff,ewald_k_radius,ewald_k_cutoffs,ewald_sigma,&
                ewald_epsilon,ewald_scaler,.false.,temp_forces,stress)
           total_forces = total_forces + temp_forces
           total_stress = total_stress + stress
@@ -7097,16 +7097,16 @@ contains
   end subroutine list_bonds
 
   ! Debug routine for Ewald
-  subroutine core_get_ewald_energy(real_cut, reciprocal_cut, sigma, epsilon, energy)
+  subroutine core_get_ewald_energy(real_cut, k_cut, reciprocal_cut, sigma, epsilon, energy)
     implicit none
-    double precision, intent(in) :: real_cut, sigma, epsilon
+    double precision, intent(in) :: real_cut, k_cut, sigma, epsilon
     integer, intent(in) :: reciprocal_cut(3)
     double precision, intent(out) :: energy
     double precision :: scaler(size(atoms))
 
     scaler = 1.d0
 
-    call calculate_ewald_energy(atoms,cell,real_cut,reciprocal_cut,sigma,&
+    call calculate_ewald_energy(atoms,cell,real_cut,k_cut,reciprocal_cut,sigma,&
          epsilon,scaler,.true.,energy)
 
   end subroutine core_get_ewald_energy
@@ -7120,13 +7120,14 @@ contains
   ! *sigma the split parameter
   ! *epsilon electric constant
   ! *scaler scaling factors for the individual charges
-  subroutine core_set_ewald_parameters(real_cut, reciprocal_cut, sigma, epsilon, scaler)
+  subroutine core_set_ewald_parameters(real_cut, k_radius, reciprocal_cut, sigma, epsilon, scaler)
     implicit none
-    double precision, intent(in) :: real_cut, sigma, epsilon, scaler(:)
+    double precision, intent(in) :: real_cut, k_radius, sigma, epsilon, scaler(:)
     integer, intent(in) :: reciprocal_cut(3)
 
     evaluate_ewald = .true.
     ewald_k_cutoffs = reciprocal_cut
+    ewald_k_radius = k_radius
     ewald_cutoff = real_cut
     ewald_sigma = sigma
     ewald_epsilon = epsilon

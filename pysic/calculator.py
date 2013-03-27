@@ -1269,6 +1269,7 @@ class Pysic:
                     raise InvalidParametersError("Length of the scaling factor vector does not match the number of atoms.")
                 
                 pf.pysic_interface.set_ewald_parameters(rcut,
+                                                        kcut,
                                                         np.array([k1,k2,k3]),
                                                         sigma,
                                                         epsilon,

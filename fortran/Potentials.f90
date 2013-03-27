@@ -326,9 +326,9 @@ module potentials
 
   ! temporary arrays for ewald summation
   double precision, pointer :: ewald_forces(:,:,:), ewald_sum_forces(:,:,:), ewald_tmp_enegs(:), &
-       s_factor(:,:,:,:), tmp_factor(:,:,:,:), diff_factor(:,:,:,:,:), tmp_diff_factor(:,:,:,:,:)
+       s_factor(:,:,:,:), tmp_factor(:,:,:,:)
   logical :: ewald_arrays_allocated = .false., s_factor_allocated = .false.
-  integer :: stored_diff_factor_cutoffs(3)
+  integer :: stored_factor_cutoffs(3)
 
 contains
 
@@ -349,13 +349,9 @@ contains
     if(s_factor_allocated)then
        deallocate(s_factor)
        deallocate(tmp_factor)
-       deallocate(diff_factor)
-       deallocate(tmp_diff_factor)
     else
        nullify(s_factor)
        nullify(tmp_factor)
-       nullify(diff_factor)
-       nullify(tmp_diff_factor)
     end if
     s_factor_allocated = .false.
 
@@ -366,13 +362,11 @@ contains
     integer, intent(in) :: n_atoms, reciprocal_cutoff(3)
 
     if(s_factor_allocated)then
-       if(reciprocal_cutoff(1) /= stored_diff_factor_cutoffs(1) .or. &
-            reciprocal_cutoff(2) /= stored_diff_factor_cutoffs(2) .or. &
-            reciprocal_cutoff(3) /= stored_diff_factor_cutoffs(3) )then          
+       if(reciprocal_cutoff(1) /= stored_factor_cutoffs(1) .or. &
+            reciprocal_cutoff(2) /= stored_factor_cutoffs(2) .or. &
+            reciprocal_cutoff(3) /= stored_factor_cutoffs(3) )then          
           deallocate(s_factor)
           deallocate(tmp_factor)
-          deallocate(diff_factor)
-          deallocate(tmp_diff_factor)
           allocate( s_factor(2, &
                -reciprocal_cutoff(1):reciprocal_cutoff(1), &
                -reciprocal_cutoff(2):reciprocal_cutoff(2), &
@@ -381,21 +375,11 @@ contains
                -reciprocal_cutoff(1):reciprocal_cutoff(1), &
                -reciprocal_cutoff(2):reciprocal_cutoff(2), &
                -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
-          allocate( diff_factor(2, n_atoms, &
-               -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-               -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-               -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
-          allocate( tmp_diff_factor(2, n_atoms, &
-               -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-               -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-               -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
-          stored_diff_factor_cutoffs = reciprocal_cutoff
+          stored_factor_cutoffs = reciprocal_cutoff
        end if
     else
        nullify(s_factor)
        nullify(tmp_factor)
-       nullify(diff_factor)
-       nullify(tmp_diff_factor)
        allocate( s_factor(2, &
             -reciprocal_cutoff(1):reciprocal_cutoff(1), &
             -reciprocal_cutoff(2):reciprocal_cutoff(2), &
@@ -404,15 +388,7 @@ contains
             -reciprocal_cutoff(1):reciprocal_cutoff(1), &
             -reciprocal_cutoff(2):reciprocal_cutoff(2), &
             -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
-       allocate( diff_factor(2, n_atoms, &
-            -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-            -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-            -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
-       allocate( tmp_diff_factor(2, n_atoms, &
-            -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-            -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-            -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
-       stored_diff_factor_cutoffs = reciprocal_cutoff
+       stored_factor_cutoffs = reciprocal_cutoff
        s_factor_allocated = .true.
     end if
 
@@ -1430,19 +1406,19 @@ contains
   ! *scaler a list of numerical values to scale the individual charges of the atoms
   ! *include_dipole_correction if true, a dipole correction term is included in the energy
   ! *total_energy the calculated energy
-  subroutine calculate_ewald_energy(atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
+  subroutine calculate_ewald_energy(atoms,cell,real_cutoff,k_radius,reciprocal_cutoff,gaussian_width,&
        electric_constant,scaler,include_dipole_correction,total_energy)
     implicit none
     type(atom), intent(in) :: atoms(:)
     type(supercell), intent(in) :: cell
-    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(:)
+    double precision, intent(in) :: real_cutoff, k_radius, gaussian_width, electric_constant, scaler(:)
     integer, intent(in) :: reciprocal_cutoff(3)
     double precision, intent(out) :: total_energy
     logical, intent(in) :: include_dipole_correction
-    double precision, save :: energy(7), tmp_energy(7), charge1, charge2, inv_eps_2v, inv_eps_4pi, &
+    double precision :: energy(7), tmp_energy(7), charge1, charge2, inv_eps_2v, inv_eps_4pi, &
          separation(3), distance, inv_sigma_sqrt_2pi, inv_sigma_sqrt_2, &
-         k_vector(3), dot, coords2(3), t1, t2, sine, cosine, exponential
-    integer, save :: index1, index2, j, k1, k2, k3, offset(3), n_atoms
+         k_vector(3), dot, coords2(3), t1, t2, sine, cosine, exponential, k_cut_sq
+    integer :: index1, index2, j, k1, k2, k3, offset(3), n_atoms
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
     logical :: evaluate
@@ -1454,7 +1430,8 @@ contains
     tmp_energy = 0.d0
     total_energy = 0.d0
     s_factor = 0.d0
-    tmp_factor = 0.d0    
+    tmp_factor = 0.d0
+    k_cut_sq = k_radius*k_radius
 
     inv_eps_4pi = 1.d0 / (4.d0 * pi * electric_constant)
     inv_eps_2v = 1.d0 / (2.d0 * cell%volume * electric_constant)
@@ -1524,16 +1501,17 @@ contains
                          k_vector = k1*cell%reciprocal_cell(1:3,1) + &
                               k2*cell%reciprocal_cell(1:3,2) + &
                               k3*cell%reciprocal_cell(1:3,3)
-                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
-                         sine = charge1*sin(dot)
-                         cosine = charge1*cos(dot)
-
-                         ! S(k) = q exp(i k.r) = q [cos(k.r) + i sin(k.r)]
-                         tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
-                              (/ cosine, sine /)
-                         !tmp_factor(1:2,-k1,-k2,-k3) = tmp_factor(1:2,-k1,-k2,-k3) + &
-                         !     (/ cosine, -sine /)
-
+                         if( (k_vector.o.k_vector) < k_cut_sq)then
+                            dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                            sine = charge1*sin(dot)
+                            cosine = charge1*cos(dot)
+                            
+                            ! S(k) = q exp(i k.r) = q [cos(k.r) + i sin(k.r)]
+                            tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
+                                 (/ cosine, sine /)
+                            !tmp_factor(1:2,-k1,-k2,-k3) = tmp_factor(1:2,-k1,-k2,-k3) + &
+                            !     (/ cosine, -sine /)
+                         end if
                       end if
                    end do
                 end do
@@ -1608,12 +1586,15 @@ contains
                      k2*cell%reciprocal_cell(1:3,2) + &
                      k3*cell%reciprocal_cell(1:3,3)
                 distance = (k_vector .o. k_vector) ! |k|^2
-                exponential = exp(-gaussian_width*gaussian_width*distance*0.5d0) / (distance)
 
-                ! exp(- sigma^2 k^2 / 2) / k^2 |S(k)|^2
-                ! |z|^2 = x^2 + y^2
-                tmp_energy(3) = tmp_energy(3) + exponential * &
-                     (s_factor(1,k1,k2,k3)*s_factor(1,k1,k2,k3) + s_factor(2,k1,k2,k3)*s_factor(2,k1,k2,k3))
+                if( (distance) < k_cut_sq)then
+                   exponential = exp(-gaussian_width*gaussian_width*distance*0.5d0) / (distance)
+                   
+                   ! exp(- sigma^2 k^2 / 2) / k^2 |S(k)|^2
+                   ! |z|^2 = x^2 + y^2
+                   tmp_energy(3) = tmp_energy(3) + exponential * &
+                        (s_factor(1,k1,k2,k3)*s_factor(1,k1,k2,k3) + s_factor(2,k1,k2,k3)*s_factor(2,k1,k2,k3))
+                end if
 
              end if
           end do
@@ -1652,12 +1633,12 @@ contains
   ! *include_dipole_correction if true, a dipole correction term is included in the energy
   ! *total_forces the calculated forces
   ! *total_stress the calculated stress
-  subroutine calculate_ewald_forces(atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
+  subroutine calculate_ewald_forces(atoms,cell,real_cutoff,k_radius,reciprocal_cutoff,gaussian_width,&
        electric_constant,scaler,include_dipole_correction,total_forces,total_stress)
     implicit none
     type(atom), intent(in) :: atoms(:)
     type(supercell), intent(in) :: cell
-    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(:)
+    double precision, intent(in) :: real_cutoff, gaussian_width, k_radius, electric_constant, scaler(:)
     integer, intent(in) :: reciprocal_cutoff(3)
     double precision, intent(inout) :: total_forces(:,:), total_stress(6)
     logical, intent(in) :: include_dipole_correction
@@ -1667,7 +1648,7 @@ contains
          inv_sigma_sqrt_2, inv_sigma_sqrt_2perpi, inv_sigma_sq_2, &
          nabla_factor(3,2), stress(6), &
          k_vector(3), dot, &
-         dipole(1:3), tmp_dipole(1:3), t1, t2
+         dipole(1:3), tmp_dipole(1:3), t1, t2, k_cut_sq
     integer :: index1, index2, j, k1, k2, k3, count, n_atoms
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
@@ -1681,6 +1662,7 @@ contains
     s_factor = 0.d0
     tmp_factor = 0.d0
     nabla_factor = 0.d0
+    k_cut_sq = k_radius*k_radius
 
     stress = 0.d0
     total_stress = 0.d0
@@ -1784,15 +1766,17 @@ contains
                          k_vector = k1*cell%reciprocal_cell(1:3,1) + &
                               k2*cell%reciprocal_cell(1:3,2) + &
                               k3*cell%reciprocal_cell(1:3,3)
-                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
-                         sin_dot = sin(dot)
-                         cos_dot = cos(dot)
 
-                         ! this is the complex conjugate of S(k):
-                         ! S*(k) = q exp(- i k.r) = q [cos(k.r) - i sin(k.r)]
-                         tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
-                              (/ charge1 * cos_dot, - charge1 * sin_dot /)
+                         if((k_vector .o. k_vector) < k_cut_sq)then
+                            dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                            sin_dot = sin(dot)
+                            cos_dot = cos(dot)
 
+                            ! this is the complex conjugate of S(k):
+                            ! S*(k) = q exp(- i k.r) = q [cos(k.r) - i sin(k.r)]
+                            tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
+                                 (/ charge1 * cos_dot, - charge1 * sin_dot /)
+                         end if
                       end if
                    end do
                 end do
@@ -1863,25 +1847,27 @@ contains
                            k2*cell%reciprocal_cell(1:3,2) + &
                            k3*cell%reciprocal_cell(1:3,3)
                       distance = k_vector .o. k_vector ! |k|^2
-                      dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
-                      sin_dot = sin(dot)
-                      cos_dot = cos(dot)
+                      if(distance < k_cut_sq)then
+                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                         sin_dot = sin(dot)
+                         cos_dot = cos(dot)
                       
-                      ! \nabla S(k) = i q k [cos(k.r) + i sin(k.r)]
-                      k_vector = charge1 * k_vector
-                      nabla_factor(1:3,1) = &
-                           -sin_dot * k_vector ! real part
-                      nabla_factor(1:3,2) = &
-                           cos_dot * k_vector ! imaginary part   
+                         ! \nabla S(k) = i q k [cos(k.r) + i sin(k.r)]
+                         k_vector = charge1 * k_vector
+                         nabla_factor(1:3,1) = &
+                              -sin_dot * k_vector ! real part
+                         nabla_factor(1:3,2) = &
+                              cos_dot * k_vector ! imaginary part   
 
-                      ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
-                      ! Re[ z1 z2 ] = x1 x2 - y1 y2  (z = x + iy)
-                      ewald_forces(1:3,2,index1) = ewald_forces(1:3,2,index1) - inv_eps_2v * &
-                           exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
-                           (distance) * 2.d0 * &
-                           (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1) - &
-                           s_factor(2,k1,k2,k3)*nabla_factor(1:3,2))
-                      
+                         ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
+                         ! Re[ z1 z2 ] = x1 x2 - y1 y2  (z = x + iy)
+                         ewald_forces(1:3,2,index1) = ewald_forces(1:3,2,index1) - inv_eps_2v * &
+                              exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
+                              (distance) * 2.d0 * &
+                              (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1) - &
+                              s_factor(2,k1,k2,k3)*nabla_factor(1:3,2))
+                      end if
+
                    end if
                 end do
              end do
@@ -1963,8 +1949,6 @@ contains
     total_enegs = 0.d0
     s_factor = 0.d0
     tmp_factor = 0.d0
-    diff_factor = 0.d0
-    tmp_diff_factor = 0.d0
     qsum = 0.d0
 
     inv_eps_4pi = 1.d0 / (4.d0 * pi * electric_constant)
@@ -2029,7 +2013,7 @@ contains
           !
           do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
              do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-                do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                do k3 = 0, reciprocal_cutoff(3)
                    if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
                       
                       k_vector = k1*cell%reciprocal_cell(1:3,1) + &
@@ -2044,9 +2028,6 @@ contains
                       tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
                            (/ charge1 * cos_dot, - charge1 * sin_dot /)
                       
-                      ! d S(k) = exp(i k.r) = [cos(k.r) + i sin(k.r)]
-                      tmp_diff_factor(1:2,index1,k1,k2,k3) = tmp_diff_factor(1:2,index1,k1,k2,k3) + &
-                           (/ cos_dot, sin_dot /)
                       
                    end if
                 end do
@@ -2074,14 +2055,24 @@ contains
 
     end do
 
+    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+          do k3 = 0, reciprocal_cutoff(3)
+                
+                ! S*(k) = q exp(i k.r) = q [cos(k.r) - i sin(k.r)]
+                tmp_factor(1,-k1,-k2,-k3) = tmp_factor(1,k1,k2,k3)
+                tmp_factor(2,-k1,-k2,-k3) = -tmp_factor(2,k1,k2,k3)
+                
+          end do
+       end do
+    end do
+
 #ifdef MPI
 
 	call timer(t1)
 
     ! collect structure factors from all cpus in MPI
     call mpi_allreduce(tmp_factor,s_factor,size(s_factor),mpi_double_precision,&
-         mpi_sum,mpi_comm_world,mpistat)
-    call mpi_allreduce(tmp_diff_factor,diff_factor,size(diff_factor),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
     call mpi_allreduce(tmp_qsum,qsum,size(qsum),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
@@ -2090,7 +2081,6 @@ contains
          
 #else
     s_factor = tmp_factor
-    diff_factor = tmp_diff_factor
     qsum = tmp_qsum
 #endif
 
@@ -2128,14 +2118,18 @@ contains
                            k2*cell%reciprocal_cell(1:3,2) + &
                            k3*cell%reciprocal_cell(1:3,3)
                       distance = .norm.k_vector
+                      dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                      sin_dot = sin(dot)
+                      cos_dot = cos(dot)
                       
                       ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) d S(k) ]
                       ! Re[ z1 z2 ] = x1 x2 - y1 y2
+                      ! d S(k) = exp(i k.r) = [cos(k.r) + i sin(k.r)]
                       ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) - inv_eps_2v * &
                            exp(-gaussian_width*gaussian_width*distance*distance*0.5d0) / &
                            (distance*distance) * 2.d0 * &
-                           (s_factor(1,k1,k2,k3)*diff_factor(1,index1,k1,k2,k3) - &
-                           s_factor(2,k1,k2,k3)*diff_factor(2,index1,k1,k2,k3))
+                           (s_factor(1,k1,k2,k3) * cos_dot - &
+                           s_factor(2,k1,k2,k3) * sin_dot)
                       
                    end if
                 end do

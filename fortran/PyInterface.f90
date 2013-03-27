@@ -1032,24 +1032,24 @@ contains
   ! *sigma the split parameter
   ! *epsilon electric constant  
   ! *scaler scaling factors for the individual charges
-  subroutine set_ewald_parameters(n_atoms, real_cut, reciprocal_cut, sigma, epsilon, scaler)
+  subroutine set_ewald_parameters(n_atoms, real_cut, k_radius, reciprocal_cut, sigma, epsilon, scaler)
     implicit none
-    double precision, intent(in) :: real_cut, sigma, epsilon, scaler(n_atoms)
+    double precision, intent(in) :: real_cut, k_radius, sigma, epsilon, scaler(n_atoms)
     integer, intent(in) :: reciprocal_cut(3), n_atoms
 
-    call core_set_ewald_parameters(real_cut, reciprocal_cut, sigma, epsilon, scaler) ! in Core.f90
+    call core_set_ewald_parameters(real_cut, k_radius, reciprocal_cut, sigma, epsilon, scaler) ! in Core.f90
 
   end subroutine set_ewald_parameters
 
 
   ! Debugging routine for Ewald
-  subroutine get_ewald_energy(real_cut, reciprocal_cut, sigma, epsilon, energy)
+  subroutine get_ewald_energy(real_cut, k_cut, reciprocal_cut, sigma, epsilon, energy)
     implicit none
-    double precision, intent(in) :: real_cut, sigma, epsilon
+    double precision, intent(in) :: real_cut, k_cut, sigma, epsilon
     integer, intent(in) :: reciprocal_cut(3)
     double precision, intent(out) :: energy
 
-    call core_get_ewald_energy(real_cut, reciprocal_cut, sigma, epsilon, energy)
+    call core_get_ewald_energy(real_cut, k_cut, reciprocal_cut, sigma, epsilon, energy)
     
   end subroutine get_ewald_energy
 
