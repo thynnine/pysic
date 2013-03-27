@@ -787,7 +787,7 @@ class Pysic:
         if self.charge_relaxation != None:
             self.charge_relaxation.charge_relaxation()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
-        self.energy = pf.pysic_interface.calculate_energy(n_atoms)
+        self.energy = pf.pysic_interface.calculate_energy()
 
 
     def calculate_stress(self):

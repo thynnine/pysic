@@ -321,9 +321,124 @@ module potentials
      logical :: includes_post_processing
   end type bond_order_parameters
 
+
+
+
+  ! temporary arrays for ewald summation
+  double precision, pointer :: ewald_forces(:,:,:), ewald_sum_forces(:,:,:), ewald_tmp_enegs(:), &
+       s_factor(:,:,:,:), tmp_factor(:,:,:,:), diff_factor(:,:,:,:,:), tmp_diff_factor(:,:,:,:,:)
+  logical :: ewald_arrays_allocated = .false., s_factor_allocated = .false.
+  integer :: stored_diff_factor_cutoffs(3)
+
 contains
 
+  subroutine deallocate_ewald_arrays()
+    implicit none
 
+    if(ewald_arrays_allocated)then
+       deallocate(ewald_forces)
+       deallocate(ewald_sum_forces)
+       deallocate(ewald_tmp_enegs)
+    else
+       nullify(ewald_forces)
+       nullify(ewald_sum_forces)
+       nullify(ewald_tmp_enegs)
+    end if
+    ewald_arrays_allocated = .false.
+
+    if(s_factor_allocated)then
+       deallocate(s_factor)
+       deallocate(tmp_factor)
+       deallocate(diff_factor)
+       deallocate(tmp_diff_factor)
+    else
+       nullify(s_factor)
+       nullify(tmp_factor)
+       nullify(diff_factor)
+       nullify(tmp_diff_factor)
+    end if
+    s_factor_allocated = .false.
+
+  end subroutine deallocate_ewald_arrays
+
+  subroutine check_s_factor_array_allocation(n_atoms,reciprocal_cutoff)
+    implicit none
+    integer, intent(in) :: n_atoms, reciprocal_cutoff(3)
+
+    if(s_factor_allocated)then
+       if(reciprocal_cutoff(1) /= stored_diff_factor_cutoffs(1) .or. &
+            reciprocal_cutoff(2) /= stored_diff_factor_cutoffs(2) .or. &
+            reciprocal_cutoff(3) /= stored_diff_factor_cutoffs(3) )then          
+          deallocate(s_factor)
+          deallocate(tmp_factor)
+          deallocate(diff_factor)
+          deallocate(tmp_diff_factor)
+          allocate( s_factor(2, &
+               -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+               -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+               -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
+          allocate( tmp_factor(2, &
+               -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+               -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+               -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
+          allocate( diff_factor(2, n_atoms, &
+               -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+               -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+               -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
+          allocate( tmp_diff_factor(2, n_atoms, &
+               -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+               -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+               -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
+          stored_diff_factor_cutoffs = reciprocal_cutoff
+       end if
+    else
+       nullify(s_factor)
+       nullify(tmp_factor)
+       nullify(diff_factor)
+       nullify(tmp_diff_factor)
+       allocate( s_factor(2, &
+            -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+            -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+            -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
+       allocate( tmp_factor(2, &
+            -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+            -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+            -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
+       allocate( diff_factor(2, n_atoms, &
+            -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+            -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+            -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
+       allocate( tmp_diff_factor(2, n_atoms, &
+            -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+            -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+            -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
+       stored_diff_factor_cutoffs = reciprocal_cutoff
+       s_factor_allocated = .true.
+    end if
+
+  end subroutine check_s_factor_array_allocation
+
+
+  subroutine allocate_ewald_arrays(n_atoms)
+    implicit none
+    integer, intent(in) :: n_atoms
+
+    if(ewald_arrays_allocated)then
+       deallocate(ewald_forces)
+       deallocate(ewald_sum_forces)
+       deallocate(ewald_tmp_enegs)
+    else
+       nullify(ewald_forces)
+       nullify(ewald_sum_forces)
+       nullify(ewald_tmp_enegs)
+    end if
+    
+    allocate(ewald_forces(3,3,n_atoms))
+    allocate(ewald_sum_forces(3,3,n_atoms))
+    allocate(ewald_tmp_enegs(n_atoms))
+    ewald_arrays_allocated = .true.
+
+  end subroutine allocate_ewald_arrays
 
 
   ! !!!: smoothening_factor
@@ -1306,39 +1421,34 @@ contains
   !
   ! .. [#] In fact, the sum converges only conditionally meaning the result depends on the order of summation. Physically this is not a problem, because one never has infinite lattices.
   !
-  ! *n_atoms number of atoms
   ! *atoms list of atoms
   ! *cell the supercell containing the system
   ! *real_cutoff Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
   ! *reciprocal_cutoff The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
   ! *gaussian_width The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
   ! *electric_constant The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
-  ! *filter a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
   ! *scaler a list of numerical values to scale the individual charges of the atoms
   ! *include_dipole_correction if true, a dipole correction term is included in the energy
   ! *total_energy the calculated energy
-  subroutine calculate_ewald_energy(n_atoms,atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
-       electric_constant,filter,scaler,include_dipole_correction,total_energy)
+  subroutine calculate_ewald_energy(atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
+       electric_constant,scaler,include_dipole_correction,total_energy)
     implicit none
-    type(atom), intent(in) :: atoms(n_atoms)
+    type(atom), intent(in) :: atoms(:)
     type(supercell), intent(in) :: cell
-    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(n_atoms)
-    integer, intent(in) :: n_atoms, reciprocal_cutoff(3)
+    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(:)
+    integer, intent(in) :: reciprocal_cutoff(3)
     double precision, intent(out) :: total_energy
-    logical, intent(in) :: filter(n_atoms), include_dipole_correction
-    double precision :: energy(7), tmp_energy(7), charge1, charge2, inv_eps_2v, inv_eps_4pi, &
+    logical, intent(in) :: include_dipole_correction
+    double precision, save :: energy(7), tmp_energy(7), charge1, charge2, inv_eps_2v, inv_eps_4pi, &
          separation(3), distance, inv_sigma_sqrt_2pi, inv_sigma_sqrt_2, &
-         s_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         tmp_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         k_vector(3), dot, coords2(3), t1, t2
-    integer :: index1, index2, j, k1, k2, k3, offset(3)
+         k_vector(3), dot, coords2(3), t1, t2, sine, cosine, exponential
+    integer, save :: index1, index2, j, k1, k2, k3, offset(3), n_atoms
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
     logical :: evaluate
+
+    n_atoms = size(atoms)
+    call check_s_factor_array_allocation(n_atoms,reciprocal_cutoff)
 
     energy = 0.d0
     tmp_energy = 0.d0
@@ -1357,8 +1467,8 @@ contains
 #endif
 
     ! loop over atoms
-    do index1 = 1, n_atoms
-       if(is_my_atom(index1) .and. filter(index1))then
+    do index1 = 1, size(atoms)
+       if(is_my_atom(index1))then
           atom1 = atoms(index1)
           nbors1 = atom1%neighbor_list
           charge1 = atom1%charge*scaler(index1)
@@ -1408,17 +1518,21 @@ contains
              !
              do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
                 do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-                   do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                   do k3 = 0, reciprocal_cutoff(3)
                       if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
 
                          k_vector = k1*cell%reciprocal_cell(1:3,1) + &
                               k2*cell%reciprocal_cell(1:3,2) + &
                               k3*cell%reciprocal_cell(1:3,3)
                          dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                         sine = charge1*sin(dot)
+                         cosine = charge1*cos(dot)
 
                          ! S(k) = q exp(i k.r) = q [cos(k.r) + i sin(k.r)]
                          tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
-                              (/ charge1 * cos(dot), charge1 * sin(dot) /)
+                              (/ cosine, sine /)
+                         !tmp_factor(1:2,-k1,-k2,-k3) = tmp_factor(1:2,-k1,-k2,-k3) + &
+                         !     (/ cosine, -sine /)
 
                       end if
                    end do
@@ -1447,6 +1561,20 @@ contains
        end if
     end do
 
+    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+          do k3 = 0, reciprocal_cutoff(3)
+             if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
+                
+                ! S(k) = q exp(i k.r) = q [cos(k.r) + i sin(k.r)]
+                tmp_factor(1,-k1,-k2,-k3) = tmp_factor(1,k1,k2,k3)
+                tmp_factor(2,-k1,-k2,-k3) = -tmp_factor(2,k1,k2,k3)
+                
+             end if
+          end do
+       end do
+    end do
+    
 #ifdef MPI
 	call timer(t1)
 	call record_load(t1)
@@ -1480,11 +1608,11 @@ contains
                      k2*cell%reciprocal_cell(1:3,2) + &
                      k3*cell%reciprocal_cell(1:3,3)
                 distance = (k_vector .o. k_vector) ! |k|^2
+                exponential = exp(-gaussian_width*gaussian_width*distance*0.5d0) / (distance)
 
                 ! exp(- sigma^2 k^2 / 2) / k^2 |S(k)|^2
                 ! |z|^2 = x^2 + y^2
-                tmp_energy(3) = tmp_energy(3) + exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
-                     (distance) * &
+                tmp_energy(3) = tmp_energy(3) + exponential * &
                      (s_factor(1,k1,k2,k3)*s_factor(1,k1,k2,k3) + s_factor(2,k1,k2,k3)*s_factor(2,k1,k2,k3))
 
              end if
@@ -1514,45 +1642,40 @@ contains
   !
   !    \mathbf{F}_\alpha = - \nabla_\alpha U
   !
-  ! *n_atoms number of atoms
   ! *atoms list of atoms
   ! *cell the supercell containing the system
   ! *real_cutoff Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
   ! *reciprocal_cutoff The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
   ! *gaussian_width The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
   ! *electric_constant The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
-  ! *filter a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
   ! *scaler a list of numerical values to scale the individual charges of the atoms
   ! *include_dipole_correction if true, a dipole correction term is included in the energy
   ! *total_forces the calculated forces
   ! *total_stress the calculated stress
-  subroutine calculate_ewald_forces(n_atoms,atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
-       electric_constant,filter,scaler,include_dipole_correction,total_forces,total_stress)
+  subroutine calculate_ewald_forces(atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
+       electric_constant,scaler,include_dipole_correction,total_forces,total_stress)
     implicit none
-    type(atom), intent(in) :: atoms(n_atoms)
+    type(atom), intent(in) :: atoms(:)
     type(supercell), intent(in) :: cell
-    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(n_atoms)
-    integer, intent(in) :: n_atoms, reciprocal_cutoff(3)
-    double precision, intent(out) :: total_forces(3,n_atoms), total_stress(6)
-    logical, intent(in) :: filter(n_atoms), include_dipole_correction
-    double precision :: forces(3,3,n_atoms), sum_forces(3,3,n_atoms), tmp_forces(3), charge1, charge2, &
+    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(:)
+    integer, intent(in) :: reciprocal_cutoff(3)
+    double precision, intent(inout) :: total_forces(:,:), total_stress(6)
+    logical, intent(in) :: include_dipole_correction
+    double precision, save :: tmp_forces(3), charge1, charge2, &
          inv_eps_2v, inv_eps_4pi, sin_dot, cos_dot, &
          separation(3), distance, inv_dist, inv_sigma_sqrt_2pi, &
          inv_sigma_sqrt_2, inv_sigma_sqrt_2perpi, inv_sigma_sq_2, &
-         s_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         tmp_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
          nabla_factor(3,2), stress(6), &
          k_vector(3), dot, &
          dipole(1:3), tmp_dipole(1:3), t1, t2
-    integer :: index1, index2, j, k1, k2, k3, count
+    integer :: index1, index2, j, k1, k2, k3, count, n_atoms
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
 
-    forces = 0.d0
+    n_atoms = size(atoms)
+    call check_s_factor_array_allocation(n_atoms,reciprocal_cutoff)
+
+    ewald_forces = 0.d0
     tmp_forces = 0.d0
     total_forces = 0.d0
     s_factor = 0.d0
@@ -1581,7 +1704,7 @@ contains
 
     ! loop over atoms
     do index1 = 1, n_atoms
-       if(is_my_atom(index1) .and. filter(index1))then
+       if(is_my_atom(index1))then
           atom1 = atoms(index1)
           nbors1 = atom1%neighbor_list
           charge1 = atom1%charge*scaler(index1)
@@ -1622,8 +1745,8 @@ contains
                            inv_sigma_sqrt_2perpi * exp( -distance*distance*inv_sigma_sq_2 ) * inv_dist  ) * &
                            separation * inv_dist
 
-                      forces(1:3,1,index1) = forces(1:3,1,index1) + tmp_forces
-                      forces(1:3,1,index2) = forces(1:3,1,index2) - tmp_forces
+                      ewald_forces(1:3,1,index1) = ewald_forces(1:3,1,index1) + tmp_forces
+                      ewald_forces(1:3,1,index2) = ewald_forces(1:3,1,index2) - tmp_forces
 
                       !***************!
                       ! stress tensor !
@@ -1655,7 +1778,7 @@ contains
              !             
              do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
                 do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-                   do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                   do k3 = 0, reciprocal_cutoff(3)
                       if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
 
                          k_vector = k1*cell%reciprocal_cell(1:3,1) + &
@@ -1682,6 +1805,19 @@ contains
        end if
     end do
 
+
+    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+          do k3 = 0, reciprocal_cutoff(3)
+                
+                ! S*(k) = q exp(i k.r) = q [cos(k.r) - i sin(k.r)]
+                tmp_factor(1,-k1,-k2,-k3) = tmp_factor(1,k1,k2,k3)
+                tmp_factor(2,-k1,-k2,-k3) = -tmp_factor(2,k1,k2,k3)
+                
+          end do
+       end do
+    end do
+
 #ifdef MPI
 
     call timer(t1)
@@ -1702,7 +1838,7 @@ contains
 #endif
 
     do index1 = 1, n_atoms
-       if(is_my_atom(index1) .and. filter(index1))then
+       if(is_my_atom(index1))then
           
           atom1 = atoms(index1)
           charge1 = atom1%charge*scaler(index1)
@@ -1711,7 +1847,7 @@ contains
           ! calculate the dipole correction
           ! 
           if(include_dipole_correction)then
-             forces(1:3,3,index1) = atoms(index1)%charge*scaler(index1) * inv_eps_2v / (-1.5d0) * dipole(1:3)
+             ewald_forces(1:3,3,index1) = atoms(index1)%charge*scaler(index1) * inv_eps_2v / (-1.5d0) * dipole(1:3)
           end if
           
           
@@ -1739,8 +1875,8 @@ contains
                            cos_dot * k_vector ! imaginary part   
 
                       ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
-                      ! Re[ z1 z2 ] = x1 x2 - y1 y2
-                      forces(1:3,2,index1) = forces(1:3,2,index1) - inv_eps_2v * &
+                      ! Re[ z1 z2 ] = x1 x2 - y1 y2  (z = x + iy)
+                      ewald_forces(1:3,2,index1) = ewald_forces(1:3,2,index1) - inv_eps_2v * &
                            exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
                            (distance) * 2.d0 * &
                            (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1) - &
@@ -1752,12 +1888,12 @@ contains
           end do
 
           ! stress tensor
-          stress(1) = stress(1) + atoms(index1)%position(1) * (forces(1,2,index1) + forces(1,3,index1))
-          stress(2) = stress(2) + atoms(index1)%position(2) * (forces(2,2,index1) + forces(2,3,index1))
-          stress(3) = stress(3) + atoms(index1)%position(3) * (forces(3,2,index1) + forces(3,3,index1))
-          stress(4) = stress(4) + atoms(index1)%position(2) * (forces(3,2,index1) + forces(3,3,index1))
-          stress(5) = stress(5) + atoms(index1)%position(1) * (forces(3,2,index1) + forces(3,3,index1))
-          stress(6) = stress(6) + atoms(index1)%position(1) * (forces(2,2,index1) + forces(2,3,index1))
+          stress(1) = stress(1) + atoms(index1)%position(1) * (ewald_forces(1,2,index1) + ewald_forces(1,3,index1))
+          stress(2) = stress(2) + atoms(index1)%position(2) * (ewald_forces(2,2,index1) + ewald_forces(2,3,index1))
+          stress(3) = stress(3) + atoms(index1)%position(3) * (ewald_forces(3,2,index1) + ewald_forces(3,3,index1))
+          stress(4) = stress(4) + atoms(index1)%position(2) * (ewald_forces(3,2,index1) + ewald_forces(3,3,index1))
+          stress(5) = stress(5) + atoms(index1)%position(1) * (ewald_forces(3,2,index1) + ewald_forces(3,3,index1))
+          stress(6) = stress(6) + atoms(index1)%position(1) * (ewald_forces(2,2,index1) + ewald_forces(2,3,index1))
 
        end if
     end do
@@ -1768,16 +1904,16 @@ contains
 	call record_load(t1+t2)
 
     ! collect forces from all cpus in MPI
-    call mpi_allreduce(forces,sum_forces,size(forces),mpi_double_precision,&
+    call mpi_allreduce(ewald_forces,ewald_sum_forces,size(ewald_forces),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
-    total_forces(1:3,1:n_atoms) = sum_forces(1:3,1,1:n_atoms) + &
-         sum_forces(1:3,2,1:n_atoms) + sum_forces(1:3,3,1:n_atoms)
+    total_forces(1:3,1:n_atoms) = ewald_sum_forces(1:3,1,1:n_atoms) + &
+         ewald_sum_forces(1:3,2,1:n_atoms) + ewald_sum_forces(1:3,3,1:n_atoms)
     ! collect stress tensor
     call mpi_allreduce(stress,total_stress,size(stress),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
 #else
-    total_forces(1:3,1:n_atoms) = forces(1:3,1,1:n_atoms) + &
-         forces(1:3,2,1:n_atoms) + forces(1:3,3,1:n_atoms)
+    total_forces(1:3,1:n_atoms) = ewald_forces(1:3,1,1:n_atoms) + &
+         ewald_forces(1:3,2,1:n_atoms) + ewald_forces(1:3,3,1:n_atoms)
     total_stress = stress
 #endif
 
@@ -1793,49 +1929,37 @@ contains
   !
   !    \chi_\alpha = - \frac{\partial U}{\partial q_\alpha}
   !
-  ! *n_atoms number of atoms
   ! *atoms list of atoms
   ! *cell the supercell containing the system
   ! *real_cutoff Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
   ! *reciprocal_cutoff The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
   ! *gaussian_width The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
   ! *electric_constant The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
-  ! *filter a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
   ! *scaler a list of numerical values to scale the individual charges of the atoms
   ! *include_dipole_correction if true, a dipole correction term is included
   ! *total_enegs the calculated electronegativities
-  subroutine calculate_ewald_electronegativities(n_atoms,atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
-       electric_constant,filter,scaler,include_dipole_correction,total_enegs)
+  subroutine calculate_ewald_electronegativities(atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
+       electric_constant,scaler,include_dipole_correction,total_enegs)
     implicit none
-    type(atom), intent(in) :: atoms(n_atoms)
+    type(atom), intent(in) :: atoms(:)
     type(supercell), intent(in) :: cell
-    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(n_atoms)
-    integer, intent(in) :: n_atoms, reciprocal_cutoff(3)
-    double precision, intent(out) :: total_enegs(n_atoms)
-    logical, intent(in) :: filter(n_atoms), include_dipole_correction
+    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(:)
+    integer, intent(in) :: reciprocal_cutoff(3)
+    double precision, intent(inout) :: total_enegs(:)
+    logical, intent(in) :: include_dipole_correction
     double precision :: tmp, qsum(4), tmp_qsum(4), &
-         enegs(n_atoms), tmp_enegs(n_atoms), charge1, charge2, inv_eps_2v, inv_eps_4pi, &
+         charge1, charge2, inv_eps_2v, inv_eps_4pi, &
          separation(3), distance, inv_sigma_sqrt_2pi, inv_sigma_sqrt_2, &
-         s_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         tmp_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         diff_factor(2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         tmp_diff_factor(2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
          k_vector(3), dot, sin_dot, cos_dot, coords2(3), t1, t2
-    integer :: index1, index2, j, k1, k2, k3, offset(3)
+    integer :: index1, index2, j, k1, k2, k3, offset(3), n_atoms
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
     logical :: evaluate
 
-    enegs = 0.d0
-    tmp_enegs = 0.d0
+    n_atoms = size(atoms)
+    call check_s_factor_array_allocation(n_atoms,reciprocal_cutoff)
+
+    ewald_tmp_enegs = 0.d0
     total_enegs = 0.d0
     s_factor = 0.d0
     tmp_factor = 0.d0
@@ -1855,7 +1979,7 @@ contains
 
     ! loop over atoms
     do index1 = 1, n_atoms
-       if(is_my_atom(index1) .and. filter(index1))then
+       if(is_my_atom(index1))then
           atom1 = atoms(index1)
           nbors1 = atom1%neighbor_list
           charge1 = atom1%charge*scaler(index1)
@@ -1891,8 +2015,8 @@ contains
                    ! q_j / r * erfc(r / (sqrt(2) sigma))
                    tmp = -inv_eps_4pi/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
                    
-                   tmp_enegs(index1) = tmp_enegs(index1) + charge2*tmp
-                   tmp_enegs(index2) = tmp_enegs(index2) + charge1*tmp
+                   ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) + charge2*tmp
+                   ewald_tmp_enegs(index2) = ewald_tmp_enegs(index2) + charge1*tmp
                    
                 end if
                 
@@ -1932,7 +2056,7 @@ contains
           !
           ! calculate the self energy term
           !
-          tmp_enegs(index1) = tmp_enegs(index1) + 2.d0*charge1 * inv_eps_4pi * inv_sigma_sqrt_2pi 
+          ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) + 2.d0*charge1 * inv_eps_4pi * inv_sigma_sqrt_2pi 
 
           !
           ! calculate the total charge (charged background term)
@@ -1972,20 +2096,20 @@ contains
 
     do index1 = 1, n_atoms
 
-       if(is_my_atom(index1) .and. filter(index1))then
+       if(is_my_atom(index1))then
           atom1 = atoms(index1)
 
           !
           ! calculate the total charged background and dipole correction terms
           !
-          tmp_enegs(index1) = tmp_enegs(index1) - scaler(index1) * inv_eps_2v * &
+          ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) - scaler(index1) * inv_eps_2v * &
                ( - gaussian_width*gaussian_width *qsum(1) )
           
           if(include_dipole_correction)then
              !
              ! dipole correction terms
              !
-             tmp_enegs(index1) = tmp_enegs(index1) + scaler(index1) * inv_eps_2v * &
+             ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) + scaler(index1) * inv_eps_2v * &
                   ( -0.666666666666666667d0 ) * &
                   ( atom1%position(1) * qsum(2) + &
                   atom1%position(2) * qsum(3) + &
@@ -2007,7 +2131,7 @@ contains
                       
                       ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) d S(k) ]
                       ! Re[ z1 z2 ] = x1 x2 - y1 y2
-                      tmp_enegs(index1) = tmp_enegs(index1) - inv_eps_2v * &
+                      ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) - inv_eps_2v * &
                            exp(-gaussian_width*gaussian_width*distance*distance*0.5d0) / &
                            (distance*distance) * 2.d0 * &
                            (s_factor(1,k1,k2,k3)*diff_factor(1,index1,k1,k2,k3) - &
@@ -2026,10 +2150,10 @@ contains
 	call record_load(t1+t2)
 
     ! collect electronegativities from all cpus in MPI
-    call mpi_allreduce(tmp_enegs,total_enegs,size(enegs),mpi_double_precision,&
+    call mpi_allreduce(ewald_tmp_enegs,total_enegs,size(ewald_tmp_enegs),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
 #else
-    total_enegs = tmp_enegs
+    total_enegs = ewald_tmp_enegs
 #endif
 
   end subroutine calculate_ewald_electronegativities
@@ -5139,7 +5263,7 @@ contains
     implicit none
     double precision, intent(in) :: raw_sum, raw_gradient(3)
     type(bond_order_parameters), intent(in) :: bond_params
-    double precision, intent(out) :: factor_out(3)
+    double precision, intent(inout) :: factor_out(3)
     double precision :: beta, eta, inv_eta, dN, expo, inv_exp
 
     !***********************************!

@@ -176,3 +176,44 @@ class CoulombSummation:
             return self.parameters['real_cutoff']
         return 0.0
 
+
+def estimate_ewald_parameters(real_cutoff=10.0, accuracy='normal'):
+    """Returns a tuple containing a good initial guess for Ewald parameters.
+    
+    The returned values are (real_cutoff, k_cutoff, sigma, epsilon).
+    Epsilon is always 0.00552635 :math:`\\varepsilon_0` in units of :math:`\\frac{e^2}{eV \\AA}`
+    Real cutoff can be given by the user and should be short enough to make the
+    real space summation efficient (note that this affects neighborlisting and thus
+    also other real space summations). Sigma and k_cutoff are determined by simple scaling rules
+    where :math:`\\sigma \\sim r_\\mathrm{cut}` and :math:`k_\\mathrm{cut} \\sim \\sigma^{-1}`.
+    The scaling constants are determined by the accuracy setting.
+    
+    Note that the given parameters are not analysed in any way - they are only a first guess.
+    You should always test the parameters for accuracy and speed before production simulations.
+    
+    Parameters:
+    
+    real_cutoff: double
+        the real space cutoff to be used - it should be shorter than the size of the simulation box
+    accuracy: string
+        either 'low', 'normal', 'high', 'real' or 'reciprocal'
+    """
+
+    epsilon = 0.00552635
+    if(accuracy == 'low'):
+        sigma = real_cutoff/2.0
+        k_cutoff = 2.0/sigma
+    elif(accuracy == 'normal'):
+        sigma = real_cutoff/3.0
+        k_cutoff = 3.0/sigma
+    elif(accuracy == 'high'):
+        sigma = real_cutoff/4.0
+        k_cutoff = 4.0/sigma
+    elif(accuracy == 'real'):
+        sigma = real_cutoff/3.0
+        k_cutoff = 2.0/sigma
+    elif(accuracy == 'reciprocal'):
+        sigma = real_cutoff/2.0
+        k_cutoff = 3.0/sigma
+
+    return (real_cutoff, k_cutoff, sigma, epsilon)

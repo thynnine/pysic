@@ -577,9 +577,8 @@ contains
     implicit none
     integer, intent(in) :: n_atoms, group_index
     double precision, intent(out) :: bond_orders(n_atoms)
-    double precision :: raw_sums(n_atoms)
 
-    call core_get_bond_order_factors(n_atoms,group_index,bond_orders) ! in Core.f90
+    call core_get_bond_order_factors(group_index,bond_orders) ! in Core.f90
 
   end subroutine calculate_bond_order_factors
 
@@ -604,10 +603,10 @@ contains
     implicit none
     integer, intent(in) :: n_atoms, group_index, atom_index
     double precision, intent(out) :: gradients(3,n_atoms)
-    double precision :: bond_orders(n_atoms), virial(6)
+    double precision :: bo(n_atoms), virial(6)
  
-    call core_get_bond_order_sums(n_atoms,group_index,bond_orders) ! in Core.f90
-    call core_calculate_bond_order_gradients(n_atoms,group_index,atom_index,bond_orders,gradients,virial) ! in Core.f90
+    call core_get_bond_order_sums(group_index,bo) ! in Core.f90
+    call core_calculate_bond_order_gradients(group_index,atom_index,bo,gradients,virial) ! in Core.f90
 
   end subroutine calculate_bond_order_gradients
 
@@ -635,8 +634,8 @@ contains
     double precision, intent(out) :: gradients(3,n_atoms)
     double precision :: bond_orders(n_atoms), virial(6)
  
-    call core_get_bond_order_sums(n_atoms,group_index,bond_orders) ! in Core.f90
-    call core_calculate_bond_order_gradients_of_factor(n_atoms,group_index,atom_index,bond_orders,gradients,virial) ! in Core.f90
+    call core_get_bond_order_sums(group_index,bond_orders) ! in Core.f90
+    call core_calculate_bond_order_gradients_of_factor(group_index,atom_index,bond_orders,gradients,virial) ! in Core.f90
 
   end subroutine calculate_bond_order_gradients_of_factor
 
@@ -647,12 +646,11 @@ contains
   !
   ! *n_atoms number of atoms
   ! *energy total potential energy
-  subroutine calculate_energy(n_atoms,energy)
+  subroutine calculate_energy(energy)
     implicit none
-    integer, intent(in) :: n_atoms
     double precision, intent(out) :: energy
 
-    call core_calculate_energy(n_atoms,energy) ! in Core.f90
+    call core_calculate_energy(energy) ! in Core.f90
 
   end subroutine calculate_energy
 
@@ -668,8 +666,8 @@ contains
     implicit none
     integer, intent(in) :: n_atoms
     double precision, intent(out) :: forces(3,n_atoms), stress(6)
-
-    call core_calculate_forces(n_atoms,forces,stress) ! in Core.f90
+    
+    call core_calculate_forces(forces,stress) ! in Core.f90
 
   end subroutine calculate_forces
 
@@ -685,7 +683,7 @@ contains
     integer, intent(in) :: n_atoms
     double precision, intent(out) :: enegs(n_atoms)
 
-    call core_calculate_electronegativities(n_atoms,enegs) ! in Core.f90
+    call core_calculate_electronegativities(enegs) ! in Core.f90
 
   end subroutine calculate_electronegativities
 
@@ -1039,7 +1037,7 @@ contains
     double precision, intent(in) :: real_cut, sigma, epsilon, scaler(n_atoms)
     integer, intent(in) :: reciprocal_cut(3), n_atoms
 
-    call core_set_ewald_parameters(n_atoms, real_cut, reciprocal_cut, sigma, epsilon, scaler) ! in Core.f90
+    call core_set_ewald_parameters(real_cut, reciprocal_cut, sigma, epsilon, scaler) ! in Core.f90
 
   end subroutine set_ewald_parameters
 
@@ -1065,7 +1063,7 @@ contains
 
     max_cutoff = maxval(cutoffs)
     call core_create_space_partitioning(max_cutoff)
-    call core_build_neighbor_lists(n_atoms,cutoffs)
+    call core_build_neighbor_lists(cutoffs)
 
   end subroutine generate_neighbor_lists
 
