@@ -1406,8 +1406,9 @@ contains
   ! *scaler a list of numerical values to scale the individual charges of the atoms
   ! *include_dipole_correction if true, a dipole correction term is included in the energy
   ! *total_energy the calculated energy
+  ! *include_realspace By default, also the real space summation is carried out, but giving the .false. flag here will prevent the calculation. This is used in the normal evaluation loop where the real space sum is calculated during the evaluation of other pairwise interactions.
   subroutine calculate_ewald_energy(atoms,cell,real_cutoff,k_radius,reciprocal_cutoff,gaussian_width,&
-       electric_constant,scaler,include_dipole_correction,total_energy)
+       electric_constant,scaler,include_dipole_correction,total_energy,include_realspace)
     implicit none
     type(atom), intent(in) :: atoms(:)
     type(supercell), intent(in) :: cell
@@ -1415,6 +1416,7 @@ contains
     integer, intent(in) :: reciprocal_cutoff(3)
     double precision, intent(out) :: total_energy
     logical, intent(in) :: include_dipole_correction
+    logical, optional, intent(in) :: include_realspace
     double precision :: energy(7), tmp_energy(7), charge1, charge2, inv_eps_2v, inv_eps_4pi, &
          separation(3), distance, inv_sigma_sqrt_2pi, inv_sigma_sqrt_2, &
          k_vector(3), dot, coords2(3), t1, t2, sine, cosine, exponential, k_cut_sq
@@ -1446,49 +1448,59 @@ contains
     ! loop over atoms
     do index1 = 1, size(atoms)
        if(is_my_atom(index1))then
+
           atom1 = atoms(index1)
           nbors1 = atom1%neighbor_list
           charge1 = atom1%charge*scaler(index1)
-
-          !
-          ! calculate the real space sum
-          !
+          
           if(charge1 /= 0.d0)then
-             ! loop over neighbors
-             do j = 1, nbors1%n_neighbors
 
-                ! neighboring atom
-                index2 = nbors1%neighbors(j)
+             evaluate = .true.
+             if(present(include_realspace))then
+                evaluate = include_realspace
+             end if
+             
+             if(evaluate)then
+                !
+                ! calculate the real space sum
+                !
+                ! loop over neighbors
+                do j = 1, nbors1%n_neighbors
 
-                ! prevent double counting (pick index1 < index2)
-                if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
+                   ! neighboring atom
+                   index2 = nbors1%neighbors(j)
 
-                   atom2 = atoms(index2)
-                   charge2 = atom2%charge*scaler(index2)
-                   ! calculate atom1-atom2 separation vector
-                   ! and distance
-                   call separation_vector(atom1%position, &
-                        atom2%position, &
-                        nbors1%pbc_offsets(1:3,j), &
-                        cell, &
-                        separation) ! in Geometry.f90
-                   distance = .norm.separation
+                   ! prevent double counting (pick index1 < index2)
+                   if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
 
-                   if(distance == 0.d0)then
-                      distance = 0.1d-10
+                      atom2 = atoms(index2)
+                      charge2 = atom2%charge*scaler(index2)
+                      ! calculate atom1-atom2 separation vector
+                      ! and distance
+                      call separation_vector(atom1%position, &
+                           atom2%position, &
+                           nbors1%pbc_offsets(1:3,j), &
+                           cell, &
+                           separation) ! in Geometry.f90
+                      distance = .norm.separation
+                      
+                      if(distance == 0.d0)then
+                         distance = 0.1d-10
+                      end if
+                      
+                      if(distance < real_cutoff)then
+                         
+                         !write(*,'(A,I8,I8,F8.2,F8.2,F8.2,F10.3)') "    Ewald pair ", index1, index2, separation, distance
+                         
+                         ! q_i q_j / r * erfc(r / (sqrt(2) sigma))
+                         energy(1) = energy(1) + charge1*charge2/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
+                      end if
+                      
                    end if
 
-                   if(distance < real_cutoff)then
+                end do
+             end if ! include_realspace
 
-                      !write(*,'(A,I8,I8,F8.2,F8.2,F8.2,F10.3)') "    Ewald pair ", index1, index2, separation, distance
-
-                      ! q_i q_j / r * erfc(r / (sqrt(2) sigma))
-                      energy(1) = energy(1) + charge1*charge2/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
-                   end if
-
-                end if
-
-             end do
 
              !
              ! calculate the structure factors
@@ -1539,19 +1551,19 @@ contains
        end if
     end do
 
-    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
-       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-          do k3 = 0, reciprocal_cutoff(3)
-             if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
-                
-                ! S(k) = q exp(i k.r) = q [cos(k.r) + i sin(k.r)]
-                tmp_factor(1,-k1,-k2,-k3) = tmp_factor(1,k1,k2,k3)
-                tmp_factor(2,-k1,-k2,-k3) = -tmp_factor(2,k1,k2,k3)
-                
-             end if
-          end do
-       end do
-    end do
+!!$    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+!!$       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+!!$          do k3 = 0, reciprocal_cutoff(3)
+!!$             if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
+!!$                
+!!$                ! S(k) = q exp(i k.r) = q [cos(k.r) + i sin(k.r)]
+!!$                tmp_factor(1,-k1,-k2,-k3) = tmp_factor(1,k1,k2,k3)
+!!$                tmp_factor(2,-k1,-k2,-k3) = -tmp_factor(2,k1,k2,k3)
+!!$                
+!!$             end if
+!!$          end do
+!!$       end do
+!!$    end do
     
 #ifdef MPI
 	call timer(t1)
@@ -1579,7 +1591,7 @@ contains
     !
     do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
        do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-          do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+          do k3 = 0, reciprocal_cutoff(3)
              if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
 
                 k_vector = k1*cell%reciprocal_cell(1:3,1) + &
@@ -1590,10 +1602,17 @@ contains
                 if( (distance) < k_cut_sq)then
                    exponential = exp(-gaussian_width*gaussian_width*distance*0.5d0) / (distance)
                    
-                   ! exp(- sigma^2 k^2 / 2) / k^2 |S(k)|^2
-                   ! |z|^2 = x^2 + y^2
-                   tmp_energy(3) = tmp_energy(3) + exponential * &
-                        (s_factor(1,k1,k2,k3)*s_factor(1,k1,k2,k3) + s_factor(2,k1,k2,k3)*s_factor(2,k1,k2,k3))
+                   if(k3 == 0)then
+                      ! exp(- sigma^2 k^2 / 2) / k^2 |S(k)|^2
+                      ! |z|^2 = x^2 + y^2
+                      tmp_energy(3) = tmp_energy(3) + exponential * &
+                           (s_factor(1,k1,k2,k3)*s_factor(1,k1,k2,k3) + s_factor(2,k1,k2,k3)*s_factor(2,k1,k2,k3))
+                   else
+                      ! exp(- sigma^2 k^2 / 2) / k^2 |S(k)|^2
+                      ! |z|^2 = x^2 + y^2
+                      tmp_energy(3) = tmp_energy(3) + 2.d0*exponential * &
+                           (s_factor(1,k1,k2,k3)*s_factor(1,k1,k2,k3) + s_factor(2,k1,k2,k3)*s_factor(2,k1,k2,k3))
+                   end if
                 end if
 
              end if
@@ -1633,8 +1652,9 @@ contains
   ! *include_dipole_correction if true, a dipole correction term is included in the energy
   ! *total_forces the calculated forces
   ! *total_stress the calculated stress
+  ! *include_realspace By default, also the real space summation is carried out, but giving the .false. flag here will prevent the calculation. This is used in the normal evaluation loop where the real space sum is calculated during the evaluation of other pairwise interactions.
   subroutine calculate_ewald_forces(atoms,cell,real_cutoff,k_radius,reciprocal_cutoff,gaussian_width,&
-       electric_constant,scaler,include_dipole_correction,total_forces,total_stress)
+       electric_constant,scaler,include_dipole_correction,total_forces,total_stress,include_realspace)
     implicit none
     type(atom), intent(in) :: atoms(:)
     type(supercell), intent(in) :: cell
@@ -1642,6 +1662,7 @@ contains
     integer, intent(in) :: reciprocal_cutoff(3)
     double precision, intent(inout) :: total_forces(:,:), total_stress(6)
     logical, intent(in) :: include_dipole_correction
+    logical, optional, intent(in) :: include_realspace
     double precision, save :: tmp_forces(3), charge1, charge2, &
          inv_eps_2v, inv_eps_4pi, sin_dot, cos_dot, &
          separation(3), distance, inv_dist, inv_sigma_sqrt_2pi, &
@@ -1652,6 +1673,7 @@ contains
     integer :: index1, index2, j, k1, k2, k3, count, n_atoms
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
+    logical :: evaluate
 
     n_atoms = size(atoms)
     call check_s_factor_array_allocation(n_atoms,reciprocal_cutoff)
@@ -1692,61 +1714,71 @@ contains
           charge1 = atom1%charge*scaler(index1)
 
           if(charge1 /= 0.d0)then
-             ! loop over neighbors
-             do j = 1, nbors1%n_neighbors
 
-                ! neighboring atom
-                index2 = nbors1%neighbors(j)
+             evaluate = .true.
+             if(present(include_realspace))then
+                evaluate = include_realspace
+             end if
+             
+             if(evaluate)then
 
-                ! prevent double counting
-                if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
-                   atom2 = atoms(index2)
-                   charge2 = atom2%charge*scaler(index2)
-
-                   ! calculate atom1-atom2 separation vector
-                   ! and distance
-                   call separation_vector(atom1%position, &
-                        atom2%position, &
-                        nbors1%pbc_offsets(1:3,j), &
-                        cell, &
-                        separation) ! in Geometry.f90
-                   distance = .norm.separation
-
-                   if(distance == 0.d0)then
-                      distance = 0.1d-10
-                   end if
-
-                   inv_dist = 1.d0 / distance
-
-                   if(distance < real_cutoff)then
-                      ! q_i q_j * 
-                      ! ( erfc(r/(sigma*sqrt(2)))/r^2 + 
-                      ! 1/sigma sqrt(2/pi) exp(-r^2/(2 sigma^2))/r ) \hat{r} 
-                      tmp_forces =  -inv_eps_4pi * charge1*charge2 * ( &
-                           ( 1 - erf(distance*inv_sigma_sqrt_2) ) * inv_dist*inv_dist + &
-                           inv_sigma_sqrt_2perpi * exp( -distance*distance*inv_sigma_sq_2 ) * inv_dist  ) * &
-                           separation * inv_dist
-
-                      ewald_forces(1:3,1,index1) = ewald_forces(1:3,1,index1) + tmp_forces
-                      ewald_forces(1:3,1,index2) = ewald_forces(1:3,1,index2) - tmp_forces
-
-                      !***************!
-                      ! stress tensor !
-                      !***************!
+                ! loop over neighbors
+                do j = 1, nbors1%n_neighbors
+                   
+                   ! neighboring atom
+                   index2 = nbors1%neighbors(j)
                 
-                      ! s_xx, s_yy, s_zz, s_yz, s_xz, s_xy:
-                      stress(1) = stress(1) - separation(1) * tmp_forces(1)
-                      stress(2) = stress(2) - separation(2) * tmp_forces(2)
-                      stress(3) = stress(3) - separation(3) * tmp_forces(3)
-                      stress(4) = stress(4) - separation(2) * tmp_forces(3)
-                      stress(5) = stress(5) - separation(1) * tmp_forces(3)
-                      stress(6) = stress(6) - separation(1) * tmp_forces(2)
-
+                   ! prevent double counting
+                   if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
+                      atom2 = atoms(index2)
+                      charge2 = atom2%charge*scaler(index2)
+                      
+                      ! calculate atom1-atom2 separation vector
+                      ! and distance
+                      call separation_vector(atom1%position, &
+                           atom2%position, &
+                           nbors1%pbc_offsets(1:3,j), &
+                           cell, &
+                           separation) ! in Geometry.f90
+                      distance = .norm.separation
+                      
+                      if(distance == 0.d0)then
+                         distance = 0.1d-10
+                      end if
+                      
+                      inv_dist = 1.d0 / distance
+                      
+                      if(distance < real_cutoff)then
+                         ! q_i q_j * 
+                         ! ( erfc(r/(sigma*sqrt(2)))/r^2 + 
+                         ! 1/sigma sqrt(2/pi) exp(-r^2/(2 sigma^2))/r ) \hat{r} 
+                         tmp_forces =  -inv_eps_4pi * charge1*charge2 * ( &
+                              ( 1 - erf(distance*inv_sigma_sqrt_2) ) * inv_dist*inv_dist + &
+                              inv_sigma_sqrt_2perpi * exp( -distance*distance*inv_sigma_sq_2 ) * inv_dist  ) * &
+                              separation * inv_dist
+                         
+                         ewald_forces(1:3,1,index1) = ewald_forces(1:3,1,index1) + tmp_forces
+                         ewald_forces(1:3,1,index2) = ewald_forces(1:3,1,index2) - tmp_forces
+                         
+                         !***************!
+                         ! stress tensor !
+                         !***************!
+                         
+                         ! s_xx, s_yy, s_zz, s_yz, s_xz, s_xy:
+                         stress(1) = stress(1) - separation(1) * tmp_forces(1)
+                         stress(2) = stress(2) - separation(2) * tmp_forces(2)
+                         stress(3) = stress(3) - separation(3) * tmp_forces(3)
+                         stress(4) = stress(4) - separation(2) * tmp_forces(3)
+                         stress(5) = stress(5) - separation(1) * tmp_forces(3)
+                         stress(6) = stress(6) - separation(1) * tmp_forces(2)
+                         
+                      end if
+                      
                    end if
 
-                end if
+                end do
 
-             end do
+             end if
 
              !
              ! calculate the dipole correction terms
@@ -1790,17 +1822,17 @@ contains
     end do
 
 
-    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
-       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-          do k3 = 0, reciprocal_cutoff(3)
-                
-                ! S*(k) = q exp(i k.r) = q [cos(k.r) - i sin(k.r)]
-                tmp_factor(1,-k1,-k2,-k3) = tmp_factor(1,k1,k2,k3)
-                tmp_factor(2,-k1,-k2,-k3) = -tmp_factor(2,k1,k2,k3)
-                
-          end do
-       end do
-    end do
+!!$    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+!!$       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+!!$          do k3 = 0, reciprocal_cutoff(3)
+!!$                
+!!$                ! S*(k) = q exp(i k.r) = q [cos(k.r) - i sin(k.r)]
+!!$                tmp_factor(1,-k1,-k2,-k3) = tmp_factor(1,k1,k2,k3)
+!!$                tmp_factor(2,-k1,-k2,-k3) = -tmp_factor(2,k1,k2,k3)
+!!$                
+!!$          end do
+!!$       end do
+!!$    end do
 
 #ifdef MPI
 
@@ -1840,7 +1872,7 @@ contains
           !
           do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
              do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-                do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                do k3 = 0, reciprocal_cutoff(3)
                    if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
                       
                       k_vector = k1*cell%reciprocal_cell(1:3,1) + &
@@ -1859,13 +1891,25 @@ contains
                          nabla_factor(1:3,2) = &
                               cos_dot * k_vector ! imaginary part   
 
-                         ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
-                         ! Re[ z1 z2 ] = x1 x2 - y1 y2  (z = x + iy)
-                         ewald_forces(1:3,2,index1) = ewald_forces(1:3,2,index1) - inv_eps_2v * &
-                              exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
-                              (distance) * 2.d0 * &
-                              (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1) - &
-                              s_factor(2,k1,k2,k3)*nabla_factor(1:3,2))
+                         if(k3 == 0)then
+                            ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
+                            ! Re[ z1 z2 ] = x1 x2 - y1 y2  (z = x + iy)
+                            ewald_forces(1:3,2,index1) = ewald_forces(1:3,2,index1) - inv_eps_2v * &
+                                 exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
+                                 (distance) * 2.d0 * &
+                                 (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1) - &
+                                 s_factor(2,k1,k2,k3)*nabla_factor(1:3,2))
+                         else
+                            ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
+                            ! Re[ z1 z2 ] = x1 x2 - y1 y2  (z = x + iy)
+                            ewald_forces(1:3,2,index1) = ewald_forces(1:3,2,index1) - inv_eps_2v * &
+                                 exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
+                                 (distance) * 4.d0 * &
+                                 (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1) - &
+                                 s_factor(2,k1,k2,k3)*nabla_factor(1:3,2))
+
+                         end if
+
                       end if
 
                    end if
@@ -1924,19 +1968,21 @@ contains
   ! *scaler a list of numerical values to scale the individual charges of the atoms
   ! *include_dipole_correction if true, a dipole correction term is included
   ! *total_enegs the calculated electronegativities
-  subroutine calculate_ewald_electronegativities(atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
-       electric_constant,scaler,include_dipole_correction,total_enegs)
+  ! *include_realspace By default, also the real space summation is carried out, but giving the .false. flag here will prevent the calculation. This is used in the normal evaluation loop where the real space sum is calculated during the evaluation of other pairwise interactions.
+  subroutine calculate_ewald_electronegativities(atoms,cell,real_cutoff,k_radius,reciprocal_cutoff,gaussian_width,&
+       electric_constant,scaler,include_dipole_correction,total_enegs,include_realspace)
     implicit none
     type(atom), intent(in) :: atoms(:)
     type(supercell), intent(in) :: cell
-    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(:)
+    double precision, intent(in) :: real_cutoff, gaussian_width, k_radius, electric_constant, scaler(:)
     integer, intent(in) :: reciprocal_cutoff(3)
     double precision, intent(inout) :: total_enegs(:)
     logical, intent(in) :: include_dipole_correction
+    logical, optional, intent(in) :: include_realspace
     double precision :: tmp, qsum(4), tmp_qsum(4), &
          charge1, charge2, inv_eps_2v, inv_eps_4pi, &
          separation(3), distance, inv_sigma_sqrt_2pi, inv_sigma_sqrt_2, &
-         k_vector(3), dot, sin_dot, cos_dot, coords2(3), t1, t2
+         k_vector(3), dot, sin_dot, cos_dot, coords2(3), t1, t2, k_cut_sq
     integer :: index1, index2, j, k1, k2, k3, offset(3), n_atoms
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
@@ -1950,6 +1996,7 @@ contains
     s_factor = 0.d0
     tmp_factor = 0.d0
     qsum = 0.d0
+    k_cut_sq = k_radius*k_radius
 
     inv_eps_4pi = 1.d0 / (4.d0 * pi * electric_constant)
     inv_eps_2v = 1.d0 / (2.d0 * cell%volume * electric_constant)
@@ -1968,46 +2015,56 @@ contains
           nbors1 = atom1%neighbor_list
           charge1 = atom1%charge*scaler(index1)
           
-          !
-          ! calculate the real space sum
-          !
-          do j = 1, nbors1%n_neighbors
-             
-             ! neighboring atom
-             index2 = nbors1%neighbors(j)
-             
-             ! prevent double counting (pick index1 < index2)
-             if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
-                
-                atom2 = atoms(index2)
-                charge2 = atom2%charge*scaler(index2)
-                ! calculate atom1-atom2 separation vector
-                ! and distance
-                call separation_vector(atom1%position, &
-                     atom2%position, &
-                     nbors1%pbc_offsets(1:3,j), &
-                     cell, &
-                     separation) ! in Geometry.f90
-                distance = .norm.separation
-                
-                if(distance == 0.d0)then
-                   distance = 0.1d-10
-                end if
 
-                if(distance < real_cutoff)then
-                   
-                   ! q_j / r * erfc(r / (sqrt(2) sigma))
-                   tmp = -inv_eps_4pi/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
-                   
-                   ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) + charge2*tmp
-                   ewald_tmp_enegs(index2) = ewald_tmp_enegs(index2) + charge1*tmp
-                   
-                end if
-                
-             end if
-             
-          end do
+          evaluate = .true.
+          if(present(include_realspace))then
+             evaluate = include_realspace
+          end if
           
+          if(evaluate)then
+
+             !
+             ! calculate the real space sum
+             !
+             do j = 1, nbors1%n_neighbors
+                
+                ! neighboring atom
+                index2 = nbors1%neighbors(j)
+                
+                ! prevent double counting (pick index1 < index2)
+                if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
+                   
+                   atom2 = atoms(index2)
+                   charge2 = atom2%charge*scaler(index2)
+                   ! calculate atom1-atom2 separation vector
+                   ! and distance
+                   call separation_vector(atom1%position, &
+                        atom2%position, &
+                        nbors1%pbc_offsets(1:3,j), &
+                        cell, &
+                        separation) ! in Geometry.f90
+                   distance = .norm.separation
+                   
+                   if(distance == 0.d0)then
+                      distance = 0.1d-10
+                   end if
+
+                   if(distance < real_cutoff)then
+                      
+                      ! q_j / r * erfc(r / (sqrt(2) sigma))
+                      tmp = -inv_eps_4pi/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
+                      
+                      ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) + charge2*tmp
+                      ewald_tmp_enegs(index2) = ewald_tmp_enegs(index2) + charge1*tmp
+                   
+                   end if
+                
+                end if
+             
+             end do
+          
+          end if
+
           !
           ! calculate the structure factors
           !
@@ -2019,15 +2076,16 @@ contains
                       k_vector = k1*cell%reciprocal_cell(1:3,1) + &
                            k2*cell%reciprocal_cell(1:3,2) + &
                            k3*cell%reciprocal_cell(1:3,3)
-                      dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
-                      sin_dot = sin(dot)
-                      cos_dot = cos(dot)
-                      
-                      ! this is the complex conjugate of S(k):
-                      ! S*(k) = q exp(- i k.r) = q [cos(k.r) - i sin(k.r)]
-                      tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
-                           (/ charge1 * cos_dot, - charge1 * sin_dot /)
-                      
+                      if( (k_vector.o.k_vector) < k_cut_sq)then
+                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                         sin_dot = sin(dot)
+                         cos_dot = cos(dot)
+                         
+                         ! this is the complex conjugate of S(k):
+                         ! S*(k) = q exp(- i k.r) = q [cos(k.r) - i sin(k.r)]
+                         tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
+                              (/ charge1 * cos_dot, - charge1 * sin_dot /)
+                      end if
                       
                    end if
                 end do
@@ -2055,17 +2113,17 @@ contains
 
     end do
 
-    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
-       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-          do k3 = 0, reciprocal_cutoff(3)
-                
-                ! S*(k) = q exp(i k.r) = q [cos(k.r) - i sin(k.r)]
-                tmp_factor(1,-k1,-k2,-k3) = tmp_factor(1,k1,k2,k3)
-                tmp_factor(2,-k1,-k2,-k3) = -tmp_factor(2,k1,k2,k3)
-                
-          end do
-       end do
-    end do
+!!$    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+!!$       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+!!$          do k3 = 0, reciprocal_cutoff(3)
+!!$                
+!!$                ! S*(k) = q exp(i k.r) = q [cos(k.r) - i sin(k.r)]
+!!$                tmp_factor(1,-k1,-k2,-k3) = tmp_factor(1,k1,k2,k3)
+!!$                tmp_factor(2,-k1,-k2,-k3) = -tmp_factor(2,k1,k2,k3)
+!!$                
+!!$          end do
+!!$       end do
+!!$    end do
 
 #ifdef MPI
 
@@ -2111,26 +2169,44 @@ contains
           !
           do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
              do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-                do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                do k3 = 0, reciprocal_cutoff(3)
                    if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
                       
                       k_vector = k1*cell%reciprocal_cell(1:3,1) + &
                            k2*cell%reciprocal_cell(1:3,2) + &
                            k3*cell%reciprocal_cell(1:3,3)
-                      distance = .norm.k_vector
-                      dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
-                      sin_dot = sin(dot)
-                      cos_dot = cos(dot)
+                      distance = (k_vector .o. k_vector) ! |k|^2
+
+                      if( (distance) < k_cut_sq)then
+                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                         sin_dot = sin(dot)
+                         cos_dot = cos(dot)
                       
-                      ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) d S(k) ]
-                      ! Re[ z1 z2 ] = x1 x2 - y1 y2
-                      ! d S(k) = exp(i k.r) = [cos(k.r) + i sin(k.r)]
-                      ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) - inv_eps_2v * &
-                           exp(-gaussian_width*gaussian_width*distance*distance*0.5d0) / &
-                           (distance*distance) * 2.d0 * &
-                           (s_factor(1,k1,k2,k3) * cos_dot - &
-                           s_factor(2,k1,k2,k3) * sin_dot)
-                      
+                         if(k3 == 0)then
+
+                            ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) d S(k) ]
+                            ! Re[ z1 z2 ] = x1 x2 - y1 y2
+                            ! d S(k) = exp(i k.r) = [cos(k.r) + i sin(k.r)]
+                            ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) - inv_eps_2v * &
+                                 exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
+                                 (distance) * 2.d0 * &
+                                 (s_factor(1,k1,k2,k3) * cos_dot - &
+                                 s_factor(2,k1,k2,k3) * sin_dot)
+                         else
+
+                            ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) d S(k) ]
+                            ! Re[ z1 z2 ] = x1 x2 - y1 y2
+                            ! d S(k) = exp(i k.r) = [cos(k.r) + i sin(k.r)]
+                            ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) - inv_eps_2v * &
+                                 exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
+                                 (distance) * 4.d0 * &
+                                 (s_factor(1,k1,k2,k3) * cos_dot - &
+                                 s_factor(2,k1,k2,k3) * sin_dot)
+
+                         end if
+
+                      end if
+
                    end if
                 end do
              end do
@@ -2919,12 +2995,18 @@ contains
     double precision, intent(in) :: separations(3,1), distances(1)
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: force(3,2)
-    double precision :: r1, r2
+    double precision :: r1, r2, r6
 
     r1 = distances(1)
     r2 = (r1 - interaction%parameters(2))
-    force(1:3,1) = interaction%parameters(1) * r2 * separations(1:3,1) / r1
-    force(1:3,2) = -force(1:3,1)
+    r6 = (interaction%cutoff - interaction%parameters(2))
+    
+    if(r2*r2 < r6*r6)then
+	    force(1:3,1) = interaction%parameters(1) * r2 * separations(1:3,1) / r1
+    	force(1:3,2) = -force(1:3,1)
+    else
+    	force = 0.d0
+    end	if
     
   end subroutine evaluate_force_spring
 
@@ -2945,7 +3027,11 @@ contains
     r1 = distances(1)
     r2 = (r1 - interaction%parameters(2))
     r6 = (interaction%cutoff - interaction%parameters(2))
-    energy = interaction%parameters(1) * 0.5d0 * (r2*r2 - r6*r6)
+    if(r2*r2 < r6*r6)then
+	    energy = interaction%parameters(1) * 0.5d0 * (r2*r2 - r6*r6)
+	else
+		energy = 0.d0
+	end	if
 
   end subroutine evaluate_energy_spring
 

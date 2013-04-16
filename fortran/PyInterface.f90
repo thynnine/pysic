@@ -407,6 +407,9 @@ contains
 
   end subroutine allocate_bond_order_storage
 
+
+  
+
   ! Creates a potential in the core.
   ! The memory must have been allocated first using allocate_potentials.
   ! 

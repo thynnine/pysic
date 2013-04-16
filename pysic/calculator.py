@@ -825,7 +825,6 @@ class Pysic:
         elif self.structure.get_number_of_atoms() != pf.pysic_interface.get_number_of_atoms():
             do_full_init = True
             
-                        
         if do_full_init:
             self.initialize_fortran_core()
         else:
@@ -872,16 +871,21 @@ class Pysic:
 
     def update_core_potentials(self):
         """Generates potentials for the Fortran core."""
-                
+        
         Pysic.core.potential_lists_ready = False
         if self.potentials == None:
             pf.pysic_interface.allocate_potentials(0)
             pf.pysic_interface.allocate_bond_order_factors(0)
+            
+            n_atoms = pf.pysic_interface.get_number_of_atoms()
+            pf.pysic_interface.allocate_bond_order_storage(n_atoms,0,0)
             return
 
         if len(self.potentials) == 0:
             pf.pysic_interface.allocate_potentials(0)
             pf.pysic_interface.allocate_bond_order_factors(0)
+            n_atoms = pf.pysic_interface.get_number_of_atoms()
+            pf.pysic_interface.allocate_bond_order_storage(n_atoms,0,0)
             return
         
         n_pots = 0
@@ -1234,7 +1238,6 @@ class Pysic:
             except:
                 raise InvalidParametersError("Failed to create a bond order factor in the core: "+str(bond))
 
-
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         pf.pysic_interface.allocate_bond_order_storage(n_atoms,
                                                        pot_index,
@@ -1344,14 +1347,13 @@ class Pysic:
         if not Pysic.core.atoms_ready(self.structure):
             raise MissingAtomsError("Creating neighbor lists before updating atoms in the core.")
         cutoffs = self.get_individual_cutoffs(1.0)
-                
+
         if not self.neighbor_lists_waiting:
             self.create_neighbor_lists(cutoffs)
             self.set_cutoffs(cutoffs)
             self.neighbor_lists_waiting = True
 
         self.neighbor_list.update(self.structure)
-
         if isinstance(self.neighbor_list,FastNeighborList):
             # if we used the fast list, the core is already updated
             pass
@@ -1362,7 +1364,7 @@ class Pysic:
                 pf.pysic_interface.create_neighbor_list(index+1,np.array(nbors),np.array(offs).transpose())
 
         Pysic.core.set_neighbor_lists(self.neighbor_list)
-        
+
 
     def initialize_fortran_core(self):
         """Fully initializes the Fortran core, creating the atoms, supercell, potentials, and neighbor lists."""
@@ -1391,11 +1393,9 @@ class Pysic:
                 
         self.update_core_supercell()
         self.update_core_potentials()
-        self.update_core_neighbor_lists()        
-                
+        self.update_core_neighbor_lists()
         self.update_core_potential_lists()
         self.update_core_coulomb()
-
 
     def get_numerical_energy_gradient(self, atom_index, shift=0.0001, atoms=None):
         """Numerically calculates the negative gradient of energy with respect to moving a single particle.

@@ -3260,7 +3260,11 @@ contains
     type(neighbor_list) :: nbors1, nbors2, nbors3
     integer, pointer :: interaction_indices(:)
     logical :: is_active, many_bodies_found
-    double precision :: max_cutoff, sigma, t00, t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb
+    double precision :: max_cutoff, sigma, inv_eps_4pi, inv_sigma_sqrt_2, charge1, charge2, &
+         inv_eps_2v, inv_dist, inv_sigma_sqrt_2pi, &
+         inv_sigma_sqrt_2perpi, inv_sigma_sq_2, &
+         tmp_forces(3), tmp_eneg, &
+         t00, t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb
     integer, save :: reci_length(3), offset(3), tripleoffset(3), quadoffset(3), n_atoms
 
     t00 = 0.0
@@ -3291,6 +3295,14 @@ contains
     stress = 0.d0
     total_stress = 0.d0
 
+    inv_eps_4pi = 1.d0 / (4.d0 * pi * ewald_epsilon)
+    inv_eps_2v = 1.d0 / (2.d0 * cell%volume * ewald_epsilon)
+    inv_sigma_sqrt_2 = 1.d0 / (sqrt(2.d0) * ewald_sigma)
+    inv_sigma_sqrt_2pi = 1.d0 / (sqrt(2.d0 * pi) * ewald_sigma)
+    inv_sigma_sqrt_2 = 1.d0 / (sqrt(2.d0) * ewald_sigma)
+    inv_sigma_sq_2 = inv_sigma_sqrt_2*inv_sigma_sqrt_2
+    inv_sigma_sqrt_2perpi = 2.d0 * inv_sigma_sqrt_2pi
+
     ! For MPI load balancing, the execution time of each cpu
     ! is recorded. After the forces have been calculated, the
     ! workload of all cpus are examined and load is transferred
@@ -3313,9 +3325,6 @@ contains
 
     ! loop over atoms
     do index1 = 1, n_atoms
-
-       !write(*,*) "debug: atom ", index1, "/", n_atoms
-
 
        ! in MPI, only consider the atoms allocated to this particular cpu
        if(is_my_atom(index1))then
@@ -3392,6 +3401,54 @@ contains
                 !*********************!
 
                 t00 = t0
+
+                ! include the realspace part of ewald already here
+                if(evaluate_ewald)then
+                   if(distances(1) < ewald_cutoff)then
+                      charge1 = atom1%charge
+                      charge2 = atom2%charge
+
+                      select case(calculation_type)
+                      case(energy_evaluation_index)
+                         ! q_i q_j / r * erfc(r / (sqrt(2) sigma))
+                         energy = energy + charge1*charge2*(1.d0 - erf(distances(1)*inv_sigma_sqrt_2))/&
+                              (distances(1)) * inv_eps_4pi
+                      case(force_evaluation_index)
+                         ! q_i q_j * 
+                         ! ( erfc(r/(sigma*sqrt(2)))/r^2 + 
+                         ! 1/sigma sqrt(2/pi) exp(-r^2/(2 sigma^2))/r ) \hat{r} 
+                         inv_dist = 1/distances(1)
+                         tmp_forces =  -inv_eps_4pi * charge1*charge2 * ( &
+                              ( 1 - erf(distances(1)*inv_sigma_sqrt_2) ) * inv_dist*inv_dist + &
+                              inv_sigma_sqrt_2perpi * exp( -distances(1)*distances(1)*inv_sigma_sq_2 ) * inv_dist  ) * &
+                              separations(1:3,1) * inv_dist
+                         temp_forces(1:3,index1) = temp_forces(1:3,index1) + tmp_forces
+                         temp_forces(1:3,index2) = temp_forces(1:3,index2) - tmp_forces
+
+                         !***************!
+                         ! stress tensor !
+                         !***************!
+                         
+                         ! s_xx, s_yy, s_zz, s_yz, s_xz, s_xy:
+                         stress(1) = stress(1) - separations(1,1) * tmp_forces(1)
+                         stress(2) = stress(2) - separations(2,1) * tmp_forces(2)
+                         stress(3) = stress(3) - separations(3,1) * tmp_forces(3)
+                         stress(4) = stress(4) - separations(2,1) * tmp_forces(3)
+                         stress(5) = stress(5) - separations(1,1) * tmp_forces(3)
+                         stress(6) = stress(6) - separations(1,1) * tmp_forces(2)
+
+                      case(electronegativity_evaluation_index)
+
+                         ! q_j / r * erfc(r / (sqrt(2) sigma))
+                         tmp_eneg = -inv_eps_4pi/distances(1)*(1.d0 - erf(distances(1)*inv_sigma_sqrt_2))
+                         
+                         temp_enegs(index1) = temp_enegs(index1) + charge2*tmp_eneg
+                         temp_enegs(index2) = temp_enegs(index2) + charge1*tmp_eneg
+
+                      end select
+                   end if
+                end if
+
                 if(distances(1) < atom1%max_potential_radius)then
                    ! differentiate between energy, force, and electronegativity evaluation
                    select case(calculation_type)
@@ -3404,15 +3461,13 @@ contains
                            energy, &
                            many_bodies_found)
                    case(force_evaluation_index)
-                      if(.true.)then
-                         call core_evaluate_local_doublet_forces_B(atom_list(1:2), &
-                              index1, index2, &
-                              2, & ! test for atom2, since interaction indices filters for atom1 already
-                              interaction_indices, &
-                              separations(1:3,1), directions(1:3,1), distances(1), &
-                              temp_forces,stress, &
-                              many_bodies_found)
-                      end if
+                      call core_evaluate_local_doublet_forces_B(atom_list(1:2), &
+                           index1, index2, &
+                           2, & ! test for atom2, since interaction indices filters for atom1 already
+                           interaction_indices, &
+                           separations(1:3,1), directions(1:3,1), distances(1), &
+                           temp_forces,stress, &
+                           many_bodies_found)
                    case(electronegativity_evaluation_index)
                       call core_evaluate_local_doublet_electronegativities_B(atom_list(1:2), &
                            index1, index2, &
@@ -3889,7 +3944,7 @@ contains
 
        if(evaluate_ewald)then
           call calculate_ewald_energy(atoms,cell,ewald_cutoff,ewald_k_radius,ewald_k_cutoffs,ewald_sigma,&
-               ewald_epsilon,ewald_scaler,.false.,energy)
+               ewald_epsilon,ewald_scaler,.false.,energy,.false.)
 
           total_energy = total_energy + energy
        call mpi_wall_clock(t0)
@@ -3924,7 +3979,7 @@ contains
 
        if(evaluate_ewald)then
           call calculate_ewald_forces(atoms,cell,ewald_cutoff,ewald_k_radius,ewald_k_cutoffs,ewald_sigma,&
-               ewald_epsilon,ewald_scaler,.false.,temp_forces,stress)
+               ewald_epsilon,ewald_scaler,.false.,temp_forces,stress,.false.)
           total_forces = total_forces + temp_forces
           total_stress = total_stress + stress
        end if
@@ -3952,8 +4007,9 @@ contains
        ! ewald summation
        if(evaluate_ewald)then
           temp_enegs = 0.d0
-          call calculate_ewald_electronegativities(atoms,cell,ewald_cutoff,ewald_k_cutoffs,ewald_sigma,&
-               ewald_epsilon,ewald_scaler,.false.,temp_enegs)
+          call calculate_ewald_electronegativities(atoms,cell,ewald_cutoff,ewald_k_radius,&
+               ewald_k_cutoffs,ewald_sigma,&
+               ewald_epsilon,ewald_scaler,.false.,temp_enegs,.false.)
           total_enegs = total_enegs + temp_enegs
        end if
 
@@ -3968,6 +4024,7 @@ contains
     call mpi_wall_clock(tb)
     t9 = t1+t2+t3+t4+t5+t6+t7
     t8 = tb-ta
+    if(.true.)then
     write(*,*) ""
     write(*,'(A)') "evaluation timing"
     write(*,'(A, F7.3, F7.1, A)') "bond_factors: ", t1,  100*t1/t8, " %"
@@ -3980,6 +4037,7 @@ contains
     write(*,'(A, F7.3)') "sum:          ", t9
     write(*,'(A, F7.3)') "total:        ", t8
     write(*,*) ""
+ end if
 
   end subroutine core_loop_over_local_interactions
 
@@ -7173,7 +7231,8 @@ contains
     integer :: cell_indices(3), i,j, i_n, j_n, k_n, neighbor_offset(3), atom1_index, atom2_index, &
          max_n_nbors=100, global_max, tmp_max, &
          atom1_wrap_offset(3), atom2_wrap_offset(3), n_atoms
-    integer, pointer, save ::  nbors_and_offsets(:,:,:)
+    integer, pointer, save ::  nbors_and_offsets(:,:,:), n_nbs(:), &
+        total_n_nbs(:)
     type(subcell) :: atom_cell, neighbor_cell
     logical :: neighbor_include, first_run = .true.
     double precision :: separation(3), distance, dummy1(3)
@@ -7182,14 +7241,24 @@ contains
     if(first_run)then
        nullify(nbors_and_offsets)
        allocate(nbors_and_offsets(4,max_n_nbors,n_atoms))
+       nullify(n_nbs)
+       allocate(n_nbs(n_atoms))
+       nullify(total_n_nbs)
+       allocate(total_n_nbs(n_atoms))
        first_run = .false.
     else if(size(nbors_and_offsets(1,1,:)) /= n_atoms)then
        deallocate(nbors_and_offsets)
        allocate(nbors_and_offsets(4,max_n_nbors,n_atoms))
+       deallocate(n_nbs)
+       allocate(n_nbs(n_atoms))
+       deallocate(total_n_nbs)
+       allocate(total_n_nbs(n_atoms))
     end if
 
     n_nbs = 0
+
     nbors_and_offsets = 0
+    
 
     do atom1_index = 1, size(atoms)
 
@@ -7262,7 +7331,7 @@ contains
           
        end if ! is_my_atom
     end do ! atom1_index
-    
+        
 #ifdef MPI
 
     ! get the total array size by summing the neighbors found by all cpus
