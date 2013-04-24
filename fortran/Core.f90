@@ -2927,7 +2927,7 @@ contains
        total_bond_gradients(1:3,1:n_atoms) = temp_gradient(1:3,1:n_atoms,1)
     end if
 #else
-    total_bond_gradients = bond_gradients
+    total_bond_gradients(1:3,1:n_atoms) = temp_gradient(1:3,1:n_atoms,1)
 #endif
 
   end subroutine core_post_process_bond_order_gradients
