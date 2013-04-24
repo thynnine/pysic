@@ -3562,7 +3562,7 @@ contains
                          ! (atom2 -- atom1 is already known though from 2-body calculation)
                          call separation_vector(atom1%position, &
                               atom3%position, &
-                              nbors1%pbc_offsets(1:3,j), &
+                              nbors1%pbc_offsets(1:3,l), &
                               cell, &
                               separations(1:3,2)) ! in Geometry.f90
                          distances(2) = .norm.(separations(1:3,2))
@@ -3571,6 +3571,7 @@ contains
                          else
                             directions(1:3,2) = separations(1:3,2) / distances(2)
                          end if
+
 
                          if(distances(2) < atom1%max_potential_radius)then
                             call core_evaluate_local_triplet_B(atom_list(1:3), &
@@ -4024,7 +4025,7 @@ contains
     call mpi_wall_clock(tb)
     t9 = t1+t2+t3+t4+t5+t6+t7
     t8 = tb-ta
-    if(.true.)then
+    if(.false.)then
     write(*,*) ""
     write(*,'(A)') "evaluation timing"
     write(*,'(A, F7.3, F7.1, A)') "bond_factors: ", t1,  100*t1/t8, " %"
@@ -7071,7 +7072,7 @@ contains
     if(associated(atoms))then
        write(*,*) "element, position, charge"    
        do i = 1, size(atoms)
-          write(*,'(I5,A,F10.4,F10.4,F10.4,F10.4)') i, atoms(i)%element, &
+          write(*,'(I7,I7,A,A,F10.4,F10.4,F10.4,F10.4)') i, atoms(i)%index," ", atoms(i)%element, &
                atoms(i)%position(1), atoms(i)%position(2), atoms(i)%position(3), atoms(i)%charge
        end do
     else
