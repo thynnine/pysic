@@ -306,7 +306,7 @@ where :math:`\varepsilon` is an energy scale constant, :math:`r_1` and :math:`r_
 
 Keywords::
 
-    >>> names_of_parameters('shift')
+    >>> names_of_parameters('shift_power')
     ['epsilon', 'r1', 'r2', 'n']
 
 .. only:: html

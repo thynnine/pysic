@@ -67,6 +67,9 @@ The error utility defines a group of intrinsic errors to describe situations whe
 one tries to use or set up the calculator with errorneous or insufficient
 information.
 
+The module also defines the :class:`~pysic.utility.error.Warning` class and related routines
+for displaying warnings for the user upon suspicious but non-critical behavior.
+
 .. automodule:: pysic.utility.error
    :members:
 

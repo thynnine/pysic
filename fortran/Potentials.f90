@@ -5797,7 +5797,7 @@ contains
     !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
     allocate(bond_order_descriptors(index)%n_parameters(2))
     
-    bond_order_descriptors(index)%n_parameters(1) = 4 ! 4 scaling parameters
+    bond_order_descriptors(index)%n_parameters(1) = 5 ! 5 scaling parameters
     bond_order_descriptors(index)%n_parameters(2) = 0 ! 0 local parameters
 
 
@@ -5816,9 +5816,11 @@ contains
     call pad_string('coordination difference scale constant',param_note_length,bond_order_descriptors(index)%parameter_notes(3,1))
     call pad_string('gamma',param_name_length,bond_order_descriptors(index)%parameter_names(4,1))
     call pad_string('exponential decay constant',param_note_length,bond_order_descriptors(index)%parameter_notes(4,1))
+    call pad_string('min',param_name_length,bond_order_descriptors(index)%parameter_names(5,1))
+    call pad_string('minimum delta N',param_note_length,bond_order_descriptors(index)%parameter_notes(5,1))
 
     call pad_string('Coordination difference scaling function: '//&
-         'b_i(n_i) = epsilon_i dN_i / (1 + exp(gamma_i dN_i)); dN_i = C_i(n_i - N_i)', &
+         'b_i(n_i) = epsilon_i dN_i / (1 + exp(gamma_i dN_i)); dN_i = C_i(n_i - N_i) > min (b_i = 0; dN_i < min)', &
          pot_note_length,bond_order_descriptors(index)%description)
 
   end subroutine create_bond_order_factor_characterizer_scaler_1
@@ -5837,7 +5839,11 @@ contains
     double precision :: dN
 
     dN = ( raw_sum - bond_params%parameters(2,1) ) * bond_params%parameters(3,1)
-    factor_out = bond_params%parameters(1,1) * dN / (1.d0 + exp(bond_params%parameters(4,1)*dN))
+    if(dN > bond_params%parameters(5,1))then
+       factor_out = bond_params%parameters(1,1) * dN / (1.d0 + exp(bond_params%parameters(4,1)*dN))
+    else
+       factor_out = 0.d0
+    end if
 
   end subroutine post_process_bond_order_factor_scaler_1
 
@@ -5856,11 +5862,16 @@ contains
     double precision :: beta, eta, dN, expo, inv_exp
 
     dN = ( raw_sum - bond_params%parameters(2,1) ) * bond_params%parameters(3,1)
-    expo = exp( bond_params%parameters(4,1)*dN )
-    inv_exp = 1.d0 / (1.d0 + expo)
-    factor_out = bond_params%parameters(1,1) * &
-         bond_params%parameters(3,1) * ( inv_exp - &
-         dN * inv_exp*inv_exp * bond_params%parameters(4,1) * expo ) * raw_gradient
+    if(dN > bond_params%parameters(5,1))then
+
+       expo = exp( bond_params%parameters(4,1)*dN )
+       inv_exp = 1.d0 / (1.d0 + expo)
+       factor_out = bond_params%parameters(1,1) * &
+            bond_params%parameters(3,1) * ( inv_exp - &
+            dN * inv_exp*inv_exp * bond_params%parameters(4,1) * expo ) * raw_gradient
+    else
+       factor_out = 0.d0
+    end if
 
   end subroutine post_process_bond_order_gradient_scaler_1
 
