@@ -8,10 +8,21 @@ Version history
 ===============
 
 This is a list of the main updates in the different versions of Pysic.
+Descriptions of all incremental changes can be found in the `commit log <https://github.com/thynnine/pysic/commits/master>`_ 
+(see also the `develop version <https://github.com/thynnine/pysic/commits/develop>`_).
 
 The version number is available in Pysic as the variable::
 
   pysic.version
+
+
+Version 0.4.6
+--------------
+
+- Code optimization: updates in the memory allocation and computation routines in the Fortran core for better performance.
+- Added a warning system (:class:`pysic.utility.error.Warning`)
+- Added support for pairwise bond order factors (in addition to per-atom factors), see :ref:`atomic and pairwise factors`.
+- Numerous bug fixes, see the github commit log for details.
 
 
 Version 0.4.5
@@ -20,7 +31,7 @@ Version 0.4.5
 - Added the :class:`~pysic.interactions.compound.CompoundPotential` class for representing complicated potentials.
 - Added the :class:`~pysic.interactions.suttonchen.SuttonChenPotential` class describing the Sutton-Chen potential.
 - Added the :ref:`shifted power potential`
-- Interface enhancements. E.g., it is possible to pass lists of potentials to methods like :meth:`pysic.Pysic.add_potential`, or pass :class:`~pysic.interactions.local.ProductPotential` objects to other :class:`~pysic.interactions.local.ProductPotential`s.
+- Interface enhancements. E.g., it is possible to pass lists of potentials to methods like :meth:`pysic.calculator.Pysic.add_potential`, or pass :class:`~pysic.interactions.local.ProductPotential` objects to other :class:`~pysic.interactions.local.ProductPotential`s.
 - Efficiency fixes. E.g., when bond order factors are created in the core, it is checked that duplicates are not created.
 
 Version 0.4.4

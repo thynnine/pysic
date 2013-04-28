@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>potentials (Potentials.f90) &mdash; Pysic 0.4.4 documentation</title>
+    <title>potentials (Potentials.f90) &mdash; Pysic 0.4.6 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.4',
+        VERSION:     '0.4.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.6 documentation" href="index.html" />
     <link rel="up" title="Pysic Fortran module" href="pysic_fortran.html" />
     <link rel="next" title="geometry (Geometry.f90)" href="Geometry_f90.html" />
     <link rel="prev" title="pysic_core (Core.f90)" href="Core_f90.html" /> 
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="Core_f90.html" title="pysic_core (Core.f90)"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
           <li><a href="pysic_fortran.html" accesskey="U">Pysic Fortran module</a> &raquo;</li> 
       </ul>
     </div>
@@ -191,6 +191,10 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#c_scale_index" title="c_scale_index"><tt class="xref py py-data docutils literal"><span class="pre">c_scale_index</span></tt></a></li>
 <li><a class="reference internal" href="#coordination_index" title="coordination_index"><tt class="xref py py-data docutils literal"><span class="pre">coordination_index</span></tt></a></li>
 <li><a class="reference internal" href="#descriptors_created" title="descriptors_created"><tt class="xref py py-data docutils literal"><span class="pre">descriptors_created</span></tt></a></li>
+<li><a class="reference internal" href="#ewald_arrays_allocated" title="ewald_arrays_allocated"><tt class="xref py py-data docutils literal"><span class="pre">ewald_arrays_allocated</span></tt></a></li>
+<li><a class="reference internal" href="#ewald_forces" title="ewald_forces"><tt class="xref py py-data docutils literal"><span class="pre">ewald_forces</span></tt></a></li>
+<li><a class="reference internal" href="#ewald_sum_forces" title="ewald_sum_forces"><tt class="xref py py-data docutils literal"><span class="pre">ewald_sum_forces</span></tt></a></li>
+<li><a class="reference internal" href="#ewald_tmp_enegs" title="ewald_tmp_enegs"><tt class="xref py py-data docutils literal"><span class="pre">ewald_tmp_enegs</span></tt></a></li>
 <li><a class="reference internal" href="#mono_const_index" title="mono_const_index"><tt class="xref py py-data docutils literal"><span class="pre">mono_const_index</span></tt></a></li>
 <li><a class="reference internal" href="#mono_none_index" title="mono_none_index"><tt class="xref py py-data docutils literal"><span class="pre">mono_none_index</span></tt></a></li>
 <li><a class="reference internal" href="#mono_qself_index" title="mono_qself_index"><tt class="xref py py-data docutils literal"><span class="pre">mono_qself_index</span></tt></a></li>
@@ -215,12 +219,16 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#potential_descriptors" title="potential_descriptors"><tt class="xref py py-data docutils literal"><span class="pre">potential_descriptors</span></tt></a></li>
 <li><a class="reference internal" href="#power_index" title="power_index"><tt class="xref py py-data docutils literal"><span class="pre">power_index</span></tt></a></li>
 <li><a class="reference internal" href="#quad_dihedral_index" title="quad_dihedral_index"><tt class="xref py py-data docutils literal"><span class="pre">quad_dihedral_index</span></tt></a></li>
+<li><a class="reference internal" href="#s_factor" title="s_factor"><tt class="xref py py-data docutils literal"><span class="pre">s_factor</span></tt></a></li>
+<li><a class="reference internal" href="#s_factor_allocated" title="s_factor_allocated"><tt class="xref py py-data docutils literal"><span class="pre">s_factor_allocated</span></tt></a></li>
 <li><a class="reference internal" href="#sqrt_scale_index" title="sqrt_scale_index"><tt class="xref py py-data docutils literal"><span class="pre">sqrt_scale_index</span></tt></a></li>
+<li><a class="reference internal" href="#stored_factor_cutoffs" title="stored_factor_cutoffs"><tt class="xref py py-data docutils literal"><span class="pre">stored_factor_cutoffs</span></tt></a></li>
 <li><a class="reference internal" href="#table_bond_index" title="table_bond_index"><tt class="xref py py-data docutils literal"><span class="pre">table_bond_index</span></tt></a></li>
 <li><a class="reference internal" href="#table_prefix" title="table_prefix"><tt class="xref py py-data docutils literal"><span class="pre">table_prefix</span></tt></a></li>
 <li><a class="reference internal" href="#table_scale_index" title="table_scale_index"><tt class="xref py py-data docutils literal"><span class="pre">table_scale_index</span></tt></a></li>
 <li><a class="reference internal" href="#table_suffix" title="table_suffix"><tt class="xref py py-data docutils literal"><span class="pre">table_suffix</span></tt></a></li>
 <li><a class="reference internal" href="#tersoff_index" title="tersoff_index"><tt class="xref py py-data docutils literal"><span class="pre">tersoff_index</span></tt></a></li>
+<li><a class="reference internal" href="#tmp_factor" title="tmp_factor"><tt class="xref py py-data docutils literal"><span class="pre">tmp_factor</span></tt></a></li>
 <li><a class="reference internal" href="#tri_bend_index" title="tri_bend_index"><tt class="xref py py-data docutils literal"><span class="pre">tri_bend_index</span></tt></a></li>
 <li><a class="reference internal" href="#triplet_index" title="triplet_index"><tt class="xref py py-data docutils literal"><span class="pre">triplet_index</span></tt></a></li>
 </ul>
@@ -237,6 +245,7 @@ must be updated accordingly.</p>
 <div class="section" id="list-of-subroutines-in-potentials">
 <h2>List of subroutines in potentials<a class="headerlink" href="#list-of-subroutines-in-potentials" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
+<li><a class="reference internal" href="#allocate_ewald_arrays" title="allocate_ewald_arrays"><tt class="xref py py-func docutils literal"><span class="pre">allocate_ewald_arrays()</span></tt></a></li>
 <li><a class="reference internal" href="#bond_order_factor_affects_atom" title="bond_order_factor_affects_atom"><tt class="xref py py-func docutils literal"><span class="pre">bond_order_factor_affects_atom()</span></tt></a></li>
 <li><a class="reference internal" href="#bond_order_factor_is_in_group" title="bond_order_factor_is_in_group"><tt class="xref py py-func docutils literal"><span class="pre">bond_order_factor_is_in_group()</span></tt></a></li>
 <li><a class="reference internal" href="#calculate_derived_parameters_bond_bending" title="calculate_derived_parameters_bond_bending"><tt class="xref py py-func docutils literal"><span class="pre">calculate_derived_parameters_bond_bending()</span></tt></a></li>
@@ -245,6 +254,7 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#calculate_ewald_electronegativities" title="calculate_ewald_electronegativities"><tt class="xref py py-func docutils literal"><span class="pre">calculate_ewald_electronegativities()</span></tt></a></li>
 <li><a class="reference internal" href="#calculate_ewald_energy" title="calculate_ewald_energy"><tt class="xref py py-func docutils literal"><span class="pre">calculate_ewald_energy()</span></tt></a></li>
 <li><a class="reference internal" href="#calculate_ewald_forces" title="calculate_ewald_forces"><tt class="xref py py-func docutils literal"><span class="pre">calculate_ewald_forces()</span></tt></a></li>
+<li><a class="reference internal" href="#check_s_factor_array_allocation" title="check_s_factor_array_allocation"><tt class="xref py py-func docutils literal"><span class="pre">check_s_factor_array_allocation()</span></tt></a></li>
 <li><a class="reference internal" href="#clear_bond_order_factor_characterizers" title="clear_bond_order_factor_characterizers"><tt class="xref py py-func docutils literal"><span class="pre">clear_bond_order_factor_characterizers()</span></tt></a></li>
 <li><a class="reference internal" href="#clear_potential_characterizers" title="clear_potential_characterizers"><tt class="xref py py-func docutils literal"><span class="pre">clear_potential_characterizers()</span></tt></a></li>
 <li><a class="reference internal" href="#create_bond_order_factor" title="create_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">create_bond_order_factor()</span></tt></a></li>
@@ -272,6 +282,7 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#create_potential_characterizer_shift" title="create_potential_characterizer_shift"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_shift()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_spring" title="create_potential_characterizer_spring"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_spring()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_table" title="create_potential_characterizer_table"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_table()</span></tt></a></li>
+<li><a class="reference internal" href="#deallocate_ewald_arrays" title="deallocate_ewald_arrays"><tt class="xref py py-func docutils literal"><span class="pre">deallocate_ewald_arrays()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_bond_order_factor" title="evaluate_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_factor()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_bond_order_factor_coordination" title="evaluate_bond_order_factor_coordination"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_factor_coordination()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_bond_order_factor_power" title="evaluate_bond_order_factor_power"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_factor_power()</span></tt></a></li>
@@ -332,6 +343,7 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#get_index_of_parameter_of_bond_order_factor" title="get_index_of_parameter_of_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">get_index_of_parameter_of_bond_order_factor()</span></tt></a></li>
 <li><a class="reference internal" href="#get_index_of_parameter_of_potential" title="get_index_of_parameter_of_potential"><tt class="xref py py-func docutils literal"><span class="pre">get_index_of_parameter_of_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#get_index_of_potential" title="get_index_of_potential"><tt class="xref py py-func docutils literal"><span class="pre">get_index_of_potential()</span></tt></a></li>
+<li><a class="reference internal" href="#get_level_of_bond_order_factor" title="get_level_of_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">get_level_of_bond_order_factor()</span></tt></a></li>
 <li><a class="reference internal" href="#get_names_of_parameters_of_bond_order_factor" title="get_names_of_parameters_of_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">get_names_of_parameters_of_bond_order_factor()</span></tt></a></li>
 <li><a class="reference internal" href="#get_names_of_parameters_of_potential" title="get_names_of_parameters_of_potential"><tt class="xref py py-func docutils literal"><span class="pre">get_names_of_parameters_of_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#get_number_of_bond_order_factors" title="get_number_of_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">get_number_of_bond_order_factors()</span></tt></a></li>
@@ -403,6 +415,31 @@ must be updated accordingly.</p>
 <dd><p>logical    <em>scalar</em></p>
 <p><em>initial value</em> = .false.</p>
 <p>logical tag used for managing pointer allocations for potential descriptors</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="ewald_arrays_allocated">
+<tt class="descname">ewald_arrays_allocated</tt><a class="headerlink" href="#ewald_arrays_allocated" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical    <em>scalar</em></p>
+<p><em>initial value</em> = .false.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="ewald_forces">
+<tt class="descname">ewald_forces</tt><a class="headerlink" href="#ewald_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision  <em>pointer</em>  <em>size(:, :, :)</em></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="ewald_sum_forces">
+<tt class="descname">ewald_sum_forces</tt><a class="headerlink" href="#ewald_sum_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision  <em>pointer</em>  <em>size(:, :, :)</em></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="ewald_tmp_enegs">
+<tt class="descname">ewald_tmp_enegs</tt><a class="headerlink" href="#ewald_tmp_enegs" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision  <em>pointer</em>  <em>size(:)</em></p>
 </dd></dl>
 
 <dl class="data">
@@ -589,11 +626,30 @@ must be updated accordingly.</p>
 </dd></dl>
 
 <dl class="data">
+<dt id="s_factor">
+<tt class="descname">s_factor</tt><a class="headerlink" href="#s_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision  <em>pointer</em>  <em>size(:, :, :, :)</em></p>
+</dd></dl>
+
+<dl class="data">
+<dt id="s_factor_allocated">
+<tt class="descname">s_factor_allocated</tt><a class="headerlink" href="#s_factor_allocated" title="Permalink to this definition">¶</a></dt>
+<dd><p>logical    <em>scalar</em></p>
+<p><em>initial value</em> = .false.</p>
+</dd></dl>
+
+<dl class="data">
 <dt id="sqrt_scale_index">
 <tt class="descname">sqrt_scale_index</tt><a class="headerlink" href="#sqrt_scale_index" title="Permalink to this definition">¶</a></dt>
 <dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
 <p><em>initial value</em> = 6</p>
 <p>internal index for the square root scaling function</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="stored_factor_cutoffs">
+<tt class="descname">stored_factor_cutoffs</tt><a class="headerlink" href="#stored_factor_cutoffs" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>size(3)</em></p>
 </dd></dl>
 
 <dl class="data">
@@ -633,6 +689,12 @@ must be updated accordingly.</p>
 <dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
 <p><em>initial value</em> = 2</p>
 <p>internal index for the Tersoff bond order factor</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="tmp_factor">
+<tt class="descname">tmp_factor</tt><a class="headerlink" href="#tmp_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>double precision  <em>pointer</em>  <em>size(:, :, :, :)</em></p>
 </dd></dl>
 
 <dl class="data">
@@ -814,6 +876,13 @@ the python interface fetch.</p>
 <h2>Full documentation of subroutines in potentials<a class="headerlink" href="#full-documentation-of-subroutines-in-potentials" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><dl class="function">
+<dt id="allocate_ewald_arrays">
+<tt class="descname">allocate_ewald_arrays</tt><big>(</big><em>n_atoms</em><big>)</big><a class="headerlink" href="#allocate_ewald_arrays" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
 <dt id="bond_order_factor_affects_atom">
 <tt class="descname">bond_order_factor_affects_atom</tt><big>(</big><em>factor</em>, <em>atom_in</em>, <em>affects</em>, <em>position</em><big>)</big><a class="headerlink" href="#bond_order_factor_affects_atom" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tests whether the given bond order factor affects the specific atom.</p>
@@ -895,41 +964,42 @@ i.e., if it affects the potential specifiesd by the group index.</p>
 
 <dl class="function">
 <dt id="calculate_ewald_electronegativities">
-<tt class="descname">calculate_ewald_electronegativities</tt><big>(</big><em>n_atoms</em>, <em>atoms</em>, <em>cell</em>, <em>real_cutoff</em>, <em>reciprocal_cutoff</em>, <em>gaussian_width</em>, <em>electric_constant</em>, <em>filter</em>, <em>scaler</em>, <em>include_dipole_correction</em>, <em>total_enegs</em><big>)</big><a class="headerlink" href="#calculate_ewald_electronegativities" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">calculate_ewald_electronegativities</tt><big>(</big><em>atoms</em>, <em>cell</em>, <em>real_cutoff</em>, <em>k_radius</em>, <em>reciprocal_cutoff</em>, <em>gaussian_width</em>, <em>electric_constant</em>, <em>scaler</em>, <em>include_dipole_correction</em>, <em>total_enegs</em>, <em>include_realspace</em><big>)</big><a class="headerlink" href="#calculate_ewald_electronegativities" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the electronegativities due to long ranged <span class="math">\(\frac{1}{r}\)</span> potentials.
 These electronegativities are the derivatives of the energies <span class="math">\(U\)</span> given by <a class="reference internal" href="#calculate_ewald_energy" title="calculate_ewald_energy"><tt class="xref py py-func docutils literal"><span class="pre">calculate_ewald_energy()</span></tt></a></p>
 <div class="math">
 \[\chi_\alpha = - \frac{\partial U}{\partial q_\alpha}\]</div>
 <p>Parameters:</p>
 <dl class="docutils">
-<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
-<dd>number of atoms</dd>
-<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(:)</em></dt>
 <dd>list of atoms</dd>
 <dt>cell: type(supercell)  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>the supercell containing the system</dd>
 <dt>real_cutoff: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)</dd>
+</dl>
+<p>k_radius: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+<dl class="docutils">
 <dt>reciprocal_cutoff: integer  <em>intent(in)</em>    <em>size(3)</em></dt>
 <dd>The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if <tt class="docutils literal"><span class="pre">reciprocal_cutoff</span> <span class="pre">=</span> <span class="pre">[3,4,5]</span></tt>, the reciprocal sum will be truncated as <span class="math">\(\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5\)</span>.</dd>
 <dt>gaussian_width: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>The <span class="math">\(\sigma\)</span> parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If <span class="math">\(\sigma\)</span> is large, the real space sum <span class="math">\(E_s\)</span> converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term <span class="math">\(E_l\)</span> converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.</dd>
 <dt>electric_constant: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>The electic constant, i.e., vacuum permittivity <span class="math">\(\varepsilon_0\)</span>. In atomic units, it is <span class="math">\(\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}\)</span>, but if one wishes to scale the results to some other unit system (such as reduced units with <span class="math">\(\varepsilon_0 = 1\)</span>), that is possible as well.</dd>
-<dt>filter: logical  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
-<dd>a list of logical values, one per atom, false for the atoms that should be ignored in the calculation</dd>
-<dt>scaler: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dt>scaler: double precision  <em>intent(in)</em>    <em>size(:)</em></dt>
 <dd>a list of numerical values to scale the individual charges of the atoms</dd>
 <dt>include_dipole_correction: logical  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>if true, a dipole correction term is included</dd>
-<dt><strong>total_enegs</strong>: double precision  <strong>intent(out)</strong>    <em>size(n_atoms)</em></dt>
+<dt><strong>total_enegs</strong>: double precision  <strong>intent(inout)</strong>    <em>size(:)</em></dt>
 <dd>the calculated electronegativities</dd>
+<dt>include_realspace: logical  <em>intent(in)</em>    <em>scalar</em>  <em>optional</em></dt>
+<dd>By default, also the real space summation is carried out, but giving the .false. flag here will prevent the calculation. This is used in the normal evaluation loop where the real space sum is calculated during the evaluation of other pairwise interactions.</dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="calculate_ewald_energy">
-<tt class="descname">calculate_ewald_energy</tt><big>(</big><em>n_atoms</em>, <em>atoms</em>, <em>cell</em>, <em>real_cutoff</em>, <em>reciprocal_cutoff</em>, <em>gaussian_width</em>, <em>electric_constant</em>, <em>filter</em>, <em>scaler</em>, <em>include_dipole_correction</em>, <em>total_energy</em><big>)</big><a class="headerlink" href="#calculate_ewald_energy" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">calculate_ewald_energy</tt><big>(</big><em>atoms</em>, <em>cell</em>, <em>real_cutoff</em>, <em>k_radius</em>, <em>reciprocal_cutoff</em>, <em>gaussian_width</em>, <em>electric_constant</em>, <em>scaler</em>, <em>include_dipole_correction</em>, <em>total_energy</em>, <em>include_realspace</em><big>)</big><a class="headerlink" href="#calculate_ewald_energy" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the energy of <span class="math">\(\frac{1}{r}\)</span> potentials through Ewald summation.</p>
 <p>If a periodic system contains charges interacting via the <span class="math">\(\frac{1}{r}\)</span> Coulomb potential,
 direct summation of the interactions</p>
@@ -994,65 +1064,75 @@ Likewise the sum in the structure factor <span class="math">\(S(\mathbf{k})\)</s
 </table>
 <p>Parameters:</p>
 <dl class="docutils">
-<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
-<dd>number of atoms</dd>
-<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(:)</em></dt>
 <dd>list of atoms</dd>
 <dt>cell: type(supercell)  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>the supercell containing the system</dd>
 <dt>real_cutoff: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)</dd>
+</dl>
+<p>k_radius: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+<dl class="docutils">
 <dt>reciprocal_cutoff: integer  <em>intent(in)</em>    <em>size(3)</em></dt>
 <dd>The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if <tt class="docutils literal"><span class="pre">reciprocal_cutoff</span> <span class="pre">=</span> <span class="pre">[3,4,5]</span></tt>, the reciprocal sum will be truncated as <span class="math">\(\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5\)</span>.</dd>
 <dt>gaussian_width: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>The <span class="math">\(\sigma\)</span> parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If <span class="math">\(\sigma\)</span> is large, the real space sum <span class="math">\(E_s\)</span> converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term <span class="math">\(E_l\)</span> converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.</dd>
 <dt>electric_constant: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>The electic constant, i.e., vacuum permittivity <span class="math">\(\varepsilon_0\)</span>. In atomic units, it is <span class="math">\(\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}\)</span>, but if one wishes to scale the results to some other unit system (such as reduced units with <span class="math">\(\varepsilon_0 = 1\)</span>), that is possible as well.</dd>
-<dt>filter: logical  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
-<dd>a list of logical values, one per atom, false for the atoms that should be ignored in the calculation</dd>
-<dt>scaler: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dt>scaler: double precision  <em>intent(in)</em>    <em>size(:)</em></dt>
 <dd>a list of numerical values to scale the individual charges of the atoms</dd>
 <dt>include_dipole_correction: logical  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>if true, a dipole correction term is included in the energy</dd>
 <dt><strong>total_energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>the calculated energy</dd>
+<dt>include_realspace: logical  <em>intent(in)</em>    <em>scalar</em>  <em>optional</em></dt>
+<dd>By default, also the real space summation is carried out, but giving the .false. flag here will prevent the calculation. This is used in the normal evaluation loop where the real space sum is calculated during the evaluation of other pairwise interactions.</dd>
 </dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="calculate_ewald_forces">
-<tt class="descname">calculate_ewald_forces</tt><big>(</big><em>n_atoms</em>, <em>atoms</em>, <em>cell</em>, <em>real_cutoff</em>, <em>reciprocal_cutoff</em>, <em>gaussian_width</em>, <em>electric_constant</em>, <em>filter</em>, <em>scaler</em>, <em>include_dipole_correction</em>, <em>total_forces</em>, <em>total_stress</em><big>)</big><a class="headerlink" href="#calculate_ewald_forces" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">calculate_ewald_forces</tt><big>(</big><em>atoms</em>, <em>cell</em>, <em>real_cutoff</em>, <em>k_radius</em>, <em>reciprocal_cutoff</em>, <em>gaussian_width</em>, <em>electric_constant</em>, <em>scaler</em>, <em>include_dipole_correction</em>, <em>total_forces</em>, <em>total_stress</em>, <em>include_realspace</em><big>)</big><a class="headerlink" href="#calculate_ewald_forces" title="Permalink to this definition">¶</a></dt>
 <dd><p>Calculates the forces due to long ranged <span class="math">\(\frac{1}{r}\)</span> potentials.
 These forces are the gradients of the energies <span class="math">\(U\)</span> given by <a class="reference internal" href="#calculate_ewald_energy" title="calculate_ewald_energy"><tt class="xref py py-func docutils literal"><span class="pre">calculate_ewald_energy()</span></tt></a></p>
 <div class="math">
 \[\mathbf{F}_\alpha = - \nabla_\alpha U\]</div>
 <p>Parameters:</p>
 <dl class="docutils">
-<dt>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></dt>
-<dd>number of atoms</dd>
-<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dt>atoms: type(atom)  <em>intent(in)</em>    <em>size(:)</em></dt>
 <dd>list of atoms</dd>
 <dt>cell: type(supercell)  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>the supercell containing the system</dd>
 <dt>real_cutoff: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)</dd>
+</dl>
+<p>k_radius: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+<dl class="docutils">
 <dt>reciprocal_cutoff: integer  <em>intent(in)</em>    <em>size(3)</em></dt>
 <dd>The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if <tt class="docutils literal"><span class="pre">reciprocal_cutoff</span> <span class="pre">=</span> <span class="pre">[3,4,5]</span></tt>, the reciprocal sum will be truncated as <span class="math">\(\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5\)</span>.</dd>
 <dt>gaussian_width: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>The <span class="math">\(\sigma\)</span> parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If <span class="math">\(\sigma\)</span> is large, the real space sum <span class="math">\(E_s\)</span> converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term <span class="math">\(E_l\)</span> converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.</dd>
 <dt>electric_constant: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>The electic constant, i.e., vacuum permittivity <span class="math">\(\varepsilon_0\)</span>. In atomic units, it is <span class="math">\(\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}\)</span>, but if one wishes to scale the results to some other unit system (such as reduced units with <span class="math">\(\varepsilon_0 = 1\)</span>), that is possible as well.</dd>
-<dt>filter: logical  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
-<dd>a list of logical values, one per atom, false for the atoms that should be ignored in the calculation</dd>
-<dt>scaler: double precision  <em>intent(in)</em>    <em>size(n_atoms)</em></dt>
+<dt>scaler: double precision  <em>intent(in)</em>    <em>size(:)</em></dt>
 <dd>a list of numerical values to scale the individual charges of the atoms</dd>
 <dt>include_dipole_correction: logical  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>if true, a dipole correction term is included in the energy</dd>
-<dt><strong>total_forces</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, n_atoms)</em></dt>
+<dt><strong>total_forces</strong>: double precision  <strong>intent(inout)</strong>    <em>size(:, :)</em></dt>
 <dd>the calculated forces</dd>
-<dt><strong>total_stress</strong>: double precision  <strong>intent(out)</strong>    <em>size(6)</em></dt>
+<dt><strong>total_stress</strong>: double precision  <strong>intent(inout)</strong>    <em>size(6)</em></dt>
 <dd>the calculated stress</dd>
+<dt>include_realspace: logical  <em>intent(in)</em>    <em>scalar</em>  <em>optional</em></dt>
+<dd>By default, also the real space summation is carried out, but giving the .false. flag here will prevent the calculation. This is used in the normal evaluation loop where the real space sum is calculated during the evaluation of other pairwise interactions.</dd>
 </dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="check_s_factor_array_allocation">
+<tt class="descname">check_s_factor_array_allocation</tt><big>(</big><em>n_atoms</em>, <em>reciprocal_cutoff</em><big>)</big><a class="headerlink" href="#check_s_factor_array_allocation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>n_atoms: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>reciprocal_cutoff: integer  <em>intent(in)</em>    <em>size(3)</em></p>
 </dd></dl>
 
 <dl class="function">
@@ -1401,6 +1481,11 @@ and returns a potential type wrapping them in one package.</p>
 <dd>index of the potential</dd>
 </dl>
 </dd></dl>
+
+<dl class="function">
+<dt id="deallocate_ewald_arrays">
+<tt class="descname">deallocate_ewald_arrays</tt><big>(</big><big>)</big><a class="headerlink" href="#deallocate_ewald_arrays" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="function">
 <dt id="evaluate_bond_order_factor">
@@ -2410,7 +2495,7 @@ as a list of strings.</p>
 <dt>bond_name: character(len=*)  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>name of the bond order factor</dd>
 <dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
-<dd>number of targets</dd>
+<dd>1 for scaling, 2 for local sum parameters</dd>
 <dt>param_notes: character(len=param_note_length)  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></dt>
 <dd>descriptions of the parameters</dd>
 </dl>
@@ -2461,8 +2546,8 @@ as a list of strings.</p>
 <tt class="descname">get_index_of_parameter_of_bond_order_factor</tt><big>(</big><em>bond_name</em>, <em>param_name</em>, <em>index</em>, <em>n_targets</em><big>)</big><a class="headerlink" href="#get_index_of_parameter_of_bond_order_factor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the index of a parameter of a bond order factor in the
 internal list of parameters. Since bond order factors can have
-parameters for different number of targets, also the number of
-targets of this parameter is returned.</p>
+parameters for different number of targets, also the type
+(scaling vs. local sum) of this parameter is returned.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>bond_name: character(len=*)  <em>intent(in)</em>    <em>scalar</em></dt>
@@ -2472,7 +2557,7 @@ targets of this parameter is returned.</p>
 <dt><strong>index</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>index of the parameter</dd>
 <dt><strong>n_targets</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></dt>
-<dd>number of targets of the parameter</dd>
+<dd>1 for scaling, 2 for local sum parameters</dd>
 </dl>
 </dd></dl>
 
@@ -2506,6 +2591,19 @@ internal list of parameters.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="get_level_of_bond_order_factor">
+<tt class="descname">get_level_of_bond_order_factor</tt><big>(</big><em>bond_name</em>, <em>level</em><big>)</big><a class="headerlink" href="#get_level_of_bond_order_factor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the level of a bond order factor (i.e., is the factor per-atom or per-pair).</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>bond_name: character(len=*)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>name of the bond order factor</dd>
+<dt><strong>level</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>level of the factor</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="get_names_of_parameters_of_bond_order_factor">
 <tt class="descname">get_names_of_parameters_of_bond_order_factor</tt><big>(</big><em>bond_name</em>, <em>n_targets</em>, <em>param_names</em><big>)</big><a class="headerlink" href="#get_names_of_parameters_of_bond_order_factor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the names of parameters of a bond order factor as a list of strings.</p>
@@ -2514,7 +2612,7 @@ internal list of parameters.</p>
 <dt>bond_name: character(len=*)  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>name of the bond order factor</dd>
 <dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
-<dd>number of targets</dd>
+<dd>1 for scaling, 2 for local sum parameters</dd>
 <dt>param_names: character(len=param_name_length)  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></dt>
 <dd>names of the parameters</dd>
 </dl>
@@ -2547,14 +2645,13 @@ internal list of parameters.</p>
 <dl class="function">
 <dt id="get_number_of_parameters_of_bond_order_factor">
 <tt class="descname">get_number_of_parameters_of_bond_order_factor</tt><big>(</big><em>bond_name</em>, <em>n_targets</em>, <em>n_params</em><big>)</big><a class="headerlink" href="#get_number_of_parameters_of_bond_order_factor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the number of parameters of a bond order factor as a list of strings,
-each element showing the number of parameters for that number of bodies.</p>
+<dd><p>Returns the number of parameters of a bond order factor as an integer.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>bond_name: character(len=*)  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>name of the bond order factor</dd>
 <dt>n_targets: integer  <em>intent(in)</em>    <em>scalar</em></dt>
-<dd>number of targets</dd>
+<dd>1 for scaling parameters, 2 for local sum parameters</dd>
 <dt><strong>n_params</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>number of parameters</dd>
 </dl>
@@ -2634,7 +2731,7 @@ specified by its index.</p>
 <dt>pot_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>index of the potential</dd>
 <dt><strong>n_target</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></dt>
-<dd>numner of targets</dd>
+<dd>number of targets</dd>
 </dl>
 </dd></dl>
 
@@ -2828,7 +2925,7 @@ bond order sum and gradient accoding to the given parameters.</p>
 <dd>the precalculated bond order gradient sum, <span class="math">\(\nabla_\alpha \sum_j c_ij\)</span> in the above example</dd>
 <dt>bond_params: type(bond_order_parameters)  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> specifying the parameters</dd>
-<dt><strong>factor_out</strong>: double precision  <strong>intent(out)</strong>    <em>size(3)</em></dt>
+<dt><strong>factor_out</strong>: double precision  <strong>intent(inout)</strong>    <em>size(3)</em></dt>
 <dd>the calculated bond order factor <span class="math">\(\nabla_\alpha b_i\)</span></dd>
 </dl>
 </dd></dl>
@@ -3040,7 +3137,7 @@ returns the value of the gradient of the smoothening function.</p>
         <li class="right" >
           <a href="Core_f90.html" title="pysic_core (Core.f90)"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
           <li><a href="pysic_fortran.html" >Pysic Fortran module</a> &raquo;</li> 
       </ul>
     </div>

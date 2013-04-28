@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>BondOrderParameters class &mdash; Pysic 0.4.4 documentation</title>
+    <title>BondOrderParameters class &mdash; Pysic 0.4.6 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.4',
+        VERSION:     '0.4.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.6 documentation" href="index.html" />
     <link rel="up" title="Pysic module" href="pysic.html" />
     <link rel="next" title="CompoundPotential class" href="compoundpotential class.html" />
     <link rel="prev" title="Coordinator class" href="coordinator class.html" /> 
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="coordinator class.html" title="Coordinator class"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
           <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
       </ul>
     </div>
@@ -445,14 +445,15 @@ For instance, the full list of triplets above can be created with:</p>
 <span id="id6"></span><h3>Coordination scaling function<a class="headerlink" href="#coordination-scaling-function" title="Permalink to this headline">¶</a></h3>
 <p>1-body bond order factor defined as</p>
 <div class="math">
-\[\begin{split}b_i(\Sigma_i) = \varepsilon_i \frac{\Delta \Sigma_i}{1+\exp(\gamma_i \Delta \Sigma_i)}\\
-\Delta \Sigma_i = C_i (\Sigma_i - N_i).\end{split}\]</div>
+\[\begin{split}b_i(\Sigma_i) &amp;= \begin{cases} \varepsilon_i \frac{\Delta \Sigma_i}{1+\exp(\gamma_i \Delta \Sigma_i)},&amp; \Delta \Sigma_i &gt; \min_\Sigma \\
+0,&amp; \Delta \Sigma_i &lt; \min_\Sigma \end{cases} \\
+\Delta \Sigma_i &amp;= C_i (\Sigma_i - N_i).\end{split}\]</div>
 <p>where <span class="math">\(\Sigma_i\)</span> is the bond order sum.</p>
 <p>In other words, this factor only overrides the scaling function of another
 bond order factor when mixed. Especially, it is zero if not paired with other bond order factors.</p>
 <p>Keywords:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;c_scale&#39;</span><span class="p">)</span>
-<span class="go">[[&#39;epsilon&#39;, &#39;N&#39;, &#39;C&#39;, &#39;gamma&#39;], []]</span>
+<span class="go">[[&#39;epsilon&#39;, &#39;N&#39;, &#39;C&#39;, &#39;gamma&#39;, &#39;min&#39;], []]</span>
 </pre></div>
 </div>
 </div>
@@ -673,6 +674,12 @@ and returns True or False accordingly.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="pysic.interactions.bondorder.BondOrderParameters.get_level">
+<tt class="descname">get_level</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.interactions.bondorder.BondOrderParameters.get_level" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the level of the factor, i.e., is it a per-atom or par-pair factor.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="pysic.interactions.bondorder.BondOrderParameters.get_number_of_parameters">
 <tt class="descname">get_number_of_parameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/bondorder.html#BondOrderParameters.get_number_of_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.bondorder.BondOrderParameters.get_number_of_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the number of parameters the bond order parameter object contains.</p>
@@ -725,6 +732,12 @@ pair parameters, etc.</p>
 <dt id="pysic.interactions.bondorder.BondOrderParameters.get_symbols">
 <tt class="descname">get_symbols</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/bondorder.html#BondOrderParameters.get_symbols"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.bondorder.BondOrderParameters.get_symbols" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the symbols the bond parameters affect.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.bondorder.BondOrderParameters.includes_scaling">
+<tt class="descname">includes_scaling</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.interactions.bondorder.BondOrderParameters.includes_scaling" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True iff there are scaling paramters.</p>
 </dd></dl>
 
 <dl class="method">
@@ -840,7 +853,7 @@ soft cutoff.</p>
         <li class="right" >
           <a href="coordinator class.html" title="Coordinator class"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
           <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
       </ul>
     </div>

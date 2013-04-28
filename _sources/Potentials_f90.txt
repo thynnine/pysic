@@ -121,6 +121,10 @@ must be updated accordingly.
     - :data:`c_scale_index`
     - :data:`coordination_index`
     - :data:`descriptors_created`
+    - :data:`ewald_arrays_allocated`
+    - :data:`ewald_forces`
+    - :data:`ewald_sum_forces`
+    - :data:`ewald_tmp_enegs`
     - :data:`mono_const_index`
     - :data:`mono_none_index`
     - :data:`mono_qself_index`
@@ -145,12 +149,16 @@ must be updated accordingly.
     - :data:`potential_descriptors`
     - :data:`power_index`
     - :data:`quad_dihedral_index`
+    - :data:`s_factor`
+    - :data:`s_factor_allocated`
     - :data:`sqrt_scale_index`
+    - :data:`stored_factor_cutoffs`
     - :data:`table_bond_index`
     - :data:`table_prefix`
     - :data:`table_scale_index`
     - :data:`table_suffix`
     - :data:`tersoff_index`
+    - :data:`tmp_factor`
     - :data:`tri_bend_index`
     - :data:`triplet_index`
 
@@ -164,6 +172,7 @@ must be updated accordingly.
     List of subroutines in potentials
     ---------------------------------
         
+    - :func:`allocate_ewald_arrays`
     - :func:`bond_order_factor_affects_atom`
     - :func:`bond_order_factor_is_in_group`
     - :func:`calculate_derived_parameters_bond_bending`
@@ -172,6 +181,7 @@ must be updated accordingly.
     - :func:`calculate_ewald_electronegativities`
     - :func:`calculate_ewald_energy`
     - :func:`calculate_ewald_forces`
+    - :func:`check_s_factor_array_allocation`
     - :func:`clear_bond_order_factor_characterizers`
     - :func:`clear_potential_characterizers`
     - :func:`create_bond_order_factor`
@@ -199,6 +209,7 @@ must be updated accordingly.
     - :func:`create_potential_characterizer_shift`
     - :func:`create_potential_characterizer_spring`
     - :func:`create_potential_characterizer_table`
+    - :func:`deallocate_ewald_arrays`
     - :func:`evaluate_bond_order_factor`
     - :func:`evaluate_bond_order_factor_coordination`
     - :func:`evaluate_bond_order_factor_power`
@@ -259,6 +270,7 @@ must be updated accordingly.
     - :func:`get_index_of_parameter_of_bond_order_factor`
     - :func:`get_index_of_parameter_of_potential`
     - :func:`get_index_of_potential`
+    - :func:`get_level_of_bond_order_factor`
     - :func:`get_names_of_parameters_of_bond_order_factor`
     - :func:`get_names_of_parameters_of_potential`
     - :func:`get_number_of_bond_order_factors`
@@ -332,6 +344,32 @@ Full documentation of global variables in potentials
     *initial value* = .false.
     
     logical tag used for managing pointer allocations for potential descriptors
+    
+  .. data:: ewald_arrays_allocated
+
+    logical    *scalar*    
+
+    *initial value* = .false.
+    
+    
+    
+  .. data:: ewald_forces
+
+    double precision  *pointer*  *size(:, :, :)*    
+    
+    
+    
+  .. data:: ewald_sum_forces
+
+    double precision  *pointer*  *size(:, :, :)*    
+    
+    
+    
+  .. data:: ewald_tmp_enegs
+
+    double precision  *pointer*  *size(:)*    
+    
+    
     
   .. data:: mono_const_index
 
@@ -523,6 +561,20 @@ Full documentation of global variables in potentials
     
     internal index for the dihedral angle potential
     
+  .. data:: s_factor
+
+    double precision  *pointer*  *size(:, :, :, :)*    
+    
+    
+    
+  .. data:: s_factor_allocated
+
+    logical    *scalar*    
+
+    *initial value* = .false.
+    
+    
+    
   .. data:: sqrt_scale_index
 
     integer    *scalar*  *parameter*  
@@ -530,6 +582,12 @@ Full documentation of global variables in potentials
     *initial value* = 6
     
     internal index for the square root scaling function
+    
+  .. data:: stored_factor_cutoffs
+
+    integer    *size(3)*    
+    
+    
     
   .. data:: table_bond_index
 
@@ -570,6 +628,12 @@ Full documentation of global variables in potentials
     *initial value* = 2
     
     internal index for the Tersoff bond order factor
+    
+  .. data:: tmp_factor
+
+    double precision  *pointer*  *size(:, :, :, :)*    
+    
+    
     
   .. data:: tri_bend_index
 
@@ -740,6 +804,14 @@ Full documentation of subroutines in potentials
         
         
             
+  .. function:: allocate_ewald_arrays(n_atoms)
+
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+            
   .. function:: bond_order_factor_affects_atom(factor, atom_in, affects, position)
 
     Tests whether the given bond order factor affects the specific atom.
@@ -824,7 +896,7 @@ Full documentation of subroutines in potentials
     **new_potential**: type(potential)  **intent(inout)**    *scalar*  
         the potential object for which the parameters are calculated
             
-  .. function:: calculate_ewald_electronegativities(n_atoms, atoms, cell, real_cutoff, reciprocal_cutoff, gaussian_width, electric_constant, filter, scaler, include_dipole_correction, total_enegs)
+  .. function:: calculate_ewald_electronegativities(atoms, cell, real_cutoff, k_radius, reciprocal_cutoff, gaussian_width, electric_constant, scaler, include_dipole_correction, total_enegs, include_realspace)
 
     Calculates the electronegativities due to long ranged :math:`\frac{1}{r}` potentials.
     These electronegativities are the derivatives of the energies :math:`U` given by :func:`calculate_ewald_energy`
@@ -836,30 +908,30 @@ Full documentation of subroutines in potentials
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
-    atoms: type(atom)  *intent(in)*    *size(n_atoms)*  
+    atoms: type(atom)  *intent(in)*    *size(:)*  
         list of atoms
     cell: type(supercell)  *intent(in)*    *scalar*  
         the supercell containing the system
     real_cutoff: double precision  *intent(in)*    *scalar*  
         Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
+    k_radius: double precision  *intent(in)*    *scalar*  
+        
     reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
         The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
     gaussian_width: double precision  *intent(in)*    *scalar*  
         The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
     electric_constant: double precision  *intent(in)*    *scalar*  
         The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
-    filter: logical  *intent(in)*    *size(n_atoms)*  
-        a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
-    scaler: double precision  *intent(in)*    *size(n_atoms)*  
+    scaler: double precision  *intent(in)*    *size(:)*  
         a list of numerical values to scale the individual charges of the atoms
     include_dipole_correction: logical  *intent(in)*    *scalar*  
         if true, a dipole correction term is included
-    **total_enegs**: double precision  **intent(out)**    *size(n_atoms)*  
+    **total_enegs**: double precision  **intent(inout)**    *size(:)*  
         the calculated electronegativities
+    include_realspace: logical  *intent(in)*    *scalar*  *optional*
+        By default, also the real space summation is carried out, but giving the .false. flag here will prevent the calculation. This is used in the normal evaluation loop where the real space sum is calculated during the evaluation of other pairwise interactions.
             
-  .. function:: calculate_ewald_energy(n_atoms, atoms, cell, real_cutoff, reciprocal_cutoff, gaussian_width, electric_constant, filter, scaler, include_dipole_correction, total_energy)
+  .. function:: calculate_ewald_energy(atoms, cell, real_cutoff, k_radius, reciprocal_cutoff, gaussian_width, electric_constant, scaler, include_dipole_correction, total_energy, include_realspace)
 
     Calculates the energy of :math:`\frac{1}{r}` potentials through Ewald summation.
     
@@ -949,30 +1021,30 @@ Full documentation of subroutines in potentials
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
-    atoms: type(atom)  *intent(in)*    *size(n_atoms)*  
+    atoms: type(atom)  *intent(in)*    *size(:)*  
         list of atoms
     cell: type(supercell)  *intent(in)*    *scalar*  
         the supercell containing the system
     real_cutoff: double precision  *intent(in)*    *scalar*  
         Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
+    k_radius: double precision  *intent(in)*    *scalar*  
+        
     reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
         The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
     gaussian_width: double precision  *intent(in)*    *scalar*  
         The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
     electric_constant: double precision  *intent(in)*    *scalar*  
         The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
-    filter: logical  *intent(in)*    *size(n_atoms)*  
-        a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
-    scaler: double precision  *intent(in)*    *size(n_atoms)*  
+    scaler: double precision  *intent(in)*    *size(:)*  
         a list of numerical values to scale the individual charges of the atoms
     include_dipole_correction: logical  *intent(in)*    *scalar*  
         if true, a dipole correction term is included in the energy
     **total_energy**: double precision  **intent(out)**    *scalar*  
         the calculated energy
+    include_realspace: logical  *intent(in)*    *scalar*  *optional*
+        By default, also the real space summation is carried out, but giving the .false. flag here will prevent the calculation. This is used in the normal evaluation loop where the real space sum is calculated during the evaluation of other pairwise interactions.
             
-  .. function:: calculate_ewald_forces(n_atoms, atoms, cell, real_cutoff, reciprocal_cutoff, gaussian_width, electric_constant, filter, scaler, include_dipole_correction, total_forces, total_stress)
+  .. function:: calculate_ewald_forces(atoms, cell, real_cutoff, k_radius, reciprocal_cutoff, gaussian_width, electric_constant, scaler, include_dipole_correction, total_forces, total_stress, include_realspace)
 
     Calculates the forces due to long ranged :math:`\frac{1}{r}` potentials.
     These forces are the gradients of the energies :math:`U` given by :func:`calculate_ewald_energy`
@@ -984,30 +1056,40 @@ Full documentation of subroutines in potentials
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
-    atoms: type(atom)  *intent(in)*    *size(n_atoms)*  
+    atoms: type(atom)  *intent(in)*    *size(:)*  
         list of atoms
     cell: type(supercell)  *intent(in)*    *scalar*  
         the supercell containing the system
     real_cutoff: double precision  *intent(in)*    *scalar*  
         Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
+    k_radius: double precision  *intent(in)*    *scalar*  
+        
     reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
         The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
     gaussian_width: double precision  *intent(in)*    *scalar*  
         The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
     electric_constant: double precision  *intent(in)*    *scalar*  
         The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
-    filter: logical  *intent(in)*    *size(n_atoms)*  
-        a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
-    scaler: double precision  *intent(in)*    *size(n_atoms)*  
+    scaler: double precision  *intent(in)*    *size(:)*  
         a list of numerical values to scale the individual charges of the atoms
     include_dipole_correction: logical  *intent(in)*    *scalar*  
         if true, a dipole correction term is included in the energy
-    **total_forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
+    **total_forces**: double precision  **intent(inout)**    *size(:, :)*  
         the calculated forces
-    **total_stress**: double precision  **intent(out)**    *size(6)*  
+    **total_stress**: double precision  **intent(inout)**    *size(6)*  
         the calculated stress
+    include_realspace: logical  *intent(in)*    *scalar*  *optional*
+        By default, also the real space summation is carried out, but giving the .false. flag here will prevent the calculation. This is used in the normal evaluation loop where the real space sum is calculated during the evaluation of other pairwise interactions.
+            
+  .. function:: check_s_factor_array_allocation(n_atoms, reciprocal_cutoff)
+
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
+        
             
   .. function:: clear_bond_order_factor_characterizers()
 
@@ -1330,6 +1412,10 @@ Full documentation of subroutines in potentials
 
     index: integer  *intent(in)*    *scalar*  
         index of the potential
+            
+  .. function:: deallocate_ewald_arrays()
+
+
             
   .. function:: evaluate_bond_order_factor(n_targets, separations, distances, bond_params, factor, atoms)
 
@@ -2331,7 +2417,7 @@ Full documentation of subroutines in potentials
     bond_name: character(len=*)  *intent(in)*    *scalar*  
         name of the bond order factor
     n_targets: integer  *intent(in)*    *scalar*  
-        number of targets
+        1 for scaling, 2 for local sum parameters
     param_notes: character(len=param_note_length)  *intent()*  *pointer*  *size(:)*  
         descriptions of the parameters
             
@@ -2376,8 +2462,8 @@ Full documentation of subroutines in potentials
 
     Returns the index of a parameter of a bond order factor in the
     internal list of parameters. Since bond order factors can have
-    parameters for different number of targets, also the number of
-    targets of this parameter is returned.
+    parameters for different number of targets, also the type
+    (scaling vs. local sum) of this parameter is returned.
     
 
     Parameters:
@@ -2389,7 +2475,7 @@ Full documentation of subroutines in potentials
     **index**: integer  **intent(out)**    *scalar*  
         index of the parameter
     **n_targets**: integer  **intent(out)**    *scalar*  
-        number of targets of the parameter
+        1 for scaling, 2 for local sum parameters
             
   .. function:: get_index_of_parameter_of_potential(pot_name, param_name, index)
 
@@ -2418,6 +2504,18 @@ Full documentation of subroutines in potentials
     **index**: integer  **intent(out)**    *scalar*  
         index of the potential in the internal array
             
+  .. function:: get_level_of_bond_order_factor(bond_name, level)
+
+    Returns the level of a bond order factor (i.e., is the factor per-atom or per-pair).
+    
+
+    Parameters:
+
+    bond_name: character(len=*)  *intent(in)*    *scalar*  
+        name of the bond order factor
+    **level**: integer  **intent(out)**    *scalar*  
+        level of the factor
+            
   .. function:: get_names_of_parameters_of_bond_order_factor(bond_name, n_targets, param_names)
 
     Returns the names of parameters of a bond order factor as a list of strings.
@@ -2428,7 +2526,7 @@ Full documentation of subroutines in potentials
     bond_name: character(len=*)  *intent(in)*    *scalar*  
         name of the bond order factor
     n_targets: integer  *intent(in)*    *scalar*  
-        number of targets
+        1 for scaling, 2 for local sum parameters
     param_names: character(len=param_name_length)  *intent()*  *pointer*  *size(:)*  
         names of the parameters
             
@@ -2456,8 +2554,7 @@ Full documentation of subroutines in potentials
             
   .. function:: get_number_of_parameters_of_bond_order_factor(bond_name, n_targets, n_params)
 
-    Returns the number of parameters of a bond order factor as a list of strings,
-    each element showing the number of parameters for that number of bodies.
+    Returns the number of parameters of a bond order factor as an integer.
     
 
     Parameters:
@@ -2465,7 +2562,7 @@ Full documentation of subroutines in potentials
     bond_name: character(len=*)  *intent(in)*    *scalar*  
         name of the bond order factor
     n_targets: integer  *intent(in)*    *scalar*  
-        number of targets
+        1 for scaling parameters, 2 for local sum parameters
     **n_params**: integer  **intent(out)**    *scalar*  
         number of parameters
             
@@ -2539,7 +2636,7 @@ Full documentation of subroutines in potentials
     pot_index: integer  *intent(in)*    *scalar*  
         index of the potential
     **n_target**: integer  **intent(out)**    *scalar*  
-        numner of targets
+        number of targets
             
   .. function:: initialize_bond_order_factor_characterizers()
 
@@ -2736,7 +2833,7 @@ Full documentation of subroutines in potentials
         the precalculated bond order gradient sum, :math:`\nabla_\alpha \sum_j c_ij` in the above example
     bond_params: type(bond_order_parameters)  *intent(in)*    *scalar*  
         a :data:`bond_order_parameters` specifying the parameters
-    **factor_out**: double precision  **intent(out)**    *size(3)*  
+    **factor_out**: double precision  **intent(inout)**    *size(3)*  
         the calculated bond order factor :math:`\nabla_\alpha b_i`
             
   .. function:: post_process_bond_order_gradient_scaler_1(raw_sum, raw_gradient, bond_params, factor_out)

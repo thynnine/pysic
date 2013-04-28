@@ -469,8 +469,9 @@ _____________________________
 
 .. math::
 
-   b_i(\Sigma_i) = \varepsilon_i \frac{\Delta \Sigma_i}{1+\exp(\gamma_i \Delta \Sigma_i)}\\
-   \Delta \Sigma_i = C_i (\Sigma_i - N_i).
+   b_i(\Sigma_i) &= \begin{cases} \varepsilon_i \frac{\Delta \Sigma_i}{1+\exp(\gamma_i \Delta \Sigma_i)},& \Delta \Sigma_i > \min_\Sigma \\
+   0,& \Delta \Sigma_i < \min_\Sigma \end{cases} \\
+   \Delta \Sigma_i &= C_i (\Sigma_i - N_i).
 
 where :math:`\Sigma_i` is the bond order sum.
 
@@ -480,7 +481,7 @@ bond order factor when mixed. Especially, it is zero if not paired with other bo
 Keywords::
 
     >>> names_of_parameters('c_scale')
-    [['epsilon', 'N', 'C', 'gamma'], []]
+    [['epsilon', 'N', 'C', 'gamma', 'min'], []]
 
 .. file:square root scaling function
 

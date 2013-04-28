@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>geometry (Geometry.f90) &mdash; Pysic 0.4.4 documentation</title>
+    <title>geometry (Geometry.f90) &mdash; Pysic 0.4.6 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.4',
+        VERSION:     '0.4.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.6 documentation" href="index.html" />
     <link rel="up" title="Pysic Fortran module" href="pysic_fortran.html" />
     <link rel="next" title="utility (Utility.f90)" href="Utility_f90.html" />
     <link rel="prev" title="potentials (Potentials.f90)" href="Potentials_f90.html" /> 
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="Potentials_f90.html" title="potentials (Potentials.f90)"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
           <li><a href="pysic_fortran.html" accesskey="U">Pysic Fortran module</a> &raquo;</li> 
       </ul>
     </div>
@@ -131,6 +131,8 @@
 <ul class="simple">
 <li><a class="reference internal" href="#absolute_coordinates" title="absolute_coordinates"><tt class="xref py py-func docutils literal"><span class="pre">absolute_coordinates()</span></tt></a></li>
 <li><a class="reference internal" href="#assign_bond_order_factor_indices" title="assign_bond_order_factor_indices"><tt class="xref py py-func docutils literal"><span class="pre">assign_bond_order_factor_indices()</span></tt></a></li>
+<li><a class="reference internal" href="#assign_max_bond_order_factor_cutoff" title="assign_max_bond_order_factor_cutoff"><tt class="xref py py-func docutils literal"><span class="pre">assign_max_bond_order_factor_cutoff()</span></tt></a></li>
+<li><a class="reference internal" href="#assign_max_potential_cutoff" title="assign_max_potential_cutoff"><tt class="xref py py-func docutils literal"><span class="pre">assign_max_potential_cutoff()</span></tt></a></li>
 <li><a class="reference internal" href="#assign_neighbor_list" title="assign_neighbor_list"><tt class="xref py py-func docutils literal"><span class="pre">assign_neighbor_list()</span></tt></a></li>
 <li><a class="reference internal" href="#assign_potential_indices" title="assign_potential_indices"><tt class="xref py py-func docutils literal"><span class="pre">assign_potential_indices()</span></tt></a></li>
 <li><a class="reference internal" href="#divide_cell" title="divide_cell"><tt class="xref py py-func docutils literal"><span class="pre">divide_cell()</span></tt></a></li>
@@ -180,6 +182,8 @@
 <dd>index of the atom</dd>
 <dt>n_pots: integer    <em>scalar</em></dt>
 <dd>number of potentials that may affect the atom</dd>
+<dt>max_potential_radius: double precision    <em>scalar</em></dt>
+<dd>the maximum cutoff of any potential listed in potential_indices</dd>
 <dt>tags: integer    <em>scalar</em></dt>
 <dd>integer tag</dd>
 <dt>potential_indices: integer  <em>pointer</em>  <em>size(:)</em></dt>
@@ -194,14 +198,16 @@
 <dd>charge of the atom</dd>
 <dt>subcell_indices: integer    <em>size(3)</em></dt>
 <dd>indices of the subcell containing the atom, used for fast neighbor searching (see <a class="reference internal" href="#subcell" title="subcell"><tt class="xref py py-data docutils literal"><span class="pre">subcell</span></tt></a>)</dd>
-<dt>mass: double precision    <em>scalar</em></dt>
-<dd>mass of th atom</dd>
+<dt>max_bond_radius: double precision    <em>scalar</em></dt>
+<dd>the maximum cutoff of any bond order factor listed in bond_indices</dd>
 <dt>n_bonds: integer    <em>scalar</em></dt>
 <dd>number of bond order factors that may affect the atom</dd>
 <dt>bond_order_factors_listed: logical    <em>scalar</em></dt>
 <dd>logical tag for checking if the bond order factors affecting the atom have been listed in bond_indices</dd>
 <dt>position: double precision    <em>size(3)</em></dt>
 <dd>coordinates of the atom</dd>
+<dt>mass: double precision    <em>scalar</em></dt>
+<dd>mass of th atom</dd>
 <dt>momentum: double precision    <em>size(3)</em></dt>
 <dd>momentum of the atom</dd>
 </dl>
@@ -396,6 +402,22 @@ first participant).</p>
 <dt>indices: integer  <em>intent(in)</em>    <em>size(n_bonds)</em></dt>
 <dd>the indices of the bond order factors</dd>
 </dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="assign_max_bond_order_factor_cutoff">
+<tt class="descname">assign_max_bond_order_factor_cutoff</tt><big>(</big><em>atom_in</em>, <em>max_cut</em><big>)</big><a class="headerlink" href="#assign_max_bond_order_factor_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p><strong>atom_in</strong>: type(atom)  <strong>intent(inout)</strong>    <em>scalar</em></p>
+<p>max_cut: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="assign_max_potential_cutoff">
+<tt class="descname">assign_max_potential_cutoff</tt><big>(</big><em>atom_in</em>, <em>max_cut</em><big>)</big><a class="headerlink" href="#assign_max_potential_cutoff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p><strong>atom_in</strong>: type(atom)  <strong>intent(inout)</strong>    <em>scalar</em></p>
+<p>max_cut: double precision  <em>intent(in)</em>    <em>scalar</em></p>
 </dd></dl>
 
 <dl class="function">
@@ -770,7 +792,7 @@ is then done by comparing these offset vectors, element by element.</p>
         <li class="right" >
           <a href="Potentials_f90.html" title="potentials (Potentials.f90)"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
           <li><a href="pysic_fortran.html" >Pysic Fortran module</a> &raquo;</li> 
       </ul>
     </div>

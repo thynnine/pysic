@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Version history &mdash; Pysic 0.4.4 documentation</title>
+    <title>Version history &mdash; Pysic 0.4.6 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.4',
+        VERSION:     '0.4.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.6 documentation" href="index.html" />
     <link rel="next" title="Roadmap" href="roadmap.html" />
     <link rel="prev" title="mt95 (Mersenne.f90)" href="Mersenne_f90.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="Mersenne_f90.html" title="mt95 (Mersenne.f90)"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -54,6 +54,7 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Version history</a><ul>
+<li><a class="reference internal" href="#version-0-4-6">Version 0.4.6</a></li>
 <li><a class="reference internal" href="#version-0-4-5">Version 0.4.5</a></li>
 <li><a class="reference internal" href="#version-0-4-4">Version 0.4.4</a></li>
 <li><a class="reference internal" href="#version-0-4-3">Version 0.4.3</a></li>
@@ -101,10 +102,21 @@
             
   <div class="section" id="version-history">
 <span id="version"></span><h1>Version history<a class="headerlink" href="#version-history" title="Permalink to this headline">¶</a></h1>
-<p>This is a list of the main updates in the different versions of Pysic.</p>
+<p>This is a list of the main updates in the different versions of Pysic.
+Descriptions of all incremental changes can be found in the <a class="reference external" href="https://github.com/thynnine/pysic/commits/master">commit log</a>
+(see also the <a class="reference external" href="https://github.com/thynnine/pysic/commits/develop">develop version</a>).</p>
 <p>The version number is available in Pysic as the variable:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">pysic</span><span class="o">.</span><span class="n">version</span>
 </pre></div>
+</div>
+<div class="section" id="version-0-4-6">
+<h2>Version 0.4.6<a class="headerlink" href="#version-0-4-6" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Code optimization: updates in the memory allocation and computation routines in the Fortran core for better performance.</li>
+<li>Added a warning system (<a class="reference internal" href="pysic_utility.html#pysic.utility.error.Warning" title="pysic.utility.error.Warning"><tt class="xref py py-class docutils literal"><span class="pre">pysic.utility.error.Warning</span></tt></a>)</li>
+<li>Added support for pairwise bond order factors (in addition to per-atom factors), see <a class="reference internal" href="bondorderparameters class.html#atomic-and-pairwise-factors"><em>Atomic and pairwise factors</em></a>.</li>
+<li>Numerous bug fixes, see the github commit log for details.</li>
+</ul>
 </div>
 <div class="section" id="version-0-4-5">
 <h2>Version 0.4.5<a class="headerlink" href="#version-0-4-5" title="Permalink to this headline">¶</a></h2>
@@ -112,7 +124,7 @@
 <li>Added the <a class="reference internal" href="compoundpotential class.html#pysic.interactions.compound.CompoundPotential" title="pysic.interactions.compound.CompoundPotential"><tt class="xref py py-class docutils literal"><span class="pre">CompoundPotential</span></tt></a> class for representing complicated potentials.</li>
 <li>Added the <a class="reference internal" href="suttonchenpotential class.html#pysic.interactions.suttonchen.SuttonChenPotential" title="pysic.interactions.suttonchen.SuttonChenPotential"><tt class="xref py py-class docutils literal"><span class="pre">SuttonChenPotential</span></tt></a> class describing the Sutton-Chen potential.</li>
 <li>Added the <a class="reference internal" href="potential class.html#shifted-power-potential"><em>Shifted power potential</em></a></li>
-<li>Interface enhancements. E.g., it is possible to pass lists of potentials to methods like <tt class="xref py py-meth docutils literal"><span class="pre">pysic.Pysic.add_potential()</span></tt>, or pass <a class="reference internal" href="productpotential class.html#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a> objects to other :class:<a href="#id1"><span class="problematic" id="id2">`</span></a>~pysic.interactions.local.ProductPotential`s.</li>
+<li>Interface enhancements. E.g., it is possible to pass lists of potentials to methods like <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic.add_potential" title="pysic.calculator.Pysic.add_potential"><tt class="xref py py-meth docutils literal"><span class="pre">pysic.calculator.Pysic.add_potential()</span></tt></a>, or pass <a class="reference internal" href="productpotential class.html#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">ProductPotential</span></tt></a> objects to other :class:<a href="#id1"><span class="problematic" id="id2">`</span></a>~pysic.interactions.local.ProductPotential`s.</li>
 <li>Efficiency fixes. E.g., when bond order factors are created in the core, it is checked that duplicates are not created.</li>
 </ul>
 </div>
@@ -227,7 +239,7 @@
         <li class="right" >
           <a href="Mersenne_f90.html" title="mt95 (Mersenne.f90)"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

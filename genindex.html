@@ -10,7 +10,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Index &mdash; Pysic 0.4.4 documentation</title>
+    <title>Index &mdash; Pysic 0.4.6 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -18,7 +18,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.4',
+        VERSION:     '0.4.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -28,7 +28,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.4 documentation" href="index.html" /> 
+    <link rel="top" title="Pysic 0.4.6 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -40,7 +40,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -184,8 +184,6 @@
   <dt><a href="MPI_f90.html#all_loads">all_loads (built-in variable)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="PyInterface_f90.html#allocate_bond_order_factors">allocate_bond_order_factors() (built-in function)</a>
   </dt>
@@ -194,12 +192,26 @@
   <dt><a href="PyInterface_f90.html#allocate_bond_order_storage">allocate_bond_order_storage() (built-in function)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="Potentials_f90.html#allocate_ewald_arrays">allocate_ewald_arrays() (built-in function)</a>
+  </dt>
+
       
   <dt><a href="PyInterface_f90.html#allocate_potentials">allocate_potentials() (built-in function)</a>
   </dt>
 
       
   <dt><a href="Geometry_f90.html#assign_bond_order_factor_indices">assign_bond_order_factor_indices() (built-in function)</a>
+  </dt>
+
+      
+  <dt><a href="Geometry_f90.html#assign_max_bond_order_factor_cutoff">assign_max_bond_order_factor_cutoff() (built-in function)</a>
+  </dt>
+
+      
+  <dt><a href="Geometry_f90.html#assign_max_potential_cutoff">assign_max_potential_cutoff() (built-in function)</a>
   </dt>
 
       
@@ -241,6 +253,26 @@
   </dt>
 
       
+  <dt><a href="Core_f90.html#bo_factors">bo_factors (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#bo_gradients">bo_gradients (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#bo_scaling">bo_scaling (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#bo_sums">bo_sums (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#bo_temp">bo_temp (built-in variable)</a>
+  </dt>
+
+      
   <dt><a href="Potentials_f90.html#bond_descriptors_created">bond_descriptors_created (built-in variable)</a>
   </dt>
 
@@ -252,6 +284,8 @@
   <dt><a href="Core_f90.html#bond_factors_allocated">bond_factors_allocated (built-in variable)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="Potentials_f90.html#bond_order_descriptor">bond_order_descriptor (built-in variable)</a>
   </dt>
@@ -260,8 +294,6 @@
   <dt><a href="Potentials_f90.html#bond_order_descriptors">bond_order_descriptors (built-in variable)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="Potentials_f90.html#bond_order_factor_affects_atom">bond_order_factor_affects_atom() (built-in function)</a>
   </dt>
@@ -411,6 +443,10 @@
   </dt>
 
       
+  <dt><a href="Potentials_f90.html#check_s_factor_array_allocation">check_s_factor_array_allocation() (built-in function)</a>
+  </dt>
+
+      
   <dt><a href="Potentials_f90.html#clear_bond_order_factor_characterizers">clear_bond_order_factor_characterizers() (built-in function)</a>
   </dt>
 
@@ -519,6 +555,10 @@
   </dt>
 
       
+  <dt><a href="Core_f90.html#core_clear_ewald_arrays">core_clear_ewald_arrays() (built-in function)</a>
+  </dt>
+
+      
   <dt><a href="Core_f90.html#core_clear_potential_multipliers">core_clear_potential_multipliers() (built-in function)</a>
   </dt>
 
@@ -555,17 +595,49 @@
   </dt>
 
       
+  <dt><a href="Core_f90.html#core_evaluate_local_doublet_electronegativities">core_evaluate_local_doublet_electronegativities() (built-in function)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#core_evaluate_local_doublet_electronegativities_B">core_evaluate_local_doublet_electronegativities_B() (built-in function)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#core_evaluate_local_doublet_energy">core_evaluate_local_doublet_energy() (built-in function)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#core_evaluate_local_doublet_energy_B">core_evaluate_local_doublet_energy_B() (built-in function)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#core_evaluate_local_doublet_forces">core_evaluate_local_doublet_forces() (built-in function)</a>
+  </dt>
+
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="Core_f90.html#core_evaluate_local_doublet_forces_B">core_evaluate_local_doublet_forces_B() (built-in function)</a>
+  </dt>
+
+      
   <dt><a href="Core_f90.html#core_evaluate_local_quadruplet">core_evaluate_local_quadruplet() (built-in function)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#core_evaluate_local_quadruplet_B">core_evaluate_local_quadruplet_B() (built-in function)</a>
   </dt>
 
       
   <dt><a href="Core_f90.html#core_evaluate_local_singlet">core_evaluate_local_singlet() (built-in function)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="Core_f90.html#core_evaluate_local_triplet">core_evaluate_local_triplet() (built-in function)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#core_evaluate_local_triplet_B">core_evaluate_local_triplet_B() (built-in function)</a>
   </dt>
 
       
@@ -807,6 +879,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="Potentials_f90.html#deallocate_ewald_arrays">deallocate_ewald_arrays() (built-in function)</a>
+  </dt>
+
+      
   <dt><a href="compoundpotential class.html#pysic.interactions.compound.CompoundPotential.define_elements">define_elements() (pysic.interactions.compound.CompoundPotential method)</a>
   </dt>
 
@@ -860,6 +936,10 @@
 
       
   <dt><a href="Potentials_f90.html#descriptors_created">descriptors_created (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="pysic_utility.html#pysic.utility.error.Warning.display">display() (pysic.utility.error.Warning method)</a>
   </dt>
 
       
@@ -1012,8 +1092,6 @@
   <dt><a href="Potentials_f90.html#evaluate_energy_shift">evaluate_energy_shift() (built-in function)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="Potentials_f90.html#evaluate_energy_spring">evaluate_energy_spring() (built-in function)</a>
   </dt>
@@ -1026,6 +1104,8 @@
   <dt><a href="Core_f90.html#evaluate_ewald">evaluate_ewald (built-in variable)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="Potentials_f90.html#evaluate_force_bond_bending">evaluate_force_bond_bending() (built-in function)</a>
   </dt>
@@ -1099,6 +1179,10 @@
   </dt>
 
       
+  <dt><a href="Potentials_f90.html#ewald_arrays_allocated">ewald_arrays_allocated (built-in variable)</a>
+  </dt>
+
+      
   <dt><a href="Core_f90.html#ewald_cutoff">ewald_cutoff (built-in variable)</a>
   </dt>
 
@@ -1107,7 +1191,15 @@
   </dt>
 
       
+  <dt><a href="Potentials_f90.html#ewald_forces">ewald_forces (built-in variable)</a>
+  </dt>
+
+      
   <dt><a href="Core_f90.html#ewald_k_cutoffs">ewald_k_cutoffs (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#ewald_k_radius">ewald_k_radius (built-in variable)</a>
   </dt>
 
       
@@ -1116,6 +1208,14 @@
 
       
   <dt><a href="Core_f90.html#ewald_sigma">ewald_sigma (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Potentials_f90.html#ewald_sum_forces">ewald_sum_forces (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Potentials_f90.html#ewald_tmp_enegs">ewald_tmp_enegs (built-in variable)</a>
   </dt>
 
       
@@ -1428,8 +1528,16 @@
   <dt><a href="pysic class.html#pysic.calculator.Pysic.get_individual_cutoffs">get_individual_cutoffs() (pysic.calculator.Pysic method)</a>
   </dt>
 
+      
+  <dt><a href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.get_level">get_level() (pysic.interactions.bondorder.BondOrderParameters method)</a>
+  </dt>
+
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="Potentials_f90.html#get_level_of_bond_order_factor">get_level_of_bond_order_factor() (built-in function)</a>
+  </dt>
+
       
   <dt><a href="PyInterface_f90.html#get_mpi_list_of_atoms">get_mpi_list_of_atoms() (built-in function)</a>
   </dt>
@@ -1691,6 +1799,10 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters.includes_scaling">includes_scaling() (pysic.interactions.bondorder.BondOrderParameters method)</a>
+  </dt>
+
+      
   <dt><a href="pysic.html#pysic.index_of_parameter">index_of_parameter() (in module pysic)</a>
   </dt>
 
@@ -1740,12 +1852,12 @@
   <dt><a href="pysic_utility.html#pysic.utility.error.InvalidCoordinatorError">InvalidCoordinatorError</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pysic_utility.html#pysic.utility.error.InvalidParametersError">InvalidParametersError</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pysic_utility.html#pysic.utility.error.InvalidPotentialError">InvalidPotentialError</a>
   </dt>
@@ -1831,6 +1943,10 @@
   </dt>
 
       
+  <dt><a href="PyInterface_f90.html#level_of_bond_order_factor">level_of_bond_order_factor() (built-in function)</a>
+  </dt>
+
+      
   <dt><a href="Core_f90.html#list_atoms">list_atoms() (built-in function)</a>
   </dt>
 
@@ -1856,6 +1972,8 @@
   <dt><a href="Core_f90.html#list_interactions">list_interactions() (built-in function)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="Potentials_f90.html#list_potentials">list_potentials() (built-in function)</a>
   </dt>
@@ -1866,8 +1984,6 @@
   </dt>
 
       </dl></dd>
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="PyInterface_f90.html#list_valid_bond_order_factors">list_valid_bond_order_factors() (built-in function)</a>
   </dt>
@@ -2015,6 +2131,10 @@
   </dt>
 
       
+  <dt><a href="Core_f90.html#n_nbs">n_nbs (built-in variable)</a>
+  </dt>
+
+      
   <dt><a href="Potentials_f90.html#n_potential_types">n_potential_types (built-in variable)</a>
   </dt>
 
@@ -2058,6 +2178,10 @@
 
       
   <dt><a href="Quaternions_f90.html#norm_tolerance">norm_tolerance (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#number_of_atoms">number_of_atoms (built-in variable)</a>
   </dt>
 
       
@@ -2489,6 +2613,14 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="Potentials_f90.html#s_factor">s_factor (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Potentials_f90.html#s_factor_allocated">s_factor_allocated (built-in variable)</a>
+  </dt>
+
+      
   <dt><a href="Core_f90.html#saved_bond_order_factors">saved_bond_order_factors (built-in variable)</a>
   </dt>
 
@@ -2755,6 +2887,10 @@
 
       </dl></dd>
       
+  <dt><a href="pysic_utility.html#pysic.utility.error.set_warning_level">set_warning_level() (in module pysic.utility.error)</a>
+  </dt>
+
+      
   <dt><a href="Potentials_f90.html#smoothening_derivative">smoothening_derivative() (built-in function)</a>
   </dt>
 
@@ -2792,6 +2928,10 @@
 
       
   <dt><a href="MPI_f90.html#stopwatch">stopwatch (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Potentials_f90.html#stored_factor_cutoffs">stored_factor_cutoffs (built-in variable)</a>
   </dt>
 
       
@@ -2853,13 +2993,33 @@
   </dt>
 
       
-  <dt><a href="Potentials_f90.html#tersoff_index">tersoff_index (built-in variable)</a>
+  <dt><a href="Core_f90.html#temp_enegs">temp_enegs (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#temp_forces">temp_forces (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#temp_gradient">temp_gradient (built-in variable)</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
+  <dt><a href="Potentials_f90.html#tersoff_index">tersoff_index (built-in variable)</a>
+  </dt>
+
+      
   <dt><a href="MPI_f90.html#timer">timer() (built-in function)</a>
+  </dt>
+
+      
+  <dt><a href="Potentials_f90.html#tmp_factor">tmp_factor (built-in variable)</a>
+  </dt>
+
+      
+  <dt><a href="Core_f90.html#total_n_nbs">total_n_nbs (built-in variable)</a>
   </dt>
 
       
@@ -2961,11 +3121,23 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="Geometry_f90.html#wrapped_coordinates">wrapped_coordinates() (built-in function)</a>
+  <dt><a href="pysic_utility.html#pysic.utility.error.warn">warn() (in module pysic.utility.error)</a>
+  </dt>
+
+      
+  <dt><a href="pysic_utility.html#pysic.utility.error.Warning">Warning (class in pysic.utility.error)</a>
+  </dt>
+
+      
+  <dt><a href="pysic_utility.html#pysic.utility.error.WarningInterruptException">WarningInterruptException</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="Geometry_f90.html#wrapped_coordinates">wrapped_coordinates() (built-in function)</a>
+  </dt>
+
       
   <dt><a href="MPI_f90.html#write_loadmonitor">write_loadmonitor() (built-in function)</a>
   </dt>
@@ -2989,7 +3161,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Pysic 0.4.4 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
