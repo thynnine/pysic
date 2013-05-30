@@ -4295,8 +4295,8 @@ contains
                 ! add the term: b_ij v_ij f(rij)
                 if(interaction%pot_index > -1)then
                     energy = energy + tmp_energy*cut_factors(1)*&
-                         (saved_bond_order_factors(index1,interaction%pot_index)+&
-                         saved_bond_order_factors(index2,interaction%pot_index)+&
+                         (saved_bond_order_factors(index1,group_index_save_slot(interaction%pot_index))+&
+                         saved_bond_order_factors(index2,group_index_save_slot(interaction%pot_index))+&
                          pair_bo_factors(1)+pair_bo_factors(2))*0.5d0
                 else
                     energy = energy + tmp_energy*cut_factors(1)
@@ -7126,7 +7126,8 @@ contains
        end if
        if(size(interactions(i)%multipliers) > 0)then
           do j = 1, size(interactions(i)%multipliers)
-             write(*,*) "      multiplier ", interactions(i)%multipliers(j)%type_index
+             write(*,*) "      multiplier ", interactions(i)%multipliers(j)%type_index, &
+                  interactions(i)%multipliers(j)%parameters
           end do
        end if
        write(*,*) ""

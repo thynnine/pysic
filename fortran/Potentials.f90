@@ -5802,7 +5802,7 @@ contains
 
 
     bond_order_descriptors(index)%includes_post_processing = .true.
-    max_params = 4 ! maxval(bond_order_descriptors(index)%n_parameters)
+    max_params = 5 ! maxval(bond_order_descriptors(index)%n_parameters)
 
     !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
     !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))

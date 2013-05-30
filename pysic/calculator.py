@@ -1245,6 +1245,10 @@ class Pysic:
 
         Pysic.core.set_potentials(self.potentials)
 
+
+        self.neighbor_lists_waiting = False
+
+
             
     def update_core_coulomb(self):
         """Updates the Coulomb summation parameters in the Fortran core.
@@ -1344,6 +1348,7 @@ class Pysic:
 
          If uninitialized, the lists are created first via :meth:`~pysic.calculator.Pysic.create_neighbor_lists`.
          """
+
         if not Pysic.core.atoms_ready(self.structure):
             raise MissingAtomsError("Creating neighbor lists before updating atoms in the core.")
         cutoffs = self.get_individual_cutoffs(1.0)
@@ -1393,6 +1398,7 @@ class Pysic:
                 
         self.update_core_supercell()
         self.update_core_potentials()
+        self.neighbor_lists_waiting = False
         self.update_core_neighbor_lists()
         self.update_core_potential_lists()
         self.update_core_coulomb()
