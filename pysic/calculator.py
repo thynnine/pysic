@@ -167,6 +167,8 @@ class Pysic:
         self.electronegativities = None
 
         self.force_core_initialization = full_initialization
+    
+        self.extra_calculators = []
 
 
     def __eq__(self,other):
@@ -178,6 +180,8 @@ class Pysic:
             if self.neighbor_list != other.neighbor_list:
                 return False
             if self.potentials != other.potentials:
+                return False
+            if self.extra_calculators != other.extra_calculators:
                 return False
         except:
             return False
@@ -294,7 +298,9 @@ class Pysic:
         """Returns the list of potentials assigned to the calculator."""
         return self.potentials
 
-    
+    def get_calculators(self):
+        """Returns the list of other calculators to be used with Pysic."""
+        return self.extra_calculators
     
     def get_electronegativities(self, atoms=None):
         """Returns the electronegativities of atoms.
@@ -523,6 +529,32 @@ class Pysic:
                 self.add_potential(pot)
     
     
+    def add_calculator(self,calculator):
+        """Add a calculator to the list of external calculators.
+        
+        Parameters:
+        
+        calculator: an ASE calculator object
+            a new calculator to describe interactions
+        """
+        if self.extra_calculators is None:
+            self.extra_calculators = []
+            
+        if isinstance(calculator,list):
+            calcs = calculator
+        else:
+            calcs = [calculator]
+            
+        for calc in calcs:
+            self.extra_calculators.append(calc)
+
+        self.forces = None
+        self.energy = None
+        self.stress = None
+        self.electronegativities = None
+
+
+
     def add_potential(self, potential):
         """Add a potential to the list of potentials.
         
@@ -561,6 +593,17 @@ class Pysic:
         new_cutoffs = self.get_individual_cutoffs(1.0)
         self.neighbor_lists_waiting = not self.neighbor_lists_expanded(new_cutoffs)
     
+    
+    def remove_calculator(self, calculator):
+        """Remove a calculator from the list of calculators.
+        
+        Parameters:
+        
+        calculator: an ASE calculator object
+            the calculator to be removed
+        """
+        self.extra_calculators.remove(calculator)
+
     
     def remove_potential(self, potential):
         """Remove a potential from the list of potentials.
@@ -773,6 +816,17 @@ class Pysic:
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.forces, self.stress = pf.pysic_interface.calculate_forces(n_atoms)#.transpose()
         self.forces = self.forces.transpose()
+
+        if not self.extra_calculators is None:
+            if len(self.extra_calculators) > 0:
+                # calculators should copy the system themselves, so the
+                # original system could be passed here. Maybe it is best to
+                # give a copy though, just in case? Will take more memory though.
+                system_copy = copy.deepcopy(self.structure)
+                for calc in self.extra_calculators:
+                    self.forces = self.forces + calc.get_forces(system_copy)
+                    self.stress = self.stress + calc.get_stress(system_copy)
+        
         
 
     def calculate_energy(self):
@@ -786,8 +840,14 @@ class Pysic:
         self.set_core()
         if self.charge_relaxation != None:
             self.charge_relaxation.charge_relaxation()
-        n_atoms = pf.pysic_interface.get_number_of_atoms()
+        #n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.energy = pf.pysic_interface.calculate_energy()
+
+        if not self.extra_calculators is None:
+            if len(self.extra_calculators) > 0:
+                system_copy = copy.deepcopy(self.structure)
+                for calc in self.extra_calculators:
+                    self.energy = self.energy + calc.get_potential_energy(system_copy)
 
 
     def calculate_stress(self):
@@ -802,6 +862,13 @@ class Pysic:
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.forces, self.stress = pf.pysic_interface.calculate_forces(n_atoms)
         self.forces = self.forces.transpose()
+
+        if not self.extra_calculators is None:
+            if len(self.extra_calculators) > 0:
+                system_copy = copy.deepcopy(self.system)
+                for calc in self.extra_calculators:
+                    self.forces = self.forces + calc.get_forces(system_copy)
+                    self.stress = self.stress + calc.get_stress(system_copy)
 
 
     def set_core(self):
