@@ -56,11 +56,14 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Pysic class</a><ul>
+<li><a class="reference internal" href="#ase-calculators">ASE calculators</a></li>
+<li><a class="reference internal" href="#wrapping-calculators">Wrapping calculators</a></li>
 <li><a class="reference internal" href="#list-of-methods">List of methods</a><ul>
 <li><a class="reference internal" href="#structure-handling">Structure handling</a></li>
 <li><a class="reference internal" href="#potential-handling">Potential handling</a></li>
 <li><a class="reference internal" href="#coulomb-handling">Coulomb handling</a></li>
 <li><a class="reference internal" href="#charge-relaxation-handling">Charge relaxation handling</a></li>
+<li><a class="reference internal" href="#calculator-handling">Calculator handling</a></li>
 <li><a class="reference internal" href="#calculations">Calculations</a></li>
 <li><a class="reference internal" href="#core">Core</a></li>
 </ul>
@@ -113,7 +116,120 @@ forces and energies of given atomistic structures provided as an
 solely based on the elements present in the system. Instead, Pysic allows and requires
 the user to specify the interactions governing the system. This is done by providing
 the calculator with one or several <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects.</p>
-<span class="target" id="ase-calculators"></span><span class="target" id="energy-evaluation"></span><span class="target" id="force-evaluation"></span><span class="target" id="electronegativity-evaluation"></span><span class="target" id="stress-evaluation"></span><span class="target" id="role-of-other-classes"></span><div class="section" id="list-of-methods">
+<div class="section" id="ase-calculators">
+<span id="id2"></span><h2>ASE calculators<a class="headerlink" href="#ase-calculators" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html">ASE calculators</a> are a class representing the physics of the atomistic system. Or put in another way, a calculator is the mathematical machine containing the algorithms and routines for calculating, for instance, the total potential energy of the atomistic system represented as an <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE atoms</a> object (hence the name). As ASE itself contains only some very simple calculators, in practice the calculators are often just Python interfaces to other atomistic simulators. Pysic too is such a calculator.</p>
+<p>Pysic implements classical potentials, where the interactions between atomic pairs, triplets etc. are represented via simple mathematical functions or a <a class="reference internal" href="potential class.html#tabulated-potential"><em>Tabulated potential</em></a>. These can be combined freely using the <a class="reference internal" href="potential class.html#potential-class"><em>Potential class</em></a> and its modifiers and extensions such as the <a class="reference internal" href="coordinator class.html#coordinator-class"><em>Coordinator</em></a>, <a class="reference internal" href="bondorderparameters class.html#bondorderparameters-class"><em>Bond order parameter</em></a>, <a class="reference internal" href="productpotential class.html#productpotential-class"><em>Product potential</em></a>, <a class="reference internal" href="compoundpotential class.html#compoundpotential-class"><em>Compound Potential</em></a>, and <a class="reference internal" href="coulombsummation class.html#coulombsummation-class"><em>Coulomb summation</em></a> classes.</p>
+</div>
+<div class="section" id="wrapping-calculators">
+<h2>Wrapping calculators<a class="headerlink" href="#wrapping-calculators" title="Permalink to this headline">¶</a></h2>
+<p>Although Pysic can be used as a calculator on its own, it is also possible to use it as a wrapper for other ASE calculators.
+By doing so, one may combine different simulators and even different descriptions in one calculator, and all the wrapped calculators will be executed when the Pysic calculator needs to calculate energies or forces. This is done simply by adding the external ASE calculators to Pysic using the <a class="reference internal" href="#pysic.calculator.Pysic.add_calculator" title="pysic.calculator.Pysic.add_calculator"><tt class="xref py py-meth docutils literal"><span class="pre">add_calculator()</span></tt></a> method.</p>
+<p>As a simple example, one can use Pysic to add simple components like springs in an ab initio calculation.
+This example uses the <a class="reference external" href="https://wiki.fysik.dtu.dk/gpaw/">Gpaw</a> code.:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pysic</span>
+<span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">Atoms</span>
+<span class="kn">from</span> <span class="nn">gpaw</span> <span class="kn">import</span> <span class="n">GPAW</span>
+
+<span class="c"># create the system</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span> <span class="o">...</span> <span class="p">)</span>
+
+<span class="c"># create the pysic calculator</span>
+<span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+
+<span class="c"># create a classical spring potential between atoms &#39;0&#39; and &#39;1&#39;</span>
+<span class="n">spr</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;spring&#39;</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">],</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">cutoff_margin</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+<span class="n">calc</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">spr</span><span class="p">)</span>
+
+<span class="c"># create an ab initio calculator</span>
+<span class="n">dft</span> <span class="o">=</span> <span class="n">GPAW</span><span class="p">(</span><span class="n">h</span><span class="o">=</span><span class="mf">0.18</span><span class="p">,</span> <span class="n">nbands</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">xc</span><span class="o">=</span><span class="s">&#39;PBE&#39;</span><span class="p">,</span> <span class="n">txt</span><span class="o">=</span><span class="s">&#39;wrapped.out&#39;</span><span class="p">)</span>
+
+<span class="c"># wrap the calculators</span>
+<span class="n">calc</span><span class="o">.</span><span class="n">add_calculator</span><span class="p">(</span><span class="n">dft</span><span class="p">)</span>
+
+<span class="c"># calculate the energy</span>
+<span class="n">system</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calc</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">system</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+</pre></div>
+</div>
+<p>It is also possible to wrap several instances of Pysic together, but usually there should be no need to do this.
+It is more efficient to just add all the potentials in one Pysic instance. However, as an example, here is how it works:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pysic</span>
+<span class="kn">import</span> <span class="nn">ase</span>
+
+<span class="c"># create some test system</span>
+<span class="n">system</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span><span class="p">(</span><span class="s">&#39;COH&#39;</span><span class="p">,[[</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">,</span><span class="mf">0.0</span><span class="p">],</span> <span class="p">[</span><span class="mf">2.0</span><span class="p">,</span><span class="mf">2.0</span><span class="p">,</span><span class="mf">2.0</span><span class="p">]])</span>
+
+<span class="c"># create two calculators</span>
+<span class="n">calc1</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+<span class="n">calc2</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+
+<span class="c"># potential 1</span>
+<span class="n">pot1</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;LJ&#39;</span><span class="p">,</span><span class="n">symbols</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">,</span><span class="s">&#39;O&#39;</span><span class="p">],</span><span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+<span class="c"># potential 2</span>
+<span class="n">pot2</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;LJ&#39;</span><span class="p">,</span><span class="n">symbols</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span><span class="s">&#39;H&#39;</span><span class="p">],</span><span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span><span class="n">cutoff</span><span class="o">=</span><span class="mf">10.0</span><span class="p">)</span>
+
+<span class="c"># add potentials to respective calculators</span>
+<span class="n">calc1</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">pot1</span><span class="p">)</span>
+<span class="n">calc2</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">pot2</span><span class="p">)</span>
+<span class="n">system</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calc1</span><span class="p">)</span>
+
+<span class="c"># write energies and forces for the calculators both separately and combined</span>
+<span class="k">print</span> <span class="s">&quot;Only potential 1&quot;</span>
+<span class="k">print</span> <span class="n">system</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+<span class="k">print</span> <span class="n">system</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()</span>
+<span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+
+<span class="k">print</span> <span class="s">&quot;Only potential 2&quot;</span>
+<span class="k">print</span> <span class="n">calc2</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">calc2</span><span class="o">.</span><span class="n">get_forces</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+<span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+
+<span class="k">print</span> <span class="s">&quot;Both potentials by calculator wrapping&quot;</span>
+<span class="n">calc1</span><span class="o">.</span><span class="n">add_calculator</span><span class="p">(</span><span class="n">calc2</span><span class="p">)</span>
+<span class="k">print</span> <span class="n">system</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+<span class="k">print</span> <span class="n">system</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()</span>
+<span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+
+<span class="n">calc1</span><span class="o">.</span><span class="n">remove_calculator</span><span class="p">(</span><span class="n">calc2</span><span class="p">)</span>
+<span class="n">calc1</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">pot2</span><span class="p">)</span>
+<span class="k">print</span> <span class="s">&quot;Both potentials in one calculator&quot;</span>
+<span class="k">print</span> <span class="n">system</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+<span class="k">print</span> <span class="n">system</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()</span>
+<span class="k">print</span> <span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+</pre></div>
+</div>
+<p>This will output:</p>
+<div class="highlight-python"><pre>Only potential 1
+-0.015380859375
+[[ 0.04541016  0.          0.        ]
+ [-0.04541016  0.          0.        ]
+ [ 0.          0.          0.        ]]
+
+
+Only potential 2
+-0.00194931030273
+[[ 0.          0.          0.        ]
+ [ 0.          0.00291824  0.00291824]
+ [ 0.         -0.00291824 -0.00291824]]
+
+
+Both potentials by calculator wrapping
+-0.0173301696777
+[[ 0.04541016  0.          0.        ]
+ [-0.04541016  0.00291824  0.00291824]
+ [ 0.         -0.00291824 -0.00291824]]
+
+
+Both potentials in one calculator
+-0.0173301696777
+[[ 0.04541016  0.          0.        ]
+ [-0.04541016  0.00291824  0.00291824]
+ [ 0.         -0.00291824 -0.00291824]]</pre>
+</div>
+<p>Notice how in the third printout the calculators <cite>calc1</cite> and <cite>calc2</cite> are wrapped together, and the result is their sum. In the fourth case, <cite>calc2</cite> is discarded and instead <cite>pot2</cite> is added directly to <cite>calc1</cite>. The result is the same, but the latter option is better performance wise, since wrapping the calculators requires both to be separately managed during calculation.</p>
+<span class="target" id="energy-evaluation"></span><span class="target" id="force-evaluation"></span><span class="target" id="electronegativity-evaluation"></span><span class="target" id="stress-evaluation"></span><span class="target" id="role-of-other-classes"></span></div>
+<div class="section" id="list-of-methods">
 <span id="pysic-class-autogenerated"></span><h2>List of methods<a class="headerlink" href="#list-of-methods" title="Permalink to this headline">¶</a></h2>
 <p>Below is a list of methods in <a class="reference internal" href="#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>, grouped according to
 the type of functionality.</p>
@@ -149,6 +265,14 @@ the type of functionality.</p>
 <ul class="simple">
 <li><a class="reference internal" href="#pysic.calculator.Pysic.get_charge_relaxation" title="pysic.calculator.Pysic.get_charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">get_charge_relaxation()</span></tt></a></li>
 <li><a class="reference internal" href="#pysic.calculator.Pysic.set_charge_relaxation" title="pysic.calculator.Pysic.set_charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">set_charge_relaxation()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="calculator-handling">
+<h3>Calculator handling<a class="headerlink" href="#calculator-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.calculator.Pysic.add_calculator" title="pysic.calculator.Pysic.add_calculator"><tt class="xref py py-meth docutils literal"><span class="pre">add_calculator()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.calculator.Pysic.get_calculators" title="pysic.calculator.Pysic.get_calculators"><tt class="xref py py-meth docutils literal"><span class="pre">get_calculators()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.calculator.Pysic.remove_calculator" title="pysic.calculator.Pysic.remove_calculator"><tt class="xref py py-meth docutils literal"><span class="pre">remove_calculator()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="calculations">
@@ -211,6 +335,17 @@ The total potential of the system is then the sum of the individual potentials.<
 If false, the Pysic tries to evaluate what needs updating by
 consulting the <a class="reference internal" href="#pysic.calculator.Pysic.core" title="pysic.calculator.Pysic.core"><tt class="xref py py-data docutils literal"><span class="pre">core</span></tt></a> instance of <a class="reference internal" href="coremirror class.html#pysic.core.CoreMirror" title="pysic.core.CoreMirror"><tt class="xref py py-class docutils literal"><span class="pre">CoreMirror</span></tt></a>.</dd>
 </dl>
+<dl class="method">
+<dt id="pysic.calculator.Pysic.add_calculator">
+<tt class="descname">add_calculator</tt><big>(</big><em>calculator</em><big>)</big><a class="headerlink" href="#pysic.calculator.Pysic.add_calculator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a calculator to the list of external calculators.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>calculator: an ASE calculator object</dt>
+<dd>a new calculator to describe interactions</dd>
+</dl>
+</dd></dl>
+
 <dl class="method">
 <dt id="pysic.calculator.Pysic.add_potential">
 <tt class="descname">add_potential</tt><big>(</big><em>potential</em><big>)</big><a class="reference internal" href="_modules/pysic/calculator.html#Pysic.add_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.calculator.Pysic.add_potential" title="Permalink to this definition">¶</a></dt>
@@ -329,6 +464,12 @@ cutoffs.</p>
 <dt id="pysic.calculator.Pysic.get_atoms">
 <tt class="descname">get_atoms</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/calculator.html#Pysic.get_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.calculator.Pysic.get_atoms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object assigned to the calculator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.calculator.Pysic.get_calculators">
+<tt class="descname">get_calculators</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.calculator.Pysic.get_calculators" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the list of other calculators to be used with Pysic.</p>
 </dd></dl>
 
 <dl class="method">
@@ -502,6 +643,17 @@ to check if the cutoffs have changed.</p>
 <dl class="docutils">
 <dt>cutoffs: list of doubles</dt>
 <dd>new cutoffs</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.calculator.Pysic.remove_calculator">
+<tt class="descname">remove_calculator</tt><big>(</big><em>calculator</em><big>)</big><a class="headerlink" href="#pysic.calculator.Pysic.remove_calculator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove a calculator from the list of calculators.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>calculator: an ASE calculator object</dt>
+<dd>the calculator to be removed</dd>
 </dl>
 </dd></dl>
 
