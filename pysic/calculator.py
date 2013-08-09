@@ -161,6 +161,8 @@ class Pysic:
         self.set_charge_relaxation(charge_relaxation)
         self.set_coulomb_summation(coulomb)
         
+        self.charges = None
+        
         self.forces = None
         self.stress = None
         self.energy = None
@@ -464,8 +466,16 @@ class Pysic:
         if atoms == None:
             pass
         else:
-            if(self.structure != atoms or
-               (self.structure.get_charges() != atoms.get_charges()).any()):
+            atoms_changed = False
+            
+            try:
+                atoms_changed = self.structure != atoms or \
+                    (self.structure.get_initial_charges() != atoms.get_initial_charges()).any()
+            except:
+                atoms_changed = self.structure != atoms or \
+                    (self.structure.get_charges() != atoms.get_charges()).any()
+
+            if(atoms_changed):
                 self.forces = None
                 self.energy = None
                 self.stress = None
@@ -1381,7 +1391,12 @@ class Pysic:
         
         self.update_core_neighbor_lists()
 
-                    
+
+    def get_charges(self):
+        """Update for ASE 3.7"""
+    
+        return self.charges
+    
 
     def update_core_charges(self):
         """Updates atomic charges in the core."""
@@ -1394,6 +1409,7 @@ class Pysic:
         self.electronegativities = None
         
         pf.pysic_interface.update_atom_charges(charges)
+        self.charges = charges
         
         Pysic.core.set_charges(charges)
             
@@ -1443,7 +1459,12 @@ class Pysic:
         
         
         masses = np.array( self.structure.get_masses() )
-        charges = np.array( self.structure.get_charges() )
+        try:
+            self.charges = np.array( self.structure.get_initial_charges() )
+        except:
+            self.charges = np.array( self.structure.get_charges() )
+        
+        charges = self.charges
         positions = np.array( self.structure.get_positions() ).transpose()
         momenta = np.array( self.structure.get_momenta() ).transpose()
         tags = np.array( self.structure.get_tags() )
@@ -1631,13 +1652,24 @@ class Pysic:
         self.set_atoms(system)
         self.set_core()
         charges[atom_index] += 1.0*shift
-        system.set_charges(charges)
+        try:
+            system.set_charges(charges)
+        except:
+            system.set_initial_charges(charges)
+
         energy_p = self.get_potential_energy(system)
         charges[atom_index] -= 2.0*shift
-        system.set_charges(charges)
+        try:
+            system.set_charges(charges)
+        except:
+            system.set_initial_charges(charges)
+
         energy_m = self.get_potential_energy(system)
         charges[atom_index] += 1.0*shift
-        system.set_charges(charges)
+        try:
+            system.set_charges(charges)
+        except:
+            system.set_initial_charges(charges)
                 
         self.energy == None
         self.set_atoms(orig_system)

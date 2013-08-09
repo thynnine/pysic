@@ -678,9 +678,13 @@ class CoreMirror:
             return False
         if len(self.structure) != len(atoms):
             return False
-        if ((self.structure.get_charges() != atoms.get_charges()).any()):
-            return False
-        
+        try:
+            if ((self.structure.get_initial_charges() != atoms.get_initial_charges()).any()):
+                return False
+        except:
+            if ((self.structure.get_charges() != atoms.get_charges()).any()):
+                return False
+
         return True
             
     def cell_ready(self,atoms):
