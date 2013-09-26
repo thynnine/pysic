@@ -1,4 +1,106 @@
 #! /usr/bin/env python
+from pysic.utility.mpi import *
+
+
+class Warning:
+    """A warning raised due to a potentially dangerous action.
+    
+    The warning is not an exception, so it doesn't by default interrupt execution.
+    It will, however, display a message or perform an action depending on the
+    warning settings.
+    
+    The warning levels are:
+
+        1: a condition that leads to unwanted behaviour (e.g., creating redundant potential in core)
+        2: a condition that is likely unwanted, but possibly a hack
+        3: a condition that is likely unwanted, but is a featured hack (e.g., bond order mixing)
+        4: a condition that is harmless but may lead to errors later (e.g., defining a potential without targets - often you'll specify the targets later)
+        5: a condition that may call for attention (notes to user)
+    
+    Parameters:
+    
+    message: string
+        information describing the cause for the warning
+    level: int
+        severity of the warning (1-5, 1 being most severe)
+    """
+    
+    warning_level = 3 # 0-6, 0: no warnings, 5: all warnings, 6: also interrupt
+    headers = ['','WARNING','Warning','NOTE','Note','note']
+    
+    def __init__(self, message, level):
+        self.message = message
+        self.level = level
+
+    def display(self):
+        """Displays the message related to this warning, but only if the level of
+        the warning is smaller (more severe) than the global warning_level.
+        """
+        if Warning.warning_level >= self.level:
+    
+            warn = """
+            
+*** """+Warning.headers[self.level]+""" ***
+            
+"""+self.message+"""
+            
+*** """+Warning.headers[self.level]+""" ***
+            
+"""
+            mprint(warn)
+
+        if Warning.warning_level == 6:
+            if self.level <= 3:
+                raise WarningInterruptException(self.message)
+
+
+
+class WarningInterruptException(Exception):
+    """An error raised automatically for any warning when
+    strict warnings are in use (warning_level = 6).
+    """
+    def __init__(self, message):
+        self.message = message
+
+    def __str__(self):
+        return """Interrupted execution due to a warning.
+        
+        Strict warnings are on. To control the warnings level, use
+        pysic.utility.error.set_warning_level(level), where 'level'
+        is an integer between 0 (no warnings) and 6 (treat warnings as errors).
+        """
+
+
+def set_warning_level(level):
+    """Set the warning level.
+    
+    Parameters:
+    
+    level: int
+        The level of warnings displayed. Should be an integer between 0 (no warnings) and 6 (warnings are treated as errors).
+    """
+    if level < 0 or level > 6:
+        print "warning level must be between 0 (no warnings) and 6 (warnings are errors)"
+    else:
+        Warning.warning_level = level
+
+
+
+def warn(message, level):
+    """Raise and display a warning.
+    
+    Parameters:
+    
+    message: string
+        information describing the cause for the warning
+    level: int
+        severity of the warning (1-5, 1 being most severe)
+    """
+
+    wrn = Warning(message, level)
+    wrn.display()
+    return wrn
+
 
 
 class InvalidPotentialError(Exception):

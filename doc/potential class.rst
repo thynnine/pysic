@@ -306,7 +306,7 @@ where :math:`\varepsilon` is an energy scale constant, :math:`r_1` and :math:`r_
 
 Keywords::
 
-    >>> names_of_parameters('shift')
+    >>> names_of_parameters('shift_power')
     ['epsilon', 'r1', 'r2', 'n']
 
 .. only:: html
@@ -325,7 +325,7 @@ Keywords::
        x.append( xval )
        y.append( (10.0 - xval) / (10.0 - 2.0) * (10.0 - xval) / (10.0 - 2.0) )
    plt.plot(x,y)
-   plt.title(r'Power decay potential: $\varepsilon = 1.0$, $r_1 = 10.0$, $r_2 = 2.0$, $n = 2.0$')
+   plt.title(r'Shifted power potential: $\varepsilon = 1.0$, $r_1 = 10.0$, $r_2 = 2.0$, $n = 2.0$')
    plt.xlim(0.9,5.0)
    #plt.ylim(0.0,1.0)
    plt.xlabel('$r$')
@@ -556,7 +556,7 @@ Keywords::
         
    plt.plot(x,y)
    
-   plt.title(r'Exponential potential: $\varepsilon = 1.0$, $\zeta = 0.5$')
+   plt.title(r'Exponential potential: $\varepsilon = -1.0$, $\zeta = 0.5$')
    plt.xlim(-0.0,10.0)
    plt.ylim(-1.0,0.0)
    plt.xlabel('$r$')

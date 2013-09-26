@@ -10,7 +10,7 @@ Pysic (Pythonic simulation code)
 
 |logo|
 
-`Teemu Hynninen <http://http://physics.aalto.fi/personnel/?id=209>`_ (2011-2013)
+`Teemu Hynninen <http://physics.aalto.fi/~tjh>`_ (2011-2013)
 
 `Tampere University of Technology <http://www.tut.fi>`_ 
 `Aalto University, Helsinki <http://www.aalto.fi>`_

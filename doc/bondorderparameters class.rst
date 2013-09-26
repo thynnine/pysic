@@ -93,6 +93,87 @@ Since bond order factors such as
 atomic coordination need not decay as a function of distance, one must always
 define a margin for continuous cutoff in bond order factors.
 
+.. file:atomic and pairwise factors
+
+.. _atomic and pairwise factors:
+
+
+
+Atomic and pairwise factors
+---------------------------------------
+
+Two types of factors can be defined: atomic or pairwise (per bond) factors. 
+Let us first give formal definitions for these types and then discuss the differences in their use and behavior.
+
+Atomic factors
+__________________
+
+Atomic factors are of the form
+
+.. math::
+
+  b_i = s_i( \sum_{j,\ldots} c_{ij\ldots}),
+
+where the local factors :math:`c_{ij\ldots}` may have 2, 3, or more indices depending on how many bodies
+affect the factor. When this kind of a factor is applied on an :math:`n`-body potential, :math:`v_{ij\ldots}`, 
+an :math:`n`-body factor is created as the average of the atomic factors
+
+.. math::
+
+ b_{ij\ldots} = \frac{1}{n}(b_i + b_j + \ldots).
+
+The resulting potential is then
+
+.. math::
+
+ U = \sum_{i,j,\ldots} b_{ij\ldots} v_{ij\ldots},
+
+where the summation goes over all :math:`n`-chains.
+
+Pairwise factors
+___________________
+
+Pairwise factors, on the other hand are only defined for pair potentials :math:`v_{ij}`. These factors scale
+the interaction by
+
+.. math::
+
+ U = \sum_{i,j} b_{ij} v_{ij},
+
+where the summation goes over all pairs :math:`(i,j)`. Note that this form requires :math:`b_{ij}` to be
+symmetric with respect to :math:`i` and :math:`j`.
+It would also be possible to define the factor through
+
+.. math::
+
+ U = \frac{1}{2} \sum_{i \ne j} \tilde{b}_{ij} v_{ij},
+
+where the sum goes over all indices --- and thus over all pairs twice. Using the notation above, this is equivalent to
+
+.. math::
+
+ U = \sum_{i,j} \frac{1}{2}(\tilde{b}_{ij}+\tilde{b}_{ji}) v_{ij}.
+
+Clearly, :math:`b_{ij} = \frac{1}{2}(\tilde{b}_{ij}+\tilde{b}_{ji})`.
+The factor :math:`\tilde{b}_{ij}` defined in this manner need not be symmetric, since the summation automatically
+leads to the symmetric form. Because of this, to avoid the need to force symmetry on :math:`b_{ij}`, 
+Pysic calculates the pairwise factors using :math:`b_{ij} = \frac{1}{2}(\tilde{b}_{ij}+\tilde{b}_{ji})`. 
+Therefore it is only necessary to implement the non-symmetric factors :math:`\tilde{b}_{ij}`.
+
+It is important to note that any scaling functions are applied on the factors :math:`\tilde{b}_{ij}`,
+not on :math:`b_{ij}`. The difference can be seen with a simple example. Let our factor be :math:`\tilde{b}_{ij} = \sqrt{\sum_{k} c_{ijk}}`. Then, :math:`b_{ij} = \frac{1}{2} (\sqrt{\sum_{k} c_{ijk}} + \sqrt{\sum_{k} c_{jik}}) \ne \sqrt{\frac{1}{2}(\sum_{k} c_{ijk} + c_{jik})}`. Also note that :ref:`mixing bond order types` is not possible between atomic and pairwise factors.
+
+Only use a pairwise factor with a pair potential!
+If a pairwise factor is applied on an :math:`n`-body potential where :math:`n \ne 2`, it will automatically be zero. However, applying such a factor will result in the potential being multiplied by the factor, and so the potential becomes zero also.
+
+Pairwise and atomic factors can be used on one and the same pair potential, in which case they are simply added together:
+
+.. math::
+  
+  b_{ij} = \frac{1}{2}(b_i + b_j + \tilde{b}_{ij} + \tilde{b}_{ji}).
+
+The usefulness of this is probably limited --- this behavior is adopted to avoid conflicts.
+
 .. file:defining parameters for bond order factors
 
 .. _defining parameters for bond order factors:
@@ -105,46 +186,131 @@ Defining parameters
 -------------------
 
 A :class:`~pysic.interactions.bondorder.BondOrderParameters` instance defines the type of the bond order factor,
-the cutoffs, and parameters for one set of elements. The parameters are formally split
-according to the number of atoms they act on. So, an n-body factor can have parameters
-which are applied for 1-body, 2-body, etc. terms. Bond order factors are applied and 
-parameterized by atomic element types (chemical symbols). An n-body factor must always have
-one or several sets of n symbols to designate the atoms it affects. So, 2- and 3-body factors
+the cutoffs, and parameters for one set of elements. The parameters are formally split to scaling function parameters
+and local summation parameters, where for a factor of type
+
+.. math::
+
+  b_i = s_i(\sum_j c_{ij})
+
+:math:`s_i` is the scaling function and :math:`\sum_j c_{ij}` is the local sum (similarly for many-body factors). 
+
+This division is mostly cosmetic, though, and the parameters could just as well be defined
+as a single list.
+
+Bond order factors are applied and 
+parameterized by atomic element types (chemical symbols). An :math:`n`-body factor must always have
+one or several sets of :math:`n` symbols to designate the atoms it affects. So, 2- and 3-body factors
 could accept for instance the following lists of symbols, respectively::
 
       >>> two_body_targets = [['H', 'H'], ['H', 'O'], ['O', 'O']]
       >>> three_body_targets = [['Si', 'O', 'H']]
 
-As a rule of thumb, if an n-body bond order factor incorporates parameters for m bodies 
-(:math:`m \le n`), then these parameters are targeted at the first m symbols of the target list.
-For instance, if a 3-body factor has the targets of the above example (three_body_targets)
-and it contains 1- and 2-body parameters, then the 1-body parameters are targeted at Si atoms
-and the 2-body parameters at Si-O bonds.
+Atomic factors
+__________________
 
-As an example, the Tersoff bond order factor
+As an example, the :ref:`power decay bond order factor`
+
+.. math::
+
+   b_i = \sum_{j \ne i} f(r_{ij})  \left(\frac{a}{r_{ij}}\right)^{n}
+ 
+is a two-body factor and therefore requires two elements as its target. It includes no scaling and two local summation factors.
+
+Such a bond order factor could be created with the following command::
+
+     >>> bonds = pysic.BondOrderParameters('power_bond', cutoff=3.2, cutoff_margin=0.4,
+     ...                                   symbols=[['Si', 'Si']],
+     ...                                   parameters=[[],[a, n]])
+
+or alternatively in pieces by a series of commands::
+
+   >>> bonds = pysic.BondOrderParameters('power_bond')
+   >>> bonds.set_cutoff(3.2)
+   >>> bonds.set_cutoff_margin(0.4)
+   >>> bonds.set_symbols([['Si', 'Si']])
+   >>> bonds.set_parameter_value('a', a)
+   >>> bonds.set_parameter_value('n', n)
+
+To be used in calculations, this is then passed on to a :class:`~pysic.interactions.bondorder.Coordinator`, 
+:class:`~pysic.interactions.local.Potential`, and :class:`~pysic.calculator.Pysic` with::
+
+    >>> crd = pysic.Coordinator( bonds )
+    >>> pot = pysic.Potential( ... , coordinator=crd )
+    >>> cal = pysic.Pysic( potentials=pot )
+
+The above factor will only consider Si-Si pairs in the local summation :math:`b_i = \sum_j c_{ij}`, i.e., the atoms :math:`i` and :math:`j` must both be silicons. 
+If also, say Si-O pairs should be taken into account,
+the list needs to be expanded:
+
+    >>> bonds.add_symbols([['Si','O']])
+    >>> bonds.get_symbols()
+    [['Si', 'Si'], ['Si', 'O']]
+
+This will apply the factor on Si atoms so that the summation :math:`b_i = \sum_j c_{ij}` goes over Si-Si and Si-O pairs, i.e., atom :math:`i` is Si but atom :math:`j` may be either Si or O.
+
+If you want to define a bond factor also for oxygens, this can be done separately with for instance::
+
+     >>> bonds2 = pysic.BondOrderParameters('power_bond', cutoff=3.2, cutoff_margin=0.4,
+     ...                                    symbols=[['O', 'O'], ['O', 'Si']],
+     ...                                    parameters=[[],[a, n]])
+     >>> crd2 = pysic.Coordinator( bonds2 )
+     >>> pot2 = pysic.Potential( ... , coordinator=crd2 )
+     >>> cal.add_potential( pot2 )
+
+Here one needs to be careful. If you apply a bond order factor on a potential, say a Si-O pair potential, the factor is applied on both Si and O atoms. However, if no parameters are applied for O, the factor for it is zero. That is, in the case of a Si-O pair (Si is :math:`i` and O is :math:`j`) the bond factor :math:`b_{ij} = \frac{1}{2}(b_i + b_j)=\frac{1}{2}b_i`, which may be not the intended result.
+
+If you want to have different local parameters for the different pairs O-O and O-Si, you must define two 
+:class:`~pysic.interactions.bondorder.BondOrderParameters` objects and wrap them in a :class:`~pysic.interactions.bondorder.Coordinator`::
+
+   >>> bonds_oo  = pysic.BondOrderParameters('power_bond', cutoff=3.2, cutoff_margin=0.4,
+   ...                                       symbols=[['O', 'O']],
+   ...                                       parameters=[[],[a_oo, n_oo]])
+   >>> bonds_osi = pysic.BondOrderParameters('power_bond', cutoff=3.2, cutoff_margin=0.4,
+   ...                                       symbols=[['O', 'Si']],
+   ...                                       parameters=[[],[a_osi, n_osi]])
+   >>> crd3 = pysic.Coordinator( [bonds_oo, bonds_osi] )
+   >>> pot3 = pysic.Potential( ... , coordinator=crd3 )
+   >>> cal.set_potentials( [pot, pot3] )
+
+That is, local summation is done using all the given parameters summed together.
+If you apply a scaling factor on a bond order factor, however, it is applied only once. The scaling is determined by the first
+:class:`~pysic.interactions.bondorder.BondOrderParameters` object in the :class:`~pysic.interactions.bondorder.Coordinator`
+which defines a scaling function and whose first target is the atom for which the factor is being calculated. This can be used
+for :ref:`mixing bond order types`.
+
+As a rule of thumb, remember that one :class:`~pysic.interactions.local.Potential` can contain only one :class:`~pysic.interactions.bondorder.Coordinator`,
+but a :class:`~pysic.interactions.bondorder.Coordinator` can contain many :class:`~pysic.interactions.bondorder.BondOrderParameters`. 
+So if your bond order factor requires several sets of parameters due to the different element pairs, it is safest to define each set
+of parameters using its own :class:`~pysic.interactions.bondorder.BondOrderParameters` object and wrap the parameters involved in one
+local summation in a :class:`~pysic.interactions.bondorder.Coordinator`.
+
+Pairwise factors
+___________________
+
+As an example, the :ref:`tersoff bond order factor`
 
 
 .. math::
 
-    b_i = \left[ 1 + \left( \beta_i \sum_{j \ne i} \sum_{k \ne i,j} \xi_{ijk} g_{ijk}  \right)^{\eta_i} \right]^{-\frac{1}{2 \eta_i}}
+    \tilde{b}_{ij} = \left[ 1 + \left( \beta \sum_{k \ne i,j} \xi_{ijk} g_{ijk}  \right)^{\eta} \right]^{-\frac{1}{2 \eta}}
 
 .. math::
 
-    \xi_{ijk} = f(r_{ij}) f(r_{ik}) \exp\left[a_{ij}^{\mu_i} (r_{ij} - r_{ik})^{\mu_i} \right]
+    \xi_{ijk} = f(r_{ik}) \exp\left[a^{\mu} (r_{ij} - r_{ik})^{\mu} \right]
 
 .. math::
 
-    g_{ijk} = 1 + \frac{c_{ij}^2}{d_{ij}^2} - \frac{c_{ij}^2}{d_{ij}^2 + (h_{ij} - \cos \theta_{ijk})^2}
+    g_{ijk} = 1 + \frac{c^2}{d^2} - \frac{c^2}{d^2 + (h - \cos \theta_{ijk})^2}
 
-is a three-body factor (it includes terms depending on atom triplets :matH:`(i, j, k)`) and therefore requires a set of three
-elements as its target. It incorporates three single body and four two body parameters.
+is a three-body factor (it includes terms depending on atom triplets :math:`(i, j, k)`) and therefore requires a set of three
+elements as its target. It incorporates two scaling and five local sum parameters.
 Such a bond order factor could be created with the following command::
 
      >>> bonds = pysic.BondOrderParameters('tersoff', cutoff=3.2, cutoff_margin=0.4,
      ...       	 		           symbols=[['Si', 'Si', 'Si']],
-     ...				   parameters=[[beta, eta, mu],
-     ...				               [a, c, d, h],
-     ...					       [ ]])
+     ...				   parameters=[[beta, eta],
+     ...				               [a, c, d, h, mu]])
 
 or alternatively in pieces by a series of commands::
 
@@ -154,51 +320,56 @@ or alternatively in pieces by a series of commands::
    >>> bonds.set_symbols([['Si', 'Si', 'Si']])
    >>> bonds.set_parameter_value('beta', beta)
    >>> bonds.set_parameter_value('eta', eta)
-   >>> bonds.set_parameter_value('mu', mu)
    >>> bonds.set_parameter_value('a', a)
    >>> bonds.set_parameter_value('c', c)
    >>> bonds.set_parameter_value('d', d)
    >>> bonds.set_parameter_value('h', h)
+   >>> bonds.set_parameter_value('mu', mu)
 
-To be used in calculations, this is then passed on to a :class:`~pysic.interactions.bondorder.Coordinator`, 
-:class:`~pysic.interactions.local.Potential`, and :class:`~pysic.calculator.Pysic` with::
 
-    >>> crd = pysic.Coordinator( bonds )
-    >>> pot = pysic.Potential( ... , coordinator=crd )
-    >>> cal = pysic.Pysic( potentials=pot )
-
-The above example creates a bond order factor which is applied to all Si triplets (symbols=[['Si','Si','Si']]). The command also assigns 1-body parameters :math:`\beta`, :math:`\eta`, and :math:`\mu`, and 2-body parameters 
+The above example creates a bond order factor which is applied to all Si triplets (symbols=[['Si','Si','Si']]). The command also assigns scaling parameters :math:`\beta`, :math:`\eta`, and :math:`\mu`, and local summation parameters 
 :math:`a`, :math:`c`, :math:`d`, and :math:`h`. If there are other elements in the system besides silicon, they will be completely ignored: The bond order factors are calculated as if the other elements do not exist. If one wishes to include, say, Si-O bonds in the bond order factor calculation, the list of symbols needs to be expanded by::
 
    >>> bonds.add_symbols([['Si', 'Si', 'O'],
    ...			  ['Si', 'O', 'Si'],
-   ...			  ['Si', 'O', 'O']])
+   ...			  ['O', 'Si', 'Si'],
+   ...			  ['Si', 'O', 'O'],
+   ...			  ['O', 'Si', 'O']])
    >>> bonds.get_symbols()
-   [['Si', 'Si', 'Si'], ['Si', 'Si', 'O'], ['Si', 'O', 'Si'], ['Si', 'O', 'O']]
+   [['Si', 'Si', 'Si'], ['Si', 'Si', 'O'], ['Si', 'O', 'Si'], ['O', 'Si', 'Si'], ['Si', 'O', 'O'], ['O', 'Si', 'O']]
 
-The format of the symbol list is as follows. In each triplet, the first symbol determines the element on which the factor is calculated. Since above the first symbol of each triplet is 'Si', the factor
-will only be applied on Si atoms. The other symbols define the other elements in the triplets which are taken in to account. The second and third symbols are not, however, symmetric. As the bond order factor is defined using 2-body parameters (:math:`a_ij` etc.), the first two symbols determine the elements of those two atoms (atoms :math:`i` and :math:`j`). The third symbol determines the element of the third atom (atom k) of the triplet. I.e., in the example above, Si-O bond parameters are included with::
+The format of the symbol list is as follows. In each triplet, the first two symbols determine the bond on which the factor is calculated (atoms :math:`i` and :math:`j`). 
+(For atomic factors, the first symbol determines the element on which the factor is applied.)
+The third symbol defines the other atoms in the triplets which are taken in to account (atom :math:`k`). 
+That is, in the example above, Si-(Si-O) bond parameters are included with::
 
-   >>> [['Si', 'O', 'Si'], ['Si', 'O', 'O']]
+   >>> ['Si', 'O', 'Si']
 
-where the first works for triplets O-Si-Si and the second for O-Si-O.
-However, one should note especially that a triplet A-B-C is only taken in to account if both bonds (A-B) and (B-C) have parameters associated with them. Therefore, ['Si', 'O', 'O'] is enough to fully define O-Si-O bond triplets, but to fully describe Si-Si-O, one also has to define the Si-Si bond with O as the third partner, which is given by::
+O-(Si-O) with::
 
-   >>> [['Si', 'Si', 'O']]
+   >>> ['Si', 'O', 'O']
+
+Si-(O-Si) with::
+
+   >>> ['O', 'Si', 'Si']
+
+and O-(O-Si) with::
+
+   >>> ['O', 'Si', 'O']
+
+The definition is complicated like this to enable the tuning of parameters of all the various bond combinations separately.
 
 Instead of giving a list of symbols to a single :class:`~pysic.interactions.bondorder.BondOrderParameters`, one can define many instances with different symbols and different parameters, and feed a list of these to a :class:`~pysic.interactions.bondorder.Coordinator` object.::
 
-     >>> bond_siosi = pysic.BondOrderParameters('tersoff', cutoff=3.2, cutoff_margin=0.4,
-     ...       	      			        symbols=[['Si', 'O', 'Si']],
-     ...			                parameters=[[beta_si, eta_si, mu_si],
-     ...				                    [a_sio, c_sio, d_sio, h_sio],
-     ...					            [ ]])
+     >>> bond_sioo = pysic.BondOrderParameters('tersoff', cutoff=3.2, cutoff_margin=0.4,
+     ...       	      			        symbols=[['Si', 'O', 'O']],
+     ...			                parameters=[[beta_si, eta_si],
+     ...				                    [a_sio, c_sio, d_sio, h_sio, mu_si]])
      >>> bond_sisio = pysic.BondOrderParameters('tersoff', cutoff=3.5, cutoff_margin=0.5,
      ...       	                		symbols=[['Si', 'Si', 'O']],
-     ...			                parameters=[[beta_si, eta_si, mu_si],
-     ...				                    [a_sisi, c_sisi, d_sisi, h_sisi],
-     ...					            []])
-     >>> bond_list = [bond_siosi,bond_sisio]
+     ...			                parameters=[[beta_si, eta_si],
+     ...				                    [a_sisi, c_sisi, d_sisi, h_sisi, mu_si]])
+     >>> bond_list = [bond_sioo,bond_sisio]
      >>> crd = pysic.Coordinator( bond_list )
 
 The above example would assign the parameter values
@@ -219,7 +390,7 @@ The above example would assign the parameter values
 
 This gives the user the possibility to precisely control the parameters, including cutoffs, for different elements.
 
-Note that the beta, eta, and mu parameters are the same for both :class:`~pysic.interactions.bondorder.BondOrderParameters` objects defined in the above example. They could be different in principle, but when the factors are calculated, the 1-body parameters are taken from the first object in the list of bonds (bond_list) for which the first element is of the correct type. Because of this, the 1-body parameters in bond_sisio are in fact ignored. This feature can be exploited for mixing different types of bond order factors, as explained below.
+Note that the beta, eta, and mu parameters are the same for both :class:`~pysic.interactions.bondorder.BondOrderParameters` objects defined in the above example. They could be different in principle, but when the factors are calculated, the scaling parameters are taken from the first object in the list of bonds (`bond_list`) for which the first element is of the correct type. Because of this, the scaling parameters in `bond_sisio` are in fact ignored. This feature can be exploited for :ref:`mixing bond order types`.
 
 For three different elements, say C, O, and H, the possible triplets are::
 
@@ -259,8 +430,8 @@ To help in generating the tables, the utility method
 For instance, the full list of triplets above can be created with::
 
    >>> pysic.utility.convenience.expand_symbols_table([['C', 'O', 'H'], 
-   ...                                     ['C', 'O', 'H'], 
-   ...                                     ['C', 'O', 'H']])
+   ...                                                 ['C', 'O', 'H'], 
+   ...                                                 ['C', 'O', 'H']])
 
 .. file:list of bond order factors
 
@@ -298,8 +469,9 @@ _____________________________
 
 .. math::
 
-   b_i(\Sigma_i) = \varepsilon_i \frac{\Delta \Sigma_i}{1+\exp(\gamma_i \Delta \Sigma_i)}\\
-   \Delta \Sigma_i = C_i (\Sigma_i - N_i).
+   b_i(\Sigma_i) &= \begin{cases} \varepsilon_i \frac{\Delta \Sigma_i}{1+\exp(\gamma_i \Delta \Sigma_i)},& \Delta \Sigma_i > \min_\Sigma \\
+   0,& \Delta \Sigma_i < \min_\Sigma \end{cases} \\
+   \Delta \Sigma_i &= C_i (\Sigma_i - N_i).
 
 where :math:`\Sigma_i` is the bond order sum.
 
@@ -309,7 +481,7 @@ bond order factor when mixed. Especially, it is zero if not paired with other bo
 Keywords::
 
     >>> names_of_parameters('c_scale')
-    [['epsilon', 'N', 'C', 'gamma']]
+    [['epsilon', 'N', 'C', 'gamma', 'min'], []]
 
 .. file:square root scaling function
 
@@ -333,7 +505,7 @@ where :math:`\Sigma_i` is the bond order sum and :math:`\varepsilon` is a scalin
 Keywords::
 
     >>> names_of_parameters('sqrt_scale')
-    [['epsilon']]
+    [['epsilon'], []]
 
 .. file:tabulated scaling function
 
@@ -357,7 +529,7 @@ where :math:`s_i(\Sigma)` is a tabulated function. The tabulation works similarl
 Keywords::
 
     >>> names_of_parameters('table_scale')
-    [[id, range, scale]]
+    [[id, range, scale], []]
 
 
 .. file:coordination bond order factor
@@ -448,19 +620,19 @@ Keywords::
 Tersoff bond order factor
 _________________________
 
-3-body bond order factor defined as
+Pairwise 3-body bond order factor defined as
 
 .. math::
 
-    b_i = \left[ 1 + \left( \beta_i \sum_{j \ne i} \sum_{k \ne i,j} \xi_{ijk} g_{ijk}  \right)^{\eta_i} \right]^{-\frac{1}{2 \eta_i}}
+    \tilde{b}_{ij} = \left[ 1 + \left( \beta_{ij} \sum_{k \ne i,j} \xi_{ijk} g_{ijk}  \right)^{\eta_{ij}} \right]^{-\frac{1}{2 \eta_{ij}}}
 
 .. math::
 
-    \xi_{ijk} = f(r_{ij}) f(r_{ik}) \exp\left[a_{ij}^{\mu_i} (r_{ij} - r_{ik})^{\mu_i} \right]
+    \xi_{ijk} = f(r_{ik}) \exp\left[a_{ijk}^{\mu_{ijk}} (r_{ij} - r_{ik})^{\mu_{ijk}} \right]
 
 .. math::
 
-    g_{ijk} = 1 + \frac{c_{ij}^2}{d_{ij}^2} - \frac{c_{ij}^2}{d_{ij}^2 + (h_{ij} - \cos \theta_{ijk})^2}
+    g_{ijk} = 1 + \frac{c_{ijk}^2}{d_{ijk}^2} - \frac{c_{ijk}^2}{d_{ijk}^2 + (h_{ijk} - \cos \theta_{ijk})^2}
 
 where r and theta are distances and angles between the atoms.
 This rather complicated bond factor takes also into account the directionality of bonds in its angle dependency.
@@ -468,7 +640,7 @@ This rather complicated bond factor takes also into account the directionality o
 Keywords::
 
     >>> names_of_parameters('tersoff')
-    [['beta', 'eta', 'mu'], ['a', 'c', 'd', 'h'], []]
+    [['beta', 'eta'], ['a', 'c', 'd', 'h', 'mu']]
 
 .. file:bondorderparameters class - autogenerated
 

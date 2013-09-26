@@ -201,6 +201,19 @@ def number_of_targets(potential_name):
         return 0
 
 
+def level_of_factor(bond_order_name):
+    """Tells the level of a bond order factor, i.e., is it a per-atom or per-pair factor.
+    
+    Parameters:
+
+    bond_order_name: string
+        the name of the bond order factor
+    """
+    if(is_bond_order_factor(bond_order_name)):
+        return pf.pysic_interface.level_of_bond_order_factor(bond_order_name)
+    else:
+        return 0
+
 
 def number_of_parameters(potential_name,as_list=False):
     """Tells how many parameters a potential, bond order factor, charge relaxation mode or coulomb summation mode incorporates.
@@ -228,8 +241,8 @@ def number_of_parameters(potential_name,as_list=False):
             return n_params
     elif(is_bond_order_factor(potential_name)):
         n_targets = pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
-        n_params = [ [""] ]*n_targets
-        for i in range(n_targets):
+        n_params = [ [""] ]*2
+        for i in range(2):
             n_params[i] = pf.pysic_interface.number_of_parameters_of_bond_order_factor(potential_name,i+1)
         return n_params
     elif(is_charge_relaxation(potential_name)):
@@ -274,14 +287,16 @@ def names_of_parameters(potential_name):
                 index += 1
                 
         return param_names
-
+    
     elif(is_bond_order_factor(potential_name)):
-        n_targets = pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
-        param_codes = [ [0] ]*n_targets
-        param_names = [ [] ]*n_targets
-        n_params = number_of_parameters(potential_name)
 
-        for i in range(n_targets):
+        n_targets = pf.pysic_interface.number_of_targets_of_bond_order_factor(potential_name)
+        param_codes = [ [0] ]*2
+        param_names = [ [] ]*2
+        
+        n_params = number_of_parameters(potential_name)
+        
+        for i in range(2):
             param_codes[i] = pf.pysic_interface.names_of_parameters_of_bond_order_factor(potential_name,i+1).transpose()
             param_names[i] = [""]*n_params[i]
 
@@ -663,9 +678,13 @@ class CoreMirror:
             return False
         if len(self.structure) != len(atoms):
             return False
-        if ((self.structure.get_charges() != atoms.get_charges()).any()):
-            return False
-        
+        try:
+            if ((self.structure.get_initial_charges() != atoms.get_initial_charges()).any()):
+                return False
+        except:
+            if ((self.structure.get_charges() != atoms.get_charges()).any()):
+                return False
+
         return True
             
     def cell_ready(self,atoms):

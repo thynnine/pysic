@@ -69,8 +69,11 @@ module geometry
   ! *potential_indices the indices of the potentials for which this atom is a valid target at first position (see :func:`potential_affects_atom`)
   ! *bond_indices the indices of the bond order factors for which this atom is a valid target at first position (see :func:`bond_order_factor_affects_atom`)
   ! *subcell_indices indices of the subcell containing the atom, used for fast neighbor searching (see :data:`subcell`)
+  ! *max_potential_radius the maximum cutoff of any potential listed in potential_indices
+  ! *max_bond_radius the maximum cutoff of any bond order factor listed in bond_indices
   type atom
-     double precision :: mass, charge, position(3), momentum(3)
+     double precision :: mass, charge, position(3), momentum(3), &
+          max_potential_radius, max_bond_radius
      integer :: index, tags, n_pots, n_bonds, subcell_indices(3)
      logical :: potentials_listed, bond_order_factors_listed
      character(len=label_length) :: element
@@ -232,6 +235,8 @@ contains
        nullify(atoms(i)%potential_indices)
        atoms(i)%bond_order_factors_listed = .false.
        nullify(atoms(i)%bond_indices)
+       atoms(i)%max_potential_radius = 0.d0
+       atoms(i)%max_bond_radius = 0.d0
     end do
 
   end subroutine generate_atoms
@@ -377,6 +382,24 @@ contains
 
   end subroutine assign_potential_indices
 
+  subroutine assign_max_potential_cutoff(atom_in, max_cut)
+    implicit none
+    double precision, intent(in) :: max_cut
+    type(atom), intent(inout) :: atom_in
+
+    atom_in%max_potential_radius = max_cut
+
+  end subroutine assign_max_potential_cutoff
+
+
+  subroutine assign_max_bond_order_factor_cutoff(atom_in, max_cut)
+    implicit none
+    double precision, intent(in) :: max_cut
+    type(atom), intent(inout) :: atom_in
+
+    atom_in%max_bond_radius = max_cut
+
+  end subroutine assign_max_bond_order_factor_cutoff
 
   ! Save the indices of bond order factors affecting an atom.
   !

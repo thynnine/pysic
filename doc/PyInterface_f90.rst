@@ -91,6 +91,7 @@ to, if the routine is just a redirect of the call.
     - :func:`get_number_of_neighbors_of_atom`
     - :func:`is_bond_order_factor`
     - :func:`is_potential`
+    - :func:`level_of_bond_order_factor`
     - :func:`list_valid_bond_order_factors`
     - :func:`list_valid_potentials`
     - :func:`names_of_parameters_of_bond_order_factor`
@@ -328,7 +329,7 @@ Full documentation of subroutines in pysic_interface
     **enegs**: double precision  **intent(out)**    *size(n_atoms)*  
         array of electronegativities on all atoms
             
-  .. function:: calculate_energy(n_atoms, energy)
+  .. function:: calculate_energy(energy)
 
     Returns the total potential energy of the system
     
@@ -337,8 +338,6 @@ Full documentation of subroutines in pysic_interface
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     **energy**: double precision  **intent(out)**    *scalar*  
         total potential energy
             
@@ -632,13 +631,15 @@ Full documentation of subroutines in pysic_interface
     **id**: integer  **intent(out)**    *scalar*  
         cpu id number in MPI - 0 in serial mode
             
-  .. function:: get_ewald_energy(real_cut, reciprocal_cut, sigma, epsilon, energy)
+  .. function:: get_ewald_energy(real_cut, k_cut, reciprocal_cut, sigma, epsilon, energy)
 
     Debugging routine for Ewald
 
     Parameters:
 
     real_cut: double precision  *intent(in)*    *scalar*  
+        
+    k_cut: double precision  *intent(in)*    *scalar*  
         
     reciprocal_cut: integer  *intent(in)*    *size(3)*  
         
@@ -738,6 +739,20 @@ Full documentation of subroutines in pysic_interface
         name of a potential
     **is_ok**: logical  **intent(out)**    *scalar*  
         true if string is a name of a potential
+            
+  .. function:: level_of_bond_order_factor(bond_name, n_target)
+
+    Tells the level of a bond order factor has, i.e., is it per-atom or per-pair
+    
+    Calls :func:`get_level_of_bond_order_factor`
+    
+
+    Parameters:
+
+    bond_name: character(len=*)  *intent(in)*    *scalar*  
+        name of the bond order factor
+    **n_target**: integer  **intent(out)**    *scalar*  
+        number of targets
             
   .. function:: list_valid_bond_order_factors(n_bonds, bond_factors)
 
@@ -896,7 +911,7 @@ Full documentation of subroutines in pysic_interface
     Calls :func:`core_release_all_memory`
 
             
-  .. function:: set_ewald_parameters(n_atoms, real_cut, reciprocal_cut, sigma, epsilon, scaler)
+  .. function:: set_ewald_parameters(n_atoms, real_cut, k_radius, reciprocal_cut, sigma, epsilon, scaler)
 
     Sets the parameters for Ewald summation in the core.
     
@@ -907,6 +922,8 @@ Full documentation of subroutines in pysic_interface
         
     real_cut: double precision  *intent(in)*    *scalar*  
         the real-space cutoff
+    k_radius: double precision  *intent(in)*    *scalar*  
+        
     reciprocal_cut: integer  *intent(in)*    *size(3)*  
         the k-space cutoffs
     sigma: double precision  *intent(in)*    *scalar*  

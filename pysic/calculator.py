@@ -161,12 +161,16 @@ class Pysic:
         self.set_charge_relaxation(charge_relaxation)
         self.set_coulomb_summation(coulomb)
         
+        self.charges = None
+        
         self.forces = None
         self.stress = None
         self.energy = None
         self.electronegativities = None
 
         self.force_core_initialization = full_initialization
+    
+        self.extra_calculators = []
 
 
     def __eq__(self,other):
@@ -178,6 +182,8 @@ class Pysic:
             if self.neighbor_list != other.neighbor_list:
                 return False
             if self.potentials != other.potentials:
+                return False
+            if self.extra_calculators != other.extra_calculators:
                 return False
         except:
             return False
@@ -294,7 +300,9 @@ class Pysic:
         """Returns the list of potentials assigned to the calculator."""
         return self.potentials
 
-    
+    def get_calculators(self):
+        """Returns the list of other calculators to be used with Pysic."""
+        return self.extra_calculators
     
     def get_electronegativities(self, atoms=None):
         """Returns the electronegativities of atoms.
@@ -458,8 +466,16 @@ class Pysic:
         if atoms == None:
             pass
         else:
-            if(self.structure != atoms or
-               (self.structure.get_charges() != atoms.get_charges()).any()):
+            atoms_changed = False
+            
+            try:
+                atoms_changed = self.structure != atoms or \
+                    (self.structure.get_initial_charges() != atoms.get_initial_charges()).any()
+            except:
+                atoms_changed = self.structure != atoms or \
+                    (self.structure.get_charges() != atoms.get_charges()).any()
+
+            if(atoms_changed):
                 self.forces = None
                 self.energy = None
                 self.stress = None
@@ -523,6 +539,32 @@ class Pysic:
                 self.add_potential(pot)
     
     
+    def add_calculator(self,calculator):
+        """Add a calculator to the list of external calculators.
+        
+        Parameters:
+        
+        calculator: an ASE calculator object
+            a new calculator to describe interactions
+        """
+        if self.extra_calculators is None:
+            self.extra_calculators = []
+            
+        if isinstance(calculator,list):
+            calcs = calculator
+        else:
+            calcs = [calculator]
+            
+        for calc in calcs:
+            self.extra_calculators.append(calc)
+
+        self.forces = None
+        self.energy = None
+        self.stress = None
+        self.electronegativities = None
+
+
+
     def add_potential(self, potential):
         """Add a potential to the list of potentials.
         
@@ -561,6 +603,17 @@ class Pysic:
         new_cutoffs = self.get_individual_cutoffs(1.0)
         self.neighbor_lists_waiting = not self.neighbor_lists_expanded(new_cutoffs)
     
+    
+    def remove_calculator(self, calculator):
+        """Remove a calculator from the list of calculators.
+        
+        Parameters:
+        
+        calculator: an ASE calculator object
+            the calculator to be removed
+        """
+        self.extra_calculators.remove(calculator)
+
     
     def remove_potential(self, potential):
         """Remove a potential from the list of potentials.
@@ -773,6 +826,17 @@ class Pysic:
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.forces, self.stress = pf.pysic_interface.calculate_forces(n_atoms)#.transpose()
         self.forces = self.forces.transpose()
+
+        if not self.extra_calculators is None:
+            if len(self.extra_calculators) > 0:
+                # calculators should copy the system themselves, so the
+                # original system could be passed here. Maybe it is best to
+                # give a copy though, just in case? Will take more memory though.
+                system_copy = copy.deepcopy(self.structure)
+                for calc in self.extra_calculators:
+                    self.forces = self.forces + calc.get_forces(system_copy)
+                    self.stress = self.stress + calc.get_stress(system_copy)
+        
         
 
     def calculate_energy(self):
@@ -786,8 +850,14 @@ class Pysic:
         self.set_core()
         if self.charge_relaxation != None:
             self.charge_relaxation.charge_relaxation()
-        n_atoms = pf.pysic_interface.get_number_of_atoms()
-        self.energy = pf.pysic_interface.calculate_energy(n_atoms)
+        #n_atoms = pf.pysic_interface.get_number_of_atoms()
+        self.energy = pf.pysic_interface.calculate_energy()
+
+        if not self.extra_calculators is None:
+            if len(self.extra_calculators) > 0:
+                system_copy = copy.deepcopy(self.structure)
+                for calc in self.extra_calculators:
+                    self.energy = self.energy + calc.get_potential_energy(system_copy)
 
 
     def calculate_stress(self):
@@ -802,6 +872,13 @@ class Pysic:
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.forces, self.stress = pf.pysic_interface.calculate_forces(n_atoms)
         self.forces = self.forces.transpose()
+
+        if not self.extra_calculators is None:
+            if len(self.extra_calculators) > 0:
+                system_copy = copy.deepcopy(self.system)
+                for calc in self.extra_calculators:
+                    self.forces = self.forces + calc.get_forces(system_copy)
+                    self.stress = self.stress + calc.get_stress(system_copy)
 
 
     def set_core(self):
@@ -825,7 +902,6 @@ class Pysic:
         elif self.structure.get_number_of_atoms() != pf.pysic_interface.get_number_of_atoms():
             do_full_init = True
             
-                        
         if do_full_init:
             self.initialize_fortran_core()
         else:
@@ -872,16 +948,21 @@ class Pysic:
 
     def update_core_potentials(self):
         """Generates potentials for the Fortran core."""
-                
+        
         Pysic.core.potential_lists_ready = False
         if self.potentials == None:
             pf.pysic_interface.allocate_potentials(0)
             pf.pysic_interface.allocate_bond_order_factors(0)
+            
+            n_atoms = pf.pysic_interface.get_number_of_atoms()
+            pf.pysic_interface.allocate_bond_order_storage(n_atoms,0,0)
             return
 
         if len(self.potentials) == 0:
             pf.pysic_interface.allocate_potentials(0)
             pf.pysic_interface.allocate_bond_order_factors(0)
+            n_atoms = pf.pysic_interface.get_number_of_atoms()
+            pf.pysic_interface.allocate_bond_order_storage(n_atoms,0,0)
             return
         
         n_pots = 0
@@ -902,6 +983,69 @@ class Pysic:
                 if not repeat_coord:
                     coord_list.append([coord,pot_index])
                 pot_index += 1
+            
+                # check the collection of bond order parameters for this potential
+                bond_level = 0
+                scaling_elements = []
+                noted_scaling = False
+
+                for bond in coord.get_bond_order_parameters():
+
+                    # !!!: check for overriding scaling
+                    if len(scaling_elements) == 0:
+                        if bond.includes_scaling():
+                            for elems in bond.get_symbols():
+                                scaling_elements.append(elems[0])
+                    else:
+                        if bond.includes_scaling() and not noted_scaling:
+
+                            # gather all targets of the new scaler
+                            new_elems = []
+                            for elems in bond.get_symbols():
+                                new_elems.append(elems[0])
+
+                            override = False
+
+                            # if the target already exists, we are overriding scaling
+                            for ne in new_elems:
+                                for elems in scaling_elements:
+                                    if ne == elems:
+                                        override = True
+
+                            # add the elements to the list of scaling targets
+                            for ne in new_elems:
+                                scaling_elements.append(ne)
+                                
+                            if override:
+                                noted_scaling = True
+                                warn("You are overriding bond order scaling in \n"+str(coord),3)
+                                    
+                    # !!!: check for redundancy (elements not in the potential)
+                    for elems in bond.get_symbols():
+                        for symbols in pot.get_symbols():
+                            found_symbol = False
+                            for symb in symbols:
+                                if elems[0] == symb:
+                                    found_symbol = True
+                            if not found_symbol:
+                                warn("You are applying a bond order factor on "+elems[0]+\
+                                    " to a potential which does not target this element.\n\n"+\
+                                    str(pot)+"\n\n"+str(bond),2)
+
+                    # check for different levels of bond factors
+                    if bond_level > 0:
+                        if bond_level != bond.get_level():
+                            warn("You are mixing per-atom and per-bond bond order factors for potential \n"+\
+                                str(pot),2)
+                    else:
+                        bond_level = bond.get_level()
+                
+                    # check that pairwise factors are only applied on pair potentials
+                    if bond.get_level() > 1:
+                        if pot.get_number_of_targets() != bond.get_level():
+                            warn("You are applying a level "+str(bond.get_level())+\
+                                " bond order factor on a "+str(pot.get_number_of_targets())+\
+                                "-body potential: it will be zero!",1)
             
             try:
                 alltargets = pot.get_symbols()
@@ -937,6 +1081,11 @@ class Pysic:
         is_multiplier = []
         master_potentials = []
         for pots in self.potentials:
+        
+            # warn for missing cutoffs
+            if pots.get_number_of_targets() > 1 and pots.get_cutoff() < 0.01:
+                warn("Potential with zero cutoff present: \n\n"+str(pots),1)
+        
             # reverse the lists so that the master potentials come last
             for rpot in reversed(pots.get_potentials()):
                 elemental_potentials.append(rpot)
@@ -971,6 +1120,7 @@ class Pysic:
             no_inds = np.array( n_targ*[-9] )
 
             try:
+                        
                 if mul:
                     alltargets = [mpot.get_symbols()[0]]
                 else:
@@ -1099,17 +1249,30 @@ class Pysic:
                 pf.pysic_interface.clear_potential_multipliers()
 
         n_bonds = 0
+        permutate = False
         for coord in coord_list:
             try:
                 allbonds = coord[0].get_bond_order_parameters()
                 for bond in allbonds:
+                
+                    # warn for missing cutoffs
+                    if (bond.get_number_of_targets() > 1 and bond.get_cutoff() < 0.01):
+                        warn("Bond order factor with zero cutoff present: \n\n"+str(bond),1)
+                
                     alltargets = bond.get_symbols()
                     for targets in alltargets:
-                        perms = permutations(targets)
-                        different = set(perms)
-                        n_bonds += len(different)
+                    
+                        if(permutate):
+                            # permutate bond factor symbols
+                            perms = permutations(targets)
+                            different = set(perms)
+                            n_bonds += len(different)
+
+                        else:
+                            # do not permutate the bond factor symbols
+                            n_bonds += 1
             except:
-                raise InvalidParametersError("Invalid bond order parameter indices: "+str(bond.get_symbols()))
+                raise InvalidParametersError("Invalid bond order parameter symbols: "+str(bond.get_symbols()))
 
         pf.pysic_interface.allocate_bond_order_factors(n_bonds)
 
@@ -1123,9 +1286,14 @@ class Pysic:
                         int_orig_symbs = []
                         for orig_symbs in targets:
                             int_orig_symbs.append( pu.str2ints(orig_symbs,2) )
-                        
-                        perms = permutations(targets)
-                        different = set(perms)
+                    
+                        if(permutate):
+                            # permutate bond factor symbols
+                            perms = permutations(targets)
+                            different = set(perms)
+                        else:
+                            # do not permutate the bond factor symbols
+                            different = [targets]
 
                         for symbs in different:
                             int_symbs = []
@@ -1147,13 +1315,16 @@ class Pysic:
             except:
                 raise InvalidParametersError("Failed to create a bond order factor in the core: "+str(bond))
 
-
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         pf.pysic_interface.allocate_bond_order_storage(n_atoms,
                                                        pot_index,
                                                        len(coord_list))
 
         Pysic.core.set_potentials(self.potentials)
+
+
+        self.neighbor_lists_waiting = False
+
 
             
     def update_core_coulomb(self):
@@ -1170,7 +1341,7 @@ class Pysic:
                 scales = self.coulomb.get_scaling_factors()
                 
                 # calculate the truncation limits for the k-space sum
-                reci_cell = self.structure.get_reciprocal_cell()
+                reci_cell = np.multiply(2.0*math.pi,self.structure.get_reciprocal_cell())
                 volume = np.dot( reci_cell[0], np.cross( reci_cell[1], reci_cell[2] ) )
                 k1 = int( kcut * np.linalg.norm( np.cross( reci_cell[1], reci_cell[2] ) ) / volume + 0.5 )
                 k2 = int( kcut * np.linalg.norm( np.cross( reci_cell[0], reci_cell[2] ) ) / volume + 0.5 )
@@ -1182,6 +1353,7 @@ class Pysic:
                     raise InvalidParametersError("Length of the scaling factor vector does not match the number of atoms.")
                 
                 pf.pysic_interface.set_ewald_parameters(rcut,
+                                                        kcut,
                                                         np.array([k1,k2,k3]),
                                                         sigma,
                                                         epsilon,
@@ -1219,7 +1391,12 @@ class Pysic:
         
         self.update_core_neighbor_lists()
 
-                    
+
+    def get_charges(self):
+        """Update for ASE 3.7"""
+    
+        return self.charges
+    
 
     def update_core_charges(self):
         """Updates atomic charges in the core."""
@@ -1232,6 +1409,7 @@ class Pysic:
         self.electronegativities = None
         
         pf.pysic_interface.update_atom_charges(charges)
+        self.charges = charges
         
         Pysic.core.set_charges(charges)
             
@@ -1253,17 +1431,17 @@ class Pysic:
 
          If uninitialized, the lists are created first via :meth:`~pysic.calculator.Pysic.create_neighbor_lists`.
          """
+
         if not Pysic.core.atoms_ready(self.structure):
             raise MissingAtomsError("Creating neighbor lists before updating atoms in the core.")
         cutoffs = self.get_individual_cutoffs(1.0)
-                
+
         if not self.neighbor_lists_waiting:
             self.create_neighbor_lists(cutoffs)
             self.set_cutoffs(cutoffs)
             self.neighbor_lists_waiting = True
 
         self.neighbor_list.update(self.structure)
-
         if isinstance(self.neighbor_list,FastNeighborList):
             # if we used the fast list, the core is already updated
             pass
@@ -1274,14 +1452,19 @@ class Pysic:
                 pf.pysic_interface.create_neighbor_list(index+1,np.array(nbors),np.array(offs).transpose())
 
         Pysic.core.set_neighbor_lists(self.neighbor_list)
-        
+
 
     def initialize_fortran_core(self):
         """Fully initializes the Fortran core, creating the atoms, supercell, potentials, and neighbor lists."""
         
         
         masses = np.array( self.structure.get_masses() )
-        charges = np.array( self.structure.get_charges() )
+        try:
+            self.charges = np.array( self.structure.get_initial_charges() )
+        except:
+            self.charges = np.array( self.structure.get_charges() )
+        
+        charges = self.charges
         positions = np.array( self.structure.get_positions() ).transpose()
         momenta = np.array( self.structure.get_momenta() ).transpose()
         tags = np.array( self.structure.get_tags() )
@@ -1303,11 +1486,10 @@ class Pysic:
                 
         self.update_core_supercell()
         self.update_core_potentials()
-        self.update_core_neighbor_lists()        
-                
+        self.neighbor_lists_waiting = False
+        self.update_core_neighbor_lists()
         self.update_core_potential_lists()
         self.update_core_coulomb()
-
 
     def get_numerical_energy_gradient(self, atom_index, shift=0.0001, atoms=None):
         """Numerically calculates the negative gradient of energy with respect to moving a single particle.
@@ -1470,13 +1652,24 @@ class Pysic:
         self.set_atoms(system)
         self.set_core()
         charges[atom_index] += 1.0*shift
-        system.set_charges(charges)
+        try:
+            system.set_charges(charges)
+        except:
+            system.set_initial_charges(charges)
+
         energy_p = self.get_potential_energy(system)
         charges[atom_index] -= 2.0*shift
-        system.set_charges(charges)
+        try:
+            system.set_charges(charges)
+        except:
+            system.set_initial_charges(charges)
+
         energy_m = self.get_potential_energy(system)
         charges[atom_index] += 1.0*shift
-        system.set_charges(charges)
+        try:
+            system.set_charges(charges)
+        except:
+            system.set_initial_charges(charges)
                 
         self.energy == None
         self.set_atoms(orig_system)

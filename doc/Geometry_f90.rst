@@ -34,6 +34,8 @@ A module for handling the geometric structure of the system.
         
     - :func:`absolute_coordinates`
     - :func:`assign_bond_order_factor_indices`
+    - :func:`assign_max_bond_order_factor_cutoff`
+    - :func:`assign_max_potential_cutoff`
     - :func:`assign_neighbor_list`
     - :func:`assign_potential_indices`
     - :func:`divide_cell`
@@ -84,6 +86,8 @@ Full documentation of custom types in geometry
         index of the atom
     n_pots: integer    *scalar*
         number of potentials that may affect the atom
+    max_potential_radius: double precision    *scalar*
+        the maximum cutoff of any potential listed in potential_indices
     tags: integer    *scalar*
         integer tag
     potential_indices: integer  *pointer*  *size(:)*
@@ -98,14 +102,16 @@ Full documentation of custom types in geometry
         charge of the atom
     subcell_indices: integer    *size(3)*
         indices of the subcell containing the atom, used for fast neighbor searching (see :data:`subcell`)
-    mass: double precision    *scalar*
-        mass of th atom
+    max_bond_radius: double precision    *scalar*
+        the maximum cutoff of any bond order factor listed in bond_indices
     n_bonds: integer    *scalar*
         number of bond order factors that may affect the atom
     bond_order_factors_listed: logical    *scalar*
         logical tag for checking if the bond order factors affecting the atom have been listed in bond_indices
     position: double precision    *size(3)*
         coordinates of the atom
+    mass: double precision    *scalar*
+        mass of th atom
     momentum: double precision    *size(3)*
         momentum of the atom
   .. data:: neighbor_list
@@ -307,6 +313,26 @@ Full documentation of subroutines in geometry
         the atom for which the bond order factors are assigned
     indices: integer  *intent(in)*    *size(n_bonds)*  
         the indices of the bond order factors
+            
+  .. function:: assign_max_bond_order_factor_cutoff(atom_in, max_cut)
+
+
+    Parameters:
+
+    **atom_in**: type(atom)  **intent(inout)**    *scalar*  
+        
+    max_cut: double precision  *intent(in)*    *scalar*  
+        
+            
+  .. function:: assign_max_potential_cutoff(atom_in, max_cut)
+
+
+    Parameters:
+
+    **atom_in**: type(atom)  **intent(inout)**    *scalar*  
+        
+    max_cut: double precision  *intent(in)*    *scalar*  
+        
             
   .. function:: assign_neighbor_list(n_nbs, nbor_list, neighbors, offsets)
 

@@ -32,6 +32,11 @@ to Python are simply calling routines here.
     --------------------------------------
     - :data:`atoms`
     - :data:`atoms_created`
+    - :data:`bo_factors`
+    - :data:`bo_gradients`
+    - :data:`bo_scaling`
+    - :data:`bo_sums`
+    - :data:`bo_temp`
     - :data:`bond_factors`
     - :data:`bond_factors_allocated`
     - :data:`bond_storage_allocated`
@@ -43,6 +48,7 @@ to Python are simply calling routines here.
     - :data:`ewald_cutoff`
     - :data:`ewald_epsilon`
     - :data:`ewald_k_cutoffs`
+    - :data:`ewald_k_radius`
     - :data:`ewald_scaler`
     - :data:`ewald_sigma`
     - :data:`force_evaluation_index`
@@ -52,12 +58,18 @@ to Python are simply calling routines here.
     - :data:`n_bond_factors`
     - :data:`n_interactions`
     - :data:`n_multi`
+    - :data:`n_nbs`
     - :data:`n_saved_bond_order_factors`
+    - :data:`number_of_atoms`
     - :data:`potentials_allocated`
     - :data:`saved_bond_order_factors`
     - :data:`saved_bond_order_gradients`
     - :data:`saved_bond_order_sums`
     - :data:`saved_bond_order_virials`
+    - :data:`temp_enegs`
+    - :data:`temp_forces`
+    - :data:`temp_gradient`
+    - :data:`total_n_nbs`
     - :data:`use_saved_bond_order_factors`
     - :data:`use_saved_bond_order_gradients`
 
@@ -78,9 +90,12 @@ to Python are simply calling routines here.
     - :func:`core_calculate_electronegativities`
     - :func:`core_calculate_energy`
     - :func:`core_calculate_forces`
+    - :func:`core_calculate_pair_bond_order_factor`
+    - :func:`core_calculate_pair_bond_order_gradients`
     - :func:`core_clear_atoms`
     - :func:`core_clear_bond_order_factors`
     - :func:`core_clear_bond_order_storage`
+    - :func:`core_clear_ewald_arrays`
     - :func:`core_clear_potential_multipliers`
     - :func:`core_clear_potentials`
     - :func:`core_create_cell`
@@ -90,9 +105,17 @@ to Python are simply calling routines here.
     - :func:`core_empty_bond_order_gradient_storage`
     - :func:`core_empty_bond_order_storage`
     - :func:`core_evaluate_local_doublet`
+    - :func:`core_evaluate_local_doublet_electronegativities`
+    - :func:`core_evaluate_local_doublet_electronegativities_B`
+    - :func:`core_evaluate_local_doublet_energy`
+    - :func:`core_evaluate_local_doublet_energy_B`
+    - :func:`core_evaluate_local_doublet_forces`
+    - :func:`core_evaluate_local_doublet_forces_B`
     - :func:`core_evaluate_local_quadruplet`
+    - :func:`core_evaluate_local_quadruplet_B`
     - :func:`core_evaluate_local_singlet`
     - :func:`core_evaluate_local_triplet`
+    - :func:`core_evaluate_local_triplet_B`
     - :func:`core_fill_bond_order_storage`
     - :func:`core_generate_atoms`
     - :func:`core_get_bond_order_factor_of_atom`
@@ -108,6 +131,8 @@ to Python are simply calling routines here.
     - :func:`core_post_process_bond_order_factors`
     - :func:`core_post_process_bond_order_gradients`
     - :func:`core_post_process_bond_order_gradients_of_factor`
+    - :func:`core_post_process_pair_bond_order_factor`
+    - :func:`core_post_process_pair_bond_order_gradients`
     - :func:`core_release_all_memory`
     - :func:`core_set_ewald_parameters`
     - :func:`core_update_atom_charges`
@@ -136,6 +161,36 @@ Full documentation of global variables in pysic_core
     *initial value* = .false.
     
     logical tag indicating if atom storing arrays have been created
+    
+  .. data:: bo_factors
+
+    double precision  *pointer*  *size(:)*    
+    
+    
+    
+  .. data:: bo_gradients
+
+    double precision  *pointer*  *size(:, :, :)*    
+    
+    
+    
+  .. data:: bo_scaling
+
+    logical  *pointer*  *size(:)*    
+    
+    
+    
+  .. data:: bo_sums
+
+    double precision  *pointer*  *size(:)*    
+    
+    
+    
+  .. data:: bo_temp
+
+    double precision  *pointer*  *size(:)*    
+    
+    
     
   .. data:: bond_factors
 
@@ -215,6 +270,12 @@ Full documentation of global variables in pysic_core
     
     
     
+  .. data:: ewald_k_radius
+
+    double precision    *scalar*    
+    
+    
+    
   .. data:: ewald_scaler
 
     double precision  *pointer*  *size(:)*    
@@ -277,6 +338,12 @@ Full documentation of global variables in pysic_core
     
     number of temporary product potentials
     
+  .. data:: n_nbs
+
+    integer  *pointer*  *size(:)*    
+    
+    
+    
   .. data:: n_saved_bond_order_factors
 
     integer    *scalar*    
@@ -284,6 +351,12 @@ Full documentation of global variables in pysic_core
     *initial value* = 0
     
     number of saved bond order factors
+    
+  .. data:: number_of_atoms
+
+    integer    *scalar*    
+    
+    
     
   .. data:: potentials_allocated
 
@@ -316,6 +389,30 @@ Full documentation of global variables in pysic_core
     double precision  *pointer*  *size(:, :, :)*    
     
     Array for storing calculated bond order virials. Indexing: (xyz, group_index_save_slot(group index), target index)
+    
+  .. data:: temp_enegs
+
+    double precision  *pointer*  *size(:)*    
+    
+    
+    
+  .. data:: temp_forces
+
+    double precision  *pointer*  *size(:, :)*    
+    
+    
+    
+  .. data:: temp_gradient
+
+    double precision  *pointer*  *size(:, :, :)*    
+    
+    
+    
+  .. data:: total_n_nbs
+
+    integer  *pointer*  *size(:)*    
+    
+    
     
   .. data:: use_saved_bond_order_factors
 
@@ -519,7 +616,7 @@ Full documentation of subroutines in pysic_core
     called from PyInterface: :func:`create_potential_list`
 
             
-  .. function:: core_build_neighbor_lists(n_atoms, cutoffs)
+  .. function:: core_build_neighbor_lists(cutoffs)
 
     Builds the neighbor lists in the core.
     The simulation cell must be partitioned with :func:`core_create_space_partitioning`
@@ -528,12 +625,10 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
-    cutoffs: double precision  *intent(in)*    *size(n_atoms)*  
+    cutoffs: double precision  *intent(in)*    *size(:)*  
         list of cutoffs, atom by atom
             
-  .. function:: core_calculate_bond_order_factors(n_atoms, group_index, total_bond_orders)
+  .. function:: core_calculate_bond_order_factors(group_index, total_bond_orders)
 
     Calculates the bond order sums of all atoms for the given group.
     
@@ -556,14 +651,12 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     group_index: integer  *intent(in)*    *scalar*  
         an index denoting the potential to which the factor is connected
-    **total_bond_orders**: double precision  **intent(out)**    *size(n_atoms)*  
+    **total_bond_orders**: double precision  **intent(inout)**    *size(:)*  
         the calculated bond order sums
             
-  .. function:: core_calculate_bond_order_gradients(n_atoms, group_index, atom_index, raw_sums, total_gradient, total_virial, for_factor)
+  .. function:: core_calculate_bond_order_gradients(group_index, atom_index, raw_sums, total_gradient, total_virial, for_factor)
 
     Returns the gradients of bond order factors.
     
@@ -587,22 +680,20 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     group_index: integer  *intent(in)*    *scalar*  
         an index denoting the potential to which the factor is connected
     atom_index: integer  *intent(in)*    *scalar*  
         index of the atom with respect to which the factors are differentiated (:math:`\alpha`), or the atoms whose factor is differentiated (:math:`i`) if for_factor is .true.
-    raw_sums: double precision  *intent(in)*    *size(n_atoms)*  
+    raw_sums: double precision  *intent(in)*    *size(:)*  
         precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
-    **total_gradient**: double precision  **intent(out)**    *size(3, n_atoms)*  
+    **total_gradient**: double precision  **intent(inout)**    *size(:, :)*  
         the calculated bond order gradients :math:`\nabla_\alpha b_i`
-    **total_virial**: double precision  **intent(out)**    *size(6)*  
+    **total_virial**: double precision  **intent(inout)**    *size(6)*  
         the components of the virial due to the bond order gradients
     for_factor: logical  *intent(in)*    *scalar*  *optional*
         a switch for requesting the gradients for a given :math:`i` instead of a given :math:`\alpha`
             
-  .. function:: core_calculate_bond_order_gradients_of_factor(n_atoms, group_index, atom_index, raw_sums, total_gradient, total_virial)
+  .. function:: core_calculate_bond_order_gradients_of_factor(group_index, atom_index, raw_sums, total_gradient, total_virial)
 
     Returns the gradients of one bond order factor with respect to
     moving all atoms.
@@ -627,20 +718,18 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     group_index: integer  *intent(in)*    *scalar*  
         an index denoting the potential to which the factor is connected
     atom_index: integer  *intent(in)*    *scalar*  
         index of the atom whose factor is differentiated (:math:`i`)
-    raw_sums: double precision  *intent(in)*    *size(n_atoms)*  
+    raw_sums: double precision  *intent(in)*    *size(:)*  
         precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
-    **total_gradient**: double precision  **intent(out)**    *size(3, n_atoms)*  
+    **total_gradient**: double precision  **intent(inout)**    *size(:, :)*  
         the calculated bond order gradients :math:`\nabla_\alpha b_i`
-    **total_virial**: double precision  **intent(out)**    *size(6)*  
+    **total_virial**: double precision  **intent(inout)**    *size(6)*  
         the components of the virial due to the bond order gradient
             
-  .. function:: core_calculate_electronegativities(n_atoms, total_enegs)
+  .. function:: core_calculate_electronegativities(total_enegs)
 
     Calculates electronegativity forces acting on all atomic charges of the system.
     
@@ -661,12 +750,10 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
-    **total_enegs**: double precision  **intent(out)**    *size(n_atoms)*  
+    **total_enegs**: double precision  **intent(inout)**    *size(:)*  
         an array containing the calculated charge forces for all atoms
             
-  .. function:: core_calculate_energy(n_atoms, total_energy)
+  .. function:: core_calculate_energy(total_energy)
 
     Calculates the total potential energy of the system.
     
@@ -681,12 +768,10 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     **total_energy**: double precision  **intent(out)**    *scalar*  
         calculated total potential energy
             
-  .. function:: core_calculate_forces(n_atoms, total_forces, total_stress)
+  .. function:: core_calculate_forces(total_forces, total_stress)
 
     Calculates forces acting on all atoms of the system.
     
@@ -707,12 +792,85 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
-    **total_forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
+    **total_forces**: double precision  **intent(inout)**    *size(:, :)*  
         an array containing the calculated forces for all atoms
-    **total_stress**: double precision  **intent(out)**    *size(6)*  
+    **total_stress**: double precision  **intent(inout)**    *size(6)*  
         as array containing the calculated stress tensor
+            
+  .. function:: core_calculate_pair_bond_order_factor(atom_pair, separation, distance, direction, group_index, bond_order_sum)
+
+    Calculates the bond order sum for a given pair of atoms for the given group.
+    
+    For a factor such as
+    
+    .. math::
+    
+         b_ij = f(\sum_k c_{ijk})
+    
+    The routine calculates
+    
+    .. math::
+    
+         \sum_k c_{ijk}.
+    
+    The full bond order factor is then obtained by applying the
+    scaling function :math:`f`. This is done with
+    :func:`core_post_process_bond_order_factors`.
+    
+
+    Parameters:
+
+    atom_pair: integer  *intent(in)*    *size(2)*  
+        
+    separation: double precision  *intent(in)*    *size(3)*  
+        
+    distance: double precision  *intent(in)*    *scalar*  
+        
+    direction: double precision  *intent(in)*    *size(3)*  
+        
+    group_index: integer  *intent(in)*    *scalar*  
+        an index denoting the potential to which the factor is connected
+    **bond_order_sum**: double precision  **intent(out)**    *size(2)*  
+        the calculated bond order sums
+            
+  .. function:: core_calculate_pair_bond_order_gradients(atom_pair, separation, distance, direction, group_index, raw_sums, total_gradient, total_virial)
+
+    Returns the gradients of a pair bond order factor.
+    
+    For a factor such as
+    
+    .. math::
+    
+         b_{ij} = f(\sum_k c_{ijk})
+    
+    The routine calculates
+    
+    .. math::
+    
+        \nabla_\alpha b_{ij} = f'(\sum_k c_{ijk}) \nabla_\alpha \sum_k c_{ijk}.
+    
+    By default, the gradients the factor :math:`ij` is calculated with respect
+    to moving all atoms :math:`\alpha`.
+    
+
+    Parameters:
+
+    atom_pair: integer  *intent(in)*    *size(2)*  
+        
+    separation: double precision  *intent(in)*    *size(3)*  
+        
+    distance: double precision  *intent(in)*    *scalar*  
+        
+    direction: double precision  *intent(in)*    *size(3)*  
+        
+    group_index: integer  *intent(in)*    *scalar*  
+        an index denoting the potential to which the factor is connected
+    raw_sums: double precision  *intent(in)*    *size(2)*  
+        precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
+    **total_gradient**: double precision  **intent(inout)**    *size(:, :, :)*  
+        the calculated bond order gradients :math:`\nabla_\alpha b_i`
+    **total_virial**: double precision  **intent(inout)**    *size(6, 2)*  
+        the components of the virial due to the bond order gradient
             
   .. function:: core_clear_atoms()
 
@@ -727,6 +885,10 @@ Full documentation of subroutines in pysic_core
   .. function:: core_clear_bond_order_storage()
 
     Deallocates pointers for bond order factors (the precalculated factor values).
+
+            
+  .. function:: core_clear_ewald_arrays()
+
 
             
   .. function:: core_clear_potential_multipliers()
@@ -754,7 +916,7 @@ Full documentation of subroutines in pysic_core
     periodicity: logical  *intent(in)*    *size(3)*  
         A 3-element vector containing logical tags specifying if the system is periodic in the directions of the three vectors spanning the supercell.
             
-  .. function:: core_create_neighbor_list(n_nbs, atom_index, neighbors, offsets)
+  .. function:: core_create_neighbor_list(n_nbors, atom_index, neighbors, offsets)
 
     Assigns a precalculated neighbor list to a single atom of the given index.
     The neighbor list must be precalculated, this method only
@@ -796,13 +958,13 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_nbs: integer  *intent(in)*    *scalar*  
-        number of neighbors
+    n_nbors: integer  *intent(in)*    *scalar*  
+        
     atom_index: integer  *intent(in)*    *scalar*  
         index of the atom for which the neighbor list is created
-    neighbors: integer  *intent(in)*    *size(n_nbs)*  
+    neighbors: integer  *intent(in)*    *size(n_nbors)*  
         An array containing the indices of the neighboring atoms
-    offsets: integer  *intent(in)*    *size(3, n_nbs)*  
+    offsets: integer  *intent(in)*    *size(3, n_nbors)*  
         An array containing vectors specifying the offsets of the neighbors in periodic systems.
             
   .. function:: core_create_space_partitioning(max_cutoff)
@@ -845,7 +1007,6 @@ Full documentation of subroutines in pysic_core
             
   .. function:: core_evaluate_local_doublet(n_atoms, atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found)
 
-    
 
     Parameters:
 
@@ -869,13 +1030,179 @@ Full documentation of subroutines in pysic_core
         
     calculation_type: integer  *intent(in)*    *scalar*  
         
-    **energy**: double precision  **intent(out)**    *scalar*  
+    **energy**: double precision  **intent(inout)**    *scalar*  
         
-    **forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
+    **forces**: double precision  **intent(inout)**    *size(3, n_atoms)*  
         
-    **enegs**: double precision  **intent(out)**    *size(n_atoms)*  
+    **enegs**: double precision  **intent(inout)**    *size(n_atoms)*  
         
-    **stress**: double precision  **intent(out)**    *size(6)*  
+    **stress**: double precision  **intent(inout)**    *size(6)*  
+        
+    **many_bodies_found**: logical  **intent(out)**    *scalar*  
+        
+            
+  .. function:: core_evaluate_local_doublet_electronegativities(n_atoms, atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, enegs, many_bodies_found)
+
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    atom_doublet: type(atom)  *intent(in)*    *size(2)*  
+        
+    index1: integer  *intent(in)*    *scalar*  
+        
+    index2: integer  *intent(in)*    *scalar*  
+        
+    test_index1: integer  *intent(in)*    *scalar*  
+        
+    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        
+    directions: double precision  *intent(in)*    *size(3, 1)*  
+        
+    distances: double precision  *intent(in)*    *size(1)*  
+        
+    **enegs**: double precision  **intent(inout)**    *size(n_atoms)*  
+        
+    **many_bodies_found**: logical  **intent(out)**    *scalar*  
+        
+            
+  .. function:: core_evaluate_local_doublet_electronegativities_B(atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, enegs, many_bodies_found)
+
+
+    Parameters:
+
+    atom_doublet: type(atom)  *intent(in)*    *size(2)*  
+        
+    index1: integer  *intent(in)*    *scalar*  
+        
+    index2: integer  *intent(in)*    *scalar*  
+        
+    test_index1: integer  *intent(in)*    *scalar*  
+        
+    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        
+    directions: double precision  *intent(in)*    *size(3, 1)*  
+        
+    distances: double precision  *intent(in)*    *size(1)*  
+        
+    **enegs**: double precision  **intent(inout)**    *size(:)*  
+        
+    **many_bodies_found**: logical  **intent(out)**    *scalar*  
+        
+            
+  .. function:: core_evaluate_local_doublet_energy(n_atoms, atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, energy, many_bodies_found)
+
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    atom_doublet: type(atom)  *intent(in)*    *size(2)*  
+        
+    index1: integer  *intent(in)*    *scalar*  
+        
+    index2: integer  *intent(in)*    *scalar*  
+        
+    test_index1: integer  *intent(in)*    *scalar*  
+        
+    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        
+    directions: double precision  *intent(in)*    *size(3, 1)*  
+        
+    distances: double precision  *intent(in)*    *size(1)*  
+        
+    **energy**: double precision  **intent(inout)**    *scalar*  
+        
+    **many_bodies_found**: logical  **intent(out)**    *scalar*  
+        
+            
+  .. function:: core_evaluate_local_doublet_energy_B(atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, energy, many_bodies_found)
+
+
+    Parameters:
+
+    atom_doublet: type(atom)  *intent(in)*    *size(2)*  
+        
+    index1: integer  *intent(in)*    *scalar*  
+        
+    index2: integer  *intent(in)*    *scalar*  
+        
+    test_index1: integer  *intent(in)*    *scalar*  
+        
+    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        
+    directions: double precision  *intent(in)*    *size(3, 1)*  
+        
+    distances: double precision  *intent(in)*    *size(1)*  
+        
+    **energy**: double precision  **intent(inout)**    *scalar*  
+        
+    **many_bodies_found**: logical  **intent(out)**    *scalar*  
+        
+            
+  .. function:: core_evaluate_local_doublet_forces(n_atoms, atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, forces, stress, many_bodies_found)
+
+
+    Parameters:
+
+    n_atoms: integer  *intent(in)*    *scalar*  
+        
+    atom_doublet: type(atom)  *intent(in)*    *size(2)*  
+        
+    index1: integer  *intent(in)*    *scalar*  
+        
+    index2: integer  *intent(in)*    *scalar*  
+        
+    test_index1: integer  *intent(in)*    *scalar*  
+        
+    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        
+    directions: double precision  *intent(in)*    *size(3, 1)*  
+        
+    distances: double precision  *intent(in)*    *size(1)*  
+        
+    **forces**: double precision  **intent(inout)**    *size(3, n_atoms)*  
+        
+    **stress**: double precision  **intent(inout)**    *size(6)*  
+        
+    **many_bodies_found**: logical  **intent(out)**    *scalar*  
+        
+            
+  .. function:: core_evaluate_local_doublet_forces_B(atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, forces, stress, many_bodies_found)
+
+
+    Parameters:
+
+    atom_doublet: type(atom)  *intent(in)*    *size(2)*  
+        
+    index1: integer  *intent(in)*    *scalar*  
+        
+    index2: integer  *intent(in)*    *scalar*  
+        
+    test_index1: integer  *intent(in)*    *scalar*  
+        
+    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        
+    directions: double precision  *intent(in)*    *size(3, 1)*  
+        
+    distances: double precision  *intent(in)*    *size(1)*  
+        
+    **forces**: double precision  **intent(inout)**    *size(:, :)*  
+        
+    **stress**: double precision  **intent(inout)**    *size(6)*  
         
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         
@@ -924,15 +1251,55 @@ Full documentation of subroutines in pysic_core
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         
             
-  .. function:: core_evaluate_local_singlet(n_atoms, index1, atom_singlet, interaction_indices, calculation_type, energy, forces, enegs)
+  .. function:: core_evaluate_local_quadruplet_B(atom_quadruplet, index1, index2, index3, index4, test_index1, test_index2, test_index3, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found)
+
+
+    Parameters:
+
+    atom_quadruplet: type(atom)  *intent(in)*    *size(4)*  
+        
+    index1: integer  *intent(in)*    *scalar*  
+        
+    index2: integer  *intent(in)*    *scalar*  
+        
+    index3: integer  *intent(in)*    *scalar*  
+        
+    index4: integer  *intent(in)*    *scalar*  
+        
+    test_index1: integer  *intent(in)*    *scalar*  
+        
+    test_index2: integer  *intent(in)*    *scalar*  
+        
+    test_index3: integer  *intent(in)*    *scalar*  
+        
+    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    separations: double precision  *intent(in)*    *size(3, 3)*  
+        
+    directions: double precision  *intent(in)*    *size(3, 3)*  
+        
+    distances: double precision  *intent(in)*    *size(3)*  
+        
+    calculation_type: integer  *intent(in)*    *scalar*  
+        
+    **energy**: double precision  **intent(inout)**    *scalar*  
+        
+    **forces**: double precision  **intent(inout)**    *size(:, :)*  
+        
+    **enegs**: double precision  **intent(inout)**    *size(:)*  
+        
+    **stress**: double precision  **intent(inout)**    *size(6)*  
+        
+    **many_bodies_found**: logical  **intent(out)**    *scalar*  
+        
+            
+  .. function:: core_evaluate_local_singlet(index1, atom_singlet, interaction_indices, calculation_type, energy, forces, stress, enegs)
 
     Evaluates the local potential affecting a single atom
     
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     index1: integer  *intent(in)*    *scalar*  
         index of the atom
     atom_singlet: type(atom)  *intent(in)*    *scalar*  
@@ -943,9 +1310,11 @@ Full documentation of subroutines in pysic_core
         specifies if we are evaluating the energy, forces, or electronegativities
     **energy**: double precision  **intent(inout)**    *scalar*  
         calculated energy
-    **forces**: double precision  **intent(inout)**    *size(3, n_atoms)*  
+    **forces**: double precision  **intent(inout)**    *size(:, :)*  
         calculated forces
-    **enegs**: double precision  **intent(inout)**    *size(n_atoms)*  
+    **stress**: double precision  **intent(inout)**    *size(6)*  
+        
+    **enegs**: double precision  **intent(inout)**    *size(:)*  
         calculated electronegativities
             
   .. function:: core_evaluate_local_triplet(n_atoms, atom_triplet, index1, index2, index3, test_index1, test_index2, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found)
@@ -988,7 +1357,45 @@ Full documentation of subroutines in pysic_core
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         
             
-  .. function:: core_fill_bond_order_storage(n_atoms)
+  .. function:: core_evaluate_local_triplet_B(atom_triplet, index1, index2, index3, test_index1, test_index2, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found)
+
+
+    Parameters:
+
+    atom_triplet: type(atom)  *intent(in)*    *size(3)*  
+        
+    index1: integer  *intent(in)*    *scalar*  
+        
+    index2: integer  *intent(in)*    *scalar*  
+        
+    index3: integer  *intent(in)*    *scalar*  
+        
+    test_index1: integer  *intent(in)*    *scalar*  
+        
+    test_index2: integer  *intent(in)*    *scalar*  
+        
+    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    separations: double precision  *intent(in)*    *size(3, 2)*  
+        
+    directions: double precision  *intent(in)*    *size(3, 2)*  
+        
+    distances: double precision  *intent(in)*    *size(2)*  
+        
+    calculation_type: integer  *intent(in)*    *scalar*  
+        
+    **energy**: double precision  **intent(inout)**    *scalar*  
+        
+    **forces**: double precision  **intent(inout)**    *size(:, :)*  
+        
+    **enegs**: double precision  **intent(inout)**    *size(:)*  
+        
+    **stress**: double precision  **intent(inout)**    *size(6)*  
+        
+    **many_bodies_found**: logical  **intent(out)**    *scalar*  
+        
+            
+  .. function:: core_fill_bond_order_storage()
 
     Fills the storage for bond order factors and bond order sums.
     This is meant to be called in the beginning of force and energy
@@ -999,10 +1406,6 @@ Full documentation of subroutines in pysic_core
     The routine does not calculate and store bond factor gradients.
     
 
-    Parameters:
-
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
             
   .. function:: core_generate_atoms(n_atoms, masses, charges, positions, momenta, tags, elements)
 
@@ -1028,23 +1431,21 @@ Full documentation of subroutines in pysic_core
     elements: character(len=label_length)  *intent(in)*    *size(n_atoms)*  
         atomic symbols of the atoms
             
-  .. function:: core_get_bond_order_factor_of_atom(n_atoms, group_index, atom_index, bond_order_factor)
+  .. function:: core_get_bond_order_factor_of_atom(group_index, atom_index, bond_order_factor)
 
     Returns the bond order factors of the given atom for the given group.
     
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     group_index: integer  *intent(in)*    *scalar*  
         index for the bond order factor group
     atom_index: integer  *intent(in)*    *scalar*  
         index of the atom whose bond order factor is returned
-    **bond_order_factor**: double precision  **intent(out)**    *scalar*  
+    **bond_order_factor**: double precision  **intent(inout)**    *scalar*  
         the calculated bond order factor
             
-  .. function:: core_get_bond_order_factors(n_atoms, group_index, bond_order_factors)
+  .. function:: core_get_bond_order_factors(group_index, bond_order_factors)
 
     Returns the bond order factors of all atoms for the given group.
     The routines tries to find the values in the stored precalculated
@@ -1054,14 +1455,12 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     group_index: integer  *intent(in)*    *scalar*  
         index for the bond order factor group
-    **bond_order_factors**: double precision  **intent(out)**    *size(n_atoms)*  
+    **bond_order_factors**: double precision  **intent(inout)**    *size(:)*  
         the calculated bond order factors
             
-  .. function:: core_get_bond_order_gradients(n_atoms, group_index, atom_index, slot_index, bond_order_gradients, bond_order_virial)
+  .. function:: core_get_bond_order_gradients(group_index, atom_index, slot_index, bond_order_gradients, bond_order_virial)
 
     Returns the gradients of the bond order factor of the given atom
     with respect to moving all atoms, for the given group.
@@ -1076,20 +1475,18 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     group_index: integer  *intent(in)*    *scalar*  
         index for the bond order factor group
     atom_index: integer  *intent(in)*    *scalar*  
         index of the atom whose bond order factor is differentiated
     slot_index: integer  *intent(in)*    *scalar*  
         index denoting the position of the atom in an interacting group (such as A-B-C triplet)
-    **bond_order_gradients**: double precision  **intent(out)**    *size(3, n_atoms)*  
+    **bond_order_gradients**: double precision  **intent(inout)**    *size(:, :)*  
         the calculated gradients of the bond order factor
-    **bond_order_virial**: double precision  **intent(out)**    *size(6)*  
+    **bond_order_virial**: double precision  **intent(inout)**    *size(6)*  
         the components of the virial due to the bond order factors
             
-  .. function:: core_get_bond_order_sums(n_atoms, group_index, bond_order_sums)
+  .. function:: core_get_bond_order_sums(group_index, bond_order_sums)
 
     Returns the bond order sums of all atoms for the given group.
     By 'bond order sum', we mean the summation of local terms
@@ -1098,14 +1495,13 @@ Full documentation of subroutines in pysic_core
     The routines tries to find the values in the stored precalculated
     values first if use_saved_bond_order_factors is true, and saves
     the calculated values if it does not find them.
+    
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     group_index: integer  *intent(in)*    *scalar*  
         index for the bond order factor group
-    **bond_order_sums**: double precision  **intent(out)**    *size(n_atoms)*  
+    **bond_order_sums**: double precision  **intent(inout)**    *size(:)*  
         the calculated bond order sums
             
   .. function:: core_get_cell_vectors(vectors)
@@ -1120,13 +1516,15 @@ Full documentation of subroutines in pysic_core
     **vectors**: double precision  **intent(out)**    *size(3, 3)*  
         A 3x3 matrix containing the vectors spanning the supercell. The first index runs over xyz and the second index runs over the three vectors.
             
-  .. function:: core_get_ewald_energy(real_cut, reciprocal_cut, sigma, epsilon, energy)
+  .. function:: core_get_ewald_energy(real_cut, k_cut, reciprocal_cut, sigma, epsilon, energy)
 
     Debug routine for Ewald
 
     Parameters:
 
     real_cut: double precision  *intent(in)*    *scalar*  
+        
+    k_cut: double precision  *intent(in)*    *scalar*  
         
     reciprocal_cut: integer  *intent(in)*    *size(3)*  
         
@@ -1177,7 +1575,7 @@ Full documentation of subroutines in pysic_core
     **n_neighbors**: integer  **intent(out)**    *scalar*  
         the number of neighbors
             
-  .. function:: core_loop_over_local_interactions(n_atoms, calculation_type, total_energy, total_forces, total_enegs, total_stress)
+  .. function:: core_loop_over_local_interactions(calculation_type, total_energy, total_forces, total_enegs, total_stress)
 
     Loops over atoms, atomic pairs, atomic triplets, and atomic quadruplets
     and calculates the contributions from local potentials to energy, forces,
@@ -1190,20 +1588,18 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     calculation_type: integer  *intent(in)*    *scalar*  
         index to specify if the loop calculates energies, forces, or e-negativities
-    **total_energy**: double precision  **intent(out)**    *scalar*  
+    **total_energy**: double precision  **intent(inout)**    *scalar*  
         calculated energy
-    **total_forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
+    **total_forces**: double precision  **intent(inout)**    *size(:, :)*  
         calculated forces
-    **total_enegs**: double precision  **intent(out)**    *size(n_atoms)*  
+    **total_enegs**: double precision  **intent(inout)**    *size(:)*  
         calculated electronegativities
-    **total_stress**: double precision  **intent(out)**    *size(6)*  
+    **total_stress**: double precision  **intent(inout)**    *size(6)*  
         calculated stress
             
-  .. function:: core_post_process_bond_order_factors(n_atoms, group_index, raw_sums, total_bond_orders)
+  .. function:: core_post_process_bond_order_factors(group_index, raw_sums, total_bond_orders)
 
     Bond-order post processing, i.e., application of per-atom scaling functions.
     
@@ -1224,16 +1620,14 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     group_index: integer  *intent(in)*    *scalar*  
         an index denoting the potential to which the factor is connected
-    raw_sums: double precision  *intent(in)*    *size(n_atoms)*  
+    raw_sums: double precision  *intent(in)*    *size(:)*  
         precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
-    **total_bond_orders**: double precision  **intent(out)**    *size(n_atoms)*  
+    **total_bond_orders**: double precision  **intent(inout)**    *size(:)*  
         the calculated bond order factors :math:`b_i`
             
-  .. function:: core_post_process_bond_order_gradients(n_atoms, group_index, raw_sums, raw_gradients, total_bond_gradients, mpi_split)
+  .. function:: core_post_process_bond_order_gradients(group_index, raw_sums, raw_gradients, total_bond_gradients, mpi_split)
 
     Bond-order post processing, i.e., application of per-atom scaling functions.
     This routine does the scaling for all bond factors with the given
@@ -1260,20 +1654,18 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     group_index: integer  *intent(in)*    *scalar*  
         an index denoting the potential to which the factor is connected
-    raw_sums: double precision  *intent(in)*    *size(n_atoms)*  
+    raw_sums: double precision  *intent(in)*    *size(:)*  
         precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example
-    raw_gradients: double precision  *intent(in)*    *size(3, n_atoms)*  
+    raw_gradients: double precision  *intent(in)*    *size(:, :)*  
         precalculated gradients of bond order sums, :math:`\nabla_\alpha \sum_j c_{ij}`, in the above example
-    **total_bond_gradients**: double precision  **intent(out)**    *size(3, n_atoms)*  
+    **total_bond_gradients**: double precision  **intent(inout)**    *size(:, :)*  
         the calculated bond order gradients :math:`\nabla_\alpha b_i`
     mpi_split: logical  *intent(in)*    *scalar*  *optional*
         A switch for enabling MPI parallelization. By default the routine is sequential since the calculation may be called from within an already parallelized routine.
             
-  .. function:: core_post_process_bond_order_gradients_of_factor(n_atoms, group_index, atom_index, raw_sum, raw_gradients, total_bond_gradients, raw_virial, total_virial, mpi_split)
+  .. function:: core_post_process_bond_order_gradients_of_factor(group_index, atom_index, raw_sum, raw_gradients, total_bond_gradients, raw_virial, total_virial, mpi_split)
 
     Bond-order post processing, i.e., application of per-atom scaling functions.
     This routine does the scaling for the bond order factor of the given atom
@@ -1302,17 +1694,88 @@ Full documentation of subroutines in pysic_core
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        number of atoms
     group_index: integer  *intent(in)*    *scalar*  
         an index denoting the potential to which the factor is connected
     atom_index: integer  *intent(in)*    *scalar*  
         the index of the atom whose factor is differentiated (:math:`i`)
     raw_sum: double precision  *intent(in)*    *scalar*  
         precalculated bond order sum for the given atom, :math:`\sum_j c_{ij}`, in the above example
-    raw_gradients: double precision  *intent(in)*    *size(3, n_atoms)*  
+    raw_gradients: double precision  *intent(in)*    *size(:, :)*  
         precalculated gradients of bond order sums, :math:`\nabla_\alpha \sum_j c_{ij}`, in the above example
-    **total_bond_gradients**: double precision  **intent(out)**    *size(3, n_atoms)*  
+    **total_bond_gradients**: double precision  **intent(inout)**    *size(:, :)*  
+        the calculated bond order gradients :math:`\nabla_\alpha b_i`
+    raw_virial: double precision  *intent(in)*    *size(6)*  
+        the precalculated virial due to the bond order gradient
+    **total_virial**: double precision  **intent(inout)**    *size(6)*  
+        the scaled  virial due to the bond order gradient
+    mpi_split: logical  *intent(in)*    *scalar*  *optional*
+        A switch for enabling MPI parallelization. By default the routine is sequential since the calculation may be called from within an already parallelized routine.
+            
+  .. function:: core_post_process_pair_bond_order_factor(atom1, group_index, raw_sum, total_bond_order)
+
+    Bond-order post processing, i.e., application of per-atom scaling functions.
+    
+    By post processing, we mean any operations done after calculating the
+    sum of pair- and many-body terms. That is, if a factor is, say,
+    
+    .. math::
+    
+         b_{ij} = f(\sum_k c_{ijk}) = 1 + \sum_k c_{ijk},
+    
+    the :math:`\sum_k c_{ijk}` would have been calculated already
+    (with :func:`core_calculate_pair_bond_order_factor`)
+    and the operation :math:`f(x) = 1 + x`
+    remains to be carried out.
+    
+
+    Parameters:
+
+    atom1: type(atom)  *intent(in)*    *scalar*  
+        
+    group_index: integer  *intent(in)*    *scalar*  
+        an index denoting the potential to which the factor is connected
+    raw_sum: double precision  *intent(in)*    *scalar*  
+        
+    **total_bond_order**: double precision  **intent(out)**    *scalar*  
+        
+            
+  .. function:: core_post_process_pair_bond_order_gradients(group_index, atom1, raw_sum, raw_gradients, total_bond_gradients, raw_virial, total_virial, mpi_split)
+
+    Bond-order post processing, i.e., application of per-pair scaling functions.
+    This routine does the scaling for the bond order factor of the given pair
+    with respect to moving all atoms
+    with the given bond order sum for the factor and
+    the gradients of the sum with respect to moving all atoms.
+    
+    By post processing, we mean any operations done after calculating the
+    sum of pair- and many-body terms. That is, if a factor is, say,
+    
+    .. math::
+    
+         b_{ij} = f(\sum_k c_{ijk}) = 1 + \sum_k c_{ijk},
+    
+    the :math:`\sum_k c_{ijk}` would have been calculated already and the operation :math:`f(x) = 1 + x`
+    remains to be carried out.
+    The post processing is done per pair.
+    
+    For gradients, one needs to evaluate
+    
+    .. math::
+    
+        \nabla_\alpha b_{ij} = f'(\sum_k c_{ijk}) \nabla_\alpha \sum_k c_{ijk}
+    
+
+    Parameters:
+
+    group_index: integer  *intent(in)*    *scalar*  
+        an index denoting the potential to which the factor is connected
+    atom1: type(atom)  *intent(in)*    *scalar*  
+        
+    raw_sum: double precision  *intent(in)*    *scalar*  
+        precalculated bond order sum for the given atom, :math:`\sum_j c_{ij}`, in the above example
+    raw_gradients: double precision  *intent(in)*    *size(:, :)*  
+        precalculated gradients of bond order sums, :math:`\nabla_\alpha \sum_j c_{ij}`, in the above example
+    **total_bond_gradients**: double precision  **intent(out)**    *size(:, :)*  
         the calculated bond order gradients :math:`\nabla_\alpha b_i`
     raw_virial: double precision  *intent(in)*    *size(6)*  
         the precalculated virial due to the bond order gradient
@@ -1326,24 +1789,24 @@ Full documentation of subroutines in pysic_core
     Release all allocated pointer arrays in the core.
 
             
-  .. function:: core_set_ewald_parameters(n_atoms, real_cut, reciprocal_cut, sigma, epsilon, scaler)
+  .. function:: core_set_ewald_parameters(real_cut, k_radius, reciprocal_cut, sigma, epsilon, scaler)
 
     Sets the parameters for Ewald summation in the core.
     
 
     Parameters:
 
-    n_atoms: integer  *intent(in)*    *scalar*  
-        
     real_cut: double precision  *intent(in)*    *scalar*  
         the real-space cutoff
+    k_radius: double precision  *intent(in)*    *scalar*  
+        
     reciprocal_cut: integer  *intent(in)*    *size(3)*  
         the k-space cutoffs
     sigma: double precision  *intent(in)*    *scalar*  
         the split parameter
     epsilon: double precision  *intent(in)*    *scalar*  
         electric constant
-    scaler: double precision  *intent(in)*    *size(n_atoms)*  
+    scaler: double precision  *intent(in)*    *size(:)*  
         scaling factors for the individual charges
             
   .. function:: core_update_atom_charges(n_atoms, charges)

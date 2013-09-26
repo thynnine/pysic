@@ -241,7 +241,7 @@ module potentials
   type bond_order_descriptor
      character(len=pot_name_length) :: name
      character(len=param_name_length), pointer :: parameter_names(:,:)
-     integer :: n_targets, type_index
+     integer :: n_targets, type_index, n_level
      integer, pointer :: n_parameters(:)
      character(len=pot_note_length) :: description
      character(len=param_note_length), pointer :: parameter_notes(:,:)
@@ -312,7 +312,7 @@ module potentials
   ! *includes_post_processing a logical switch specifying if there is a scaling function :math:`s_i` attached to the factor
   ! *table array for storing tabulated values
   type bond_order_parameters
-     integer :: type_index, group_index
+     integer :: type_index, group_index, n_level
      double precision, pointer :: parameters(:,:), derived_parameters(:,:), table(:,:)
      double precision :: cutoff, soft_cutoff
      integer, pointer :: n_params(:)
@@ -321,9 +321,100 @@ module potentials
      logical :: includes_post_processing
   end type bond_order_parameters
 
+
+
+
+  ! temporary arrays for ewald summation
+  double precision, pointer :: ewald_forces(:,:,:), ewald_sum_forces(:,:,:), ewald_tmp_enegs(:), &
+       s_factor(:,:,:,:), tmp_factor(:,:,:,:)
+  logical :: ewald_arrays_allocated = .false., s_factor_allocated = .false.
+  integer :: stored_factor_cutoffs(3)
+
 contains
 
+  subroutine deallocate_ewald_arrays()
+    implicit none
 
+    if(ewald_arrays_allocated)then
+       deallocate(ewald_forces)
+       deallocate(ewald_sum_forces)
+       deallocate(ewald_tmp_enegs)
+    else
+       nullify(ewald_forces)
+       nullify(ewald_sum_forces)
+       nullify(ewald_tmp_enegs)
+    end if
+    ewald_arrays_allocated = .false.
+
+    if(s_factor_allocated)then
+       deallocate(s_factor)
+       deallocate(tmp_factor)
+    else
+       nullify(s_factor)
+       nullify(tmp_factor)
+    end if
+    s_factor_allocated = .false.
+
+  end subroutine deallocate_ewald_arrays
+
+  subroutine check_s_factor_array_allocation(n_atoms,reciprocal_cutoff)
+    implicit none
+    integer, intent(in) :: n_atoms, reciprocal_cutoff(3)
+
+    if(s_factor_allocated)then
+       if(reciprocal_cutoff(1) /= stored_factor_cutoffs(1) .or. &
+            reciprocal_cutoff(2) /= stored_factor_cutoffs(2) .or. &
+            reciprocal_cutoff(3) /= stored_factor_cutoffs(3) )then          
+          deallocate(s_factor)
+          deallocate(tmp_factor)
+          allocate( s_factor(2, &
+               -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+               -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+               -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
+          allocate( tmp_factor(2, &
+               -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+               -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+               -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
+          stored_factor_cutoffs = reciprocal_cutoff
+       end if
+    else
+       nullify(s_factor)
+       nullify(tmp_factor)
+       allocate( s_factor(2, &
+            -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+            -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+            -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
+       allocate( tmp_factor(2, &
+            -reciprocal_cutoff(1):reciprocal_cutoff(1), &
+            -reciprocal_cutoff(2):reciprocal_cutoff(2), &
+            -reciprocal_cutoff(3):reciprocal_cutoff(3)) )
+       stored_factor_cutoffs = reciprocal_cutoff
+       s_factor_allocated = .true.
+    end if
+
+  end subroutine check_s_factor_array_allocation
+
+
+  subroutine allocate_ewald_arrays(n_atoms)
+    implicit none
+    integer, intent(in) :: n_atoms
+
+    if(ewald_arrays_allocated)then
+       deallocate(ewald_forces)
+       deallocate(ewald_sum_forces)
+       deallocate(ewald_tmp_enegs)
+    else
+       nullify(ewald_forces)
+       nullify(ewald_sum_forces)
+       nullify(ewald_tmp_enegs)
+    end if
+    
+    allocate(ewald_forces(3,3,n_atoms))
+    allocate(ewald_sum_forces(3,3,n_atoms))
+    allocate(ewald_tmp_enegs(n_atoms))
+    ewald_arrays_allocated = .true.
+
+  end subroutine allocate_ewald_arrays
 
 
   ! !!!: smoothening_factor
@@ -702,7 +793,7 @@ contains
   ! Returns the names of parameters of a bond order factor as a list of strings.
   !
   ! *bond_name name of the bond order factor
-  ! *n_targets number of targets
+  ! *n_targets 1 for scaling, 2 for local sum parameters
   ! *param_names names of the parameters
   subroutine get_names_of_parameters_of_bond_order_factor(bond_name, n_targets, param_names)
     implicit none
@@ -713,7 +804,7 @@ contains
     integer :: i
 
     call get_bond_descriptor(bond_name,descriptor)
-    if(descriptor%n_targets < n_targets)then
+    if(n_targets > 2)then
        return
     end if
     nullify(param_names)
@@ -756,7 +847,7 @@ contains
   ! as a list of strings.
   ! 
   ! *bond_name name of the bond order factor
-  ! *n_targets number of targets
+  ! *n_targets 1 for scaling, 2 for local sum parameters
   ! *param_notes descriptions of the parameters
   subroutine get_descriptions_of_parameters_of_bond_order_factor(bond_name, &
        n_targets, param_notes)
@@ -768,7 +859,7 @@ contains
     integer :: i
 
     call get_bond_descriptor(bond_name,descriptor)
-    if(descriptor%n_targets < n_targets)then
+    if(n_targets > 2)then
        return
     end if
     nullify(param_notes)
@@ -801,11 +892,10 @@ contains
 
   ! !!!: get_number_of_parameters_of_bond_order_factor
 
-  ! Returns the number of parameters of a bond order factor as a list of strings,
-  ! each element showing the number of parameters for that number of bodies.
+  ! Returns the number of parameters of a bond order factor as an integer.
   !
   ! *bond_name name of the bond order factor
-  ! *n_targets number of targets
+  ! *n_targets 1 for scaling parameters, 2 for local sum parameters
   ! *n_params number of parameters
   subroutine get_number_of_parameters_of_bond_order_factor(bond_name,n_targets,n_params)
     implicit none
@@ -859,11 +949,11 @@ contains
 
   ! !!!: get_number_of_targets_of_potential_index
 
-  ! Returns the number of targets (i.e., bodies) of a potential 
+  ! Returns the number of targets (i.e., bodies) of a potential
   ! specified by its index.
-  ! 
+  !
   ! *pot_index index of the potential
-  ! *n_target numner of targets
+  ! *n_target number of targets
   subroutine get_number_of_targets_of_potential_index(pot_index,n_target)
     implicit none
     integer, intent(in) :: pot_index
@@ -872,7 +962,6 @@ contains
     n_target = potential_descriptors(pot_index)%n_targets
 
   end subroutine get_number_of_targets_of_potential_index
-
 
   ! !!!: get_number_of_targets_of_bond_order_factor_index
 
@@ -889,6 +978,26 @@ contains
     n_target = bond_order_descriptors(bond_index)%n_targets
 
   end subroutine get_number_of_targets_of_bond_order_factor_index
+
+
+
+  ! !!!: get_level_of_bond_order_factor
+
+  ! Returns the level of a bond order factor (i.e., is the factor per-atom or per-pair).
+  !
+  ! *bond_name name of the bond order factor
+  ! *level level of the factor
+  subroutine get_level_of_bond_order_factor(bond_name,level)
+    implicit none
+    character(len=*), intent(in) :: bond_name
+    integer, intent(out) :: level
+    type(bond_order_descriptor) :: descriptor
+
+    call get_bond_descriptor(bond_name,descriptor)
+    level = descriptor%n_level
+
+  end subroutine get_level_of_bond_order_factor
+
 
 
   ! !!!: is_valid_potential
@@ -973,13 +1082,13 @@ contains
 
   ! Returns the index of a parameter of a bond order factor in the
   ! internal list of parameters. Since bond order factors can have
-  ! parameters for different number of targets, also the number of
-  ! targets of this parameter is returned.
+  ! parameters for different number of targets, also the type
+  ! (scaling vs. local sum) of this parameter is returned.
   !
   ! *bond_name name of the bond order factor
   ! *param_name name of the parameter
   ! *index index of the parameter
-  ! *n_targets number of targets of the parameter
+  ! *n_targets 1 for scaling, 2 for local sum parameters
   subroutine get_index_of_parameter_of_bond_order_factor(bond_name,param_name,index,n_targets)
     implicit none
     character(len=*), intent(in) :: bond_name
@@ -993,7 +1102,7 @@ contains
 
     index = 0
     n_targets = 0
-    do j = 1, descriptor%n_targets
+    do j = 1, 2
        do i = 1, descriptor%n_parameters(j)
           if (descriptor%parameter_names(i,j) == param_name) then
              index = i
@@ -1288,45 +1397,43 @@ contains
   !
   ! .. [#] In fact, the sum converges only conditionally meaning the result depends on the order of summation. Physically this is not a problem, because one never has infinite lattices.
   !
-  ! *n_atoms number of atoms
   ! *atoms list of atoms
   ! *cell the supercell containing the system
   ! *real_cutoff Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
   ! *reciprocal_cutoff The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
   ! *gaussian_width The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
   ! *electric_constant The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
-  ! *filter a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
   ! *scaler a list of numerical values to scale the individual charges of the atoms
   ! *include_dipole_correction if true, a dipole correction term is included in the energy
   ! *total_energy the calculated energy
-  subroutine calculate_ewald_energy(n_atoms,atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
-       electric_constant,filter,scaler,include_dipole_correction,total_energy)
+  ! *include_realspace By default, also the real space summation is carried out, but giving the .false. flag here will prevent the calculation. This is used in the normal evaluation loop where the real space sum is calculated during the evaluation of other pairwise interactions.
+  subroutine calculate_ewald_energy(atoms,cell,real_cutoff,k_radius,reciprocal_cutoff,gaussian_width,&
+       electric_constant,scaler,include_dipole_correction,total_energy,include_realspace)
     implicit none
-    type(atom), intent(in) :: atoms(n_atoms)
+    type(atom), intent(in) :: atoms(:)
     type(supercell), intent(in) :: cell
-    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(n_atoms)
-    integer, intent(in) :: n_atoms, reciprocal_cutoff(3)
+    double precision, intent(in) :: real_cutoff, k_radius, gaussian_width, electric_constant, scaler(:)
+    integer, intent(in) :: reciprocal_cutoff(3)
     double precision, intent(out) :: total_energy
-    logical, intent(in) :: filter(n_atoms), include_dipole_correction
+    logical, intent(in) :: include_dipole_correction
+    logical, optional, intent(in) :: include_realspace
     double precision :: energy(7), tmp_energy(7), charge1, charge2, inv_eps_2v, inv_eps_4pi, &
          separation(3), distance, inv_sigma_sqrt_2pi, inv_sigma_sqrt_2, &
-         s_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         tmp_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         k_vector(3), dot, coords2(3), t1, t2
-    integer :: index1, index2, j, k1, k2, k3, offset(3)
+         k_vector(3), dot, coords2(3), t1, t2, sine, cosine, exponential, k_cut_sq
+    integer :: index1, index2, j, k1, k2, k3, offset(3), n_atoms
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
     logical :: evaluate
+
+    n_atoms = size(atoms)
+    call check_s_factor_array_allocation(n_atoms,reciprocal_cutoff)
 
     energy = 0.d0
     tmp_energy = 0.d0
     total_energy = 0.d0
     s_factor = 0.d0
-    tmp_factor = 0.d0    
+    tmp_factor = 0.d0
+    k_cut_sq = k_radius*k_radius
 
     inv_eps_4pi = 1.d0 / (4.d0 * pi * electric_constant)
     inv_eps_2v = 1.d0 / (2.d0 * cell%volume * electric_constant)
@@ -1339,69 +1446,84 @@ contains
 #endif
 
     ! loop over atoms
-    do index1 = 1, n_atoms
-       if(is_my_atom(index1) .and. filter(index1))then
+    do index1 = 1, size(atoms)
+       if(is_my_atom(index1))then
+
           atom1 = atoms(index1)
           nbors1 = atom1%neighbor_list
           charge1 = atom1%charge*scaler(index1)
-
-          !
-          ! calculate the real space sum
-          !
+          
           if(charge1 /= 0.d0)then
-             ! loop over neighbors
-             do j = 1, nbors1%n_neighbors
 
-                ! neighboring atom
-                index2 = nbors1%neighbors(j)
+             evaluate = .true.
+             if(present(include_realspace))then
+                evaluate = include_realspace
+             end if
+             
+             if(evaluate)then
+                !
+                ! calculate the real space sum
+                !
+                ! loop over neighbors
+                do j = 1, nbors1%n_neighbors
 
-                ! prevent double counting (pick index1 < index2)
-                if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
+                   ! neighboring atom
+                   index2 = nbors1%neighbors(j)
 
-                   atom2 = atoms(index2)
-                   charge2 = atom2%charge*scaler(index2)
-                   ! calculate atom1-atom2 separation vector
-                   ! and distance
-                   call separation_vector(atom1%position, &
-                        atom2%position, &
-                        nbors1%pbc_offsets(1:3,j), &
-                        cell, &
-                        separation) ! in Geometry.f90
-                   distance = .norm.separation
+                   ! prevent double counting (pick index1 < index2)
+                   if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
 
-                   if(distance == 0.d0)then
-                      distance = 0.1d-10
+                      atom2 = atoms(index2)
+                      charge2 = atom2%charge*scaler(index2)
+                      ! calculate atom1-atom2 separation vector
+                      ! and distance
+                      call separation_vector(atom1%position, &
+                           atom2%position, &
+                           nbors1%pbc_offsets(1:3,j), &
+                           cell, &
+                           separation) ! in Geometry.f90
+                      distance = .norm.separation
+                      
+                      if(distance == 0.d0)then
+                         distance = 0.1d-10
+                      end if
+                      
+                      if(distance < real_cutoff)then
+                         
+                         !write(*,'(A,I8,I8,F8.2,F8.2,F8.2,F10.3)') "    Ewald pair ", index1, index2, separation, distance
+                         
+                         ! q_i q_j / r * erfc(r / (sqrt(2) sigma))
+                         energy(1) = energy(1) + charge1*charge2/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
+                      end if
+                      
                    end if
 
-                   if(distance < real_cutoff)then
+                end do
+             end if ! include_realspace
 
-                      !write(*,'(A,I8,I8,F8.2,F8.2,F8.2,F10.3)') "    Ewald pair ", index1, index2, separation, distance
-
-                      ! q_i q_j / r * erfc(r / (sqrt(2) sigma))
-                      energy(1) = energy(1) + charge1*charge2/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
-                   end if
-
-                end if
-
-             end do
 
              !
              ! calculate the structure factors
              !
              do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
                 do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-                   do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                   do k3 = 0, reciprocal_cutoff(3)
                       if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
 
                          k_vector = k1*cell%reciprocal_cell(1:3,1) + &
                               k2*cell%reciprocal_cell(1:3,2) + &
                               k3*cell%reciprocal_cell(1:3,3)
-                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
-
-                         ! S(k) = q exp(i k.r) = q [cos(k.r) + i sin(k.r)]
-                         tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
-                              (/ charge1 * cos(dot), charge1 * sin(dot) /)
-
+                         if( (k_vector.o.k_vector) < k_cut_sq)then
+                            dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                            sine = charge1*sin(dot)
+                            cosine = charge1*cos(dot)
+                            
+                            ! S(k) = q exp(i k.r) = q [cos(k.r) + i sin(k.r)]
+                            tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
+                                 (/ cosine, sine /)
+                            !tmp_factor(1:2,-k1,-k2,-k3) = tmp_factor(1:2,-k1,-k2,-k3) + &
+                            !     (/ cosine, -sine /)
+                         end if
                       end if
                    end do
                 end do
@@ -1429,6 +1551,20 @@ contains
        end if
     end do
 
+!!$    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+!!$       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+!!$          do k3 = 0, reciprocal_cutoff(3)
+!!$             if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
+!!$                
+!!$                ! S(k) = q exp(i k.r) = q [cos(k.r) + i sin(k.r)]
+!!$                tmp_factor(1,-k1,-k2,-k3) = tmp_factor(1,k1,k2,k3)
+!!$                tmp_factor(2,-k1,-k2,-k3) = -tmp_factor(2,k1,k2,k3)
+!!$                
+!!$             end if
+!!$          end do
+!!$       end do
+!!$    end do
+    
 #ifdef MPI
 	call timer(t1)
 	call record_load(t1)
@@ -1455,7 +1591,7 @@ contains
     !
     do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
        do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-          do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+          do k3 = 0, reciprocal_cutoff(3)
              if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
 
                 k_vector = k1*cell%reciprocal_cell(1:3,1) + &
@@ -1463,11 +1599,21 @@ contains
                      k3*cell%reciprocal_cell(1:3,3)
                 distance = (k_vector .o. k_vector) ! |k|^2
 
-                ! exp(- sigma^2 k^2 / 2) / k^2 |S(k)|^2
-                ! |z|^2 = x^2 + y^2
-                tmp_energy(3) = tmp_energy(3) + exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
-                     (distance) * &
-                     (s_factor(1,k1,k2,k3)*s_factor(1,k1,k2,k3) + s_factor(2,k1,k2,k3)*s_factor(2,k1,k2,k3))
+                if( (distance) < k_cut_sq)then
+                   exponential = exp(-gaussian_width*gaussian_width*distance*0.5d0) / (distance)
+                   
+                   if(k3 == 0)then
+                      ! exp(- sigma^2 k^2 / 2) / k^2 |S(k)|^2
+                      ! |z|^2 = x^2 + y^2
+                      tmp_energy(3) = tmp_energy(3) + exponential * &
+                           (s_factor(1,k1,k2,k3)*s_factor(1,k1,k2,k3) + s_factor(2,k1,k2,k3)*s_factor(2,k1,k2,k3))
+                   else
+                      ! exp(- sigma^2 k^2 / 2) / k^2 |S(k)|^2
+                      ! |z|^2 = x^2 + y^2
+                      tmp_energy(3) = tmp_energy(3) + 2.d0*exponential * &
+                           (s_factor(1,k1,k2,k3)*s_factor(1,k1,k2,k3) + s_factor(2,k1,k2,k3)*s_factor(2,k1,k2,k3))
+                   end if
+                end if
 
              end if
           end do
@@ -1496,50 +1642,49 @@ contains
   !
   !    \mathbf{F}_\alpha = - \nabla_\alpha U
   !
-  ! *n_atoms number of atoms
   ! *atoms list of atoms
   ! *cell the supercell containing the system
   ! *real_cutoff Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
   ! *reciprocal_cutoff The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
   ! *gaussian_width The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
   ! *electric_constant The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
-  ! *filter a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
   ! *scaler a list of numerical values to scale the individual charges of the atoms
   ! *include_dipole_correction if true, a dipole correction term is included in the energy
   ! *total_forces the calculated forces
   ! *total_stress the calculated stress
-  subroutine calculate_ewald_forces(n_atoms,atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
-       electric_constant,filter,scaler,include_dipole_correction,total_forces,total_stress)
+  ! *include_realspace By default, also the real space summation is carried out, but giving the .false. flag here will prevent the calculation. This is used in the normal evaluation loop where the real space sum is calculated during the evaluation of other pairwise interactions.
+  subroutine calculate_ewald_forces(atoms,cell,real_cutoff,k_radius,reciprocal_cutoff,gaussian_width,&
+       electric_constant,scaler,include_dipole_correction,total_forces,total_stress,include_realspace)
     implicit none
-    type(atom), intent(in) :: atoms(n_atoms)
+    type(atom), intent(in) :: atoms(:)
     type(supercell), intent(in) :: cell
-    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(n_atoms)
-    integer, intent(in) :: n_atoms, reciprocal_cutoff(3)
-    double precision, intent(out) :: total_forces(3,n_atoms), total_stress(6)
-    logical, intent(in) :: filter(n_atoms), include_dipole_correction
-    double precision :: forces(3,3,n_atoms), sum_forces(3,3,n_atoms), tmp_forces(3), charge1, charge2, &
+    double precision, intent(in) :: real_cutoff, gaussian_width, k_radius, electric_constant, scaler(:)
+    integer, intent(in) :: reciprocal_cutoff(3)
+    double precision, intent(inout) :: total_forces(:,:), total_stress(6)
+    logical, intent(in) :: include_dipole_correction
+    logical, optional, intent(in) :: include_realspace
+    double precision, save :: tmp_forces(3), charge1, charge2, &
          inv_eps_2v, inv_eps_4pi, sin_dot, cos_dot, &
          separation(3), distance, inv_dist, inv_sigma_sqrt_2pi, &
          inv_sigma_sqrt_2, inv_sigma_sqrt_2perpi, inv_sigma_sq_2, &
-         s_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         tmp_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
          nabla_factor(3,2), stress(6), &
          k_vector(3), dot, &
-         dipole(1:3), tmp_dipole(1:3), t1, t2
-    integer :: index1, index2, j, k1, k2, k3
+         dipole(1:3), tmp_dipole(1:3), t1, t2, k_cut_sq
+    integer :: index1, index2, j, k1, k2, k3, count, n_atoms
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
+    logical :: evaluate
 
-    forces = 0.d0
+    n_atoms = size(atoms)
+    call check_s_factor_array_allocation(n_atoms,reciprocal_cutoff)
+
+    ewald_forces = 0.d0
     tmp_forces = 0.d0
     total_forces = 0.d0
     s_factor = 0.d0
     tmp_factor = 0.d0
     nabla_factor = 0.d0
+    k_cut_sq = k_radius*k_radius
 
     stress = 0.d0
     total_stress = 0.d0
@@ -1563,67 +1708,77 @@ contains
 
     ! loop over atoms
     do index1 = 1, n_atoms
-       if(is_my_atom(index1) .and. filter(index1))then
+       if(is_my_atom(index1))then
           atom1 = atoms(index1)
           nbors1 = atom1%neighbor_list
           charge1 = atom1%charge*scaler(index1)
 
           if(charge1 /= 0.d0)then
-             ! loop over neighbors
-             do j = 1, nbors1%n_neighbors
 
-                ! neighboring atom
-                index2 = nbors1%neighbors(j)
+             evaluate = .true.
+             if(present(include_realspace))then
+                evaluate = include_realspace
+             end if
+             
+             if(evaluate)then
 
-                ! prevent double counting
-                if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
-                   atom2 = atoms(index2)
-                   charge2 = atom2%charge*scaler(index2)
-
-                   ! calculate atom1-atom2 separation vector
-                   ! and distance
-                   call separation_vector(atom1%position, &
-                        atom2%position, &
-                        nbors1%pbc_offsets(1:3,j), &
-                        cell, &
-                        separation) ! in Geometry.f90
-                   distance = .norm.separation
-
-                   if(distance == 0.d0)then
-                      distance = 0.1d-10
-                   end if
-
-                   inv_dist = 1.d0 / distance
-
-                   if(distance < real_cutoff)then
-                      ! q_i q_j * 
-                      ! ( erfc(r/(sigma*sqrt(2)))/r^2 + 
-                      ! 1/sigma sqrt(2/pi) exp(-r^2/(2 sigma^2))/r ) \hat{r} 
-                      tmp_forces =  -inv_eps_4pi * charge1*charge2 * ( &
-                           ( 1 - erf(distance*inv_sigma_sqrt_2) ) * inv_dist*inv_dist + &
-                           inv_sigma_sqrt_2perpi * exp( -distance*distance*inv_sigma_sq_2 ) * inv_dist  ) * &
-                           separation * inv_dist
-
-                      forces(1:3,1,index1) = forces(1:3,1,index1) + tmp_forces
-                      forces(1:3,1,index2) = forces(1:3,1,index2) - tmp_forces
-
-                      !***************!
-                      ! stress tensor !
-                      !***************!
+                ! loop over neighbors
+                do j = 1, nbors1%n_neighbors
+                   
+                   ! neighboring atom
+                   index2 = nbors1%neighbors(j)
                 
-                      ! s_xx, s_yy, s_zz, s_yz, s_xz, s_xy:
-                      stress(1) = stress(1) - separation(1) * tmp_forces(1)
-                      stress(2) = stress(2) - separation(2) * tmp_forces(2)
-                      stress(3) = stress(3) - separation(3) * tmp_forces(3)
-                      stress(4) = stress(4) - separation(2) * tmp_forces(3)
-                      stress(5) = stress(5) - separation(1) * tmp_forces(3)
-                      stress(6) = stress(6) - separation(1) * tmp_forces(2)
-
+                   ! prevent double counting
+                   if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
+                      atom2 = atoms(index2)
+                      charge2 = atom2%charge*scaler(index2)
+                      
+                      ! calculate atom1-atom2 separation vector
+                      ! and distance
+                      call separation_vector(atom1%position, &
+                           atom2%position, &
+                           nbors1%pbc_offsets(1:3,j), &
+                           cell, &
+                           separation) ! in Geometry.f90
+                      distance = .norm.separation
+                      
+                      if(distance == 0.d0)then
+                         distance = 0.1d-10
+                      end if
+                      
+                      inv_dist = 1.d0 / distance
+                      
+                      if(distance < real_cutoff)then
+                         ! q_i q_j * 
+                         ! ( erfc(r/(sigma*sqrt(2)))/r^2 + 
+                         ! 1/sigma sqrt(2/pi) exp(-r^2/(2 sigma^2))/r ) \hat{r} 
+                         tmp_forces =  -inv_eps_4pi * charge1*charge2 * ( &
+                              ( 1 - erf(distance*inv_sigma_sqrt_2) ) * inv_dist*inv_dist + &
+                              inv_sigma_sqrt_2perpi * exp( -distance*distance*inv_sigma_sq_2 ) * inv_dist  ) * &
+                              separation * inv_dist
+                         
+                         ewald_forces(1:3,1,index1) = ewald_forces(1:3,1,index1) + tmp_forces
+                         ewald_forces(1:3,1,index2) = ewald_forces(1:3,1,index2) - tmp_forces
+                         
+                         !***************!
+                         ! stress tensor !
+                         !***************!
+                         
+                         ! s_xx, s_yy, s_zz, s_yz, s_xz, s_xy:
+                         stress(1) = stress(1) - separation(1) * tmp_forces(1)
+                         stress(2) = stress(2) - separation(2) * tmp_forces(2)
+                         stress(3) = stress(3) - separation(3) * tmp_forces(3)
+                         stress(4) = stress(4) - separation(2) * tmp_forces(3)
+                         stress(5) = stress(5) - separation(1) * tmp_forces(3)
+                         stress(6) = stress(6) - separation(1) * tmp_forces(2)
+                         
+                      end if
+                      
                    end if
 
-                end if
+                end do
 
-             end do
+             end if
 
              !
              ! calculate the dipole correction terms
@@ -1637,21 +1792,23 @@ contains
              !             
              do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
                 do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-                   do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                   do k3 = 0, reciprocal_cutoff(3)
                       if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
 
                          k_vector = k1*cell%reciprocal_cell(1:3,1) + &
                               k2*cell%reciprocal_cell(1:3,2) + &
                               k3*cell%reciprocal_cell(1:3,3)
-                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
-                         sin_dot = sin(dot)
-                         cos_dot = cos(dot)
 
-                         ! this is the complex conjugate of S(k):
-                         ! S*(k) = q exp(- i k.r) = q [cos(k.r) - i sin(k.r)]
-                         tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
-                              (/ charge1 * cos_dot, - charge1 * sin_dot /)
+                         if((k_vector .o. k_vector) < k_cut_sq)then
+                            dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                            sin_dot = sin(dot)
+                            cos_dot = cos(dot)
 
+                            ! this is the complex conjugate of S(k):
+                            ! S*(k) = q exp(- i k.r) = q [cos(k.r) - i sin(k.r)]
+                            tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
+                                 (/ charge1 * cos_dot, - charge1 * sin_dot /)
+                         end if
                       end if
                    end do
                 end do
@@ -1663,6 +1820,19 @@ contains
 
        end if
     end do
+
+
+!!$    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+!!$       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+!!$          do k3 = 0, reciprocal_cutoff(3)
+!!$                
+!!$                ! S*(k) = q exp(i k.r) = q [cos(k.r) - i sin(k.r)]
+!!$                tmp_factor(1,-k1,-k2,-k3) = tmp_factor(1,k1,k2,k3)
+!!$                tmp_factor(2,-k1,-k2,-k3) = -tmp_factor(2,k1,k2,k3)
+!!$                
+!!$          end do
+!!$       end do
+!!$    end do
 
 #ifdef MPI
 
@@ -1684,7 +1854,7 @@ contains
 #endif
 
     do index1 = 1, n_atoms
-       if(is_my_atom(index1) .and. filter(index1))then
+       if(is_my_atom(index1))then
           
           atom1 = atoms(index1)
           charge1 = atom1%charge*scaler(index1)
@@ -1693,7 +1863,7 @@ contains
           ! calculate the dipole correction
           ! 
           if(include_dipole_correction)then
-             forces(1:3,3,index1) = atoms(index1)%charge*scaler(index1) * inv_eps_2v / (-1.5d0) * dipole(1:3)
+             ewald_forces(1:3,3,index1) = atoms(index1)%charge*scaler(index1) * inv_eps_2v / (-1.5d0) * dipole(1:3)
           end if
           
           
@@ -1702,44 +1872,58 @@ contains
           !
           do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
              do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-                do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                do k3 = 0, reciprocal_cutoff(3)
                    if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
                       
                       k_vector = k1*cell%reciprocal_cell(1:3,1) + &
                            k2*cell%reciprocal_cell(1:3,2) + &
                            k3*cell%reciprocal_cell(1:3,3)
                       distance = k_vector .o. k_vector ! |k|^2
-                      dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
-                      sin_dot = sin(dot)
-                      cos_dot = cos(dot)
+                      if(distance < k_cut_sq)then
+                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                         sin_dot = sin(dot)
+                         cos_dot = cos(dot)
                       
-                      ! \nabla S(k) = i q k [cos(k.r) + i sin(k.r)]
-                      k_vector = charge1 * k_vector
-                      nabla_factor(1:3,1) = &
-                           -sin_dot * k_vector ! real part
-                      nabla_factor(1:3,2) = &
-                           cos_dot * k_vector ! imaginary part   
+                         ! \nabla S(k) = i q k [cos(k.r) + i sin(k.r)]
+                         k_vector = charge1 * k_vector
+                         nabla_factor(1:3,1) = &
+                              -sin_dot * k_vector ! real part
+                         nabla_factor(1:3,2) = &
+                              cos_dot * k_vector ! imaginary part   
 
-                      ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
-                      ! Re[ z1 z2 ] = x1 x2 - y1 y2
-                      forces(1:3,2,index1) = forces(1:3,2,index1) - inv_eps_2v * &
-                           exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
-                           (distance) * 2.d0 * &
-                           (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1) - &
-                           s_factor(2,k1,k2,k3)*nabla_factor(1:3,2))
-                      
+                         if(k3 == 0)then
+                            ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
+                            ! Re[ z1 z2 ] = x1 x2 - y1 y2  (z = x + iy)
+                            ewald_forces(1:3,2,index1) = ewald_forces(1:3,2,index1) - inv_eps_2v * &
+                                 exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
+                                 (distance) * 2.d0 * &
+                                 (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1) - &
+                                 s_factor(2,k1,k2,k3)*nabla_factor(1:3,2))
+                         else
+                            ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) \nabla S(k) ]
+                            ! Re[ z1 z2 ] = x1 x2 - y1 y2  (z = x + iy)
+                            ewald_forces(1:3,2,index1) = ewald_forces(1:3,2,index1) - inv_eps_2v * &
+                                 exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
+                                 (distance) * 4.d0 * &
+                                 (s_factor(1,k1,k2,k3)*nabla_factor(1:3,1) - &
+                                 s_factor(2,k1,k2,k3)*nabla_factor(1:3,2))
+
+                         end if
+
+                      end if
+
                    end if
                 end do
              end do
           end do
 
           ! stress tensor
-          stress(1) = stress(1) + atoms(index1)%position(1) * (forces(1,2,index1) + forces(1,3,index1))
-          stress(2) = stress(2) + atoms(index1)%position(2) * (forces(2,2,index1) + forces(2,3,index1))
-          stress(3) = stress(3) + atoms(index1)%position(3) * (forces(3,2,index1) + forces(3,3,index1))
-          stress(4) = stress(4) + atoms(index1)%position(2) * (forces(3,2,index1) + forces(3,3,index1))
-          stress(5) = stress(5) + atoms(index1)%position(1) * (forces(3,2,index1) + forces(3,3,index1))
-          stress(6) = stress(6) + atoms(index1)%position(1) * (forces(2,2,index1) + forces(2,3,index1))
+          stress(1) = stress(1) + atoms(index1)%position(1) * (ewald_forces(1,2,index1) + ewald_forces(1,3,index1))
+          stress(2) = stress(2) + atoms(index1)%position(2) * (ewald_forces(2,2,index1) + ewald_forces(2,3,index1))
+          stress(3) = stress(3) + atoms(index1)%position(3) * (ewald_forces(3,2,index1) + ewald_forces(3,3,index1))
+          stress(4) = stress(4) + atoms(index1)%position(2) * (ewald_forces(3,2,index1) + ewald_forces(3,3,index1))
+          stress(5) = stress(5) + atoms(index1)%position(1) * (ewald_forces(3,2,index1) + ewald_forces(3,3,index1))
+          stress(6) = stress(6) + atoms(index1)%position(1) * (ewald_forces(2,2,index1) + ewald_forces(2,3,index1))
 
        end if
     end do
@@ -1750,20 +1934,20 @@ contains
 	call record_load(t1+t2)
 
     ! collect forces from all cpus in MPI
-    call mpi_allreduce(forces,sum_forces,size(forces),mpi_double_precision,&
+    call mpi_allreduce(ewald_forces,ewald_sum_forces,size(ewald_forces),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
-    total_forces(1:3,1:n_atoms) = sum_forces(1:3,1,1:n_atoms) + &
-         sum_forces(1:3,2,1:n_atoms) + sum_forces(1:3,3,1:n_atoms)
+    total_forces(1:3,1:n_atoms) = ewald_sum_forces(1:3,1,1:n_atoms) + &
+         ewald_sum_forces(1:3,2,1:n_atoms) + ewald_sum_forces(1:3,3,1:n_atoms)
     ! collect stress tensor
     call mpi_allreduce(stress,total_stress,size(stress),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
 #else
-    total_forces(1:3,1:n_atoms) = forces(1:3,1,1:n_atoms) + &
-         forces(1:3,2,1:n_atoms) + forces(1:3,3,1:n_atoms)
+    total_forces(1:3,1:n_atoms) = ewald_forces(1:3,1,1:n_atoms) + &
+         ewald_forces(1:3,2,1:n_atoms) + ewald_forces(1:3,3,1:n_atoms)
     total_stress = stress
 #endif
 
-	!write(*,*) t1+t2, cpu_id, my_atoms, reciprocal_cutoff
+	!write(*,*) t1, t2, t1+t2, cpu_id, my_atoms, reciprocal_cutoff
 
   end subroutine calculate_ewald_forces
 
@@ -1775,55 +1959,44 @@ contains
   !
   !    \chi_\alpha = - \frac{\partial U}{\partial q_\alpha}
   !
-  ! *n_atoms number of atoms
   ! *atoms list of atoms
   ! *cell the supercell containing the system
   ! *real_cutoff Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
   ! *reciprocal_cutoff The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
   ! *gaussian_width The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
   ! *electric_constant The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
-  ! *filter a list of logical values, one per atom, false for the atoms that should be ignored in the calculation
   ! *scaler a list of numerical values to scale the individual charges of the atoms
   ! *include_dipole_correction if true, a dipole correction term is included
   ! *total_enegs the calculated electronegativities
-  subroutine calculate_ewald_electronegativities(n_atoms,atoms,cell,real_cutoff,reciprocal_cutoff,gaussian_width,&
-       electric_constant,filter,scaler,include_dipole_correction,total_enegs)
+  ! *include_realspace By default, also the real space summation is carried out, but giving the .false. flag here will prevent the calculation. This is used in the normal evaluation loop where the real space sum is calculated during the evaluation of other pairwise interactions.
+  subroutine calculate_ewald_electronegativities(atoms,cell,real_cutoff,k_radius,reciprocal_cutoff,gaussian_width,&
+       electric_constant,scaler,include_dipole_correction,total_enegs,include_realspace)
     implicit none
-    type(atom), intent(in) :: atoms(n_atoms)
+    type(atom), intent(in) :: atoms(:)
     type(supercell), intent(in) :: cell
-    double precision, intent(in) :: real_cutoff, gaussian_width, electric_constant, scaler(n_atoms)
-    integer, intent(in) :: n_atoms, reciprocal_cutoff(3)
-    double precision, intent(out) :: total_enegs(n_atoms)
-    logical, intent(in) :: filter(n_atoms), include_dipole_correction
+    double precision, intent(in) :: real_cutoff, gaussian_width, k_radius, electric_constant, scaler(:)
+    integer, intent(in) :: reciprocal_cutoff(3)
+    double precision, intent(inout) :: total_enegs(:)
+    logical, intent(in) :: include_dipole_correction
+    logical, optional, intent(in) :: include_realspace
     double precision :: tmp, qsum(4), tmp_qsum(4), &
-         enegs(n_atoms), tmp_enegs(n_atoms), charge1, charge2, inv_eps_2v, inv_eps_4pi, &
+         charge1, charge2, inv_eps_2v, inv_eps_4pi, &
          separation(3), distance, inv_sigma_sqrt_2pi, inv_sigma_sqrt_2, &
-         s_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         tmp_factor(2, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         diff_factor(2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         tmp_diff_factor(2, n_atoms, -reciprocal_cutoff(1):reciprocal_cutoff(1), &
-         -reciprocal_cutoff(2):reciprocal_cutoff(2), &
-         -reciprocal_cutoff(3):reciprocal_cutoff(3)), &
-         k_vector(3), dot, sin_dot, cos_dot, coords2(3), t1, t2
-    integer :: index1, index2, j, k1, k2, k3, offset(3)
+         k_vector(3), dot, sin_dot, cos_dot, coords2(3), t1, t2, k_cut_sq
+    integer :: index1, index2, j, k1, k2, k3, offset(3), n_atoms
     type(atom) :: atom1, atom2
     type(neighbor_list) :: nbors1
     logical :: evaluate
 
-    enegs = 0.d0
-    tmp_enegs = 0.d0
+    n_atoms = size(atoms)
+    call check_s_factor_array_allocation(n_atoms,reciprocal_cutoff)
+
+    ewald_tmp_enegs = 0.d0
     total_enegs = 0.d0
     s_factor = 0.d0
     tmp_factor = 0.d0
-    diff_factor = 0.d0
-    tmp_diff_factor = 0.d0
     qsum = 0.d0
+    k_cut_sq = k_radius*k_radius
 
     inv_eps_4pi = 1.d0 / (4.d0 * pi * electric_constant)
     inv_eps_2v = 1.d0 / (2.d0 * cell%volume * electric_constant)
@@ -1837,74 +2010,82 @@ contains
 
     ! loop over atoms
     do index1 = 1, n_atoms
-       if(is_my_atom(index1) .and. filter(index1))then
+       if(is_my_atom(index1))then
           atom1 = atoms(index1)
           nbors1 = atom1%neighbor_list
           charge1 = atom1%charge*scaler(index1)
           
-          !
-          ! calculate the real space sum
-          !
-          do j = 1, nbors1%n_neighbors
-             
-             ! neighboring atom
-             index2 = nbors1%neighbors(j)
-             
-             ! prevent double counting (pick index1 < index2)
-             if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
-                
-                atom2 = atoms(index2)
-                charge2 = atom2%charge*scaler(index2)
-                ! calculate atom1-atom2 separation vector
-                ! and distance
-                call separation_vector(atom1%position, &
-                     atom2%position, &
-                     nbors1%pbc_offsets(1:3,j), &
-                     cell, &
-                     separation) ! in Geometry.f90
-                distance = .norm.separation
-                
-                if(distance == 0.d0)then
-                   distance = 0.1d-10
-                end if
 
-                if(distance < real_cutoff)then
-                   
-                   ! q_j / r * erfc(r / (sqrt(2) sigma))
-                   tmp = -inv_eps_4pi/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
-                   
-                   tmp_enegs(index1) = tmp_enegs(index1) + charge2*tmp
-                   tmp_enegs(index2) = tmp_enegs(index2) + charge1*tmp
-                   
-                end if
-                
-             end if
-             
-          end do
+          evaluate = .true.
+          if(present(include_realspace))then
+             evaluate = include_realspace
+          end if
           
+          if(evaluate)then
+
+             !
+             ! calculate the real space sum
+             !
+             do j = 1, nbors1%n_neighbors
+                
+                ! neighboring atom
+                index2 = nbors1%neighbors(j)
+                
+                ! prevent double counting (pick index1 < index2)
+                if(pick(index1,index2,nbors1%pbc_offsets(1:3,j)))then
+                   
+                   atom2 = atoms(index2)
+                   charge2 = atom2%charge*scaler(index2)
+                   ! calculate atom1-atom2 separation vector
+                   ! and distance
+                   call separation_vector(atom1%position, &
+                        atom2%position, &
+                        nbors1%pbc_offsets(1:3,j), &
+                        cell, &
+                        separation) ! in Geometry.f90
+                   distance = .norm.separation
+                   
+                   if(distance == 0.d0)then
+                      distance = 0.1d-10
+                   end if
+
+                   if(distance < real_cutoff)then
+                      
+                      ! q_j / r * erfc(r / (sqrt(2) sigma))
+                      tmp = -inv_eps_4pi/distance*(1.d0 - erf(distance*inv_sigma_sqrt_2))
+                      
+                      ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) + charge2*tmp
+                      ewald_tmp_enegs(index2) = ewald_tmp_enegs(index2) + charge1*tmp
+                   
+                   end if
+                
+                end if
+             
+             end do
+          
+          end if
+
           !
           ! calculate the structure factors
           !
           do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
              do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-                do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                do k3 = 0, reciprocal_cutoff(3)
                    if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
                       
                       k_vector = k1*cell%reciprocal_cell(1:3,1) + &
                            k2*cell%reciprocal_cell(1:3,2) + &
                            k3*cell%reciprocal_cell(1:3,3)
-                      dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
-                      sin_dot = sin(dot)
-                      cos_dot = cos(dot)
-                      
-                      ! this is the complex conjugate of S(k):
-                      ! S*(k) = q exp(- i k.r) = q [cos(k.r) - i sin(k.r)]
-                      tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
-                           (/ charge1 * cos_dot, - charge1 * sin_dot /)
-                      
-                      ! d S(k) = exp(i k.r) = [cos(k.r) + i sin(k.r)]
-                      tmp_diff_factor(1:2,index1,k1,k2,k3) = tmp_diff_factor(1:2,index1,k1,k2,k3) + &
-                           (/ cos_dot, sin_dot /)
+                      if( (k_vector.o.k_vector) < k_cut_sq)then
+                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                         sin_dot = sin(dot)
+                         cos_dot = cos(dot)
+                         
+                         ! this is the complex conjugate of S(k):
+                         ! S*(k) = q exp(- i k.r) = q [cos(k.r) - i sin(k.r)]
+                         tmp_factor(1:2,k1,k2,k3) = tmp_factor(1:2,k1,k2,k3) + &
+                              (/ charge1 * cos_dot, - charge1 * sin_dot /)
+                      end if
                       
                    end if
                 end do
@@ -1914,7 +2095,7 @@ contains
           !
           ! calculate the self energy term
           !
-          tmp_enegs(index1) = tmp_enegs(index1) + 2.d0*charge1 * inv_eps_4pi * inv_sigma_sqrt_2pi 
+          ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) + 2.d0*charge1 * inv_eps_4pi * inv_sigma_sqrt_2pi 
 
           !
           ! calculate the total charge (charged background term)
@@ -1932,14 +2113,24 @@ contains
 
     end do
 
+!!$    do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
+!!$       do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
+!!$          do k3 = 0, reciprocal_cutoff(3)
+!!$                
+!!$                ! S*(k) = q exp(i k.r) = q [cos(k.r) - i sin(k.r)]
+!!$                tmp_factor(1,-k1,-k2,-k3) = tmp_factor(1,k1,k2,k3)
+!!$                tmp_factor(2,-k1,-k2,-k3) = -tmp_factor(2,k1,k2,k3)
+!!$                
+!!$          end do
+!!$       end do
+!!$    end do
+
 #ifdef MPI
 
 	call timer(t1)
 
     ! collect structure factors from all cpus in MPI
     call mpi_allreduce(tmp_factor,s_factor,size(s_factor),mpi_double_precision,&
-         mpi_sum,mpi_comm_world,mpistat)
-    call mpi_allreduce(tmp_diff_factor,diff_factor,size(diff_factor),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
     call mpi_allreduce(tmp_qsum,qsum,size(qsum),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
@@ -1948,26 +2139,25 @@ contains
          
 #else
     s_factor = tmp_factor
-    diff_factor = tmp_diff_factor
     qsum = tmp_qsum
 #endif
 
     do index1 = 1, n_atoms
 
-       if(is_my_atom(index1) .and. filter(index1))then
+       if(is_my_atom(index1))then
           atom1 = atoms(index1)
 
           !
           ! calculate the total charged background and dipole correction terms
           !
-          tmp_enegs(index1) = tmp_enegs(index1) - scaler(index1) * inv_eps_2v * &
+          ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) - scaler(index1) * inv_eps_2v * &
                ( - gaussian_width*gaussian_width *qsum(1) )
           
           if(include_dipole_correction)then
              !
              ! dipole correction terms
              !
-             tmp_enegs(index1) = tmp_enegs(index1) + scaler(index1) * inv_eps_2v * &
+             ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) + scaler(index1) * inv_eps_2v * &
                   ( -0.666666666666666667d0 ) * &
                   ( atom1%position(1) * qsum(2) + &
                   atom1%position(2) * qsum(3) + &
@@ -1979,22 +2169,44 @@ contains
           !
           do k1 = -reciprocal_cutoff(1), reciprocal_cutoff(1)
              do k2 = -reciprocal_cutoff(2), reciprocal_cutoff(2)
-                do k3 = -reciprocal_cutoff(3), reciprocal_cutoff(3)
+                do k3 = 0, reciprocal_cutoff(3)
                    if(k1 /= 0 .or. k2 /= 0 .or. k3 /= 0)then
                       
                       k_vector = k1*cell%reciprocal_cell(1:3,1) + &
                            k2*cell%reciprocal_cell(1:3,2) + &
                            k3*cell%reciprocal_cell(1:3,3)
-                      distance = .norm.k_vector
+                      distance = (k_vector .o. k_vector) ! |k|^2
+
+                      if( (distance) < k_cut_sq)then
+                         dot = k_vector.o.atom1%position ! .o. in Quaternions.f90
+                         sin_dot = sin(dot)
+                         cos_dot = cos(dot)
                       
-                      ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) d S(k) ]
-                      ! Re[ z1 z2 ] = x1 x2 - y1 y2
-                      tmp_enegs(index1) = tmp_enegs(index1) - inv_eps_2v * &
-                           exp(-gaussian_width*gaussian_width*distance*distance*0.5d0) / &
-                           (distance*distance) * 2.d0 * &
-                           (s_factor(1,k1,k2,k3)*diff_factor(1,index1,k1,k2,k3) - &
-                           s_factor(2,k1,k2,k3)*diff_factor(2,index1,k1,k2,k3))
-                      
+                         if(k3 == 0)then
+
+                            ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) d S(k) ]
+                            ! Re[ z1 z2 ] = x1 x2 - y1 y2
+                            ! d S(k) = exp(i k.r) = [cos(k.r) + i sin(k.r)]
+                            ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) - inv_eps_2v * &
+                                 exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
+                                 (distance) * 2.d0 * &
+                                 (s_factor(1,k1,k2,k3) * cos_dot - &
+                                 s_factor(2,k1,k2,k3) * sin_dot)
+                         else
+
+                            ! - exp(- sigma^2 k^2 / 2) / k^2 2 Re[ S*(k) d S(k) ]
+                            ! Re[ z1 z2 ] = x1 x2 - y1 y2
+                            ! d S(k) = exp(i k.r) = [cos(k.r) + i sin(k.r)]
+                            ewald_tmp_enegs(index1) = ewald_tmp_enegs(index1) - inv_eps_2v * &
+                                 exp(-gaussian_width*gaussian_width*distance*0.5d0) / &
+                                 (distance) * 4.d0 * &
+                                 (s_factor(1,k1,k2,k3) * cos_dot - &
+                                 s_factor(2,k1,k2,k3) * sin_dot)
+
+                         end if
+
+                      end if
+
                    end if
                 end do
              end do
@@ -2008,10 +2220,10 @@ contains
 	call record_load(t1+t2)
 
     ! collect electronegativities from all cpus in MPI
-    call mpi_allreduce(tmp_enegs,total_enegs,size(enegs),mpi_double_precision,&
+    call mpi_allreduce(ewald_tmp_enegs,total_enegs,size(ewald_tmp_enegs),mpi_double_precision,&
          mpi_sum,mpi_comm_world,mpistat)
 #else
-    total_enegs = tmp_enegs
+    total_enegs = ewald_tmp_enegs
 #endif
 
   end subroutine calculate_ewald_electronegativities
@@ -2783,12 +2995,18 @@ contains
     double precision, intent(in) :: separations(3,1), distances(1)
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: force(3,2)
-    double precision :: r1, r2
+    double precision :: r1, r2, r6
 
     r1 = distances(1)
     r2 = (r1 - interaction%parameters(2))
-    force(1:3,1) = interaction%parameters(1) * r2 * separations(1:3,1) / r1
-    force(1:3,2) = -force(1:3,1)
+    r6 = (interaction%cutoff - interaction%parameters(2))
+    
+    if(r2*r2 < r6*r6)then
+	    force(1:3,1) = interaction%parameters(1) * r2 * separations(1:3,1) / r1
+    	force(1:3,2) = -force(1:3,1)
+    else
+    	force = 0.d0
+    end	if
     
   end subroutine evaluate_force_spring
 
@@ -2809,7 +3027,11 @@ contains
     r1 = distances(1)
     r2 = (r1 - interaction%parameters(2))
     r6 = (interaction%cutoff - interaction%parameters(2))
-    energy = interaction%parameters(1) * 0.5d0 * (r2*r2 - r6*r6)
+    if(r2*r2 < r6*r6)then
+	    energy = interaction%parameters(1) * 0.5d0 * (r2*r2 - r6*r6)
+	else
+		energy = 0.d0
+	end	if
 
   end subroutine evaluate_energy_spring
 
@@ -4360,6 +4582,15 @@ contains
 
     inv_sqrt = 0.5 / sqrt(f1*f2)
 
+    if(f1 < 0.0)then
+    	f1 = 0.0
+    	inv_sqrt = 0.0
+    end if
+    if(f2 < 0.0)then
+    	f2 = 0.0
+    	inv_sqrt = 0.0
+    end if
+
     eneg(1) = inv_sqrt * d1*f2
     eneg(2) = inv_sqrt * d2*f1
 
@@ -4430,6 +4661,13 @@ contains
     f1 = a1 + b1 * abs( qq1 - Q1 )**n1
     f2 = a2 + b2 * abs( qq2 - Q2 )**n2
 
+    if(f1 < 0.0)then
+    	f1 = 0.0
+    end if
+    if(f2 < 0.0)then
+    	f2 = 0.0
+    end if
+    
     energy = sqrt( f1 * f2 )
 
   end subroutine evaluate_energy_charge_pair_abs
@@ -4755,7 +4993,7 @@ contains
     allocate(new_bond%original_elements(n_targets))
     new_bond%original_elements = orig_elements
     new_bond%includes_post_processing = descriptor%includes_post_processing
-
+    new_bond%n_level = descriptor%n_level
 
     !***********************************!
     ! EDIT WHEN ADDING NEW BOND FACTORS !
@@ -4801,6 +5039,8 @@ contains
 
 
 
+
+
   ! !!!: evaluate_bond_order_factor
 
   ! Returns a bond order factor term.
@@ -4839,8 +5079,6 @@ contains
     select case (bond_params(1)%type_index)
     case(coordination_index) ! number of neighbors
        call evaluate_bond_order_factor_coordination(separations(1:3,1),distances(1),bond_params(1),factor)
-    case(tersoff_index) ! tersoff bond-order factor
-       call evaluate_bond_order_factor_tersoff(separations(1:3,1:2),distances(1:2),bond_params(1:2),factor,atoms(1:3))
     case(triplet_index) ! triplet search
        call evaluate_bond_order_factor_triplet(separations(1:3,1:2),distances(1:2),bond_params(1:2),factor,atoms(1:3))
     case(power_index) ! power law
@@ -4851,6 +5089,50 @@ contains
     end select
 
   end subroutine evaluate_bond_order_factor
+
+
+
+  ! !!!: evaluate_pair_bond_order_factor
+
+  ! Returns a bond order factor term.
+  ! 
+  ! By a bond order factor term, we mean the contribution from
+  ! specific atoms, :math:`c_{ijk}`, appearing in the factor
+  !
+  ! .. math::
+  !
+  !       b_ij = f(\sum_{k} c_{ijk})
+  ! 
+  ! This routine evaluates the term :math:`c_{ijk}` for the given
+  ! atoms :math:`ijk` according to the given parameters.
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *bond_params a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *factor the calculated bond order term :math:`c`
+  subroutine evaluate_pair_bond_order_factor(n_targets,separations,distances,bond_params,factor,atoms)
+    implicit none
+    integer, intent(in) :: n_targets
+    double precision, intent(in) :: separations(3,n_targets-1), &
+         distances(n_targets-1)
+    type(bond_order_parameters), intent(in) :: bond_params
+    double precision, intent(out) :: factor
+    type(atom), intent(in) :: atoms(n_targets)
+
+    factor = 0.d0
+
+    !***********************************!
+    ! EDIT WHEN ADDING NEW BOND FACTORS !
+    !***********************************!
+
+    select case (bond_params%type_index)
+    case(tersoff_index) ! tersoff bond-order factor
+       call evaluate_pair_bond_order_factor_tersoff(separations(1:3,1:2),distances(1:2),bond_params,factor,atoms(1:3))
+    end select
+
+  end subroutine evaluate_pair_bond_order_factor
 
 
   ! !!!: evaluate_bond_order_gradient
@@ -4899,12 +5181,6 @@ contains
             distances(1),&
             bond_params(1),&
             gradient(1:3,1:2,1:2))
-    case(tersoff_index) ! tersoff bond-order factor
-       call evaluate_bond_order_gradient_tersoff(separations(1:3,1:2),&
-            distances(1:2),&
-            bond_params(1:2),&
-            gradient(1:3,1:3,1:3),&
-            atoms(1:3))
     case(triplet_index) ! triplet bond-order factor
        call evaluate_bond_order_gradient_triplet(separations(1:3,1:2),&
             distances(1:2),&
@@ -4924,6 +5200,61 @@ contains
     end select
 
   end subroutine evaluate_bond_order_gradient
+
+
+
+  ! !!!: evaluate_pair_bond_order_gradient
+
+  ! Returns the gradients of bond order terms with respect to moving an atom.
+  ! 
+  ! By a bond order factor term, we mean the contribution from
+  ! specific atoms, c_ijk, appearing in the factor
+  !
+  ! .. math::
+  !
+  !       b_ij = f(\sum_{k} c_{ijk})
+  ! 
+  ! This routine evaluates the gradient term
+  ! :math:`\nabla_\alpha c_{ijk}` for the given atoms :math:`ijk` according to the given parameters.
+  !
+  ! The returned array has two dimensions:
+  ! gradient( coordinates, atom with respect to which we differentiate ).
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *bond_params a :data:`bond_order_parameters` containing the parameters
+  ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
+  ! *gradient the calculated bond order term :math:`\nabla_\alpha c`
+  subroutine evaluate_pair_bond_order_gradient(n_targets,separations,distances,bond_params,gradient,atoms)
+    implicit none
+    integer, intent(in) :: n_targets
+    double precision, intent(in) :: separations(3,n_targets-1), &
+         distances(n_targets-1)
+    type(bond_order_parameters), intent(in) :: bond_params
+    double precision, intent(out) :: gradient(3,n_targets)
+    type(atom), intent(in) :: atoms(n_targets)
+
+    gradient = 0.d0
+
+    !***********************************!
+    ! EDIT WHEN ADDING NEW BOND FACTORS !
+    !***********************************!
+
+    select case (bond_params%type_index)
+    case(tersoff_index) ! tersoff bond-order factor
+       call evaluate_pair_bond_order_gradient_tersoff(separations(1:3,1:2),&
+            distances(1:2),&
+            bond_params,&
+            gradient(1:3,1:3),&
+            atoms(1:3))
+    end select
+
+  end subroutine evaluate_pair_bond_order_gradient
+
+
+
+
 
 
   ! !!!: post_process_bond_order_factor
@@ -5012,7 +5343,7 @@ contains
     implicit none
     double precision, intent(in) :: raw_sum, raw_gradient(3)
     type(bond_order_parameters), intent(in) :: bond_params
-    double precision, intent(out) :: factor_out(3)
+    double precision, intent(inout) :: factor_out(3)
     double precision :: beta, eta, inv_eta, dN, expo, inv_exp
 
     !***********************************!
@@ -5075,13 +5406,15 @@ contains
 
     ! Record the number of targets
     bond_order_descriptors(index)%n_targets = 2 
+    bond_order_descriptors(index)%n_level = 1
 
     ! Allocate space for storing the numbers of parameters (for 1-body, 2-body etc.).
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
 
     ! Record the number of parameters
-    bond_order_descriptors(index)%n_parameters(1) = 0 ! no 1-body params
-    bond_order_descriptors(index)%n_parameters(2) = 0 ! no 2-body params
+    bond_order_descriptors(index)%n_parameters(1) = 0 ! no scaling params
+    bond_order_descriptors(index)%n_parameters(2) = 0 ! no local params
 
     ! Record if the bond factor includes post processing (per-atom scaling)
     bond_order_descriptors(index)%includes_post_processing = .false.
@@ -5170,16 +5503,19 @@ contains
     bond_order_descriptors(index)%type_index = index
     call pad_string('tersoff',pot_name_length,bond_order_descriptors(index)%name)
     bond_order_descriptors(index)%n_targets = 3
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
-    bond_order_descriptors(index)%n_parameters(1) = 3 ! 3 1-body parameters
-    bond_order_descriptors(index)%n_parameters(2) = 4 ! 4 2-body parameters
-    bond_order_descriptors(index)%n_parameters(3) = 0 ! no 3-body parameters
-    max_params = 4 ! maxval(bond_order_descriptors(index)%n_parameters)
+    bond_order_descriptors(index)%n_level = 2
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
+    bond_order_descriptors(index)%n_parameters(1) = 2 ! 3 scaling parameters
+    bond_order_descriptors(index)%n_parameters(2) = 5 ! 4 local parameters
+    max_params = 5 ! maxval(bond_order_descriptors(index)%n_parameters)
     bond_order_descriptors(index)%includes_post_processing = .true.
 
     ! Allocate space for storing the parameter names and descriptions.
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
 
     ! Record parameter names and descriptions.
     ! Names are keywords with which one can intuitively 
@@ -5193,8 +5529,8 @@ contains
     call pad_string('prefactor',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
     call pad_string('eta',param_name_length,bond_order_descriptors(index)%parameter_names(2,1))
     call pad_string('overall exponent',param_note_length,bond_order_descriptors(index)%parameter_notes(2,1))
-    call pad_string('mu',param_name_length,bond_order_descriptors(index)%parameter_names(3,1))
-    call pad_string('decay exponent',param_note_length,bond_order_descriptors(index)%parameter_notes(3,1))
+    call pad_string('mu',param_name_length,bond_order_descriptors(index)%parameter_names(5,2))
+    call pad_string('decay exponent',param_note_length,bond_order_descriptors(index)%parameter_notes(5,2))
     call pad_string('a',param_name_length,bond_order_descriptors(index)%parameter_names(1,2))
     call pad_string('inverse decay factor',param_note_length,bond_order_descriptors(index)%parameter_notes(1,2))
     call pad_string('c',param_name_length,bond_order_descriptors(index)%parameter_names(2,2))
@@ -5204,9 +5540,9 @@ contains
     call pad_string('h',param_name_length,bond_order_descriptors(index)%parameter_names(4,2))
     call pad_string('angle term denominator 2',param_note_length,bond_order_descriptors(index)%parameter_notes(4,2))
 
-    call pad_string('Tersoff bond-order: b_i = [ 1+( beta_i sum xi_ijk*g_ijk)^eta_i ]^(-1/eta_i), \n'//&
-         'xi_ijk = f(r_ik)*exp(alpha_ij^m_i (r_ij-r_ik)^m_i), \n'// &
-         'g_ijk = 1+c_ij^2/d_ij^2-c_ij^2/(d_ij^2+(h_ij^2-cos theta_ijk))', &
+    call pad_string('Tersoff bond-order: b_ij = [ 1+( beta sum xi_ijk*g_ijk)^eta ]^(-1/eta), \n'//&
+         'xi_ijk = f(r_ik)*exp(alpha^m (r_ij-r_ik)^m), \n'// &
+         'g_ijk = 1+c^2/d^2-c^2/(d^2+(h^2-cos theta_ijk))', &
          pot_note_length,bond_order_descriptors(index)%description)
 
   end subroutine create_bond_order_factor_characterizer_tersoff
@@ -5218,42 +5554,26 @@ contains
   ! *bond_params a :data:`bond_order_parameters` containing the parameters
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
   ! *factor the calculated bond order term :math:`c`
-  subroutine evaluate_bond_order_factor_tersoff(separations,distances,bond_params,factor,atoms)
+  subroutine evaluate_pair_bond_order_factor_tersoff(separations,distances,bond_params,factor,atoms)
     double precision, intent(in) :: separations(3,2), &
          distances(2)
-    type(bond_order_parameters), intent(in) :: bond_params(2)
-    double precision, intent(out) :: factor(3)
+    type(bond_order_parameters), intent(in) :: bond_params
+    double precision, intent(out) :: factor
     type(atom), intent(in) :: atoms(3)
-    double precision :: r1, r2, cosine, decay1, decay2, &
-         xi1, xi2, gee1, gee2, &
-         mu, a1, a2, cc1, dd1, h1, cc2, dd2, h2
+    double precision :: r1, r2, cosine, decay1, &
+         xi1, gee1, &
+         mu, a1, cc1, dd1, h1
     double precision :: tmp1(3), tmp2(3)
 
     factor = 0.d0
 
-    ! note that the given distances and separation vectors 
-    ! must be for index pairs ij and ik (in the notation 
-    ! described in the documentation) since these are needed.
-    !
-    ! bond_params(1) should contain the ij parameters and 
-    ! bond_params(2) the ik ones
-
-    if(bond_params(1)%type_index /= bond_params(2)%type_index)then
+    if(bond_params%original_elements(1) /= atoms(2)%element)then
        return
     end if
-
-    ! check that bond_params(1) is for indices (ij)
-    if(bond_params(1)%original_elements(1) /= atoms(2)%element)then
+    if(bond_params%original_elements(2) /= atoms(1)%element)then
        return
     end if
-    if(bond_params(1)%original_elements(2) /= atoms(1)%element)then
-       return
-    end if
-    ! check that bond_params(2) is for indices (ik)
-    if(bond_params(2)%original_elements(1) /= atoms(2)%element)then
-       return
-    end if
-    if(bond_params(2)%original_elements(2) /= atoms(3)%element)then
+    if(bond_params%original_elements(3) /= atoms(3)%element)then
        return
     end if
 
@@ -5269,35 +5589,25 @@ contains
     ! bond_params: mu_i, a_ij, a_ik, &
     !              c_ij^2, d_ij^2, h_ij, 
     !              c_ik^2, d_ik^2, h_ik
-    mu = bond_params(1)%parameters(3,1)
-    a1 = bond_params(1)%parameters(1,2)
-    a2 = bond_params(2)%parameters(1,2)
-    cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
-    dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
-    h1 = bond_params(1)%parameters(4,2)
-    cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
-    dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
-    h2 = bond_params(2)%parameters(4,2)
+    mu = bond_params%parameters(5,2)
+    a1 = bond_params%parameters(1,2)
+    cc1 = bond_params%parameters(2,2)*bond_params%parameters(2,2)
+    dd1 = bond_params%parameters(3,2)*bond_params%parameters(3,2)
+    h1 = bond_params%parameters(4,2)
     
-    call smoothening_factor(r2,bond_params(2)%cutoff,&
-         bond_params(2)%soft_cutoff,decay2)
-    call smoothening_factor(r1,bond_params(1)%cutoff,&
-         bond_params(1)%soft_cutoff,decay1)
+    call smoothening_factor(r2,bond_params%cutoff,&
+         bond_params%soft_cutoff,decay1)
     
-    xi1 = decay1 * decay2 * exp( (a1 * (r1-r2))**mu ) 
-    xi2 = decay1 * decay2 * exp( (a2 * (r2-r1))**mu ) 
+    xi1 = decay1 * exp( (a1 * (r1-r2))**mu ) 
     gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
-    gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
     
     ! only the middle atom gets a contribution, 
-    ! so factor(1) = factor(3) = 0.0
-    factor(2) = xi1*gee1 + xi2*gee2
+    factor = xi1*gee1
     
+  end subroutine evaluate_pair_bond_order_factor_tersoff
 
-  end subroutine evaluate_bond_order_factor_tersoff
 
-
-  ! Coordination bond order factor gradient
+  ! Tersoff bond order factor gradient
   !
   ! *n_targets number of targets
   ! *separations atom-atom separation vectors :math:`\mathbf{r}_{12}`, :math:`\mathbf{r}_{23}` etc. for the atoms 123...
@@ -5305,40 +5615,31 @@ contains
   ! *bond_params a :data:`bond_order_parameters` containing the parameters
   ! *atoms a list of the actual :data:`atom` objects for which the term is calculated
   ! *gradient the calculated bond order term :math:`c`
-  subroutine evaluate_bond_order_gradient_tersoff(separations,distances,bond_params,gradient,atoms)
+  subroutine evaluate_pair_bond_order_gradient_tersoff(separations,distances,bond_params,gradient,atoms)
     double precision, intent(in) :: separations(3,2), &
          distances(2)
-    type(bond_order_parameters), intent(in) :: bond_params(2)
-    double precision, intent(out) :: gradient(3,3,3)
+    type(bond_order_parameters), intent(in) :: bond_params
+    double precision, intent(out) :: gradient(3,3)
     type(atom), intent(in) :: atoms(3)
     double precision :: r1, r2, nablar1(3,3), nablar2(3,3), &
-         cosine, nablacosine(3,3), decay1, decay2,&
+         cosine, nablacosine(3,3), decay1, &
          nabladecay(3,3), unitvector(3,2), xi1, gee1, &
          nablaxi1(3,3), nablagee1(3,3), &
-         xi2, gee2, nablaxi2(3,3), nablagee2(3,3), &
-         mu, a1, a2, cc1, dd1, h1, cc2, dd2, h2, dot, &
+         mu, a1, cc1, dd1, h1, dot, &
          ratio, exponent1a, exponent1b, exponent2a, exponent2b
     double precision :: tmp1(3), tmp2(3), tmp3(3), tmp4(3), &
-         tmp5(3), tmp6(3), tmpmat1(3,3), tmpmat2(3,3)
+         tmp6(3), tmpmat2(3,3)
 
     gradient = 0.d0
 
-    if(bond_params(1)%type_index /= bond_params(2)%type_index)then
-       return
-    end if
-
     ! check that bond_params(1) is for indices (ij)
-    if(bond_params(1)%original_elements(1) /= atoms(2)%element)then
+    if(bond_params%original_elements(1) /= atoms(2)%element)then
        return
     end if
-    if(bond_params(1)%original_elements(2) /= atoms(1)%element)then
+    if(bond_params%original_elements(2) /= atoms(1)%element)then
        return
     end if
-    ! check that bond_params(2) is for indices (ik)
-    if(bond_params(2)%original_elements(1) /= atoms(2)%element)then
-       return
-    end if
-    if(bond_params(2)%original_elements(2) /= atoms(3)%element)then
+    if(bond_params%original_elements(3) /= atoms(3)%element)then
        return
     end if
 
@@ -5380,72 +5681,44 @@ contains
     ! bond_params: mu_i, a_ij, a_ik, &
     !              c_ij^2, d_ij^2, h_ij, 
     !              c_ik^2, d_ik^2, h_ik
-    mu = bond_params(1)%parameters(3,1)
-    a1 = bond_params(1)%parameters(1,2)
-    a2 = bond_params(2)%parameters(1,2)
-    cc1 = bond_params(1)%parameters(2,2)*bond_params(1)%parameters(2,2)
-    dd1 = bond_params(1)%parameters(3,2)*bond_params(1)%parameters(3,2)
-    h1 = bond_params(1)%parameters(4,2)
-    cc2 = bond_params(2)%parameters(2,2)*bond_params(2)%parameters(2,2)
-    dd2 = bond_params(2)%parameters(3,2)*bond_params(2)%parameters(3,2)
-    h2 = bond_params(2)%parameters(4,2)
+    mu = bond_params%parameters(5,2)
+    a1 = bond_params%parameters(1,2)
+    cc1 = bond_params%parameters(2,2)*bond_params%parameters(2,2)
+    dd1 = bond_params%parameters(3,2)*bond_params%parameters(3,2)
+    h1 = bond_params%parameters(4,2)
     
-    call smoothening_factor(r2,bond_params(2)%cutoff,bond_params(2)%soft_cutoff,decay2)
-    call smoothening_factor(r1,bond_params(1)%cutoff,bond_params(2)%soft_cutoff,decay1)
-    ! store the gradients of decay1 and decay2 in tmp5 and tmp6
+    call smoothening_factor(r2,bond_params%cutoff,bond_params%soft_cutoff,decay1)
+    ! store the gradient of decay1 in tmp6
     call smoothening_gradient(unitvector(1:3,2),r2,&
-         bond_params(2)%cutoff,bond_params(2)%soft_cutoff,tmp6)
-    call smoothening_gradient(unitvector(1:3,1),r1,&
-         bond_params(1)%cutoff,bond_params(1)%soft_cutoff,tmp5)
-    
-    ! tmpmat1 ad tmpmat2 store the gradients of decay1
-    ! and decay2 with respect to moving any atom i, j, or k
-    
-    ! gradient 1 (tmp5) affects atoms ij, so it affects atoms 2 and 1
-    tmpmat1 = 0.d0
-    tmpmat1(1:3,1) = tmp5
-    tmpmat1(1:3,2) = -tmp5
-    ! gradient 2 (tmp6) affects atoms ik, so it affects atoms 2 and 3
+         bond_params%cutoff,bond_params%soft_cutoff,tmp6)
+        
+    ! gradient (tmp6) affects atoms ik, so it affects atoms 2 and 3
     tmpmat2 = 0.d0
     tmpmat2(1:3,2) = -tmp6
     tmpmat2(1:3,3) = tmp6
     
     exponent1a = (a1 * (r1-r2))**(mu-1)
-    exponent2a = (a2 * (r2-r1))**(mu-1)
     exponent1b = (a1 * (r1-r2))*exponent1a
-    exponent2b = (a2 * (r2-r1))*exponent2a
     xi1 = exp( exponent1b ) 
-    xi2 = exp( exponent2b )
     gee1 = 1 + cc1/dd1 - cc1/(dd1+(h1-cosine)*(h1-cosine))
-    gee2 = 1 + cc2/dd2 - cc2/(dd2+(h2-cosine)*(h2-cosine))
-    nablaxi1 = (tmpmat1 * decay2 + tmpmat2 * decay1) * xi1 + &
-         decay1*decay2*( exp( exponent1b ) * a1 * mu * exponent1a ) * (nablar1 - nablar2)
-    nablaxi2 = (tmpmat2 * decay1 + tmpmat1 * decay2) * xi2 + &
-         decay1*decay2*( exp( exponent2b ) * a2 * mu * exponent2a ) * (nablar2 - nablar1)
-    xi1 = xi1 * decay1 * decay2
-    xi2 = xi2 * decay1 * decay2
+    nablaxi1 = tmpmat2 * xi1 + &
+         decay1*( exp( exponent1b ) * a1 * mu * exponent1a ) * (nablar1 - nablar2)
+    xi1 = xi1 * decay1
     nablagee1 = - cc1 / ( (dd1+(h1-cosine)*(h1-cosine))*(dd1+(h1-cosine)*(h1-cosine)) ) * &
          2.d0 * (h1-cosine) * nablacosine
-    nablagee2 = - cc2 / ( (dd2+(h2-cosine)*(h2-cosine))*(dd2+(h2-cosine)*(h2-cosine)) ) * &
-         2.d0 * (h2-cosine) * nablacosine
     
-    ! there is only contribution to the factor of the middle atom, so
-    ! also the gradients of atoms 1 and 3 are 0.
-    gradient(1:3,2,1) = nablaxi1(1:3,1) * gee1 + xi1 * nablagee1(1:3,1) + &
-         nablaxi2(1:3,1) * gee2 + xi2 * nablagee2(1:3,1)
-    gradient(1:3,2,2) = nablaxi1(1:3,2) * gee1 + xi1 * nablagee1(1:3,2) + &
-         nablaxi2(1:3,2) * gee2 + xi2 * nablagee2(1:3,2)
-    gradient(1:3,2,3) = nablaxi1(1:3,3) * gee1 + xi1 * nablagee1(1:3,3) + &
-         nablaxi2(1:3,3) * gee2 + xi2 * nablagee2(1:3,3)
+    gradient(1:3,1) = nablaxi1(1:3,1) * gee1 + xi1 * nablagee1(1:3,1) 
+    gradient(1:3,2) = nablaxi1(1:3,2) * gee1 + xi1 * nablagee1(1:3,2) 
+    gradient(1:3,3) = nablaxi1(1:3,3) * gee1 + xi1 * nablagee1(1:3,3) 
     
-  end subroutine evaluate_bond_order_gradient_tersoff
+  end subroutine evaluate_pair_bond_order_gradient_tersoff
 
 
   ! Tersoff post process factor
   !
-  ! *raw_sum the precalculated bond order sum, :math:`\sum_j c_ij` in the above example
+  ! *raw_sum the precalculated bond order sum, :math:`\sum_k c_{ijk}` in the above example
   ! *bond_params a :data:`bond_order_parameters` specifying the parameters
-  ! *factor_out the calculated bond order factor :math:`b_i`
+  ! *factor_out the calculated bond order factor :math:`b_{ij}`
   subroutine post_process_bond_order_factor_tersoff(raw_sum, bond_params, factor_out)
     implicit none
     double precision, intent(in) :: raw_sum
@@ -5519,14 +5792,22 @@ contains
     call pad_string('c_scale',pot_name_length,bond_order_descriptors(index)%name)
 
     bond_order_descriptors(index)%n_targets = 1
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
-    bond_order_descriptors(index)%n_parameters(1) = 4 ! 4 1-body parameters
+    bond_order_descriptors(index)%n_level = 1
+
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
+    
+    bond_order_descriptors(index)%n_parameters(1) = 5 ! 5 scaling parameters
+    bond_order_descriptors(index)%n_parameters(2) = 0 ! 0 local parameters
+
 
     bond_order_descriptors(index)%includes_post_processing = .true.
-    max_params = 4 ! maxval(bond_order_descriptors(index)%n_parameters)
+    max_params = 5 ! maxval(bond_order_descriptors(index)%n_parameters)
 
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
     call pad_string('epsilon',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
     call pad_string('energy scale constant',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
     call pad_string('N',param_name_length,bond_order_descriptors(index)%parameter_names(2,1))
@@ -5535,9 +5816,11 @@ contains
     call pad_string('coordination difference scale constant',param_note_length,bond_order_descriptors(index)%parameter_notes(3,1))
     call pad_string('gamma',param_name_length,bond_order_descriptors(index)%parameter_names(4,1))
     call pad_string('exponential decay constant',param_note_length,bond_order_descriptors(index)%parameter_notes(4,1))
+    call pad_string('min',param_name_length,bond_order_descriptors(index)%parameter_names(5,1))
+    call pad_string('minimum delta N',param_note_length,bond_order_descriptors(index)%parameter_notes(5,1))
 
     call pad_string('Coordination difference scaling function: '//&
-         'b_i(n_i) = epsilon_i dN_i / (1 + exp(gamma_i dN_i)); dN_i = C_i(n_i - N_i)', &
+         'b_i(n_i) = epsilon_i dN_i / (1 + exp(gamma_i dN_i)); dN_i = C_i(n_i - N_i) > min (b_i = 0; dN_i < min)', &
          pot_note_length,bond_order_descriptors(index)%description)
 
   end subroutine create_bond_order_factor_characterizer_scaler_1
@@ -5556,7 +5839,11 @@ contains
     double precision :: dN
 
     dN = ( raw_sum - bond_params%parameters(2,1) ) * bond_params%parameters(3,1)
-    factor_out = bond_params%parameters(1,1) * dN / (1.d0 + exp(bond_params%parameters(4,1)*dN))
+    if(dN > bond_params%parameters(5,1))then
+       factor_out = bond_params%parameters(1,1) * dN / (1.d0 + exp(bond_params%parameters(4,1)*dN))
+    else
+       factor_out = 0.d0
+    end if
 
   end subroutine post_process_bond_order_factor_scaler_1
 
@@ -5575,11 +5862,16 @@ contains
     double precision :: beta, eta, dN, expo, inv_exp
 
     dN = ( raw_sum - bond_params%parameters(2,1) ) * bond_params%parameters(3,1)
-    expo = exp( bond_params%parameters(4,1)*dN )
-    inv_exp = 1.d0 / (1.d0 + expo)
-    factor_out = bond_params%parameters(1,1) * &
-         bond_params%parameters(3,1) * ( inv_exp - &
-         dN * inv_exp*inv_exp * bond_params%parameters(4,1) * expo ) * raw_gradient
+    if(dN > bond_params%parameters(5,1))then
+
+       expo = exp( bond_params%parameters(4,1)*dN )
+       inv_exp = 1.d0 / (1.d0 + expo)
+       factor_out = bond_params%parameters(1,1) * &
+            bond_params%parameters(3,1) * ( inv_exp - &
+            dN * inv_exp*inv_exp * bond_params%parameters(4,1) * expo ) * raw_gradient
+    else
+       factor_out = 0.d0
+    end if
 
   end subroutine post_process_bond_order_gradient_scaler_1
 
@@ -5603,16 +5895,21 @@ contains
     bond_order_descriptors(index)%type_index = index
     call pad_string('triplet',pot_name_length,bond_order_descriptors(index)%name)
     bond_order_descriptors(index)%n_targets = 3
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
-    bond_order_descriptors(index)%n_parameters(1) = 0 ! 3 1-body parameters
-    bond_order_descriptors(index)%n_parameters(2) = 0 ! 4 2-body parameters
-    bond_order_descriptors(index)%n_parameters(3) = 0 ! no 3-body parameters
+    bond_order_descriptors(index)%n_level = 1
+
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
+    
+    bond_order_descriptors(index)%n_parameters(1) = 0 ! 0 scaling parameters
+    bond_order_descriptors(index)%n_parameters(2) = 0 ! 0 local parameters
     max_params = 0 ! maxval(bond_order_descriptors(index)%n_parameters)
     bond_order_descriptors(index)%includes_post_processing = .false.
 
     ! Allocate space for storing the parameter names and descriptions.
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
 
     ! Record parameter names and descriptions.
     ! Names are keywords with which one can intuitively 
@@ -5751,18 +6048,22 @@ contains
 
     ! Record the number of targets
     bond_order_descriptors(index)%n_targets = 2 
+    bond_order_descriptors(index)%n_level = 1
 
     ! Allocate space for storing the numbers of parameters (for 1-body, 2-body etc.).
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
 
     ! Record the number of parameters
-    bond_order_descriptors(index)%n_parameters(1) = 0 ! no 1-body params
-    bond_order_descriptors(index)%n_parameters(2) = 2 ! 2 2-body params
+    bond_order_descriptors(index)%n_parameters(1) = 0 ! no scaling params
+    bond_order_descriptors(index)%n_parameters(2) = 2 ! 2 local params
     max_params = 2 ! maxval(bond_order_descriptors(index)%n_parameters)
 
     ! Allocate space for storing the parameter names and descriptions.
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
 
     ! Record if the bond factor includes post processing (per-atom scaling)
     bond_order_descriptors(index)%includes_post_processing = .false.
@@ -5880,14 +6181,22 @@ contains
     call pad_string('sqrt_scale',pot_name_length,bond_order_descriptors(index)%name)
 
     bond_order_descriptors(index)%n_targets = 1
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
-    bond_order_descriptors(index)%n_parameters(1) = 1 ! 4 1-body parameters
+    bond_order_descriptors(index)%n_level = 1
+
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
+
+    bond_order_descriptors(index)%n_parameters(1) = 1 ! 1 scaling parameter
+    bond_order_descriptors(index)%n_parameters(2) = 0 ! no local parameter
 
     bond_order_descriptors(index)%includes_post_processing = .true.
     max_params = 1 ! maxval(bond_order_descriptors(index)%n_parameters)
 
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
+    
     call pad_string('epsilon',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
     call pad_string('energy scale constant',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
 
@@ -5962,14 +6271,22 @@ contains
     call pad_string('table_scale',pot_name_length,bond_order_descriptors(index)%name)
 
     bond_order_descriptors(index)%n_targets = 1
-    allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    bond_order_descriptors(index)%n_level = 1
+
+    !allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
+
     bond_order_descriptors(index)%n_parameters(1) = 3
+    bond_order_descriptors(index)%n_parameters(2) = 0
 
     bond_order_descriptors(index)%includes_post_processing = .true.
     max_params = 3 ! maxval(bond_order_descriptors(index)%n_parameters)
 
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
+    
     call pad_string('id',param_name_length,bond_order_descriptors(index)%parameter_names(1,1))
     call pad_string('file identifier',param_note_length,bond_order_descriptors(index)%parameter_notes(1,1))
     call pad_string('range',param_name_length,bond_order_descriptors(index)%parameter_names(2,1))
@@ -6098,18 +6415,22 @@ contains
 
     ! Record the number of targets
     bond_order_descriptors(index)%n_targets = 2 
+    bond_order_descriptors(index)%n_level = 1
 
     ! Allocate space for storing the numbers of parameters (for 1-body, 2-body etc.).
     allocate(bond_order_descriptors(index)%n_parameters(bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%n_parameters(2))
 
     ! Record the number of parameters
-    bond_order_descriptors(index)%n_parameters(1) = 0 ! no 1-body params
-    bond_order_descriptors(index)%n_parameters(2) = 3 ! no 2-body params
+    bond_order_descriptors(index)%n_parameters(1) = 0 ! no scaling params
+    bond_order_descriptors(index)%n_parameters(2) = 3 ! 3 local params
     max_params = 3 ! maxval(bond_order_descriptors(index)%n_parameters)
 
     ! Allocate space for storing the parameter names and descriptions.
-    allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
-    allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_names(max_params,bond_order_descriptors(index)%n_targets))
+    !allocate(bond_order_descriptors(index)%parameter_notes(max_params,bond_order_descriptors(index)%n_targets))
+    allocate(bond_order_descriptors(index)%parameter_names(max_params,2))
+    allocate(bond_order_descriptors(index)%parameter_notes(max_params,2))
 
     ! Record if the bond factor includes post processing (per-atom scaling)
     bond_order_descriptors(index)%includes_post_processing = .false.
