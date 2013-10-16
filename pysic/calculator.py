@@ -14,7 +14,6 @@ from pysic.interactions.coulomb import CoulombSummation
 from pysic.charges.relaxation import ChargeRelaxation
 
 import pysic.pysic_fortran as pf
-import ase.calculators.neighborlist as nbl
 import pysic.utility.f2py as pu
 
 import numpy as np
@@ -468,6 +467,7 @@ class Pysic:
         else:
             atoms_changed = False
             
+            # the call for charges was changed between ASE 3.6 and 3.7
             try:
                 atoms_changed = self.structure != atoms or \
                     (self.structure.get_initial_charges() != atoms.get_initial_charges()).any()
@@ -1459,6 +1459,8 @@ class Pysic:
         
         
         masses = np.array( self.structure.get_masses() )
+        
+        # the call for charges was changed between ASE 3.6 and 3.7
         try:
             self.charges = np.array( self.structure.get_initial_charges() )
         except:
@@ -1652,6 +1654,8 @@ class Pysic:
         self.set_atoms(system)
         self.set_core()
         charges[atom_index] += 1.0*shift
+
+        # the call for charges was changed between ASE 3.6 and 3.7
         try:
             system.set_charges(charges)
         except:
@@ -1659,6 +1663,8 @@ class Pysic:
 
         energy_p = self.get_potential_energy(system)
         charges[atom_index] -= 2.0*shift
+        
+        # the call for charges was changed between ASE 3.6 and 3.7
         try:
             system.set_charges(charges)
         except:
@@ -1666,6 +1672,8 @@ class Pysic:
 
         energy_m = self.get_potential_energy(system)
         charges[atom_index] += 1.0*shift
+        
+        # the call for charges was changed between ASE 3.6 and 3.7
         try:
             system.set_charges(charges)
         except:

@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import numpy as np
+from pysic.utility.error import InvalidRelaxationError
 
 class ChargeRelaxation:
     """A class for handling charge dynamics and relaxation.
@@ -40,20 +41,25 @@ class ChargeRelaxation:
             updated as well, the relaxation algorithm must have access to it.
     """
 
-    relaxation_modes = [ 'dynamic' ]
+    relaxation_modes = [ 'dynamic', 'potentiostat' ]
     """Names of the charge relaxation algorithms available. 
         
         These are keywords needed when creating the 
         :class:`~pysic.charges.relaxation.ChargeRelaxation` objects as type specifiers."""
     
-    relaxation_parameters = { relaxation_modes[0] : ['n_steps', 'timestep', 'inertia', 'friction', 'tolerance'] }
+    relaxation_parameters = { relaxation_modes[0] : ['n_steps', 'timestep', 'inertia', 'friction', 'tolerance'],
+        relaxation_modes[1] : ['n_steps','timestep', 'inertia', 'potential'] }
     """Names of the parameters of the charge relaxation algorithms."""
     
-    relaxation_parameter_descriptions = { relaxation_modes[0] : ['time steps of charge dynamics between molecular dynamics', 
-                                                                 'time step of charge dynamics', 
-                                                                 'fictional charge mass', 
-                                                                 'friction coefficient for damped charge dynamics',
-                                                                 'convergence tolerance'] }
+    relaxation_parameter_descriptions = { relaxation_modes[0] : ['number of time steps of charge dynamics between molecular dynamics', 
+            'time step of charge dynamics', 
+            'fictional charge mass', 
+            'friction coefficient for damped charge dynamics',
+            'convergence tolerance'],
+        relaxation_modes[1] : ['number of time steps of charge dynamics between molecular dynamics',
+            'time step of charge dynamics',
+            'fictional charge mass', 
+            'external potential']}
     """Short descriptions of the relaxation parameters."""
     
     def __init__(self, relaxation='dynamic', calculator=None, parameters=None, atoms=None):
@@ -61,6 +67,9 @@ class ChargeRelaxation:
         self.set_calculator(calculator)
         self.set_parameters(parameters)
         self.set_atoms(atoms)
+        self.piped_relaxation = None
+        self.charge_rates = None
+        self.observers = []
 
     
     def __eq__(self,other):
@@ -73,6 +82,11 @@ class ChargeRelaxation:
             if self.parameters != other.parameters:
                 return False
             if self.atoms != other.atoms:
+                return False
+            if self.piped_relaxation is None:
+                if not other.piped_relaxation is None:
+                    return False
+            elif self.piped_relaxation != other.piped_relaxation:
                 return False
         except:
             return False
@@ -90,8 +104,73 @@ class ChargeRelaxation:
             c=str(self.calculator), 
             p=str(self.parameters),
             a=str(self.atoms) )
+
+
+    def set_relaxation_pipe(self, relaxation, pass_info=True):
+        """Add another :class:`~pysic.charges.relaxation.ChargeRelaxation` to take place immediately after this relaxation.
+        
+            Sometimes it is most efficient to start the relaxation with a robust but 
+            possibly slow algorithm and switch to a more advanced one once closer to
+            equilibrium. On the other hand, when relaxation is needed between MD steps,
+            this is not possible manually. Therefore, one can link several ChargeRelaxation
+            objects together to automatically invoke a sequential relaxation procedure.
             
+            You should only give one ChargeRelaxation for piping. If you want to
+            pipe more than two relaxation sequences together, you should always link the
+            additional relaxation to the currently final ChargeRelaxation object to
+            create a nested pipeline::
             
+              rel1 = ChargeRelaxation()
+              rel2 = ChargeRelaxation()
+              rel3 = ChargeRelaxation()
+              
+              rel1.set_relaxation_pipe(rel2)
+              rel2.set_relaxation_pipe(rel3)
+              
+              rel1.charge_relaxation() # will do rel1 -> rel2 -> rel3
+              
+            Parameters:
+            
+            relaxation: :class:`~pysic.charges.relaxation.ChargeRelaxation` object
+                the relaxation to be piped after this one
+            pass_info: boolean
+                If True, the calculator and atoms of this calculator will be automatically
+                copied over to the piped calculator.
+        """
+
+        # Check that this relaxation does not appear in the pipeline to be attached.
+        # Otherwise we would create an infinite loop.
+        if relaxation is self:
+            raise InvalidRelaxationError("Trying to create a looped relaxation pipe.")
+        if not relaxation.piped_relaxation is None:
+            pipeline = relaxation.get_relaxation_pipe()
+            for rel in pipeline:
+                if rel is self:
+                    raise InvalidRelaxationError("Trying to create a looped relaxation pipe.")
+
+        
+        self.piped_relaxation = relaxation
+
+        if pass_info:
+            pipeline = self.get_relaxation_pipe()
+            
+            for rel in pipeline:
+                rel.set_calculator(self.calculator)
+                rel.set_atoms(self.atoms)
+
+        if self.calculator != relaxation.calculator:
+            warn("The piped ChargeRelaxation has a different calculator.",2)
+        if not self.atoms is None:
+            if relaxation.atoms is None:
+                warn("No Atoms object linked to the piped ChargeRelaxation.",2)
+
+
+    def clear_relaxation_pipe(self):
+        """Equivalent to set_relaxation_pipe(None).
+        """
+        self.set_relaxation_pipe(None)
+        
+
     def set_calculator(self, calculator, reciprocal=False):
         """Assigns a :class:`~pysic.calculator.Pysic` calculator.
             
@@ -168,7 +247,9 @@ class ChargeRelaxation:
 
 
     def set_parameter_values(self, parameters):
-        """Sets the numeric values for all parameters.                    
+        """Sets the numeric values for all parameters.
+            
+            Use get_parameters() to see the correct order of values.
             
             Parameters:
                     
@@ -182,8 +263,8 @@ class ChargeRelaxation:
         if len(parameters) != len(self.parameters):
             raise InvalidRelaxationError("The relaxation mode "+self.relaxation+" requires "+
                                          len(self.parameters)+" parameters.")
-        for key, value in zip(self.parameters.get_keys(), parameters):
-            self.parameters[key] = parameters
+        for key, value in zip(self.parameters.keys(), parameters):
+            self.parameters[key] = value
 
 
     def set_parameter_value(self, parameter_name, value):
@@ -208,6 +289,30 @@ class ChargeRelaxation:
         """Returns the keyword specifying the mode of relaxation.
             """
         return self.relaxation
+
+    def get_relaxation_pipe(self, recursive=True):
+        """Return the piped :class:`~pysic.charges.relaxation.ChargeRelaxation` objects.
+        
+        By default, a list is given containing all the ChargeRelaxation objects
+        in the pipeline (or an empty list).
+        
+        If called with the argument False, only the ChargeRelaxation next-in-line
+        will be returned (or None).
+        
+        Parameters:
+        
+        recursive: boolean
+            If True, will return a list containing all the piped objects. Otherwise, only the next-in-line is returned.
+        """
+        if recursive:
+            pipe = []
+            if not self.piped_relaxation is None:
+                pipe.append(self.piped_relaxation)
+                while not pipe[-1].piped_relaxation is None:
+                    pipe.append(pipe[-1].piped_relaxation)
+            return pipe
+        else:
+            return self.piped_relaxation
     
     def get_parameters(self):
         """Returns a list containing the numeric values of the parameters.
@@ -257,7 +362,7 @@ class ChargeRelaxation:
         """
         return self.atoms
     
-    # ToDo: compare performance to pure Fortran dynamics?
+
     def charge_relaxation(self):
         """Performs the charge relaxation.
 
@@ -279,6 +384,7 @@ class ChargeRelaxation:
         charges = atoms.get_charges() # starting charges
         
         if self.relaxation == ChargeRelaxation.relaxation_modes[0]: # damped dynamic relaxation
+        
             dt = self.parameters['timestep']
             dt2 = dt*dt
             mq = self.parameters['inertia']
@@ -290,29 +396,108 @@ class ChargeRelaxation:
 
             error = 2.0 * tolerance
             step = 0
-            charge_rates = np.array( len(atoms)*[0.0] ) # starting "velocities" \dot{q}
+            
+            if self.charge_rates is None:
+                self.charge_rates = np.array( len(atoms)*[0.0] ) # starting "velocities" \dot{q}
             charge_forces = self.calculator.get_electronegativity_differences(atoms)
             
             while (error > tolerance and step < n_steps):
-                charges += charge_rates * dt + \
-                           (charge_forces - friction * charge_rates) * inv_mq * dt2
-                charge_rates = (1.0 - 0.5 * friction * dt) * charge_rates + \
+                charges += self.charge_rates * dt + \
+                           (charge_forces - friction * self.charge_rates) * inv_mq * dt2
+                self.charge_rates = (1.0 - 0.5 * friction * dt) * self.charge_rates + \
                             charge_forces * 0.5 * inv_mq * dt
-
                 atoms.set_charges(charges)
                 charge_forces = self.calculator.get_electronegativity_differences(atoms)
-            
-                charge_rates = future_friction * \
-                            ( charge_rates + charge_forces * 0.5 * inv_mq * dt )
-
+                self.charge_rates = future_friction * \
+                            ( self.charge_rates + charge_forces * 0.5 * inv_mq * dt )
                 step += 1
                 error = charge_forces.max()
+                self.call_observers(step)
+
     
+        elif self.relaxation == ChargeRelaxation.relaxation_modes[1]: # potentiostat
+        
+            dt = self.parameters['timestep']
+            dt2 = dt*dt
+            mq = self.parameters['inertia']
+            inv_mq = 1.0/mq
+            n_steps = self.parameters['n_steps']
+            step = 0
+            ext_potential = self.parameters['potential']
+
+            if self.charge_rates is None:
+                self.charge_rates = np.array( len(atoms)*[0.0] ) # starting "velocities" \dot{q}
+            charge_forces = self.calculator.get_electronegativities(atoms)-ext_potential
+            
+            while (step < n_steps):
+                charges += self.charge_rates * dt + charge_forces * inv_mq * dt2
+                self.charge_rates = self.charge_rates + charge_forces * 0.5 * inv_mq * dt
+
+                #print "charge", charges
+                #print "velo", self.charge_rates
+                #print "force", charge_forces
+
+                atoms.set_charges(charges)
+                charge_forces = self.calculator.get_electronegativities(atoms)-ext_potential
+            
+                self.charge_rates = self.charge_rates + charge_forces * 0.5 * inv_mq * dt
+
+                step += 1
+                self.call_observers(step)
+           
+            
+        
         else:
             pass
 
         if self.atoms != None:
             self.atoms.set_charges(charges)
 
+
+        if not self.piped_relaxation is None:
+            charges = self.piped_relaxation.charge_relaxation()
+
+
         return charges
 
+
+
+    def add_observer(self, function, interval=1, *args, **kwargs):
+        """Attach a callback function.
+    
+        Call the given function with the given arguments at constant
+        intervals, after a given number of relaxation steps.
+        
+        Parameters:
+        
+        function: Python function
+            the function to be called
+        interval: integer
+            the number of steps between callback
+        args: string
+            arguments for the callback function
+        kwargs: string
+            keyword arguments for the callback function
+        """
+    
+        if not hasattr(function, '__call__'):
+            function = function.write
+        self.observers.append((function, interval, args, kwargs))
+
+
+    def clear_observers(self):
+        """Removes all observers.
+        """
+        self.observers = []
+    
+    def call_observers(self,step):
+        """Calls all the attached callback functions.
+        
+        Parameters:
+        
+        step: integer
+            the number of dynamics steps taken during the relaxation
+        """
+        for function, interval, args, kwargs in self.observers:
+            if step % interval == 0:
+                function(*args, **kwargs)

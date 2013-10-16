@@ -2667,7 +2667,6 @@ contains
   ! The post processing is done per atom regardless of if the
   ! bond factor is of a pair or many body type.
   !
-  ! *n_atoms number of atoms
   ! *group_index an index denoting the potential to which the factor is connected
   ! *raw_sums precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
   ! *total_bond_orders the calculated bond order factors :math:`b_i`
@@ -2743,7 +2742,7 @@ contains
 
 ! !!!: core_post_process_pair_bond_order_factors
 
-  ! Bond-order post processing, i.e., application of per-atom scaling functions.
+  ! Bond-order post processing, i.e., application of per-pair scaling functions.
   !
   ! By post processing, we mean any operations done after calculating the
   ! sum of pair- and many-body terms. That is, if a factor is, say,
@@ -2757,10 +2756,10 @@ contains
   ! and the operation :math:`f(x) = 1 + x`
   ! remains to be carried out.
   !
-  ! *n_atoms number of atoms
+  ! *atom1 the central atom of the pair bond order factor
   ! *group_index an index denoting the potential to which the factor is connected
-  ! *raw_sums precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
-  ! *total_bond_orders the calculated bond order factors :math:`b_i`
+  ! *raw_sum precalculated bond order sum, :math:`\sum_k c_{ijk}`, in the above example.
+  ! *total_bond_order the calculated bond order factor :math:`b_{ij}`
   subroutine core_post_process_pair_bond_order_factor(atom1,group_index,raw_sum,total_bond_order)
     implicit none
     type(atom), intent(in) :: atom1
@@ -3108,7 +3107,7 @@ contains
   !     \nabla_\alpha b_{ij} = f'(\sum_k c_{ijk}) \nabla_\alpha \sum_k c_{ijk}
   !
   ! *group_index an index denoting the potential to which the factor is connected
-  ! *atom_index the index of the atom whose factor is differentiated (:math:`i`)
+  ! *atom1 the central atom of the pair bond order factor
   ! *raw_sum precalculated bond order sum for the given atom, :math:`\sum_j c_{ij}`, in the above example
   ! *raw_gradients precalculated gradients of bond order sums, :math:`\nabla_\alpha \sum_j c_{ij}`, in the above example
   ! *total_bond_gradients the calculated bond order gradients :math:`\nabla_\alpha b_i`
@@ -4042,6 +4041,7 @@ contains
 
   end subroutine core_loop_over_local_interactions
 
+
   ! Evaluates the local potential affecting a single atom
   !
   ! *index1 index of the atom
@@ -4050,6 +4050,7 @@ contains
   ! *calculation_type specifies if we are evaluating the energy, forces, or electronegativities
   ! *energy calculated energy
   ! *forces calculated forces
+  ! *stress calculated stress
   ! *enegs calculated electronegativities
   subroutine core_evaluate_local_singlet(index1, &
        atom_singlet, &
@@ -4195,6 +4196,18 @@ contains
  
 
 
+  ! Evaluates the local potential affecting two atoms. (Rearranged internally compared to 'A'.)
+  !
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *energy calculated energy
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet_energy_B(atom_doublet, &
        index1, index2, &
        test_index1, &
@@ -4319,6 +4332,18 @@ contains
 
 
 
+  ! Evaluates the local potential affecting two atoms.
+  !
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *energy calculated energy
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet_energy(n_atoms, &
        atom_doublet, &
        index1, index2, &
@@ -4440,6 +4465,20 @@ contains
 
 
 
+  ! Evaluates the local force affecting two atoms.
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet_forces(n_atoms, &
        atom_doublet, &
        index1, index2, &
@@ -4650,6 +4689,20 @@ contains
 
 
 
+  ! Evaluates the local force affecting two atoms. (Rearranged internally.)
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet_forces_B( &
        atom_doublet, &
        index1, index2, &
@@ -4860,6 +4913,18 @@ contains
 
 
 
+  ! Evaluates the local electronegativity affecting two atoms. (Rearranged internally.)
+  !
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet_electronegativities_B(atom_doublet, &
        index1, index2, &
        test_index1, &
@@ -4993,6 +5058,19 @@ contains
 
 
 
+
+  ! Evaluates the local electronegativity affecting two atoms.
+  !
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet_electronegativities(n_atoms, &
        atom_doublet, &
        index1, index2, &
@@ -5127,6 +5205,24 @@ contains
 
 
 
+
+  ! Evaluates the interactions affecting two atoms.
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *calculation_type the type of information requested
+  ! *energy calculated energy
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet(n_atoms, &
        atom_doublet, &
        index1, index2, &
@@ -5475,6 +5571,25 @@ contains
 
 
 
+  ! Evaluates the interactions affecting three atoms.
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *index3 index of the atom 3
+  ! *atom_triplet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *test_index2 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2 and 2 to 3 as an array
+  ! *directions unit vector from 1 to 2 and 2 to 3 as an array
+  ! *distances distance from 1 to 2 and 2 to 3 as an array
+  ! *calculation_type the type of information requested
+  ! *energy calculated energy
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_triplet(n_atoms, &
        atom_triplet, &
        index1, index2, index3, &
@@ -5817,6 +5932,25 @@ contains
 
 
 
+  ! Evaluates the interactions affecting three atoms. (Rearranged internally.)
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *index3 index of the atom 3
+  ! *atom_triplet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *test_index2 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2 and 2 to 3 as an array
+  ! *directions unit vector from 1 to 2 and 2 to 3 as an array
+  ! *distances distance from 1 to 2 and 2 to 3 as an array
+  ! *calculation_type the type of information requested
+  ! *energy calculated energy
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_triplet_B(atom_triplet, &
        index1, index2, index3, &
        test_index1, test_index2, &
@@ -6178,6 +6312,27 @@ contains
 
 
 
+  ! Evaluates the interactions affecting four atoms.
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *index3 index of the atom 3
+  ! *index4 index of the atom 4
+  ! *atom_quadruplet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *test_index2 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *test_index3 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, 2 to 3 and 3 to 4 as an array
+  ! *directions unit vector from 1 to 2, 2 to 3 and 3 to 4 as an array
+  ! *distances distance from 1 to 2, 2 to 3 and 3 to 4 as an array
+  ! *calculation_type the type of information requested
+  ! *energy calculated energy
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_quadruplet(n_atoms, &
        atom_quadruplet, &
        index1, index2, index3, index4, &
@@ -6548,6 +6703,29 @@ contains
 
 
 
+
+
+  ! Evaluates the interactions affecting four atoms. (Rearranged internally.)
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *index3 index of the atom 3
+  ! *index4 index of the atom 4
+  ! *atom_quadruplet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *test_index2 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *test_index3 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, 2 to 3 and 3 to 4 as an array
+  ! *directions unit vector from 1 to 2, 2 to 3 and 3 to 4 as an array
+  ! *distances distance from 1 to 2, 2 to 3 and 3 to 4 as an array
+  ! *calculation_type the type of information requested
+  ! *energy calculated energy
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_quadruplet_B(atom_quadruplet, &
        index1, index2, index3, index4, &
        test_index1, test_index2, test_index3, &
@@ -7176,7 +7354,8 @@ contains
   ! Sets the parameters for Ewald summation in the core. 
   !
   ! *real_cut the real-space cutoff
-  ! *reciprocal_cut the k-space cutoffs
+  ! *k_radius the k-space cutoff (in inverse length)
+  ! *reciprocal_cut the k-space cutoffs (in numbers of k-space cells)
   ! *sigma the split parameter
   ! *epsilon electric constant
   ! *scaler scaling factors for the individual charges

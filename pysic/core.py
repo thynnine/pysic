@@ -569,8 +569,13 @@ class CoreMirror:
             atoms: `ASE Atoms`_ object
                 atomic structure containing the positions to be saved.
             """
-        self.structure.set_charges(charges)
-    
+        # the call for charges was changed between ASE 3.6 and 3.7
+        try:
+            self.structure.set_charges(charges)
+        except:
+            self.structure.set_initial_charges(charges)
+
+
     def set_atomic_positions(self, atoms):
         """Copies and stores the positions of atoms in the `ASE Atoms`_ instance.
 
@@ -678,6 +683,8 @@ class CoreMirror:
             return False
         if len(self.structure) != len(atoms):
             return False
+            
+        # the call for charges was changed between ASE 3.6 and 3.7
         try:
             if ((self.structure.get_initial_charges() != atoms.get_initial_charges()).any()):
                 return False

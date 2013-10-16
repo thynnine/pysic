@@ -1031,7 +1031,8 @@ contains
   ! Sets the parameters for Ewald summation in the core. 
   !
   ! *real_cut the real-space cutoff
-  ! *reciprocal_cut the k-space cutoffs
+  ! *k_radius the k-space cutoff
+  ! *reciprocal_cut the k-space cutoffs (in numbers of cells)
   ! *sigma the split parameter
   ! *epsilon electric constant  
   ! *scaler scaling factors for the individual charges

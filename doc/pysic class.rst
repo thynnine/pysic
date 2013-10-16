@@ -38,10 +38,10 @@ the calculator with one or several :class:`~pysic.interactions.local.Potential` 
 
 
 
-ASE calculators
+Calculators in ASE
 -------------------
 
-`ASE calculators <https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html>`_ are a class representing the physics of the atomistic system. Or put in another way, a calculator is the mathematical machine containing the algorithms and routines for calculating, for instance, the total potential energy of the atomistic system represented as an `ASE atoms`_ object (hence the name). As ASE itself contains only some very simple calculators, in practice the calculators are often just Python interfaces to other atomistic simulators. Pysic too is such a calculator.
+`Calculators in ASE <https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html>`_ are a class representing the physics of the atomistic system. Or put in another way, a calculator is the mathematical machine containing the algorithms and routines for calculating, for instance, the total potential energy of the atomistic system represented as an `ASE atoms`_ object (hence the name). As ASE itself contains only some very simple calculators, in practice the calculators are often just Python interfaces to other atomistic simulators. Pysic too is such a calculator.
 
 .. _ASE atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html
 

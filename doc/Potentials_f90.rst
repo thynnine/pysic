@@ -672,7 +672,7 @@ Full documentation of custom types in potentials
     n_parameters: integer  *pointer*  *size(:)*
         number of parameters for each number of bodies (1-body parameters, 2-body parameters etc.)
     n_level: integer    *scalar*
-        
+        1 for atomic bond order factors, 2 for pairwise factors
     name: character(len=pot_name_length)    *scalar*
         The name of the bond order factor: this is a keyword according to which the factor may be recognized.
     description: character(len=pot_note_length)    *scalar*
@@ -701,7 +701,7 @@ Full documentation of custom types in potentials
     cutoff: double precision    *scalar*
         The hard cutoff for the bond order factor. If the atoms are farther away from each other than this, they do not contribute to the total bond order factor does not affect them.
     n_level: integer    *scalar*
-        
+        1 for atomic bond order factors, 2 for pairwise
     soft_cutoff: double precision    *scalar*
         The soft cutoff for the bond order factor. If this is smaller than the hard cutoff, the bond contribution is scaled to zero continuously when the interatomic distances grow from the soft to the hard cutoff.
     parameters: double precision  *pointer*  *size(:, :)*
@@ -915,7 +915,7 @@ Full documentation of subroutines in potentials
     real_cutoff: double precision  *intent(in)*    *scalar*  
         Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
     k_radius: double precision  *intent(in)*    *scalar*  
-        
+        Cutoff radius of k-space summation in inverse length. This is an absolute cutoff so that any k-point at a greater distance will be ignored. THis makes the k-cutoff spherical instead of summing over a rectangular box. (It also speeds up the summation.)
     reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
         The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
     gaussian_width: double precision  *intent(in)*    *scalar*  
@@ -1028,7 +1028,7 @@ Full documentation of subroutines in potentials
     real_cutoff: double precision  *intent(in)*    *scalar*  
         Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
     k_radius: double precision  *intent(in)*    *scalar*  
-        
+        absolute k-space cutoff
     reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
         The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
     gaussian_width: double precision  *intent(in)*    *scalar*  
@@ -1063,7 +1063,7 @@ Full documentation of subroutines in potentials
     real_cutoff: double precision  *intent(in)*    *scalar*  
         Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
     k_radius: double precision  *intent(in)*    *scalar*  
-        
+        Cutoff radius of k-space summation in inverse length. This is an absolute cutoff so that any k-point at a greater distance will be ignored. THis makes the k-cutoff spherical instead of summing over a rectangular box. (It also speeds up the summation.)
     reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
         The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
     gaussian_width: double precision  *intent(in)*    *scalar*  
