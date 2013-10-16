@@ -1,9 +1,47 @@
 #! /usr/bin/env python
 
+def expand_symbols_string(symbol_string):
+    """Expands a string of chemical symbols to list.
+    
+    The function parses a string of chemical symbols and turns
+    it to a list such as those expected by 
+    :class:`~pysic.interactions.local.Potential`.
+    
+    Examples::
+    
+      >>> print expand_symbols_string("HH")
+      [['H', 'H']]
+      >>> print expand_symbols_string("SiSi,SiO,SiH")
+      [['Si', 'Si'], ['Si', 'O'], ['Si', 'H']]
+    
+    Parameters:
+    
+    symbol_string: string
+        the string to be expanded
+    """
+
+    parts = symbol_string.split(',')
+    symbol_list = []
+    for part in parts:
+        newsymbol = ""
+        newset = []
+        for letter in part:
+            if letter.isupper():
+                if newsymbol != "":
+                    newset.append(newsymbol)
+                newsymbol = letter
+            else:
+                newsymbol += letter
+        newset.append(newsymbol)
+        symbol_list.append(newset)
+
+    return symbol_list
+
+
 def expand_symbols_table(symbol_list,type=None):
-    """Creates a table of symbols for a BondOrderParameters object.
+    """Creates a table of symbols object.
             
-            The syntax for defining the targets of bond order factors is precise
+            The syntax for defining the targets is precise
             but somewhat cumbersome due to the large number of permutations one gets
             when the number of bodies increases. Oftentimes one does not need such
             fine control over all the parameters since many of them have the same
@@ -14,7 +52,7 @@ def expand_symbols_table(symbol_list,type=None):
             By default, the method takes a list of list and multiplies each list
             with the others (note the call for a static method)::
             
-             >>> pysic.BondOrderParameters.expand_symbols_table([  'Si',
+             >>> pysic.utility.convenience.expand_symbols_table([  'Si',
              ...                                                  ['O', 'C'],
              ...                                                  ['H', 'O'] ])
              [['Si', 'O', 'H'],
