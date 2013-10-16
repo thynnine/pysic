@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Pysic class &mdash; Pysic 0.4.6 documentation</title>
+    <title>Pysic class &mdash; Pysic 0.4.8 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.6',
+        VERSION:     '0.4.8',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.6 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.8 documentation" href="index.html" />
     <link rel="up" title="Pysic module" href="pysic.html" />
     <link rel="next" title="Potential class" href="potential class.html" />
     <link rel="prev" title="Pysic module" href="pysic.html" /> 
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="pysic.html" title="Pysic module"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.8 documentation</a> &raquo;</li>
           <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
       </ul>
     </div>
@@ -56,7 +56,7 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Pysic class</a><ul>
-<li><a class="reference internal" href="#ase-calculators">ASE calculators</a></li>
+<li><a class="reference internal" href="#calculators-in-ase">Calculators in ASE</a></li>
 <li><a class="reference internal" href="#wrapping-calculators">Wrapping calculators</a></li>
 <li><a class="reference internal" href="#list-of-methods">List of methods</a><ul>
 <li><a class="reference internal" href="#structure-handling">Structure handling</a></li>
@@ -116,9 +116,9 @@ forces and energies of given atomistic structures provided as an
 solely based on the elements present in the system. Instead, Pysic allows and requires
 the user to specify the interactions governing the system. This is done by providing
 the calculator with one or several <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a> objects.</p>
-<div class="section" id="ase-calculators">
-<span id="id2"></span><h2>ASE calculators<a class="headerlink" href="#ase-calculators" title="Permalink to this headline">¶</a></h2>
-<p><a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html">ASE calculators</a> are a class representing the physics of the atomistic system. Or put in another way, a calculator is the mathematical machine containing the algorithms and routines for calculating, for instance, the total potential energy of the atomistic system represented as an <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE atoms</a> object (hence the name). As ASE itself contains only some very simple calculators, in practice the calculators are often just Python interfaces to other atomistic simulators. Pysic too is such a calculator.</p>
+<div class="section" id="calculators-in-ase">
+<span id="ase-calculators"></span><h2>Calculators in ASE<a class="headerlink" href="#calculators-in-ase" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html">Calculators in ASE</a> are a class representing the physics of the atomistic system. Or put in another way, a calculator is the mathematical machine containing the algorithms and routines for calculating, for instance, the total potential energy of the atomistic system represented as an <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE atoms</a> object (hence the name). As ASE itself contains only some very simple calculators, in practice the calculators are often just Python interfaces to other atomistic simulators. Pysic too is such a calculator.</p>
 <p>Pysic implements classical potentials, where the interactions between atomic pairs, triplets etc. are represented via simple mathematical functions or a <a class="reference internal" href="potential class.html#tabulated-potential"><em>Tabulated potential</em></a>. These can be combined freely using the <a class="reference internal" href="potential class.html#potential-class"><em>Potential class</em></a> and its modifiers and extensions such as the <a class="reference internal" href="coordinator class.html#coordinator-class"><em>Coordinator</em></a>, <a class="reference internal" href="bondorderparameters class.html#bondorderparameters-class"><em>Bond order parameter</em></a>, <a class="reference internal" href="productpotential class.html#productpotential-class"><em>Product potential</em></a>, <a class="reference internal" href="compoundpotential class.html#compoundpotential-class"><em>Compound Potential</em></a>, and <a class="reference internal" href="coulombsummation class.html#coulombsummation-class"><em>Coulomb summation</em></a> classes.</p>
 </div>
 <div class="section" id="wrapping-calculators">
@@ -476,6 +476,12 @@ cutoffs.</p>
 <dt id="pysic.calculator.Pysic.get_charge_relaxation">
 <tt class="descname">get_charge_relaxation</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/calculator.html#Pysic.get_charge_relaxation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.calculator.Pysic.get_charge_relaxation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns the <a class="reference internal" href="chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> object connected to the calculator.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.calculator.Pysic.get_charges">
+<tt class="descname">get_charges</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.calculator.Pysic.get_charges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update for ASE 3.7</p>
 </dd></dl>
 
 <dl class="method">
@@ -844,12 +850,12 @@ generate these lists.</p>
         <li class="right" >
           <a href="pysic.html" title="Pysic module"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.8 documentation</a> &raquo;</li>
           <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2011-2012, Teemu Hynninen.
+        &copy; Copyright 2011-2013, Teemu Hynninen.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>

@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>ChargeRelaxation class &mdash; Pysic 0.4.6 documentation</title>
+    <title>ChargeRelaxation class &mdash; Pysic 0.4.8 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.6',
+        VERSION:     '0.4.8',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.6 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.8 documentation" href="index.html" />
     <link rel="up" title="Pysic module" href="pysic.html" />
     <link rel="next" title="FastNeighborList class" href="fastneighborlist class.html" />
     <link rel="prev" title="SuttonChenPotential class" href="suttonchenpotential class.html" /> 
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="suttonchenpotential class.html" title="SuttonChenPotential class"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.8 documentation</a> &raquo;</li>
           <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
       </ul>
     </div>
@@ -57,8 +57,11 @@
   <ul>
 <li><a class="reference internal" href="#">ChargeRelaxation class</a><ul>
 <li><a class="reference internal" href="#connecting-the-structure-calculator-and-relaxation-algorithm">Connecting the structure, calculator and relaxation algorithm</a></li>
+<li><a class="reference internal" href="#piping-chargerelaxation-algorithms">Piping ChargeRelaxation algorithms</a></li>
+<li><a class="reference internal" href="#observers">Observers</a></li>
 <li><a class="reference internal" href="#list-of-currently-available-relaxation-methods">List of currently available relaxation methods</a><ul>
 <li><a class="reference internal" href="#damped-dynamics">Damped dynamics</a></li>
+<li><a class="reference internal" href="#potentiostat">Potentiostat</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#list-of-methods">List of methods</a><ul>
@@ -66,6 +69,8 @@
 <li><a class="reference internal" href="#atoms-handling">Atoms handling</a></li>
 <li><a class="reference internal" href="#calculator-handling">Calculator handling</a></li>
 <li><a class="reference internal" href="#parameter-handling">Parameter handling</a></li>
+<li><a class="reference internal" href="#pipe-handling">Pipe handling</a></li>
+<li><a class="reference internal" href="#observer-handling">Observer handling</a></li>
 <li><a class="reference internal" href="#charge-relaxation">Charge relaxation</a></li>
 </ul>
 </li>
@@ -121,11 +126,46 @@ If a system exhibits charge transfer, polarization, charged defects etc., one ma
 <p>The atomic structure cannot be given a link to the relaxation algorithm since the charge relaxation is not part of the ASE API and so the atoms object does not know how to interact with it. In essence, from the point of view of the structure, the charge relaxation is fully contained in the calculator.</p>
 <p>The charge relaxation algorithm always acts on the structure contained in the calculator. The atomic charges of this structure are automatically updated during the relaxation. Since the calculator only stores a copy of the original structure, the original is not updated. This may be desired if, for instance, one wishes to revert back to the original charges. However, during strucural dynamics simulations such as MD, it is necessary that the relaxed charges are saved between structural steps. This is a problem, since structural dynamics are handled by ASE, and ASE invokes the calculation of forces with the original <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object. Therefore, if the relaxed charges are not saved, charge relaxation is always started from the original charges, which may be very inefficient. In order to have also the original structure updated automatically, the charge relaxation can be made to know the original structure with <tt class="xref py py-meth docutils literal"><span class="pre">set_atoms()</span></tt>. Note that the structure given to the algorithm is not used in the actual relaxation; the algorithm always works on the structure in the calculator, which may be different. The given structure is merely updated according to the calculation results.</p>
 </div>
+<div class="section" id="piping-chargerelaxation-algorithms">
+<span id="piping-chargerelaxations"></span><h2>Piping ChargeRelaxation algorithms<a class="headerlink" href="#piping-chargerelaxation-algorithms" title="Permalink to this headline">¶</a></h2>
+<p>Sometimes the most efficient way to optimize a system is to combine several algorithms or several parameterizations of a single algorithm in a sequence. First, one can run a robust but less efficient algorithm to find a rough solution and follow with a more efficient method to pinpoint the optimum at high precision. For a plain relaxation, this can be done manually. However, if the optimization needs to happen automatically, e.g., between molecular dynamics steps, one needs to combine several ChargeRelaxation objects together. This can be done through the method <tt class="xref py py-meth docutils literal"><span class="pre">add_relaxation_pipe()</span></tt>.</p>
+<p>Adding a piped ChargeRelaxation object simply calls the <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.charge_relaxation" title="pysic.charges.relaxation.ChargeRelaxation.charge_relaxation"><tt class="xref py py-meth docutils literal"><span class="pre">charge_relaxation()</span></tt></a> methods of both objects one after another when relaxation is invoked. Several objects can be piped by recursive piping. For instance, the following:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">rel1</span> <span class="o">=</span> <span class="n">ChargeRelaxation</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">rel2</span> <span class="o">=</span> <span class="n">ChargeRelaxation</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">rel3</span> <span class="o">=</span> <span class="n">ChargeRelaxation</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+
+<span class="n">rel1</span><span class="o">.</span><span class="n">add_relaxation_pipe</span><span class="p">(</span><span class="n">rel2</span><span class="p">)</span>
+<span class="n">rel2</span><span class="o">.</span><span class="n">add_relaxation_pipe</span><span class="p">(</span><span class="n">rel3</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>creates a pipe <tt class="docutils literal"><span class="pre">rel1</span></tt>-<tt class="docutils literal"><span class="pre">rel2</span></tt>-<tt class="docutils literal"><span class="pre">rel3</span></tt>, where <tt class="docutils literal"><span class="pre">rel1</span></tt> is executed first and <tt class="docutils literal"><span class="pre">rel3</span></tt> last. Creating looped pipes where the same relaxation appears twice is not allowed.</p>
+<p>By default, when a pipe is created, the calculator and structure objects of the first relaxation are copied also to all the piped ChargeRelaxation objects (including recursively defined ones).</p>
+</div>
+<div class="section" id="observers">
+<span id="id2"></span><h2>Observers<a class="headerlink" href="#observers" title="Permalink to this headline">¶</a></h2>
+<p>Similarly to <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/tutorials/md/md.html">ASE molecular dynamics</a>, also the ChargeRelaxation allows one to attach callback functions to the dynamics. That is, one can have a specific functions be automatically invoked at given intervals. This can be used for instance for printing statistics or saving data during the optimization run. For instance, the following example saves and plots the charge of the atom with index 0:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">system</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">calc</span> <span class="o">=</span> <span class="n">Pysic</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">rel</span> <span class="o">=</span> <span class="n">ChargeRelaxation</span><span class="p">(</span><span class="n">calculator</span> <span class="o">=</span> <span class="n">calc</span><span class="p">,</span> <span class="n">system</span> <span class="o">=</span> <span class="n">system</span><span class="p">)</span>
+
+<span class="n">charge0</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">def</span> <span class="nf">save_charge</span><span class="p">():</span>
+    <span class="n">charge0</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">calc</span><span class="o">.</span><span class="n">get_atoms</span><span class="p">()</span><span class="o">.</span><span class="n">get_charges</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+
+<span class="n">rel</span><span class="o">.</span><span class="n">add_observer</span><span class="p">(</span><span class="n">save_charge</span><span class="p">)</span>
+<span class="n">rel</span><span class="o">.</span><span class="n">charge_relaxation</span><span class="p">()</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">charge0</span><span class="p">))),</span> <span class="n">thecharges</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="list-of-currently-available-relaxation-methods">
 <span id="list-of-relaxation-modes"></span><h2>List of currently available relaxation methods<a class="headerlink" href="#list-of-currently-available-relaxation-methods" title="Permalink to this headline">¶</a></h2>
 <p>Below is a list of the charge relaxation methods currently implemented.</p>
 <div class="section" id="damped-dynamics">
-<span id="id2"></span><h3>Damped dynamics<a class="headerlink" href="#damped-dynamics" title="Permalink to this headline">¶</a></h3>
+<span id="id3"></span><h3>Damped dynamics<a class="headerlink" href="#damped-dynamics" title="Permalink to this headline">¶</a></h3>
 <p>Assigning an inertia, <span class="math">\(M_q\)</span>, on the atomic charges, <span class="math">\(q_i\)</span>, we can describe the system with the Lagrangian</p>
 <div class="math">
 \[L = \sum_i \frac{1}{2} m_i \dot{\mathbf{r}}_i^2 + \sum_i \frac{1}{2} M_q \dot{q}_i^2 - U(\{q\},\{\mathbf{r}\}) - \nu \sum_i q_i,\]</div>
@@ -143,6 +183,16 @@ M_q \ddot{q}_i & = & -\frac{\partial U}{\partial q_i} - \nu.
 <span class="eqno">(1)</span>\[M_q \ddot{q}_i = \Delta \chi_i - \eta \dot{q}_i.\]</div>
 <p>This leads to the charges being driven towards a state where the driving force vanishes <span class="math">\(\Delta \chi_i = 0\)</span>, i.e., the electronegativities are equal.</p>
 <p>During simulation such as molecular dynamics or geometry optimization, charge equilibration is done by running the damped charge dynamics <a href="#equation-charge_equation">(1)</a> before each force or energy evaluation.</p>
+</div>
+<div class="section" id="potentiostat">
+<span id="id4"></span><h3>Potentiostat<a class="headerlink" href="#potentiostat" title="Permalink to this headline">¶</a></h3>
+<p>Similarly to <a class="reference internal" href="#damped-dynamics"><em>Damped dynamics</em></a>, a potentiostat drives the atomic charges <span class="math">\(q_i\)</span>
+with the dynamics</p>
+<div class="math">
+\[\begin{eqnarray}
+m_i \ddot{\mathbf{r}}_i & = & -\nabla_i U \\
+M_q \ddot{q}_i & = & -\frac{\partial U}{\partial q_i} - \Phi.
+\end{eqnarray}\]</div><p>Charge equilibration tries to optimize the charge distribution (with fixed total charge) so that the total energy is minimized. The potentiostat, however, connects the system to an electrode (a charge resevoir) at constant potential <span class="math">\(\Phi\)</span>. This means that the total charge of the system is allowed to change so that the electronegativity of each atom equals the external potential <span class="math">\(\chi_i = -\frac{\partial U}{\partial q_i} = \Phi\)</span>.</p>
 </div>
 </div>
 <div class="section" id="list-of-methods">
@@ -181,6 +231,22 @@ the type of functionality.</p>
 <li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_parameter_value" title="pysic.charges.relaxation.ChargeRelaxation.set_parameter_value"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_value()</span></tt></a></li>
 <li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_parameter_values" title="pysic.charges.relaxation.ChargeRelaxation.set_parameter_values"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameter_values()</span></tt></a></li>
 <li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_parameters" title="pysic.charges.relaxation.ChargeRelaxation.set_parameters"><tt class="xref py py-meth docutils literal"><span class="pre">set_parameters()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="pipe-handling">
+<h3>Pipe handling<a class="headerlink" href="#pipe-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.clear_relaxation_pipe" title="pysic.charges.relaxation.ChargeRelaxation.clear_relaxation_pipe"><tt class="xref py py-meth docutils literal"><span class="pre">clear_relaxation_pipe()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.get_relaxation_pipe" title="pysic.charges.relaxation.ChargeRelaxation.get_relaxation_pipe"><tt class="xref py py-meth docutils literal"><span class="pre">get_relaxation_pipe()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_relaxation_pipe" title="pysic.charges.relaxation.ChargeRelaxation.set_relaxation_pipe"><tt class="xref py py-meth docutils literal"><span class="pre">set_relaxation_pipe()</span></tt></a></li>
+</ul>
+</div>
+<div class="section" id="observer-handling">
+<h3>Observer handling<a class="headerlink" href="#observer-handling" title="Permalink to this headline">¶</a></h3>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.add_observer" title="pysic.charges.relaxation.ChargeRelaxation.add_observer"><tt class="xref py py-meth docutils literal"><span class="pre">add_observer()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.call_observers" title="pysic.charges.relaxation.ChargeRelaxation.call_observers"><tt class="xref py py-meth docutils literal"><span class="pre">call_observers()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.clear_observers" title="pysic.charges.relaxation.ChargeRelaxation.clear_observers"><tt class="xref py py-meth docutils literal"><span class="pre">clear_observers()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="charge-relaxation">
@@ -226,6 +292,36 @@ Note! The relaxation is always done using the atoms copy in
 updated as well, the relaxation algorithm must have access to it.</dd>
 </dl>
 <dl class="method">
+<dt id="pysic.charges.relaxation.ChargeRelaxation.add_observer">
+<tt class="descname">add_observer</tt><big>(</big><em>function</em>, <em>interval=1</em>, <em>*args</em>, <em>**kwargs</em><big>)</big><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.add_observer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attach a callback function.</p>
+<p>Call the given function with the given arguments at constant
+intervals, after a given number of relaxation steps.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>function: Python function</dt>
+<dd>the function to be called</dd>
+<dt>interval: integer</dt>
+<dd>the number of steps between callback</dd>
+<dt>args: string</dt>
+<dd>arguments for the callback function</dd>
+<dt>kwargs: string</dt>
+<dd>keyword arguments for the callback function</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.charges.relaxation.ChargeRelaxation.call_observers">
+<tt class="descname">call_observers</tt><big>(</big><em>step</em><big>)</big><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.call_observers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls all the attached callback functions.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>step: integer</dt>
+<dd>the number of dynamics steps taken during the relaxation</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="pysic.charges.relaxation.ChargeRelaxation.charge_relaxation">
 <tt class="descname">charge_relaxation</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.charge_relaxation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.charge_relaxation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Performs the charge relaxation.</p>
@@ -240,6 +336,18 @@ If the structure is not known, the charges are updated in the
 structure stored in the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator, but not in any other
 object. Since <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> only stores a copy of the structure it 
 is given, the original <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object will not be updated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.charges.relaxation.ChargeRelaxation.clear_observers">
+<tt class="descname">clear_observers</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.clear_observers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Removes all observers.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.charges.relaxation.ChargeRelaxation.clear_relaxation_pipe">
+<tt class="descname">clear_relaxation_pipe</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.clear_relaxation_pipe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equivalent to set_relaxation_pipe(None).</p>
 </dd></dl>
 
 <dl class="method">
@@ -269,6 +377,21 @@ charge relaxation is invoked.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="pysic.charges.relaxation.ChargeRelaxation.get_relaxation_pipe">
+<tt class="descname">get_relaxation_pipe</tt><big>(</big><em>recursive=True</em><big>)</big><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.get_relaxation_pipe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the piped <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> objects.</p>
+<p>By default, a list is given containing all the ChargeRelaxation objects
+in the pipeline (or an empty list).</p>
+<p>If called with the argument False, only the ChargeRelaxation next-in-line
+will be returned (or None).</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>recursive: boolean</dt>
+<dd>If True, will return a list containing all the piped objects. Otherwise, only the next-in-line is returned.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
 <dt id="pysic.charges.relaxation.ChargeRelaxation.initialize_parameters">
 <tt class="descname">initialize_parameters</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.initialize_parameters"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.initialize_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Creates a dictionary of parameters and initializes all values to 0.0.</p>
@@ -276,7 +399,7 @@ charge relaxation is invoked.</p>
 
 <dl class="attribute">
 <dt id="pysic.charges.relaxation.ChargeRelaxation.relaxation_modes">
-<tt class="descname">relaxation_modes</tt><em class="property"> = ['dynamic']</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_modes" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">relaxation_modes</tt><em class="property"> = ['dynamic', 'potentiostat']</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_modes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Names of the charge relaxation algorithms available.</p>
 <p>These are keywords needed when creating the
 <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> objects as type specifiers.</p>
@@ -284,13 +407,13 @@ charge relaxation is invoked.</p>
 
 <dl class="attribute">
 <dt id="pysic.charges.relaxation.ChargeRelaxation.relaxation_parameter_descriptions">
-<tt class="descname">relaxation_parameter_descriptions</tt><em class="property"> = {'dynamic': ['time steps of charge dynamics between molecular dynamics', 'time step of charge dynamics', 'fictional charge mass', 'friction coefficient for damped charge dynamics', 'convergence tolerance']}</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_parameter_descriptions" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">relaxation_parameter_descriptions</tt><em class="property"> = {'dynamic': ['number of time steps of charge dynamics between molecular dynamics', 'time step of charge dynamics', 'fictional charge mass', 'friction coefficient for damped charge dynamics', 'convergence tolerance'], 'potentiostat': ['number of time steps of charge dynamics between molecular dynamics', 'time step of charge dynamics', 'fictional charge mass', 'external potential']}</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_parameter_descriptions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Short descriptions of the relaxation parameters.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pysic.charges.relaxation.ChargeRelaxation.relaxation_parameters">
-<tt class="descname">relaxation_parameters</tt><em class="property"> = {'dynamic': ['n_steps', 'timestep', 'inertia', 'friction', 'tolerance']}</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_parameters" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">relaxation_parameters</tt><em class="property"> = {'dynamic': ['n_steps', 'timestep', 'inertia', 'friction', 'tolerance'], 'potentiostat': ['n_steps', 'timestep', 'inertia', 'potential']}</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Names of the parameters of the charge relaxation algorithms.</p>
 </dd></dl>
 
@@ -365,6 +488,7 @@ it is up to the user to start the relaxation.</p>
 <dt id="pysic.charges.relaxation.ChargeRelaxation.set_parameter_values">
 <tt class="descname">set_parameter_values</tt><big>(</big><em>parameters</em><big>)</big><a class="reference internal" href="_modules/pysic/charges/relaxation.html#ChargeRelaxation.set_parameter_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.set_parameter_values" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets the numeric values for all parameters.</p>
+<p>Use get_parameters() to see the correct order of values.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>parameters: list of doubles</dt>
@@ -397,6 +521,39 @@ by invoking <a class="reference internal" href="#pysic.charges.relaxation.Charge
 </dl>
 </dd></dl>
 
+<dl class="method">
+<dt id="pysic.charges.relaxation.ChargeRelaxation.set_relaxation_pipe">
+<tt class="descname">set_relaxation_pipe</tt><big>(</big><em>relaxation</em>, <em>pass_info=True</em><big>)</big><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.set_relaxation_pipe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add another <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> to take place immediately after this relaxation.</p>
+<p>Sometimes it is most efficient to start the relaxation with a robust but 
+possibly slow algorithm and switch to a more advanced one once closer to
+equilibrium. On the other hand, when relaxation is needed between MD steps,
+this is not possible manually. Therefore, one can link several ChargeRelaxation
+objects together to automatically invoke a sequential relaxation procedure.</p>
+<p>You should only give one ChargeRelaxation for piping. If you want to
+pipe more than two relaxation sequences together, you should always link the
+additional relaxation to the currently final ChargeRelaxation object to
+create a nested pipeline:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">rel1</span> <span class="o">=</span> <span class="n">ChargeRelaxation</span><span class="p">()</span>
+<span class="n">rel2</span> <span class="o">=</span> <span class="n">ChargeRelaxation</span><span class="p">()</span>
+<span class="n">rel3</span> <span class="o">=</span> <span class="n">ChargeRelaxation</span><span class="p">()</span>
+
+<span class="n">rel1</span><span class="o">.</span><span class="n">set_relaxation_pipe</span><span class="p">(</span><span class="n">rel2</span><span class="p">)</span>
+<span class="n">rel2</span><span class="o">.</span><span class="n">set_relaxation_pipe</span><span class="p">(</span><span class="n">rel3</span><span class="p">)</span>
+
+<span class="n">rel1</span><span class="o">.</span><span class="n">charge_relaxation</span><span class="p">()</span> <span class="c"># will do rel1 -&gt; rel2 -&gt; rel3</span>
+</pre></div>
+</div>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>relaxation: <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> object</dt>
+<dd>the relaxation to be piped after this one</dd>
+<dt>pass_info: boolean</dt>
+<dd>If True, the calculator and atoms of this calculator will be automatically
+copied over to the piped calculator.</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -423,12 +580,12 @@ by invoking <a class="reference internal" href="#pysic.charges.relaxation.Charge
         <li class="right" >
           <a href="suttonchenpotential class.html" title="SuttonChenPotential class"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.8 documentation</a> &raquo;</li>
           <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2011-2012, Teemu Hynninen.
+        &copy; Copyright 2011-2013, Teemu Hynninen.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>

@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>potentials (Potentials.f90) &mdash; Pysic 0.4.6 documentation</title>
+    <title>potentials (Potentials.f90) &mdash; Pysic 0.4.8 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.6',
+        VERSION:     '0.4.8',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.6 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.8 documentation" href="index.html" />
     <link rel="up" title="Pysic Fortran module" href="pysic_fortran.html" />
     <link rel="next" title="geometry (Geometry.f90)" href="Geometry_f90.html" />
     <link rel="prev" title="pysic_core (Core.f90)" href="Core_f90.html" /> 
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="Core_f90.html" title="pysic_core (Core.f90)"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.8 documentation</a> &raquo;</li>
           <li><a href="pysic_fortran.html" accesskey="U">Pysic Fortran module</a> &raquo;</li> 
       </ul>
     </div>
@@ -732,9 +732,8 @@ the python interface fetch.</p>
 <dd>Descriptions of the parameters. The descriptions should be very short indicators such as &#8216;spring constant&#8217; or &#8216;energy coefficient&#8217;. For more detailed explanations, the proper documentation should be used.</dd>
 <dt>n_parameters: integer  <em>pointer</em>  <em>size(:)</em></dt>
 <dd>number of parameters for each number of bodies (1-body parameters, 2-body parameters etc.)</dd>
-</dl>
-<p>n_level: integer    <em>scalar</em></p>
-<dl class="docutils">
+<dt>n_level: integer    <em>scalar</em></dt>
+<dd>1 for atomic bond order factors, 2 for pairwise factors</dd>
 <dt>name: character(len=pot_name_length)    <em>scalar</em></dt>
 <dd>The name of the bond order factor: this is a keyword according to which the factor may be recognized.</dd>
 <dt>description: character(len=pot_note_length)    <em>scalar</em></dt>
@@ -764,9 +763,8 @@ interface when calculations are invoked.</p>
 <dl class="docutils">
 <dt>cutoff: double precision    <em>scalar</em></dt>
 <dd>The hard cutoff for the bond order factor. If the atoms are farther away from each other than this, they do not contribute to the total bond order factor does not affect them.</dd>
-</dl>
-<p>n_level: integer    <em>scalar</em></p>
-<dl class="docutils">
+<dt>n_level: integer    <em>scalar</em></dt>
+<dd>1 for atomic bond order factors, 2 for pairwise</dd>
 <dt>soft_cutoff: double precision    <em>scalar</em></dt>
 <dd>The soft cutoff for the bond order factor. If this is smaller than the hard cutoff, the bond contribution is scaled to zero continuously when the interatomic distances grow from the soft to the hard cutoff.</dd>
 <dt>parameters: double precision  <em>pointer</em>  <em>size(:, :)</em></dt>
@@ -977,9 +975,8 @@ These electronegativities are the derivatives of the energies <span class="math"
 <dd>the supercell containing the system</dd>
 <dt>real_cutoff: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)</dd>
-</dl>
-<p>k_radius: double precision  <em>intent(in)</em>    <em>scalar</em></p>
-<dl class="docutils">
+<dt>k_radius: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>Cutoff radius of k-space summation in inverse length. This is an absolute cutoff so that any k-point at a greater distance will be ignored. THis makes the k-cutoff spherical instead of summing over a rectangular box. (It also speeds up the summation.)</dd>
 <dt>reciprocal_cutoff: integer  <em>intent(in)</em>    <em>size(3)</em></dt>
 <dd>The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if <tt class="docutils literal"><span class="pre">reciprocal_cutoff</span> <span class="pre">=</span> <span class="pre">[3,4,5]</span></tt>, the reciprocal sum will be truncated as <span class="math">\(\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5\)</span>.</dd>
 <dt>gaussian_width: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
@@ -1070,9 +1067,8 @@ Likewise the sum in the structure factor <span class="math">\(S(\mathbf{k})\)</s
 <dd>the supercell containing the system</dd>
 <dt>real_cutoff: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)</dd>
-</dl>
-<p>k_radius: double precision  <em>intent(in)</em>    <em>scalar</em></p>
-<dl class="docutils">
+<dt>k_radius: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>absolute k-space cutoff</dd>
 <dt>reciprocal_cutoff: integer  <em>intent(in)</em>    <em>size(3)</em></dt>
 <dd>The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if <tt class="docutils literal"><span class="pre">reciprocal_cutoff</span> <span class="pre">=</span> <span class="pre">[3,4,5]</span></tt>, the reciprocal sum will be truncated as <span class="math">\(\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5\)</span>.</dd>
 <dt>gaussian_width: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
@@ -1105,9 +1101,8 @@ These forces are the gradients of the energies <span class="math">\(U\)</span> g
 <dd>the supercell containing the system</dd>
 <dt>real_cutoff: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)</dd>
-</dl>
-<p>k_radius: double precision  <em>intent(in)</em>    <em>scalar</em></p>
-<dl class="docutils">
+<dt>k_radius: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>Cutoff radius of k-space summation in inverse length. This is an absolute cutoff so that any k-point at a greater distance will be ignored. THis makes the k-cutoff spherical instead of summing over a rectangular box. (It also speeds up the summation.)</dd>
 <dt>reciprocal_cutoff: integer  <em>intent(in)</em>    <em>size(3)</em></dt>
 <dd>The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if <tt class="docutils literal"><span class="pre">reciprocal_cutoff</span> <span class="pre">=</span> <span class="pre">[3,4,5]</span></tt>, the reciprocal sum will be truncated as <span class="math">\(\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5\)</span>.</dd>
 <dt>gaussian_width: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
@@ -3137,12 +3132,12 @@ returns the value of the gradient of the smoothening function.</p>
         <li class="right" >
           <a href="Core_f90.html" title="pysic_core (Core.f90)"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.8 documentation</a> &raquo;</li>
           <li><a href="pysic_fortran.html" >Pysic Fortran module</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2011-2012, Teemu Hynninen.
+        &copy; Copyright 2011-2013, Teemu Hynninen.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>

@@ -16,6 +16,20 @@ The version number is available in Pysic as the variable::
   pysic.version
 
 
+Version 0.4.8
+----------------
+
+- Fixed compatibility with syntax changes in ASE 3.7.0.
+- Added piping of :class:`~pysic.charge.relaxation.ChargeRelaxation` objects.
+- Added a potentiostat as a :class:`~pysic.charge.relaxation.ChargeRelaxation` type.
+
+
+Version 0.4.7
+---------------
+
+- Added wrapping of several :ref:`ase calculators`
+
+
 Version 0.4.6
 --------------
 
@@ -31,7 +45,7 @@ Version 0.4.5
 - Added the :class:`~pysic.interactions.compound.CompoundPotential` class for representing complicated potentials.
 - Added the :class:`~pysic.interactions.suttonchen.SuttonChenPotential` class describing the Sutton-Chen potential.
 - Added the :ref:`shifted power potential`
-- Interface enhancements. E.g., it is possible to pass lists of potentials to methods like :meth:`pysic.calculator.Pysic.add_potential`, or pass :class:`~pysic.interactions.local.ProductPotential` objects to other :class:`~pysic.interactions.local.ProductPotential`s.
+- Interface enhancements. E.g., it is possible to pass lists of potentials to methods like :meth:`pysic.calculator.Pysic.add_potential`, or pass :class:`~pysic.interactions.local.ProductPotential` objects to other :class:`~pysic.interactions.local.ProductPotential` objects.
 - Efficiency fixes. E.g., when bond order factors are created in the core, it is checked that duplicates are not created.
 
 Version 0.4.4

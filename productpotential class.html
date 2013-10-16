@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>ProductPotential class &mdash; Pysic 0.4.6 documentation</title>
+    <title>ProductPotential class &mdash; Pysic 0.4.8 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.6',
+        VERSION:     '0.4.8',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.6 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.4.8 documentation" href="index.html" />
     <link rel="up" title="Pysic module" href="pysic.html" />
     <link rel="next" title="CoulombSummation class" href="coulombsummation class.html" />
     <link rel="prev" title="Potential class" href="potential class.html" /> 
@@ -47,7 +47,7 @@
         <li class="right" >
           <a href="potential class.html" title="Potential class"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.8 documentation</a> &raquo;</li>
           <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
       </ul>
     </div>
@@ -134,6 +134,17 @@ so that the total potential energy is</p>
 </div>
 <p>An immediate benefit of this functionality is the possibility to construct complicated potentials from simple building blocks
 without having to hardcode all the different variants.</p>
+<p>As an example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">pot1</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;power&#39;</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">pot2</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;charge_pair&#39;</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">])</span>
+<span class="n">prod</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">ProductPotential</span><span class="p">([</span><span class="n">pot1</span><span class="p">,</span><span class="n">pot2</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>defines the potentials</p>
+<div class="math">
+\[\begin{split}v^1_{ij} &amp; = q_i q_j \\
+v^2_{ij} &amp; = \frac{1}{|\mathbf{r}_i - \mathbf{r}_j|} \\
+V = \sum_{ij} v^1_{ij} v^2_{ij} &amp; = \sum_{ij} \frac{q_i q_j}{|\mathbf{r}_i - \mathbf{r}_j|}.\end{split}\]</div>
 </div>
 <div class="section" id="parameterization">
 <span id="id2"></span><h2>Parameterization<a class="headerlink" href="#parameterization" title="Permalink to this headline">¶</a></h2>
@@ -204,7 +215,7 @@ copies of these potentials.
 If <tt class="docutils literal"><span class="pre">prod</span></tt> contained the original potential objects <tt class="docutils literal"><span class="pre">prod.set_symbols(</span> <span class="pre">[['H','H']]</span> <span class="pre">)</span></tt>
 would affect <tt class="docutils literal"><span class="pre">pot1</span></tt>, the leading potential, and change <tt class="docutils literal"><span class="pre">symbols</span></tt>
 in <tt class="docutils literal"><span class="pre">pot1</span></tt> as well having both potentials end up targeting H-H pairs.
-This kind of behaviour could lead to one unintentional changes the properties of other potentials</p>
+This kind of behaviour could lead to unintentional changes in the properties of other potentials</p>
 <p>On the other hand, this example:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
 <span class="n">pot1</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">symbols</span><span class="o">=</span><span class="p">[[</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="s">&#39;O&#39;</span><span class="p">]])</span>   <span class="c"># Define a potential for H-O</span>
@@ -547,12 +558,12 @@ list of tags on which the potential acts</p>
         <li class="right" >
           <a href="potential class.html" title="Potential class"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.6 documentation</a> &raquo;</li>
+        <li><a href="index.html">Pysic 0.4.8 documentation</a> &raquo;</li>
           <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
-        &copy; Copyright 2011-2012, Teemu Hynninen.
+        &copy; Copyright 2011-2013, Teemu Hynninen.
       Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
     </div>
   </body>
