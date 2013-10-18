@@ -308,10 +308,31 @@ the distances traveled on the plane and the recorded forces is returned.</p>
 <span id="convenience-utility"></span><h2>Convenience<a class="headerlink" href="#convenience" title="Permalink to this headline">¶</a></h2>
 <p>The convenience utility defines functions to ease the handling of complicated data structures.</p>
 <span class="target" id="module-pysic.utility.convenience"></span><dl class="function">
+<dt id="pysic.utility.convenience.expand_symbols_string">
+<tt class="descclassname">pysic.utility.convenience.</tt><tt class="descname">expand_symbols_string</tt><big>(</big><em>symbol_string</em><big>)</big><a class="headerlink" href="#pysic.utility.convenience.expand_symbols_string" title="Permalink to this definition">¶</a></dt>
+<dd><p>Expands a string of chemical symbols to list.</p>
+<p>The function parses a string of chemical symbols and turns
+it to a list such as those expected by 
+<a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a>.</p>
+<p>Examples:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">expand_symbols_string</span><span class="p">(</span><span class="s">&quot;HH&quot;</span><span class="p">)</span>
+<span class="go">[[&#39;H&#39;, &#39;H&#39;]]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="k">print</span> <span class="n">expand_symbols_string</span><span class="p">(</span><span class="s">&quot;SiSi,SiO,SiH&quot;</span><span class="p">)</span>
+<span class="go">[[&#39;Si&#39;, &#39;Si&#39;], [&#39;Si&#39;, &#39;O&#39;], [&#39;Si&#39;, &#39;H&#39;]]</span>
+</pre></div>
+</div>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>symbol_string: string</dt>
+<dd>the string to be expanded</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="pysic.utility.convenience.expand_symbols_table">
 <tt class="descclassname">pysic.utility.convenience.</tt><tt class="descname">expand_symbols_table</tt><big>(</big><em>symbol_list</em>, <em>type=None</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/convenience.html#expand_symbols_table"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.convenience.expand_symbols_table" title="Permalink to this definition">¶</a></dt>
-<dd><p>Creates a table of symbols for a BondOrderParameters object.</p>
-<p>The syntax for defining the targets of bond order factors is precise
+<dd><p>Creates a table of symbols object.</p>
+<p>The syntax for defining the targets is precise
 but somewhat cumbersome due to the large number of permutations one gets
 when the number of bodies increases. Oftentimes one does not need such
 fine control over all the parameters since many of them have the same
@@ -320,7 +341,7 @@ the targets in a more compact way.</p>
 <p>This method generates the detailed target tables from compact syntax.
 By default, the method takes a list of list and multiplies each list
 with the others (note the call for a static method):</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pysic</span><span class="o">.</span><span class="n">BondOrderParameters</span><span class="o">.</span><span class="n">expand_symbols_table</span><span class="p">([</span>  <span class="s">&#39;Si&#39;</span><span class="p">,</span>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">pysic</span><span class="o">.</span><span class="n">utility</span><span class="o">.</span><span class="n">convenience</span><span class="o">.</span><span class="n">expand_symbols_table</span><span class="p">([</span>  <span class="s">&#39;Si&#39;</span><span class="p">,</span>
 <span class="gp">... </span>                                                 <span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">],</span>
 <span class="gp">... </span>                                                 <span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="s">&#39;O&#39;</span><span class="p">]</span> <span class="p">])</span>
 <span class="go">[[&#39;Si&#39;, &#39;O&#39;, &#39;H&#39;],</span>

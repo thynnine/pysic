@@ -22,6 +22,7 @@ Version 0.4.8
 - Fixed compatibility with syntax changes in ASE 3.7.0.
 - Added piping of :class:`~pysic.charge.relaxation.ChargeRelaxation` objects.
 - Added a potentiostat as a :class:`~pysic.charge.relaxation.ChargeRelaxation` type.
+- Added utility functions :meth:`~pysic.calculator.FastNeighborList.get_neighbor_distances`, :func:`~pysic.utility.convenience.expand_symbols_string`
 
 
 Version 0.4.7

@@ -59,6 +59,7 @@
 <li><a class="reference internal" href="#the-benefit-of-neighbor-lists">The benefit of neighbor lists</a></li>
 <li><a class="reference internal" href="#faster-neighbor-search">Faster neighbor search</a></li>
 <li><a class="reference internal" href="#limitations-in-the-implementation">Limitations in the implementation</a></li>
+<li><a class="reference internal" href="#accessing-neighbor-lists">Accessing neighbor lists</a></li>
 <li><a class="reference internal" href="#methods-inherited-from-ase-neighborlist">Methods inherited from ASE NeighborList</a></li>
 <li><a class="reference internal" href="#list-of-methods">List of methods</a></li>
 <li><a class="reference internal" href="#full-documentation-of-the-fastneighborlist-class">Full documentation of the FastNeighborList class</a></li>
@@ -134,10 +135,42 @@ d_i & = & \frac{|\mathbf{v}_i \cdot \mathbf{n_i}|}{|\mathbf{n}_{i}|}\\
 \mathbf{n}_i & = & \mathbf{v}_j \times \mathbf{v}_k
 \end{eqnarray}\]</div><p>where <span class="math">\(\mathbf{n}_i\)</span> are the normal vectors of the plane spanned by the vectors <span class="math">\(\mathbf{v}_{j,k}\)</span>. If one wishes to find neighbors in a radius containing the simulation volume several times, the original <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists">ASE NeighborList</a> should be used instead. <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> does this choice automatically when building the neighbor lists. One should usually avoid such long cutoffs in the first place, but if your system is very small that may not be possible.</p>
 </div>
+<div class="section" id="accessing-neighbor-lists">
+<span id="listing-neighbors"></span><h2>Accessing neighbor lists<a class="headerlink" href="#accessing-neighbor-lists" title="Permalink to this headline">¶</a></h2>
+<p>Although the neighbor lists are automatically used by the calculator, it is also possible to use the list for manually analysing local atomic neighborhoods. This can be done with the methods</p>
+<ul class="simple">
+<li><a class="reference internal" href="#pysic.calculator.FastNeighborList.get_neighbors" title="pysic.calculator.FastNeighborList.get_neighbors"><tt class="xref py py-meth docutils literal"><span class="pre">get_neighbors()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.calculator.FastNeighborList.get_neighbor_separations" title="pysic.calculator.FastNeighborList.get_neighbor_separations"><tt class="xref py py-meth docutils literal"><span class="pre">get_neighbor_separations()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.calculator.FastNeighborList.get_neighbor_distances" title="pysic.calculator.FastNeighborList.get_neighbor_distances"><tt class="xref py py-meth docutils literal"><span class="pre">get_neighbor_distances()</span></tt></a></li>
+</ul>
+<p>which list, for a specified atom, the indices and periodic boundary offsets of neighbors (cf. <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#ase.calculators.neighborlist.NeighborList.get_neighbors">get_neighbors</a> of the ASE neighbor list), separation vectors, and separation distances, respectively. The arrays can also be requested pre-sorted according to the atom-atom distance by providing the keyword <tt class="docutils literal"><span class="pre">sort=True</span></tt>.</p>
+<p>Since the lists are created in the Fortran core according to specified interaction cutoffs, it is unfortunately not possible to inquire the neighbors within arbitrary radii without touching the potentials. Normally the lists contain the atoms which interact. In order to just analyse structures, a dummy calculator needs to be created:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">system</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+<span class="n">system</span><span class="o">.</span><span class="n">set_cell</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+<span class="n">system</span><span class="o">.</span><span class="n">set_pbc</span><span class="p">([</span><span class="bp">True</span><span class="p">,</span><span class="bp">True</span><span class="p">,</span><span class="bp">True</span><span class="p">])</span>
+
+<span class="c"># create a dummy calculator</span>
+<span class="n">dummy</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+<span class="c"># Find neighbors at distance 3.0 + 0.5 (0.5 is the default marginal).</span>
+<span class="c"># Note that the list finds all neighbors within the maximum interaction</span>
+<span class="c"># radius of the particular atom.</span>
+<span class="n">pot</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;LJ&#39;</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">symbols</span><span class="o">=...</span><span class="p">)</span>
+<span class="n">dummy</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">pot</span><span class="p">)</span>
+<span class="n">system</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">dummy</span><span class="p">)</span>
+<span class="c"># It is important to manually initialize the core since no actual calculations are not carried out.</span>
+<span class="n">dummy</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+
+<span class="c"># get the list and access its contents</span>
+<span class="n">nbl</span> <span class="o">=</span> <span class="n">dummy</span><span class="o">.</span><span class="n">get_neighbor_list</span><span class="p">()</span>
+<span class="n">neighbors</span><span class="p">,</span> <span class="n">offsets</span> <span class="o">=</span> <span class="n">nbl</span><span class="o">.</span><span class="n">get_neighbors</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+<span class="n">separations</span> <span class="o">=</span> <span class="n">nbl</span><span class="o">.</span><span class="n">get_neighbor_separations</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+<span class="n">distances</span> <span class="o">=</span> <span class="n">nbl</span><span class="o">.</span><span class="n">get_neighbor_distances</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">system</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
 <div class="section" id="methods-inherited-from-ase-neighborlist">
 <span id="fastneighborlist-class-autogenerated"></span><h2>Methods inherited from ASE NeighborList<a class="headerlink" href="#methods-inherited-from-ase-neighborlist" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
-<li><a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#ase.calculators.neighborlist.NeighborList.get_neighbors">get_neighbors</a></li>
 <li><a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#ase.calculators.neighborlist.NeighborList.update">update</a></li>
 </ul>
 </div>
@@ -145,14 +178,17 @@ d_i & = & \frac{|\mathbf{v}_i \cdot \mathbf{n_i}|}{|\mathbf{n}_{i}|}\\
 <h2>List of methods<a class="headerlink" href="#list-of-methods" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><a class="reference internal" href="#pysic.calculator.FastNeighborList.build" title="pysic.calculator.FastNeighborList.build"><tt class="xref py py-meth docutils literal"><span class="pre">build()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.calculator.FastNeighborList.get_neighbors" title="pysic.calculator.FastNeighborList.get_neighbors"><tt class="xref py py-meth docutils literal"><span class="pre">get_neighbors()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.calculator.FastNeighborList.get_neighbor_separations" title="pysic.calculator.FastNeighborList.get_neighbor_separations"><tt class="xref py py-meth docutils literal"><span class="pre">get_neighbor_separations()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.calculator.FastNeighborList.get_neighbor_distances" title="pysic.calculator.FastNeighborList.get_neighbor_distances"><tt class="xref py py-meth docutils literal"><span class="pre">get_neighbor_distances()</span></tt></a></li>
 </ul>
 </div>
 <div class="section" id="full-documentation-of-the-fastneighborlist-class">
 <h2>Full documentation of the FastNeighborList class<a class="headerlink" href="#full-documentation-of-the-fastneighborlist-class" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pysic.calculator.FastNeighborList">
-<em class="property">class </em><tt class="descclassname">pysic.calculator.</tt><tt class="descname">FastNeighborList</tt><big>(</big><em>cutoffs</em>, <em>skin=0.5</em><big>)</big><a class="reference internal" href="_modules/pysic/calculator.html#FastNeighborList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.calculator.FastNeighborList" title="Permalink to this definition">¶</a></dt>
-<dd><p>ASE has a neighbor list class built in, but its implementation is
+<em class="property">class </em><tt class="descclassname">pysic.calculator.</tt><tt class="descname">FastNeighborList</tt><big>(</big><em>cutoffs</em>, <em>skin=None</em><big>)</big><a class="reference internal" href="_modules/pysic/calculator.html#FastNeighborList"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.calculator.FastNeighborList" title="Permalink to this definition">¶</a></dt>
+<dd><p>ASE has a neighbor list class built in, <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists">ASE NeighborList</a>, but its implementation is
 currently inefficient, and building of the list is an <span class="math">\(O(n^2)\)</span>
 operation. This neighbor list class overrides the 
 <a class="reference internal" href="#pysic.calculator.FastNeighborList.build" title="pysic.calculator.FastNeighborList.build"><tt class="xref py py-meth docutils literal"><span class="pre">build()</span></tt></a> method with
@@ -182,9 +218,61 @@ fed back to the <a class="reference internal" href="#pysic.calculator.FastNeighb
 atoms and saving the lists of neighbors and offsets.</p>
 <p>Parameters:</p>
 <dl class="docutils">
-<dt>atoms: ASE Atoms object</dt>
+<dt>atoms: <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> object</dt>
 <dd>the structure for which the neighbors are searched</dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.calculator.FastNeighborList.get_neighbor_distances">
+<tt class="descname">get_neighbor_distances</tt><big>(</big><em>index</em>, <em>atoms</em>, <em>sort=False</em><big>)</big><a class="headerlink" href="#pysic.calculator.FastNeighborList.get_neighbor_distances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of atom-atom distances between the given atom and its neighbors.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer</dt>
+<dd>the index of the central atom</dd>
+<dt>atoms: ASE Atoms</dt>
+<dd>the atoms object containing the absolute coordinates</dd>
+<dt>sort: boolean</dt>
+<dd>if True, the list will be sorted according to distance</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.calculator.FastNeighborList.get_neighbor_separations">
+<tt class="descname">get_neighbor_separations</tt><big>(</big><em>index</em>, <em>atoms</em>, <em>sort=False</em><big>)</big><a class="headerlink" href="#pysic.calculator.FastNeighborList.get_neighbor_separations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an array of atom-atom separation vectors between the given atom and its neighbors.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer</dt>
+<dd>the index of the central atom</dd>
+<dt>atoms: ASE Atoms</dt>
+<dd>the atoms object containing the absolute coordinates</dd>
+<dt>sort: boolean</dt>
+<dd>if True, the list will be sorted according to distance</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.calculator.FastNeighborList.get_neighbors">
+<tt class="descname">get_neighbors</tt><big>(</big><em>index</em>, <em>atoms=None</em>, <em>sort=False</em><big>)</big><a class="headerlink" href="#pysic.calculator.FastNeighborList.get_neighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns arrays containing the indices and offsets of the neighbors of the given atom.</p>
+<p>Overrides the method in <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists">ASE NeighborList</a>.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer</dt>
+<dd>the index of the central atom</dd>
+<dt>atoms: ASE Atoms</dt>
+<dd>the atoms object containing the absolute coordinates - needed only if sorting is necessary</dd>
+<dt>sort: boolean</dt>
+<dd>if True, the list will be sorted according to distance</dd>
+</dl>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pysic.calculator.FastNeighborList.neighbor_marginal">
+<tt class="descname">neighbor_marginal</tt><em class="property"> = 0.5</em><a class="headerlink" href="#pysic.calculator.FastNeighborList.neighbor_marginal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Default skin width for the neighbor list</p>
 </dd></dl>
 
 </dd></dl>

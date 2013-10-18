@@ -434,11 +434,16 @@ Fortran core itself.</p>
 
 <dl class="method">
 <dt id="pysic.calculator.Pysic.create_neighbor_lists">
-<tt class="descname">create_neighbor_lists</tt><big>(</big><em>cutoffs=None</em>, <em>marginal=0.5</em><big>)</big><a class="reference internal" href="_modules/pysic/calculator.html#Pysic.create_neighbor_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.calculator.Pysic.create_neighbor_lists" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">create_neighbor_lists</tt><big>(</big><em>cutoffs=None</em>, <em>marginal=None</em><big>)</big><a class="reference internal" href="_modules/pysic/calculator.html#Pysic.create_neighbor_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.calculator.Pysic.create_neighbor_lists" title="Permalink to this definition">¶</a></dt>
 <dd><p>Initializes the neighbor lists.</p>
 <p>In order to do calculations at reasonable speed, the calculator needs 
-a list of neighbors for each atom. For this purpose, the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists">ASE NeighborList</a>
-are used. This method initializes these lists according to the given
+a list of neighbors for each atom. For this purpose, either the list
+is built in the Fortran core or the <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists">ASE NeighborList</a>
+are used. The ASE lists are very slow, but they will work even for small
+systems where the cutoff is longer than cell size. The custom list
+uses <a class="reference internal" href="fastneighborlist class.html#pysic.calculator.FastNeighborList" title="pysic.calculator.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">pysic.calculator.FastNeighborList</span></tt></a>, but the build succeeds only
+for cutoffs shorter than cell size. The type of list is determined automatically.</p>
+<p>This method initializes these lists according to the given
 cutoffs.</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -532,6 +537,12 @@ will return the cutoffs halved.</p>
 <dt>scaler: double</dt>
 <dd>a number for scaling all values in the generated list</dd>
 </dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.calculator.Pysic.get_neighbor_list">
+<tt class="descname">get_neighbor_list</tt><big>(</big><big>)</big><a class="headerlink" href="#pysic.calculator.Pysic.get_neighbor_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the neighbor list object.</p>
 </dd></dl>
 
 <dl class="method">
