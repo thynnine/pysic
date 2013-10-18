@@ -17,6 +17,7 @@ import pysic.pysic_fortran as pf
 import pysic.utility.f2py as pu
 
 import numpy as np
+import numpy.linalg as npla
 import ase.calculators.neighborlist as nbl
 from itertools import permutations
 import copy
@@ -26,11 +27,8 @@ import pysic.utility.debug as d
 
 
 
-neighbor_marginal = 0.5
-"""Default skin width for the neighbor list"""
-
 class FastNeighborList(nbl.NeighborList):
-    """ASE has a neighbor list class built in, but its implementation is
+    """ASE has a neighbor list class built in, `ASE NeighborList`_, but its implementation is
         currently inefficient, and building of the list is an :math:`O(n^2)`
         operation. This neighbor list class overrides the 
         :meth:`~pysic.calculator.FastNeighborList.build` method with
@@ -42,10 +40,20 @@ class FastNeighborList(nbl.NeighborList):
         the sum of the individual cutoffs + neighbor list skin. This list, however,
         searches for the neighbors of each atom at a distance of the cutoff of the
         given atom only, plus skin.
+        
+        
+        .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html
+        .. _ASE NeighborList: https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists
         """
+
+    neighbor_marginal = 0.5
+    """Default skin width for the neighbor list"""
+
     
-    def __init__(self, cutoffs, skin=neighbor_marginal):
-        nbl.NeighborList.__init__(self, 
+    def __init__(self, cutoffs, skin=None):
+        if skin is None:
+            skin = FastNeighborList.neighbor_marginal
+        nbl.NeighborList.__init__(self,
                               cutoffs=cutoffs, 
                               skin=skin, 
                               sorted=False, 
@@ -72,7 +80,7 @@ class FastNeighborList(nbl.NeighborList):
 
             Parameters:
             
-            atoms: ASE Atoms object
+            atoms: `ASE Atoms`_ object
                 the structure for which the neighbors are searched
             """
         
@@ -99,8 +107,87 @@ class FastNeighborList(nbl.NeighborList):
                 self.displacements[i] = np.transpose(self.displacements[i])
     
         self.nupdates += 1
+    
+    
+    def get_neighbors(self, index, atoms=None, sort=False):
+        """Returns arrays containing the indices and offsets of the neighbors of the given atom.
         
+        Overrides the method in `ASE NeighborList`_.
+        
+        Parameters:
+        
+        index: integer
+            the index of the central atom
+        atoms: ASE Atoms
+            the atoms object containing the absolute coordinates - needed only if sorting is necessary
+        sort: boolean
+            if True, the list will be sorted according to distance
+        """
+        n_nbs = pf.pysic_interface.get_number_of_neighbors_of_atom(index)
+        nbors = self.neighbors[index][0:n_nbs]
+        displ = self.displacements[index][0:n_nbs]
+        
+        if sort and atoms is not None and n_nbs > 0:
+            dists = self.get_neighbor_distances(index, atoms)
+            sorted_lists = np.array([np.append(o,np.array(n)) for (d,n,o) in sorted(zip(dists, nbors, displ), key=lambda dis: dis[0])])
+            return sorted_lists[:,3], sorted_lists[:,0:3]
+        
+        return nbors, displ
+    
+    
+    def get_neighbor_separations(self, index, atoms, sort=False):
+        """Returns an array of atom-atom separation vectors between the given atom and its neighbors.
+        
+        Parameters:
+        
+        index: integer
+            the index of the central atom
+        atoms: ASE Atoms
+            the atoms object containing the absolute coordinates
+        sort: boolean
+            if True, the list will be sorted according to distance
+        """
+        
+        indices, offsets = self.get_neighbors(index)
+        separations = np.array(len(indices)*[[0.0,0.0,0.0]])
+        dists = np.array(len(separations)*[0.0])
+        running = 0
+        for i, offset in zip(indices, offsets):
+            sep = atoms.positions[i] + np.dot(offset, atoms.get_cell()) - atoms.positions[index]
+            
+            separations[running] = sep
+            if sort:
+                dists[running] = math.sqrt(np.dot(sep,sep))                
+            running += 1
 
+        if sort:
+            return np.array([s for (d,s) in sorted(zip(dists, separations), key=lambda dis: dis[0])])
+        
+        return separations
+
+    def get_neighbor_distances(self, index, atoms, sort=False):
+        """Returns a list of atom-atom distances between the given atom and its neighbors.
+        
+        Parameters:
+        
+        index: integer
+            the index of the central atom
+        atoms: ASE Atoms
+            the atoms object containing the absolute coordinates
+        sort: boolean
+            if True, the list will be sorted according to distance
+        """
+        separations = self.get_neighbor_separations(index, atoms)
+        dists = np.array(len(separations)*[0.0])
+        running = 0
+        for sep in separations:
+            dists[running] = math.sqrt(np.dot(sep,sep))
+            running += 1
+
+        if sort:
+            return np.array(sorted(dists))
+            
+        return dists
 
 
 class Pysic:
@@ -699,12 +786,18 @@ class Pysic:
         return self.charge_relaxation
     
     
-    def create_neighbor_lists(self,cutoffs=None,marginal=neighbor_marginal):
+    def create_neighbor_lists(self,cutoffs=None,marginal=None):
         """Initializes the neighbor lists.
 
         In order to do calculations at reasonable speed, the calculator needs 
-        a list of neighbors for each atom. For this purpose, the `ASE NeighborList`_
-        are used. This method initializes these lists according to the given
+        a list of neighbors for each atom. For this purpose, either the list
+        is built in the Fortran core or the `ASE NeighborList`_
+        are used. The ASE lists are very slow, but they will work even for small
+        systems where the cutoff is longer than cell size. The custom list
+        uses :class:`pysic.calculator.FastNeighborList`, but the build succeeds only
+        for cutoffs shorter than cell size. The type of list is determined automatically.
+        
+        This method initializes these lists according to the given
         cutoffs.
 
         .. _ASE NeighborList: https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists
@@ -716,6 +809,11 @@ class Pysic:
         marginal: double
             the skin width of the neighbor list
         """
+        
+        if marginal is None:
+            marginal = FastNeighborList.neighbor_marginal
+
+        
         fastlist = True
         if cutoffs == None:
             cutoffs = self.get_individual_cutoffs(1.0)
@@ -742,7 +840,13 @@ class Pysic:
 
         self.neighbor_lists_waiting = True
         self.set_cutoffs(cutoffs)
-        
+    
+    
+    def get_neighbor_list(self):
+        """Returns the neighbor list object.
+        """
+        return self.neighbor_list
+    
             
     def get_individual_cutoffs(self,scaler=1.0):
         """Get a list of maximum cutoffs for all atoms.
