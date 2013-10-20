@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 
 import numpy as np
+from scipy.optimize import fmin_slsqp
 from pysic.utility.error import InvalidRelaxationError
 
 class ChargeRelaxation:
@@ -41,14 +42,15 @@ class ChargeRelaxation:
             updated as well, the relaxation algorithm must have access to it.
     """
 
-    relaxation_modes = [ 'dynamic', 'potentiostat' ]
+    relaxation_modes = [ 'dynamic', 'potentiostat', 'optimize' ]
     """Names of the charge relaxation algorithms available. 
         
         These are keywords needed when creating the 
         :class:`~pysic.charges.relaxation.ChargeRelaxation` objects as type specifiers."""
     
     relaxation_parameters = { relaxation_modes[0] : ['n_steps', 'timestep', 'inertia', 'friction', 'tolerance'],
-        relaxation_modes[1] : ['n_steps','timestep', 'inertia', 'potential'] }
+        relaxation_modes[1] : ['n_steps', 'timestep', 'inertia', 'potential'],
+        relaxation_modes[2] : ['n_steps', 'tolerance'] }
     """Names of the parameters of the charge relaxation algorithms."""
     
     relaxation_parameter_descriptions = { relaxation_modes[0] : ['number of time steps of charge dynamics between molecular dynamics', 
@@ -59,7 +61,9 @@ class ChargeRelaxation:
         relaxation_modes[1] : ['number of time steps of charge dynamics between molecular dynamics',
             'time step of charge dynamics',
             'fictional charge mass', 
-            'external potential']}
+            'external potential'],
+        relaxation_modes[2] : ['maximum number of optimization steps',
+            'convergence tolerance'] }
     """Short descriptions of the relaxation parameters."""
     
     def __init__(self, relaxation='dynamic', calculator=None, parameters=None, atoms=None):
@@ -362,6 +366,19 @@ class ChargeRelaxation:
         """
         return self.atoms
     
+    
+    def _energy_function(self, charges, orig_charge):
+
+        self.calculator.get_atoms().set_charges(charges)
+        return self.calculator.get_potential_energy()
+    
+    def _nabla_function(self, charges, orig_charge):
+    
+        self.calculator.get_atoms().set_charges(charges)
+        return -self.calculator.get_electronegativities()
+    
+    def _charge_constraint(self, charges, orig_charge):
+        return np.sum(charges) - orig_charge
 
     def charge_relaxation(self):
         """Performs the charge relaxation.
@@ -433,10 +450,6 @@ class ChargeRelaxation:
                 charges += self.charge_rates * dt + charge_forces * inv_mq * dt2
                 self.charge_rates = self.charge_rates + charge_forces * 0.5 * inv_mq * dt
 
-                #print "charge", charges
-                #print "velo", self.charge_rates
-                #print "force", charge_forces
-
                 atoms.set_charges(charges)
                 charge_forces = self.calculator.get_electronegativities(atoms)-ext_potential
             
@@ -444,8 +457,13 @@ class ChargeRelaxation:
 
                 step += 1
                 self.call_observers(step)
-           
+        
+        elif self.relaxation == ChargeRelaxation.relaxation_modes[2]: #
+                
+            charge0 = charges
+            orig_charge = np.sum(charges),
             
+            charges = fmin_slsqp(self._energy_function, charge0, fprime=self._nabla_function, eqcons=[self._charge_constraint], acc=self.parameters['tolerance'], iter=self.parameters['n_steps'], args=orig_charge)
         
         else:
             pass
@@ -499,5 +517,8 @@ class ChargeRelaxation:
             the number of dynamics steps taken during the relaxation
         """
         for function, interval, args, kwargs in self.observers:
-            if step % interval == 0:
+            try:
+                if step % interval == 0:
+                    function(*args, **kwargs)
+            except:
                 function(*args, **kwargs)

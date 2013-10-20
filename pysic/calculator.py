@@ -1060,6 +1060,7 @@ class Pysic:
             
             n_atoms = pf.pysic_interface.get_number_of_atoms()
             pf.pysic_interface.allocate_bond_order_storage(n_atoms,0,0)
+            warn("There are no potentials associated with the Pysic calculator!",2)
             return
 
         if len(self.potentials) == 0:
@@ -1067,6 +1068,7 @@ class Pysic:
             pf.pysic_interface.allocate_bond_order_factors(0)
             n_atoms = pf.pysic_interface.get_number_of_atoms()
             pf.pysic_interface.allocate_bond_order_storage(n_atoms,0,0)
+            warn("There are no potentials associated with the Pysic calculator!",2)
             return
         
         n_pots = 0
@@ -1189,6 +1191,10 @@ class Pysic:
             # warn for missing cutoffs
             if pots.get_number_of_targets() > 1 and pots.get_cutoff() < 0.01:
                 warn("Potential with zero cutoff present: \n\n"+str(pots),1)
+            if pots.get_symbols() is None and \
+                pots.get_tags() is None and \
+                pots.get_indices() is None:
+                warn("Potential with no targets present: \n\n"+str(pots),1)
         
             # reverse the lists so that the master potentials come last
             for rpot in reversed(pots.get_potentials()):
@@ -1512,6 +1518,10 @@ class Pysic:
         self.stress = None
         self.electronegativities = None
         
+        total_charge = np.sum(charges)
+        if total_charge > 0.001 or total_charge < -0.001:
+            warn("There is non-zero total charge in the system: {tc}".format(tc=total_charge),5)
+        
         pf.pysic_interface.update_atom_charges(charges)
         self.charges = charges
         
@@ -1583,6 +1593,11 @@ class Pysic:
 
         #self.create_neighbor_lists(self.get_individual_cutoffs(1.0))
         #self.neighbor_lists_waiting = True
+
+        total_charge = np.sum(self.charges)
+        if total_charge > 0.001 or total_charge < -0.001:
+            warn("There is non-zero total charge in the system: {tc}".format(tc=total_charge),5)
+
 
         pf.pysic_interface.create_atoms(masses,charges,positions,momenta,tags,elements)
         Pysic.core.set_atoms(self.structure)
