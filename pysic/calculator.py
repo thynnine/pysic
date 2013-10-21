@@ -241,13 +241,12 @@ class Pysic:
         self.potentials = None
         self.charge_relaxation = None
         self.coulomb = None
+        self.charges = None
         
         self.set_atoms(atoms)
         self.set_potentials(potentials)
         self.set_charge_relaxation(charge_relaxation)
         self.set_coulomb_summation(coulomb)
-        
-        self.charges = None
         
         self.forces = None
         self.stress = None
@@ -263,7 +262,7 @@ class Pysic:
         try:
             if self.structure != other.structure:
                 return False
-            if any(self.structure.get_charges() != other.structure.get_charges()):
+            if any(self.structure.get_initial_charges() != other.structure.get_initial_charges()):
                 return False
             if self.neighbor_list != other.neighbor_list:
                 return False
@@ -272,7 +271,19 @@ class Pysic:
             if self.extra_calculators != other.extra_calculators:
                 return False
         except:
-            return False
+            try:
+                if self.structure != other.structure:
+                    return False
+                if any(self.structure.get_charges() != other.structure.get_charges()):
+                    return False
+                if self.neighbor_list != other.neighbor_list:
+                    return False
+                if self.potentials != other.potentials:
+                    return False
+                if self.extra_calculators != other.extra_calculators:
+                    return False
+            except:
+                return False
 
         return True
 
@@ -408,7 +419,7 @@ class Pysic:
         return enegs - average_eneg
 
     
-    def get_forces(self, atoms=None):
+    def get_forces(self, atoms=None, skip_charge_relaxation=False):
         """Returns the forces.
 
         If the atoms parameter is given, it will be used for updating the
@@ -426,12 +437,13 @@ class Pysic:
         """
         self.set_atoms(atoms)
         if self.calculation_required(atoms,'forces'):
-            self.calculate_forces()
+            self.calculate_forces(skip_charge_relaxation=skip_charge_relaxation)
 
         return np.copy(self.forces)
 
 
-    def get_potential_energy(self, atoms=None, force_consistent=False):
+    def get_potential_energy(self, atoms=None, force_consistent=False,
+                             skip_charge_relaxation=False):
         """Returns the potential energy.
 
         If the atoms parameter is given, it will be used for updating the
@@ -451,12 +463,12 @@ class Pysic:
         """
         self.set_atoms(atoms)
         if self.calculation_required(atoms,'energy'):
-            self.calculate_energy()
+            self.calculate_energy(skip_charge_relaxation=skip_charge_relaxation)
 
         return self.energy
 
 
-    def get_stress(self, atoms=None):
+    def get_stress(self, atoms=None, skip_charge_relaxation=False):
         """Returns the stress tensor in the format 
         :math:`[\sigma_{xx},\sigma_{yy},\sigma_{zz},\sigma_{yz},\sigma_{xz},\sigma_{xy}]`
 
@@ -503,7 +515,7 @@ class Pysic:
         """
         self.set_atoms(atoms)
         if self.calculation_required(atoms,'stress'):
-            self.calculate_stress()
+            self.calculate_stress(skip_charge_relaxation=skip_charge_relaxation)
         
         # self.stress contains the potential contribution to the stress tensor
         # but we add the kinetic contribution on the fly
@@ -916,7 +928,7 @@ class Pysic:
         self.electronegativities = pf.pysic_interface.calculate_electronegativities(n_atoms).transpose()
         
     
-    def calculate_forces(self):
+    def calculate_forces(self, skip_charge_relaxation=False):
         """Calculates forces (and the potential part of the stress tensor).
 
         Calls the Fortran core to calculate forces for the currently assigned structure.
@@ -925,7 +937,7 @@ class Pysic:
         relax the atomic charges before the forces are calculated.
         """
         self.set_core()
-        if self.charge_relaxation != None:
+        if self.charge_relaxation is not None and skip_charge_relaxation == False:
             self.charge_relaxation.charge_relaxation()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.forces, self.stress = pf.pysic_interface.calculate_forces(n_atoms)#.transpose()
@@ -943,7 +955,7 @@ class Pysic:
         
         
 
-    def calculate_energy(self):
+    def calculate_energy(self, skip_charge_relaxation=False):
         """Calculates the potential energy.
 
         Calls the Fortran core to calculate the potential energy for the currently assigned structure.
@@ -952,7 +964,8 @@ class Pysic:
         relax the atomic charges before the forces are calculated.
         """
         self.set_core()
-        if self.charge_relaxation != None:
+
+        if self.charge_relaxation is not None and skip_charge_relaxation == False:
             self.charge_relaxation.charge_relaxation()
         #n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.energy = pf.pysic_interface.calculate_energy()
@@ -964,13 +977,13 @@ class Pysic:
                     self.energy = self.energy + calc.get_potential_energy(system_copy)
 
 
-    def calculate_stress(self):
+    def calculate_stress(self, skip_charge_relaxation=False):
         """Calculates the potential part of the stress tensor (and forces).
 
         Calls the Fortran core to calculate the stress tensor for the currently assigned structure.
         """
-        if self.charge_relaxation != None:
-            self.charge_relaxation.charge_relaxation()
+
+        if self.charge_relaxation is not None and skip_charge_relaxation == False:            self.charge_relaxation.charge_relaxation()
         
         self.set_core()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
@@ -1502,16 +1515,30 @@ class Pysic:
         self.update_core_neighbor_lists()
 
 
-    def get_charges(self):
+    def get_charges(self, system=None):
         """Update for ASE 3.7"""
     
-        return self.charges
-    
+        if self.charges is not None:
+            return self.charges
+        else:
+            if system is not None:
+                try:
+                    return system.get_initial_charges()
+                except:
+                    return system.get_charges()
+            else:
+                try:
+                    return self.structure.get_initial_charges()
+                except:
+                    return self.structure.get_charges()
 
     def update_core_charges(self):
         """Updates atomic charges in the core."""
         
-        charges = np.array( self.structure.get_charges() )
+        try:
+            charges = np.array( self.structure.get_initial_charges() )
+        except:
+            charges = np.array( self.structure.get_charges() )
 
         self.forces = None
         self.energy = None
@@ -1768,7 +1795,11 @@ class Pysic:
             system = atoms.copy()
             orig_system = self.structure.copy()
         
-        charges = system.get_charges()
+        try:
+            charges = system.get_charges()
+        except:
+            charges = system.get_initial_charges()
+        
         self.energy == None
         self.set_atoms(system)
         self.set_core()

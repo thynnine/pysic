@@ -369,12 +369,20 @@ class ChargeRelaxation:
     
     def _energy_function(self, charges, orig_charge):
 
-        self.calculator.get_atoms().set_charges(charges)
-        return self.calculator.get_potential_energy()
+        try:
+            self.calculator.get_atoms().set_initial_charges(charges)
+        except:
+            self.calculator.get_atoms().set_charges(charges)
+
+        return self.calculator.get_potential_energy(skip_charge_relaxation=True)
     
     def _nabla_function(self, charges, orig_charge):
     
-        self.calculator.get_atoms().set_charges(charges)
+        try:
+            self.calculator.get_atoms().set_initial_charges(charges)
+        except:
+            self.calculator.get_atoms().set_charges(charges)
+
         return -self.calculator.get_electronegativities()
     
     def _charge_constraint(self, charges, orig_charge):
@@ -387,7 +395,7 @@ class ChargeRelaxation:
             the :class:`~pysic.calculator.Pysic` calculator joint with this :class:`~pysic.charges.relaxation.ChargeRelaxation`.
             The calculated equilibrium charges are returned as a numeric array.
             
-            If an `ASE Atoms`_ structure is known by the 
+            If an `ASE Atoms`_ structure is known by the
             :class:`~pysic.charges.relaxation.ChargeRelaxation` 
             (given through :meth:`~pysic.charges.relaxation.ChargeRelaxation.set_atoms`), the charges of
             the structure are updated according to the calculation result.
@@ -398,7 +406,10 @@ class ChargeRelaxation:
             """
         
         atoms = self.calculator.get_atoms()
-        charges = atoms.get_charges() # starting charges
+        try:
+            charges = atoms.get_initial_charges() # starting charges
+        except:
+            charges = atoms.get_charges() # starting charges
         
         if self.relaxation == ChargeRelaxation.relaxation_modes[0]: # damped dynamic relaxation
         
@@ -423,7 +434,11 @@ class ChargeRelaxation:
                            (charge_forces - friction * self.charge_rates) * inv_mq * dt2
                 self.charge_rates = (1.0 - 0.5 * friction * dt) * self.charge_rates + \
                             charge_forces * 0.5 * inv_mq * dt
-                atoms.set_charges(charges)
+                try:
+                    atoms.set_initial_charges(charges)
+                except:
+                    atoms.set_charges(charges)
+
                 charge_forces = self.calculator.get_electronegativity_differences(atoms)
                 self.charge_rates = future_friction * \
                             ( self.charge_rates + charge_forces * 0.5 * inv_mq * dt )
@@ -450,7 +465,11 @@ class ChargeRelaxation:
                 charges += self.charge_rates * dt + charge_forces * inv_mq * dt2
                 self.charge_rates = self.charge_rates + charge_forces * 0.5 * inv_mq * dt
 
-                atoms.set_charges(charges)
+                try:
+                    atoms.set_initial_charges(charges)
+                except:
+                    atoms.set_charges(charges)
+
                 charge_forces = self.calculator.get_electronegativities(atoms)-ext_potential
             
                 self.charge_rates = self.charge_rates + charge_forces * 0.5 * inv_mq * dt
@@ -469,7 +488,10 @@ class ChargeRelaxation:
             pass
 
         if self.atoms != None:
-            self.atoms.set_charges(charges)
+            try:
+                self.atoms.set_initial_charges(charges)
+            except:
+                self.atoms.set_charges(charges)
 
 
         if not self.piped_relaxation is None:
