@@ -6155,7 +6155,6 @@ contains
                    call evaluate_forces(3,interaction%n_product,separations(1:3,1:2),distances(1:2),interaction,&
                         tmp_forces(1:3,1:3),atom_triplet) ! in Potentials.f90
 
-
                    if(interaction%pot_index > -1)then
                       ! force on atom 1:
                       triplet_forces(1:3,1) = ( tmp_forces(1:3,1)*cut_factors(1)*cut_factors(2) + &

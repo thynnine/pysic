@@ -2498,8 +2498,8 @@ contains
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: eneg(n_targets)
     type(atom), intent(in) :: atoms(n_targets)
-    double precision :: multi_energy(n_product), multi_eneg(n_targets,n_product), energy
-    integer :: i
+    double precision :: multi_energy(n_product), multi_eneg(n_targets,n_product), energy, tmp_energy
+    integer :: i, j
 
 
     if(n_product > 1)then
@@ -2518,15 +2518,25 @@ contains
        eneg = 0.d0
        energy = 1.d0
        do i = 1, n_product
-          energy = energy * multi_energy(i)          
+          energy = energy * multi_energy(i)    
        end do
 
-       if(energy /= 0.0)then
-          do i = 1, n_product
+       do i = 1, n_product
+          if(multi_energy(i) /= 0.0)then
              eneg(1:n_targets) = eneg(1:n_targets) + &
                   energy / multi_energy(i) * multi_eneg(1:n_targets,i)
-          end do
-       end if
+          else
+             tmp_energy = 1.d0
+             do j = 1, n_product
+                if(i /= j)then
+                   tmp_energy = tmp_energy * multi_energy(j)
+                end if
+             end do
+             eneg(1:n_targets) = eneg(1:n_targets) + &
+                  tmp_energy * multi_eneg(1:n_targets,i)
+
+          end if
+       end do
 
     else
        call evaluate_electronegativity_component(n_targets,separations,distances,interaction,&
@@ -2616,8 +2626,8 @@ contains
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: force(3,n_targets)
     type(atom), intent(in) :: atoms(n_targets)
-    double precision :: multi_energy(n_product), multi_force(3,n_targets,n_product), energy
-    integer :: i
+    double precision :: multi_energy(n_product), multi_force(3,n_targets,n_product), energy, tmp_energy
+    integer :: i, j
 
     if(n_product > 1)then
        call evaluate_energy_component(n_targets,separations,distances,interaction,&
@@ -2638,12 +2648,24 @@ contains
           energy = energy * multi_energy(i)          
        end do
 
-       if(energy /= 0.0)then
-          do i = 1, n_product
+       do i = 1, n_product
+          if(multi_energy(i) /= 0.0)then
              force(1:3,1:n_targets) = force(1:3,1:n_targets) + &
                   energy / multi_energy(i) * multi_force(1:3,1:n_targets,i)
-          end do
-       end if
+          else
+             tmp_energy = 1.d0
+             do j = 1, n_product
+                if(i /= j)then
+                   tmp_energy = tmp_energy * multi_energy(j)
+                end if
+             end do
+             force(1:3,1:n_targets) = force(1:3,1:n_targets) + &
+                  tmp_energy * multi_force(1:3,1:n_targets,i)
+
+          end if
+       end do
+
+
 
     else
        call evaluate_force_component(n_targets,separations,distances,interaction,&
@@ -3275,9 +3297,9 @@ contains
 
 
 
-  !***************************!
-  ! dihedrral angle potential !
-  !***************************!
+  !**************************!
+  ! dihedral angle potential !
+  !**************************!
 
   ! dihedral angle characterizer initialization
   !
@@ -3855,7 +3877,7 @@ contains
     d2 = r3 + abs(r9 * (r5 - atoms(2)%charge))**r7
     energy = interaction%parameters(1)* &
          exp( 0.5d0*(d3*d1 + d4*d2) )
- 
+
   end subroutine evaluate_energy_charge_exp
 
 
@@ -4403,10 +4425,19 @@ contains
        n2 = int(interaction%parameters(3))
     end if
 
-    eneg(1) = -interaction%parameters(1) * & 
-         ( n1 * atoms(1)%charge**(n1-1) * atoms(2)%charge**n2 )
-    eneg(2) = -interaction%parameters(1) * & 
-         ( n2 * atoms(1)%charge**n1 * atoms(2)%charge**(n2-1) )
+    if(n1 > 0)then
+       eneg(1) = -interaction%parameters(1) * & 
+            ( n1 * atoms(1)%charge**(n1-1) * atoms(2)%charge**n2 )
+    else
+       eneg(1) = 0.0
+    end if
+
+    if(n2 > 0)then
+       eneg(2) = -interaction%parameters(1) * & 
+            ( n2 * atoms(1)%charge**n1 * atoms(2)%charge**(n2-1) )
+    else
+       eneg(2) = 0.0
+    end if
 
   end subroutine evaluate_electronegativity_charge_pair
 
