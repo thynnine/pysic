@@ -1729,27 +1729,27 @@ contains
        ! neighboring atom
        index3 = nbors1%neighbors(j)
        offset(1:3) = nbors1%pbc_offsets(1:3,j)
-
+       
+       atom3 = atoms(index3)
+       atom_list = (/ atom2, atom1, atom3 /)
+       
+       ! calculate atom1-atom3 separation vector
+       ! and distance
+       call separation_vector(atom1%position, &
+            atom3%position, &
+            offset(1:3), &
+            cell, &
+            separations(1:3,2)) ! in Geometry.f90
+       distances(2) = .norm.(separations(1:3,2))
+       if(distances(2) == 0.d0)then
+          directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+       else
+          directions(1:3,2) = separations(1:3,2) / distances(2)
+       end if
+       
        ! To prevent the case index2 - index1 - index2
-       if(index2 /= index3)then
-
-          atom3 = atoms(index3)
-          atom_list = (/ atom2, atom1, atom3 /)
-
-          ! calculate atom1-atom3 separation vector
-          ! and distance
-          call separation_vector(atom1%position, &
-               atom3%position, &
-               offset(1:3), &
-               cell, &
-               separations(1:3,2)) ! in Geometry.f90
-          distances(2) = .norm.(separations(1:3,2))
-          if(distances(2) == 0.d0)then
-             directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-          else
-             directions(1:3,2) = separations(1:3,2) / distances(2)
-          end if
-          
+       if(any(separations(1:3,1)+separations(1:3,2) /= 0.d0))then
+   
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! apply 3-body bond order factors !
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1835,26 +1835,26 @@ contains
        index3 = nbors2%neighbors(j)
        offset(1:3) = nbors2%pbc_offsets(1:3,j)
 
-       ! To prevent the case index1 - index2 - index1
-       if(index1 /= index3)then
+       atom3 = atoms(index3)
+       atom_list = (/ atom1, atom2, atom3 /)
+       
+       ! calculate atom2-atom3 separation vector
+       ! and distance
+       call separation_vector(atom2%position, &
+            atom3%position, &
+            offset(1:3), &
+            cell, &
+            separations(1:3,2)) ! in Geometry.f90
+       distances(2) = .norm.(separations(1:3,2))
+       if(distances(2) == 0.d0)then
+          directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+       else
+          directions(1:3,2) = separations(1:3,2) / distances(2)
+       end if
+       
+       ! To prevent the case index2 - index1 - index2
+       if(any(separations(1:3,1)+separations(1:3,2) /= 0.d0))then
 
-          atom3 = atoms(index3)
-          atom_list = (/ atom1, atom2, atom3 /)
-
-          ! calculate atom2-atom3 separation vector
-          ! and distance
-          call separation_vector(atom2%position, &
-               atom3%position, &
-               offset(1:3), &
-               cell, &
-               separations(1:3,2)) ! in Geometry.f90
-          distances(2) = .norm.(separations(1:3,2))
-          if(distances(2) == 0.d0)then
-             directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-          else
-             directions(1:3,2) = separations(1:3,2) / distances(2)
-          end if
-          
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! apply 3-body bond order factors !
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2450,7 +2450,7 @@ contains
     type(neighbor_list) :: nbors1, nbors2
     type(bond_order_parameters) :: bond_params(1)
     integer, pointer :: bond_indices(:), bond_indices2(:)
-    logical :: is_active, is_in_group
+    logical :: is_active, is_in_group, is_allowed
     integer :: offset(3)
 
     bond_order_sum = 0.d0
@@ -2491,29 +2491,30 @@ contains
        index3 = nbors1%neighbors(j)
        offset(1:3) = nbors1%pbc_offsets(1:3,j)
 
+       atom3 = atoms(index3)
+       atom_list = (/ atom2, atom1, atom3 /)
+       
+       ! calculate atom1-atom3 separation vector
+       ! and distance
+       call separation_vector(atom1%position, &
+            atom3%position, &
+            offset(1:3), &
+            cell, &
+            separations(1:3,2)) ! in Geometry.f90
+       distances(2) = .norm.(separations(1:3,2))
+       if(distances(2) == 0.d0)then
+          directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+       else
+          directions(1:3,2) = separations(1:3,2) / distances(2)
+       end if
+       
        ! To prevent the case index2 - index1 - index2
-       if(index2 /= index3)then
+       if(any(separations(1:3,1)+separations(1:3,2) /= 0.d0))then
 
-          atom3 = atoms(index3)
-          atom_list = (/ atom2, atom1, atom3 /)
-
-          ! calculate atom1-atom3 separation vector
-          ! and distance
-          call separation_vector(atom1%position, &
-               atom3%position, &
-               offset(1:3), &
-               cell, &
-               separations(1:3,2)) ! in Geometry.f90
-          distances(2) = .norm.(separations(1:3,2))
-          if(distances(2) == 0.d0)then
-             directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-          else
-             directions(1:3,2) = separations(1:3,2) / distances(2)
-          end if
-          
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! apply 3-body bond order factors !
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
           if(distances(2) < atom1%max_bond_radius)then
 
@@ -2546,7 +2547,7 @@ contains
                                  distances(1:2),bond_params(1),tmp_factor,atom_list)
                             
                             bond_order_sum(1) = bond_order_sum(1) + tmp_factor
-                            
+
                          end if ! is_active
                       end if ! n_targets == 3
                    end if ! is_active
@@ -2570,26 +2571,27 @@ contains
        index3 = nbors2%neighbors(j)
        offset(1:3) = nbors2%pbc_offsets(1:3,j)
 
-       ! To prevent the case index1 - index2 - index1
-       if(index1 /= index3)then
-
-          atom3 = atoms(index3)
-          atom_list = (/ atom1, atom2, atom3 /)
-
-          ! calculate atom1-atom3 separation vector
-          ! and distance
-          call separation_vector(atom2%position, &
-               atom3%position, &
-               offset(1:3), &
-               cell, &
-               separations(1:3,2)) ! in Geometry.f90
-          distances(2) = .norm.(separations(1:3,2))
-          if(distances(2) == 0.d0)then
-             directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-          else
-             directions(1:3,2) = separations(1:3,2) / distances(2)
-          end if
-          
+       
+       atom3 = atoms(index3)
+       atom_list = (/ atom1, atom2, atom3 /)
+       
+       ! calculate atom1-atom3 separation vector
+       ! and distance
+       call separation_vector(atom2%position, &
+            atom3%position, &
+            offset(1:3), &
+            cell, &
+            separations(1:3,2)) ! in Geometry.f90
+       distances(2) = .norm.(separations(1:3,2))
+       if(distances(2) == 0.d0)then
+          directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+       else
+          directions(1:3,2) = separations(1:3,2) / distances(2)
+       end if
+       
+       ! To prevent the case index2 - index1 - index2
+       if(any(separations(1:3,1)+separations(1:3,2) /= 0.d0))then
+   
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! apply 3-body bond order factors !
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2623,7 +2625,7 @@ contains
                                  distances(1:2),bond_params(1),tmp_factor,atom_list)
                             
                             bond_order_sum(2) = bond_order_sum(2) + tmp_factor
-                            
+
                          end if ! is_active
                       end if ! n_targets == 3
                    end if ! is_active
@@ -4863,6 +4865,7 @@ contains
                   interaction,tmp_forces(1:3,1:2),atom_doublet) ! in Potentials.f90
              
              if(interaction%pot_index > -1)then
+
                 ! force on atom 1:                 
                 pair_forces(1:3,1) = ( tmp_forces(1:3,1) * cut_factors(1) + &
                      tmp_energy * cut_gradients(1:3,1) ) * &
@@ -5447,6 +5450,7 @@ contains
                      interaction,tmp_forces(1:3,1:2),atom_doublet) ! in Potentials.f90
 
                 if(interaction%pot_index > -1)then
+
                     ! force on atom 1:                 
                     pair_forces(1:3,1) = ( tmp_forces(1:3,1) * cut_factors(1) + &
                          tmp_energy * cut_gradients(1:3,1) ) * &

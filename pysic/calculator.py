@@ -898,7 +898,7 @@ class Pysic:
 
                     if potential.get_different_symbols().count(symbol) > 0 or potential.get_different_tags().count(tags) > 0 or potential.get_different_indices().count(index) > 0:
                         active_potential = True
-                    
+
                     if active_potential and potential.get_cutoff() > max_cut:
                         max_cut = potential.get_cutoff()
 
@@ -913,7 +913,7 @@ class Pysic:
                                     max_cut = bond.get_cutoff()
                     except:
                         pass
-
+            
                 cuts.append(max_cut*scaler)
             return cuts
 

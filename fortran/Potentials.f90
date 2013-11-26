@@ -5639,7 +5639,7 @@ contains
     
     ! only the middle atom gets a contribution, 
     factor = xi1*gee1
-    
+
   end subroutine evaluate_pair_bond_order_factor_tersoff
 
 
@@ -5805,7 +5805,6 @@ contains
                eta * (beta*raw_sum)**(eta-1.d0) * beta * raw_gradient       
        end if
     end if
-
 
   end subroutine post_process_bond_order_gradient_tersoff
 
