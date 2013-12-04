@@ -983,6 +983,21 @@ contains
 
 
 
+  ! !!!: get_level_of_bond_order_factor_index
+
+  ! Returns the level of a bond order factor (i.e., is the factor per-atom or per-pair).
+  !
+  ! *bond_index name of the bond order factor
+  ! *level level of the factor
+  subroutine get_level_of_bond_order_factor_index(bond_index,level)
+    implicit none
+    integer, intent(in) :: bond_index
+    integer, intent(out) :: level
+
+    level = bond_order_descriptors(bond_index)%n_level
+
+  end subroutine get_level_of_bond_order_factor_index
+
   ! !!!: get_level_of_bond_order_factor
 
   ! Returns the level of a bond order factor (i.e., is the factor per-atom or per-pair).
@@ -999,7 +1014,6 @@ contains
     level = descriptor%n_level
 
   end subroutine get_level_of_bond_order_factor
-
 
 
   ! !!!: is_valid_potential

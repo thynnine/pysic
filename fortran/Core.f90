@@ -4026,7 +4026,7 @@ contains
     call mpi_wall_clock(tb)
     t9 = t1+t2+t3+t4+t5+t6+t7
     t8 = tb-ta
-    if(.true.)then
+    if(.false.)then
     write(*,*) ""
     write(*,'(A)') "evaluation timing"
     write(*,'(A, F7.3, F7.1, A)') "bond_factors: ", t1,  100*t1/t8, " %"
@@ -4708,7 +4708,7 @@ contains
     type(neighbor_list) :: nbors1, nbors2
     type(bond_order_parameters) :: bond_params(2)
     integer, pointer :: bond_indices(:), bond_indices2(:)
-    integer :: index1, index2, index3, indexA, k1, k2, j, l, n_targets, n_atoms, post_process1
+    integer :: index1, index2, index3, indexA, k1, k2, j, l, n_targets, n_atoms, n_level, post_process1
     double precision :: separations(3,2), distances(2), directions(3,2), tmp_grad(3,3,3), &
          new_grad(3,3), virial(6), total_virial(6)
     logical :: is_active, is_in_group, many_bodies_found, separation3_unknown
@@ -4844,8 +4844,13 @@ contains
                       ! If the number of targets is greater than 2,
                       ! we have found a many-body bond order factor.
                       ! Make a note that we must also evaluate the many-body factors.
-                      many_bodies_found = .true.
-                      
+
+                      ! many bodies are only relevant for per-atom factors here
+                      call get_level_of_bond_order_factor_index(bond_params(1)%type_index, n_level)
+                      if(n_level == 1)then
+                         many_bodies_found = .true.
+                      end if
+
                    end if ! n_targets == 2
                 end if ! is_active
              end if ! is_in_group
@@ -4855,9 +4860,9 @@ contains
     end do ! j
 
     if( many_bodies_found )then
-       write(*,*) " **** The many-body per-atom bond order factors are currently turned off, **** "
-       write(*,*) " **** since only the slow debug version has been implemented.             **** "
-       call exit(1)
+          write(*,*) " **** The many-body per-atom bond order factors are currently turned off, **** "
+          write(*,*) " **** since only the slow debug version has been implemented.             **** "
+          call exit(1)
     end if
 
     ! Post process the virial in two batches
