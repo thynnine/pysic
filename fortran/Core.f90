@@ -1942,7 +1942,6 @@ contains
     call core_post_process_pair_bond_order_gradients(group_index,atom2,raw_sums(2),&
          temp_gradient(1:3,1:n_atoms,2),total_gradient(1:3,1:n_atoms,2),virial(1:6,2),total_virial(1:6,2))
 
-
   end subroutine core_calculate_pair_bond_order_gradients
 
 
@@ -4904,7 +4903,7 @@ contains
   ! *stress calculated stress
   ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_add_pair_bond_order_forces(  &
-       atom_doublet, &
+       !atom_doublet, &
        index1, index2, &
        interaction, prefactor, &
        separation, direction, distance, &
@@ -4913,7 +4912,7 @@ contains
     implicit none
     integer, intent(in) :: index1, index2, group_index
     double precision, intent(inout) :: forces(:,:), stress(6)
-    type(atom), intent(in) :: atom_doublet(2)
+    !type(atom), intent(in) :: atom_doublet(2)
     double precision, intent(in) :: separation(3), direction(3), distance, &
          prefactor, pair_bo_factors(2), pair_bo_sums(2)
     
@@ -4924,7 +4923,7 @@ contains
     double precision :: &
          separations(3,2), directions(3,2), distances(2), &
          tmp_energy, tmp_grad(3,3), new_grad(3,3), tmp_forces(3,2), &
-         virial(6,2), total_virial(6,2)
+         virial(6,2), total_virial(6,2), dummy_grad(3,2), process_factor(2)
 
     logical :: is_active, is_in_group
     integer, pointer :: bond_indices(:), bond_indices2(:)
@@ -4935,10 +4934,9 @@ contains
 
 
     n_atoms = size(atoms)
-    atom1 = atom_doublet(1)
-    atom2 = atom_doublet(2)
+    !atom1 = atom_doublet(1)
+    !atom2 = atom_doublet(2)
     index_pair = (/ index1, index2 /)
-
 
     ! target atom 1
     atom1 = atoms(index1)
@@ -4949,7 +4947,6 @@ contains
     atom2 = atoms(index2)
     nbors2 = atom2%neighbor_list
     bond_indices2 => atom2%bond_indices
-
 
 
     ! Check all the bond factors that affect the atoms and see
@@ -4969,6 +4966,12 @@ contains
              if( bond_params%original_elements(1) == atom1%element )then
                 ! store the index of the parameters 
                 post_process1 = bond_indices(indexA)
+                dummy_grad = 1.d0
+                call post_process_bond_order_gradient(pair_bo_sums(1), &
+                     dummy_grad(1:3,1), &
+                     bond_params, &
+                     dummy_grad(1:3,2) ) ! in Potentials.f90
+                process_factor(1) = dummy_grad(1,2)
                 exit
              end if
           end if
@@ -4983,7 +4986,13 @@ contains
           if( bond_params%includes_post_processing .and. bond_params%n_level == 2 )then
              if( bond_params%original_elements(1) == atom2%element )then
                 ! store the index of the parameters 
-                post_process2 = bond_indices(indexA)
+                post_process2 = bond_indices2(indexA)
+                dummy_grad = 1.d0
+                call post_process_bond_order_gradient(pair_bo_sums(2), &
+                     dummy_grad(1:3,1), &
+                     bond_params, &
+                     dummy_grad(1:3,2) ) ! in Potentials.f90
+                process_factor(2) = dummy_grad(1,2)
                 exit
              end if
           end if
@@ -5071,27 +5080,24 @@ contains
                                  bond_params,&
                                  tmp_grad(1:3,1:3),&
                                  atom_list) ! in Potentials.f90
-                           
+                            
+               
                             if( post_process1 > 0)then
-                               call post_process_bond_order_gradient(pair_bo_sums(1),&
-                                    tmp_grad(1:3,1),&
-                                    bond_factors( post_process1 ),&
-                                    new_grad(1:3,1))
-                               call post_process_bond_order_gradient(pair_bo_sums(1),&
-                                    tmp_grad(1:3,2),&
-                                    bond_factors( post_process1 ),&
-                                    new_grad(1:3,2))
-                               call post_process_bond_order_gradient(pair_bo_sums(1),&
-                                    tmp_grad(1:3,3),&
-                                    bond_factors( post_process1 ),&
-                                    new_grad(1:3,3))
-                               new_grad(1:3,1) = - prefactor*new_grad(1:3,1)
-                               new_grad(1:3,2) = - prefactor*new_grad(1:3,2)
-                               new_grad(1:3,3) = - prefactor*new_grad(1:3,3)
+!!$                               call post_process_bond_order_gradient(pair_bo_sums(1),&
+!!$                                    tmp_grad(1:3,1),&
+!!$                                    bond_factors( post_process1 ),&
+!!$                                    new_grad(1:3,1))
+!!$                               call post_process_bond_order_gradient(pair_bo_sums(1),&
+!!$                                    tmp_grad(1:3,2),&
+!!$                                    bond_factors( post_process1 ),&
+!!$                                    new_grad(1:3,2))
+!!$                               call post_process_bond_order_gradient(pair_bo_sums(1),&
+!!$                                    tmp_grad(1:3,3),&
+!!$                                    bond_factors( post_process1 ),&
+!!$                                    new_grad(1:3,3))
+                               new_grad(1:3,1:3) = - process_factor(1)*prefactor*tmp_grad(1:3,1:3)
                             else
-                               new_grad(1:3,1) = - prefactor*tmp_grad(1:3,1)
-                               new_grad(1:3,2) = - prefactor*tmp_grad(1:3,2)
-                               new_grad(1:3,3) = - prefactor*tmp_grad(1:3,3)
+                               new_grad(1:3,1:3) = - prefactor*tmp_grad(1:3,1:3)
                             end if
  
                             ! store the gradients of the pair bond factor
@@ -5197,24 +5203,24 @@ contains
                                  bond_params,&
                                  tmp_grad(1:3,1:3),&
                                  atom_list) ! in Potentials.f90
-                            
-
-                            if( post_process2 > 0)then
-                               call post_process_bond_order_gradient(pair_bo_sums(2),&
-                                    tmp_grad(1:3,1),&
-                                    bond_factors( post_process2 ),&
-                                    new_grad(1:3,1))
-                               call post_process_bond_order_gradient(pair_bo_sums(2),&
-                                    tmp_grad(1:3,2),&
-                                    bond_factors( post_process2 ),&
-                                    new_grad(1:3,2))
-                               call post_process_bond_order_gradient(pair_bo_sums(2),&
-                                    tmp_grad(1:3,3),&
-                                    bond_factors( post_process2 ),&
-                                    new_grad(1:3,3))
-                               new_grad(1:3,1) = - prefactor*new_grad(1:3,1)
-                               new_grad(1:3,2) = - prefactor*new_grad(1:3,2)
-                               new_grad(1:3,3) = - prefactor*new_grad(1:3,3)
+                                                        
+                            if( post_process2 > 0)then                               
+!!$                               call post_process_bond_order_gradient(pair_bo_sums(2),&
+!!$                                    tmp_grad(1:3,1),&
+!!$                                    bond_factors( post_process2 ),&
+!!$                                    new_grad(1:3,1))
+!!$                               call post_process_bond_order_gradient(pair_bo_sums(2),&
+!!$                                    tmp_grad(1:3,2),&
+!!$                                    bond_factors( post_process2 ),&
+!!$                                    new_grad(1:3,2))
+!!$                               call post_process_bond_order_gradient(pair_bo_sums(2),&
+!!$                                    tmp_grad(1:3,3),&
+!!$                                    bond_factors( post_process2 ),&
+!!$                                    new_grad(1:3,3))
+!!$                               new_grad(1:3,1) = - prefactor*new_grad(1:3,1)
+!!$                               new_grad(1:3,2) = - prefactor*new_grad(1:3,2)
+!!$                               new_grad(1:3,3) = - prefactor*new_grad(1:3,3)
+                               new_grad(1:3,1:3) = - process_factor(2)*prefactor*tmp_grad(1:3,1:3)
                             else
                                new_grad(1:3,1) = - prefactor*tmp_grad(1:3,1)
                                new_grad(1:3,2) = - prefactor*tmp_grad(1:3,2)
@@ -5477,7 +5483,7 @@ contains
                         forces, stress )
 
                    call core_add_pair_bond_order_forces( &
-                        atom_doublet, &
+                        !atom_doublet, &
                         index1, index2, &
                         interaction, 0.5d0*tmp_energy*cut_factors(1), &
                         separations(1:3,1), directions(1:3,1), distances(1), &
