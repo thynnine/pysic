@@ -3250,7 +3250,7 @@ contains
     integer, intent(in) :: calculation_type
     double precision, intent(inout) :: total_energy, total_forces(:,:), &
          total_enegs(:), total_stress(6)
-    integer :: j, k, l, m, n_targets, index1, index2, index3, index4
+    integer :: j, k, l, m, n_targets, index1, index2, index3, index4, n_manybody
     double precision,save :: energy,  &
          stress(6), &
          separations(3,3), distances(3), directions(3,3), &
@@ -3258,13 +3258,13 @@ contains
     type(atom) :: atom1, atom2, atom3, atom4
     type(atom), save :: atom_list(4)
     type(neighbor_list) :: nbors1, nbors2, nbors3
-    integer, pointer :: interaction_indices(:)
+    integer, pointer :: interaction_indices(:), manybody_indices(:)
     logical :: is_active, many_bodies_found
     double precision :: max_cutoff, sigma, inv_eps_4pi, inv_sigma_sqrt_2, charge1, charge2, &
          inv_eps_2v, inv_dist, inv_sigma_sqrt_2pi, &
          inv_sigma_sqrt_2perpi, inv_sigma_sq_2, &
          tmp_forces(3), tmp_eneg, &
-         t00, t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb
+         t00, t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf
     integer, save :: reci_length(3), offset(3), tripleoffset(3), quadoffset(3), n_atoms
 
     t00 = 0.0
@@ -3280,6 +3280,14 @@ contains
     t9 = 0.0
     ta = 0.0
     tb = 0.0
+    tc = 0.0
+    td = 0.0
+    te = 0.0
+    tf = 0.0
+
+    nullify(manybody_indices)
+    allocate(manybody_indices(n_interactions))
+    n_manybody = 0
 
     n_atoms = size(atoms)
 
@@ -3459,7 +3467,9 @@ contains
                            interaction_indices, &
                            separations(1:3,1), directions(1:3,1), distances(1), &
                            energy, &
-                           many_bodies_found)
+                           many_bodies_found, &
+                           manybody_indices, &
+                           n_manybody )
                    case(force_evaluation_index)
                       call core_evaluate_local_doublet_forces_B(atom_list(1:2), &
                            index1, index2, &
@@ -3467,7 +3477,9 @@ contains
                            interaction_indices, &
                            separations(1:3,1), directions(1:3,1), distances(1), &
                            temp_forces,stress, &
-                           many_bodies_found)
+                           many_bodies_found, &
+                           manybody_indices, &
+                           n_manybody )
                    case(electronegativity_evaluation_index)
                       call core_evaluate_local_doublet_electronegativities_B(atom_list(1:2), &
                            index1, index2, &
@@ -3475,7 +3487,9 @@ contains
                            interaction_indices, &
                            separations(1:3,1), directions(1:3,1), distances(1), &
                            temp_enegs, &
-                           many_bodies_found)
+                           many_bodies_found, &
+                           manybody_indices, &
+                           n_manybody )
                    end select
                 end if
                 call mpi_wall_clock(t0)
@@ -3520,6 +3534,11 @@ contains
                 !                       B : 2 -> found A-C-B
                 !          B : 2 C : 3  A : 1 -> A < B (1 < 2) so ignored
                 !                       A : 1 -> A < C (1 < 3) so ignored
+
+
+                call start_timer()
+                call mpi_wall_clock(tc)
+                t00 = tc
 
                 if(many_bodies_found)then
 
@@ -3577,10 +3596,12 @@ contains
                             call core_evaluate_local_triplet_B(atom_list(1:3), &
                                  index2, index1, index3, & ! atom2 - atom1 - atom3
                                  1, 3, & ! atom1 is 2nd in the triplet, so test for 1st and 3rd
-                                 interaction_indices, &
+                                 !interaction_indices, &
                                  separations(1:3,1:2), directions(1:3,1:2), distances(1:2), &
                                  calculation_type, energy, temp_forces, temp_enegs, stress, &
-                                 many_bodies_found)
+                                 many_bodies_found, &
+                                 manybody_indices, &
+                                 n_manybody )
                          end if
 
                          if(many_bodies_found)then
@@ -3647,10 +3668,12 @@ contains
                                      call core_evaluate_local_quadruplet_B(atom_list(1:4), &
                                        index4, index2, index1, index3, & ! atom4 - atom2 - atom1 - atom3
                                        1, 2, 4, & ! atom1 is 3rd in the quadruplet
-                                       interaction_indices, &
+                                       !interaction_indices, &
                                        separations(1:3,1:3), directions(1:3,1:3), distances(1:3), &
                                        calculation_type, energy, temp_forces, temp_enegs, stress, &
-                                       many_bodies_found)
+                                       many_bodies_found, &
+                                       manybody_indices, &
+                                       n_manybody )
                                   end if
 
                                end if ! index4 > index3
@@ -3703,10 +3726,12 @@ contains
                                      call core_evaluate_local_quadruplet_B(atom_list(1:4), &
                                           index2, index1, index3, index4, & ! atom2 - atom1 - atom3 - atom4
                                           1, 3, 4, & ! atom1 is 2nd in the quadruplet
-                                          interaction_indices, &
+                                          !interaction_indices, &
                                           separations(1:3,1:3), directions(1:3,1:3), distances(1:3), &
                                           calculation_type, energy, temp_forces, temp_enegs, stress, &
-                                          many_bodies_found)
+                                          many_bodies_found, &
+                                          manybody_indices, &
+                                          n_manybody )
                                   end if
 
                                end if ! index4 > index3
@@ -3764,10 +3789,12 @@ contains
                             call core_evaluate_local_triplet_B(atom_list(1:3), &
                                  index1, index2, index3, & ! atom1 - atom2 - atom3
                                  2, 3, & ! atom1 is 1st in the triplet, so test for 2nd and 3rd
-                                 interaction_indices, &
+                                 !interaction_indices, &
                                  separations(1:3,1:2), directions(1:3,1:2), distances(1:2), &
                                  calculation_type, energy, temp_forces, temp_enegs, stress, &
-                                 many_bodies_found)
+                                 many_bodies_found, &
+                                 manybody_indices, &
+                                 n_manybody )
                          end if
 
                          if(many_bodies_found)then
@@ -3835,10 +3862,12 @@ contains
                                      call core_evaluate_local_quadruplet_B(atom_list(1:4), &
                                           index4, index1, index2, index3, & ! atom4 - atom1 - atom2 - atom3
                                           1, 3, 4, & ! atom1 is 2nd in the quadruplet
-                                          interaction_indices, &
+                                          !interaction_indices, &
                                           separations(1:3,1:3), directions(1:3,1:3), distances(1:3), &
                                           calculation_type, energy, temp_forces, temp_enegs, stress, &
-                                          many_bodies_found)
+                                          many_bodies_found, &
+                                          manybody_indices, &
+                                          n_manybody )
                                   end if
 
                                end if ! index4 > index3
@@ -3892,10 +3921,12 @@ contains
                                      call core_evaluate_local_quadruplet_B(atom_list(1:4), &
                                           index1, index2, index3, index4, & ! atom1 - atom2 - atom3 - atom4
                                           2, 3, 4, & ! atom1 is 1st in the quadruplet
-                                          interaction_indices, &
+                                          !interaction_indices, &
                                           separations(1:3,1:3), directions(1:3,1:3), distances(1:3), &
                                           calculation_type, energy, temp_forces, temp_enegs, stress, &
-                                          many_bodies_found)
+                                          many_bodies_found, &
+                                          manybody_indices, &
+                                          n_manybody )
                                   end if
 
                                end if ! index4 > index3
@@ -3908,6 +3939,9 @@ contains
                    end do ! l
 
                 end if ! many-bodies_found
+
+                call mpi_wall_clock(t0)
+                td = td+t0-t00
 
              end if ! index2 > index1
 
@@ -4023,7 +4057,7 @@ contains
     call core_empty_bond_order_storage()
 
     call mpi_wall_clock(tb)
-    t9 = t1+t2+t3+t4+t5+t6+t7
+    t9 = t1+t2+t3+t4+t5+t6+t7+td
     t8 = tb-ta
     if(.false.)then
     write(*,*) ""
@@ -4032,13 +4066,16 @@ contains
     write(*,'(A, F7.3, F7.1, A)') "singlets:     ", t2,  100*t2/t8, " %"
     write(*,'(A, F7.3, F7.1, A)') "distances:    ", t3,  100*t3/t8, " %"
     write(*,'(A, F7.3, F7.1, A)') "doublets:     ", t4,  100*t4/t8, " %"
+    write(*,'(A, F7.3, F7.1, A)') "manybody:     ", td,  100*td/t8, " %"
     write(*,'(A, F7.3, F7.1, A)') "mpi:          ", t5,  100*t5/t8, " %"
     write(*,'(A, F7.3, F7.1, A)') "ewald:        ", t6,  100*t6/t8, " %"
     write(*,'(A, F7.3, F7.1, A)') "clear:        ", t7,  100*t7/t8, " %"
     write(*,'(A, F7.3)') "sum:          ", t9
     write(*,'(A, F7.3)') "total:        ", t8
     write(*,*) ""
- end if
+  end if
+
+  deallocate(manybody_indices)  
 
   end subroutine core_loop_over_local_interactions
 
@@ -4221,10 +4258,13 @@ contains
        interaction_indices, &
        separations, directions, distances, &
        energy, &
-       many_bodies_found)
+       many_bodies_found, &
+       manybody_indices, &
+       n_manybody)
     implicit none
     integer, intent(in) :: index1, index2, test_index1
-    integer, pointer :: interaction_indices(:)
+    integer, intent(out) :: n_manybody
+    integer, pointer :: interaction_indices(:), manybody_indices(:)
     double precision, intent(inout) :: energy
     type(atom), intent(in) :: atom_doublet(2)
     double precision, intent(in) :: separations(3,1), directions(3,1), distances(1)
@@ -4239,6 +4279,7 @@ contains
     logical :: is_active
 
     many_bodies_found = .false.
+    n_manybody = 0
     atom1 = atom_doublet(1)
     atom2 = atom_doublet(2)
     index_pair = (/ index1, index2 /)
@@ -4328,6 +4369,8 @@ contains
              ! we have found a many-body potential.
              ! Make a note that we must also evaluate the many-body terms.
              many_bodies_found = .true.
+             n_manybody = n_manybody + 1
+             manybody_indices(n_manybody) = interaction_indices(k)
 
           end if ! n_targets == 2
 
@@ -5327,10 +5370,13 @@ contains
        interaction_indices, &
        separations, directions, distances, &
        forces,stress, &
-       many_bodies_found)
+       many_bodies_found, &
+       manybody_indices, &
+       n_manybody)
     implicit none
     integer, intent(in) :: index1, index2, test_index1
-    integer, pointer :: interaction_indices(:)
+    integer, intent(out) :: n_manybody
+    integer, pointer :: interaction_indices(:), manybody_indices(:)
     double precision, intent(inout) :: forces(:,:), stress(6)
     type(atom), intent(in) :: atom_doublet(2)
     double precision, intent(in) :: separations(3,1), directions(3,1), distances(1)
@@ -5349,6 +5395,7 @@ contains
 
     n_atoms = size(atoms)
     many_bodies_found = .false.
+    n_manybody = 0
     atom1 = atom_doublet(1)
     atom2 = atom_doublet(2)
     index_pair = (/ index1, index2 /)
@@ -5543,6 +5590,8 @@ contains
              ! we have found a many-body potential.
              ! Make a note that we must also evaluate the many-body terms.
              many_bodies_found = .true.
+             n_manybody = n_manybody + 1
+             manybody_indices(n_manybody) = interaction_indices(k)
 
           end if ! n_targets == 2
 
@@ -5572,10 +5621,13 @@ contains
        interaction_indices, &
        separations, directions, distances, &
        enegs, &
-       many_bodies_found)
+       many_bodies_found, &
+       manybody_indices, &
+       n_manybody)
     implicit none
     integer, intent(in) :: index1, index2, test_index1
-    integer, pointer :: interaction_indices(:)
+    integer, intent(out) :: n_manybody
+    integer, pointer :: interaction_indices(:), manybody_indices(:)
     double precision, intent(inout) :: enegs(:)
     type(atom), intent(in) :: atom_doublet(2)
     double precision, intent(in) :: separations(3,1), directions(3,1), distances(1)
@@ -5592,6 +5644,8 @@ contains
 
     n_atoms = size(atoms)
     many_bodies_found = .false.
+    n_manybody = 0
+
     atom1 = atom_doublet(1)
     atom2 = atom_doublet(2)
     index_pair = (/ index1, index2 /)
@@ -5688,6 +5742,8 @@ contains
              ! we have found a many-body potential.
              ! Make a note that we must also evaluate the many-body terms.
              many_bodies_found = .true.
+             n_manybody = n_manybody + 1
+             manybody_indices(n_manybody) = interaction_indices(k)
 
           end if ! n_targets == 2
 
@@ -6596,13 +6652,17 @@ contains
   subroutine core_evaluate_local_triplet_B(atom_triplet, &
        index1, index2, index3, &
        test_index1, test_index2, &
-       interaction_indices, &
+       !interaction_indices, &
        separations, directions, distances, &
        calculation_type,energy,forces,enegs,stress, &
-       many_bodies_found)
+       many_bodies_found, &
+       manybody_indices, &
+       n_manybody )
     implicit none
-    integer, intent(in) :: calculation_type, index1, index2, index3, test_index1, test_index2
-    integer, pointer :: interaction_indices(:)
+    integer, intent(in) :: calculation_type, index1, index2, index3, &
+         test_index1, test_index2, n_manybody
+    !integer, pointer :: interaction_indices(:), manybody_indices(:)
+    integer, pointer :: manybody_indices(:)
     double precision, intent(inout) :: energy, forces(:,:), enegs(:), stress(6)
     double precision, intent(in) :: separations(3,2), directions(3,2), distances(2)
     logical, intent(out) :: many_bodies_found
@@ -6622,9 +6682,9 @@ contains
     atom3 = atom_triplet(3)
 
     ! loop over the potentials affecting atom1
-    do k = 1, size(interaction_indices)
+    do k = 1, n_manybody !size(interaction_indices)
 
-       interaction = interactions(interaction_indices(k))
+       interaction = interactions(manybody_indices(k))
        call get_number_of_targets_of_potential_index(interaction%type_index,&
             n_targets) ! in Potentials.f90
        call potential_affects_atom(interaction,atom_triplet(test_index1),is_active,2) ! in Potentials.f90
@@ -7386,14 +7446,17 @@ contains
   subroutine core_evaluate_local_quadruplet_B(atom_quadruplet, &
        index1, index2, index3, index4, &
        test_index1, test_index2, test_index3, &
-       interaction_indices, &
+       !interaction_indices, &
        separations, directions, distances, &
        calculation_type,energy,forces,enegs,stress, &
-       many_bodies_found)
+       many_bodies_found, &
+       manybody_indices, &
+       n_manybody )
     implicit none
     integer, intent(in) :: calculation_type, index1, index2, index3, index4, &
-         test_index1, test_index2, test_index3
-    integer, pointer :: interaction_indices(:)
+         test_index1, test_index2, test_index3, n_manybody
+    !integer, pointer :: interaction_indices(:)
+    integer, pointer :: manybody_indices(:)
     double precision, intent(inout) :: energy, forces(:,:), enegs(:), stress(6)
     double precision, intent(in) :: separations(3,3), directions(3,3), distances(3)
     logical, intent(out) :: many_bodies_found
@@ -7414,9 +7477,9 @@ contains
     atom4 = atom_quadruplet(3)
 
     ! loop over the potentials affecting atom1
-    do k = 1, size(interaction_indices)
+    do k = 1, n_manybody !size(interaction_indices)
 
-       interaction = interactions(interaction_indices(k))
+       interaction = interactions(manybody_indices(k))
        call get_number_of_targets_of_potential_index(interaction%type_index,&
             n_targets) ! in Potentials.f90
        call potential_affects_atom(interaction,atom_quadruplet(test_index1),is_active,2) ! in Potentials.f90
