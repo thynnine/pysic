@@ -488,7 +488,8 @@ class ChargeRelaxation:
             pass
 
         if self.atoms != None:
-            print "ch", charges
+            #print "ch", charges
+            #print "atoms", self.atoms
             try:
                 self.atoms.set_initial_charges(charges)
             except:

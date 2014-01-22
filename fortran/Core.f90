@@ -2466,7 +2466,6 @@ contains
     nbors2 = atom2%neighbor_list
     bond_indices2 => atom2%bond_indices
 
-
     ! In the 3-body loop, we search the neighbors of both atom1
     ! and atom2 to find the triplets 
     ! atom1-atom2-atom3 and
@@ -2521,13 +2520,11 @@ contains
              do k1 = 1, size(bond_indices)
                             
                 bond_params(1) = bond_factors(bond_indices(k1))
-                            
+                
                 ! filter the parameters by:
                 ! number of targets, atom2 and atom3 being targets, group index                   
                 call bond_order_factor_is_in_group(bond_params(1),&
                      group_index,is_in_group) ! in Potentials.f90
-                
-                !write(*,*) "group, level", is_in_group, bond_params(1)%n_level
                 
                 if( is_in_group .and. bond_params(1)%n_level == 2 )then
                    call bond_order_factor_affects_atom(bond_params(1),&
@@ -2636,7 +2633,6 @@ contains
 
     end do ! j = 1, nbors2%n_neighbors
 
-
   end subroutine core_calculate_pair_bond_order_factor
 
 
@@ -2705,8 +2701,10 @@ contains
              bond_params = bond_factors(bond_indices(index2))
              if( bond_params%includes_post_processing .and. bond_params%n_level == 1 )then
                 if( bond_params%original_elements(1) == atom1%element )then
-                   post_process = bond_indices(index2)
-                   exit
+                    if( bond_params%group_index == group_index)then
+                       post_process = bond_indices(index2)
+                       exit
+                    end if
                 end if
              end if
           end do
@@ -2741,7 +2739,7 @@ contains
 
 
 
-! !!!: core_post_process_pair_bond_order_factors
+! !!!: core_post_process_pair_bond_order_factor
 
   ! Bond-order post processing, i.e., application of per-pair scaling functions.
   !
@@ -2788,8 +2786,10 @@ contains
        bond_params = bond_factors(bond_indices(index2))
        if( bond_params%includes_post_processing .and. bond_params%n_level == 2 )then
           if( bond_params%original_elements(1) == atom1%element )then
-             post_process = bond_indices(index2)
-             exit
+                if( bond_params%group_index == group_index)then
+                     post_process = bond_indices(index2)
+                    exit
+                end if
           end if
        end if
     end do
@@ -4331,7 +4331,7 @@ contains
                         interaction%pot_index, &
                         pair_bo_sums(2), &
                         pair_bo_factors(2))
-
+                        
                 else
 
                 end if
@@ -4353,12 +4353,14 @@ contains
                 call evaluate_energy(2,interaction%n_product,separations(1:3,1),distances(1),&
                      interaction,tmp_energy,atom_doublet)  ! in Potentials.f90
 
+                    
                 ! add the term: b_ij v_ij f(rij)
                 if(interaction%pot_index > -1)then
                     energy = energy + tmp_energy*cut_factors(1)*&
                          (saved_bond_order_factors(index1,group_index_save_slot(interaction%pot_index))+&
                          saved_bond_order_factors(index2,group_index_save_slot(interaction%pot_index))+&
                          pair_bo_factors(1)+pair_bo_factors(2))*0.5d0
+
                 else
                     energy = energy + tmp_energy*cut_factors(1)
                 end if

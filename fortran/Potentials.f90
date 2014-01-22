@@ -120,7 +120,7 @@ module potentials
   ! *param_note_length maximum length allowed for the descriptions of parameters
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
-       n_potential_types = 15, &
+       n_potential_types = 16, &
        n_bond_order_types = 8, &
        n_max_params = 12, &
        pot_note_length = 500, &
@@ -168,7 +168,8 @@ module potentials
        pair_qpair_index = 12, &
        pair_qexp_index = 13, &
        pair_qabs_index = 14, &
-       pair_shift_index = 15
+       pair_shift_index = 15, &
+       pair_step_index = 16
 
 
   !***********************************!
@@ -2316,6 +2317,9 @@ contains
     ! **** Shifted potential ****
     call create_potential_characterizer_shift(pair_shift_index)
 
+    ! **** Step potential ****
+    call create_potential_characterizer_step(pair_step_index)
+    
     descriptors_created = .true.
 
   end subroutine initialize_potential_characterizers
@@ -2753,6 +2757,8 @@ contains
        call evaluate_force_table(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
     case (pair_shift_index) ! shifted potential
        call evaluate_force_shift(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
+    case (pair_step_index) ! step potential
+       call evaluate_force_step(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
     end select
 
   end subroutine evaluate_force_component
@@ -2875,8 +2881,10 @@ contains
        call evaluate_energy_charge_pair(interaction,energy,atoms(1:2))
     case (pair_qabs_index) ! charge pair energy potential
        call evaluate_energy_charge_pair_abs(interaction,energy,atoms(1:2))
-    case (pair_shift_index) ! lennard-jones
+    case (pair_shift_index) ! shifted
        call evaluate_energy_shift(separations(1:3,1),distances(1),interaction,energy)
+    case (pair_step_index) ! step
+       call evaluate_energy_step(separations(1:3,1),distances(1),interaction,energy)
     end select
 
   end subroutine evaluate_energy_component
@@ -4839,6 +4847,135 @@ contains
 
 
 
+
+  !*****************!
+  ! Step potential  !
+  !*****************!
+
+  ! Step characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_step(index)
+    implicit none
+    integer, intent(in) :: index
+
+    ! Record type index
+    potential_descriptors(index)%type_index = index
+
+    ! Record the name of the potential.
+    ! This is a keyword used for accessing the type of potential
+    ! in pysic, also in the python interface.
+    call pad_string('step', pot_name_length,potential_descriptors(index)%name)
+
+    ! Record the number of parameters
+    potential_descriptors(index)%n_parameters = 4
+
+    ! Record the number of targets (i.e., is the potential 1-body, 2-body etc.)
+    potential_descriptors(index)%n_targets = 2
+
+    ! Allocate space for storing the parameter names and descriptions.
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+
+    ! Record parameter names and descriptions.
+    ! Names are keywords with which one can intuitively 
+    ! and easily access the parameters in the python
+    ! interface.
+    ! Descriptions are short descriptions of the
+    ! physical or mathematical meaning of the parameters.
+    ! They can be viewed from the python interface to
+    ! remind the user how to parameterize the potential.
+    call pad_string('e1', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy at r1', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('e2', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy at r2', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('r1', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('lower limit', param_note_length,potential_descriptors(index)%parameter_notes(3))
+    call pad_string('r2', param_name_length,potential_descriptors(index)%parameter_names(4))
+    call pad_string('upper limit', param_note_length,potential_descriptors(index)%parameter_notes(4))
+
+    ! Record a description of the entire potential.
+    ! This description can also be viewed in the python
+    ! interface as a reminder of the properties of the
+    ! potential.
+    ! The description should contain the mathematical
+    ! formulation of the potential as well as a short
+    ! verbal description.
+    call pad_string('A step potential: V(r) = e1, r<r1; e2 r>r2; (e1+e2)/2 ( 1 + 1/2 cos (pi (r-r1)/(r2-r1)) ) r1<r<r2', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_step
+
+
+  ! Step force
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  subroutine evaluate_force_step(separations,distances,interaction,force)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,2)
+    double precision :: rr, r1, r2, e1, e2
+
+    rr = distances(1)
+    e1 = interaction%parameters(1)
+    e2 = interaction%parameters(2)
+    r1 = interaction%parameters(3)
+    r2 = interaction%parameters(4)
+    
+    if(rr < r1 .or. rr > r2)then
+    	force(1:3,1:2) = 0.d0
+    else
+	    force(1:3,1) = (e1+e2)*0.25d0*pi/(r2-r1)*sin(pi*(rr-r1)/(r2-r1))
+    	force(1:3,2) = -force(1:3,1)
+	end	if
+
+  end subroutine evaluate_force_step
+
+
+  ! Shift energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  subroutine evaluate_energy_step(separations,distances,interaction,energy)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    double precision :: r1, r2, e1, e2, rr
+
+    rr = distances(1)
+    e1 = interaction%parameters(1)
+    e2 = interaction%parameters(2)
+    r1 = interaction%parameters(3)
+    r2 = interaction%parameters(4)
+    
+    if(rr < r1)then
+    	energy = e1
+    else if(rr > r2)then
+    	energy = e2
+    else
+	    energy = (e1+e2)*0.5d0*(1.d0+0.5d0*cos(pi*(rr-r1)/(r2-r1)))
+	end	if
+    
+  end subroutine evaluate_energy_step
+
+
+
+
+
+
+
+
+
+
+
 !!$  !*****************!
 !!$  ! dummy potential !
 !!$  !*****************!
@@ -5616,7 +5753,7 @@ contains
     double precision :: tmp1(3), tmp2(3)
 
     factor = 0.d0
-
+    
     if(bond_params%original_elements(1) /= atoms(2)%element)then
        return
     end if
@@ -5629,13 +5766,14 @@ contains
 
     r1 = distances(1)
     r2 = distances(2)
+    
 
     ! tmp1 and tmp2 are the vectors r_ij, r_ik
     tmp1 = -separations(1:3,1)
     tmp2 = separations(1:3,2)
     ! cosine of the angle between ij and ik
     cosine = (tmp1 .o. tmp2) / ( r1 * r2 )
-    
+        
     ! bond_params: mu_i, a_ij, a_ik, &
     !              c_ij^2, d_ij^2, h_ij, 
     !              c_ik^2, d_ik^2, h_ik
@@ -5645,7 +5783,7 @@ contains
     dd1 = bond_params%parameters(3,2)*bond_params%parameters(3,2)
     h1 = bond_params%parameters(4,2)
     
-    call smoothening_factor(r2,bond_params%cutoff,&
+        call smoothening_factor(r2,bond_params%cutoff,&
          bond_params%soft_cutoff,decay1)
     
     xi1 = decay1 * exp( (a1 * (r1-r2))**mu ) 
@@ -5653,7 +5791,7 @@ contains
     
     ! only the middle atom gets a contribution, 
     factor = xi1*gee1
-
+    
   end subroutine evaluate_pair_bond_order_factor_tersoff
 
 
