@@ -8176,7 +8176,6 @@ contains
     n_nbs = 0
 
     nbors_and_offsets = 0
-    
 
     do atom1_index = 1, size(atoms)
 
