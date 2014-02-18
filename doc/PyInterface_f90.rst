@@ -923,9 +923,9 @@ Full documentation of subroutines in pysic_interface
     real_cut: double precision  *intent(in)*    *scalar*  
         the real-space cutoff
     k_radius: double precision  *intent(in)*    *scalar*  
-        
+        the k-space cutoff
     reciprocal_cut: integer  *intent(in)*    *size(3)*  
-        the k-space cutoffs
+        the k-space cutoffs (in numbers of cells)
     sigma: double precision  *intent(in)*    *scalar*  
         the split parameter
     epsilon: double precision  *intent(in)*    *scalar*  

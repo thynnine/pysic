@@ -177,10 +177,10 @@ class CoulombSummation:
 
 
 def estimate_ewald_parameters(real_cutoff=10.0, accuracy='normal'):
-    """Returns a tuple containing a good initial guess for Ewald parameters.
+    """Returns a tuple containing a good initial guess for Ewald parameters in the order `real_cutoff, k_cutoff, sigma, epsilon`.
     
     The returned values are (real_cutoff, k_cutoff, sigma, epsilon).
-    Epsilon is always 0.00552635 :math:`\\varepsilon_0` in units of :math:`\\frac{e^2}{eV \\AA}`
+    Epsilon is always 0.00552635 :math:`\\varepsilon_0` in units of :math:`\\frac{e^2}{eV A}`
     Real cutoff can be given by the user and should be short enough to make the
     real space summation efficient (note that this affects neighborlisting and thus
     also other real space summations). Sigma and k_cutoff are determined by simple scaling rules

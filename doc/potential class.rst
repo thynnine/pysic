@@ -103,6 +103,40 @@ no smoothening is applied.
 
 
 
+.. file:potential targets
+
+.. _potential targets:
+
+
+
+Targets of a Potential
+--------------------------
+
+A Potential needs targets to describe interactions. For instance a 2-body potential
+needs two targets. These targets can be specified as chemical species (through the
+corresponding chemical symbols), indices, or tags (as defined in `ASE Atoms`_). The
+most typical use is by symbols.
+
+The targets need to be specified as lists. For example, if one wishes to define
+a Potential affecting He-He pairs, it can be defined through::
+
+  >>> pot = Potential(...)
+  >>> pot.set_symbols(['He','He'])
+
+There are also utility functions for generating these lists more conveniently from strings:
+:meth:`pysic.utility.convenience.expand_symbols_string` and 
+:meth:`pysic.utility.convenience.expand_symbols_table`.
+For example::
+
+  >>> from pysic.utility.convencience import expand_symbols_string as sym
+  >>> from pysic.utility.convencience import expand_symbols_table as tab
+  >>> print sym('HeHe')
+  [['He', 'He']]
+  >>> print tab(sym('Si,SiO'))
+  [['Si', 'Si'], ['Si', 'O']]
+
+.. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html
+
 .. file:list of potentials
 
 .. _list of potentials:

@@ -120,7 +120,7 @@ module potentials
   ! *param_note_length maximum length allowed for the descriptions of parameters
   integer, parameter :: pot_name_length = 11, &
        param_name_length = 10, &
-       n_potential_types = 15, &
+       n_potential_types = 16, &
        n_bond_order_types = 8, &
        n_max_params = 12, &
        pot_note_length = 500, &
@@ -168,7 +168,8 @@ module potentials
        pair_qpair_index = 12, &
        pair_qexp_index = 13, &
        pair_qabs_index = 14, &
-       pair_shift_index = 15
+       pair_shift_index = 15, &
+       pair_step_index = 16
 
 
   !***********************************!
@@ -234,6 +235,7 @@ module potentials
   ! *parameter_names The names of the parameters of the bond order factor: these are keywords according to which the parameters may be recognized.
   ! *n_parameters number of parameters for each number of bodies (1-body parameters, 2-body parameters etc.)
   ! *n_targets number of targets, i.e., interacting bodies
+  ! *n_level 1 for atomic bond order factors, 2 for pairwise factors
   ! *type_index The internal index of the bond order factor. This can also be used for recognizing the factor and must therefore match the name. For instance, if name = 'neighbors', type_index = :data:`coordination_index`.
   ! *description A description of the bond order factor. This should contain the mathematical formulation as well as a short verbal explanation.
   ! *parameter_notes Descriptions of the parameters. The descriptions should be very short indicators such as 'spring constant' or 'energy coefficient'. For more detailed explanations, the proper documentation should be used.
@@ -304,6 +306,7 @@ module potentials
   ! *group_index The internal index of the *potential* the bond order factor is modifying.
   ! *parameters numerical values for parameters
   ! *n_params array containing the numbers of parameters for different number of targets (1-body parameters, 2-body parameters, etc.)
+  ! *n_level 1 for atomic bond order factors, 2 for pairwise
   ! *derived_parameters numerical values for parameters calculated based on the parameters specified by the user
   ! *cutoff The hard cutoff for the bond order factor. If the atoms are farther away from each other than this, they do not contribute to the total bond order factor does not affect them.
   ! *soft_cutoff The soft cutoff for the bond order factor. If this is smaller than the hard cutoff, the bond contribution is scaled to zero continuously when the interatomic distances grow from the soft to the hard cutoff.
@@ -981,6 +984,21 @@ contains
 
 
 
+  ! !!!: get_level_of_bond_order_factor_index
+
+  ! Returns the level of a bond order factor (i.e., is the factor per-atom or per-pair).
+  !
+  ! *bond_index name of the bond order factor
+  ! *level level of the factor
+  subroutine get_level_of_bond_order_factor_index(bond_index,level)
+    implicit none
+    integer, intent(in) :: bond_index
+    integer, intent(out) :: level
+
+    level = bond_order_descriptors(bond_index)%n_level
+
+  end subroutine get_level_of_bond_order_factor_index
+
   ! !!!: get_level_of_bond_order_factor
 
   ! Returns the level of a bond order factor (i.e., is the factor per-atom or per-pair).
@@ -997,7 +1015,6 @@ contains
     level = descriptor%n_level
 
   end subroutine get_level_of_bond_order_factor
-
 
 
   ! !!!: is_valid_potential
@@ -1400,6 +1417,7 @@ contains
   ! *atoms list of atoms
   ! *cell the supercell containing the system
   ! *real_cutoff Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
+  ! *k_radius absolute k-space cutoff
   ! *reciprocal_cutoff The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
   ! *gaussian_width The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
   ! *electric_constant The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
@@ -1645,6 +1663,7 @@ contains
   ! *atoms list of atoms
   ! *cell the supercell containing the system
   ! *real_cutoff Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
+  ! *k_radius Cutoff radius of k-space summation in inverse length. This is an absolute cutoff so that any k-point at a greater distance will be ignored. THis makes the k-cutoff spherical instead of summing over a rectangular box. (It also speeds up the summation.)
   ! *reciprocal_cutoff The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
   ! *gaussian_width The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
   ! *electric_constant The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
@@ -1962,6 +1981,7 @@ contains
   ! *atoms list of atoms
   ! *cell the supercell containing the system
   ! *real_cutoff Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
+  ! *k_radius Cutoff radius of k-space summation in inverse length. This is an absolute cutoff so that any k-point at a greater distance will be ignored. THis makes the k-cutoff spherical instead of summing over a rectangular box. (It also speeds up the summation.)
   ! *reciprocal_cutoff The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
   ! *gaussian_width The :math:`\sigma` parameter, i.e., the distribution width of the screening Gaussians. This should not influence the actual value of the energy, but it does influence the convergence of the summation. If :math:`\sigma` is large, the real space sum :math:`E_s` converges slowly and a large real space cutoff is needed. If it is small, the reciprocal term :math:`E_l` converges slowly and the sum over the reciprocal lattice has to be evaluated over several cell lengths.
   ! *electric_constant The electic constant, i.e., vacuum permittivity :math:`\varepsilon_0`. In atomic units, it is :math:`\varepsilon_0 = 0.00552635 \frac{e^2}{\mathrm{Å\ eV}}`, but if one wishes to scale the results to some other unit system (such as reduced units with :math:`\varepsilon_0 = 1`), that is possible as well.
@@ -2297,6 +2317,9 @@ contains
     ! **** Shifted potential ****
     call create_potential_characterizer_shift(pair_shift_index)
 
+    ! **** Step potential ****
+    call create_potential_characterizer_step(pair_step_index)
+    
     descriptors_created = .true.
 
   end subroutine initialize_potential_characterizers
@@ -2493,8 +2516,8 @@ contains
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: eneg(n_targets)
     type(atom), intent(in) :: atoms(n_targets)
-    double precision :: multi_energy(n_product), multi_eneg(n_targets,n_product), energy
-    integer :: i
+    double precision :: multi_energy(n_product), multi_eneg(n_targets,n_product), energy, tmp_energy
+    integer :: i, j
 
 
     if(n_product > 1)then
@@ -2513,15 +2536,25 @@ contains
        eneg = 0.d0
        energy = 1.d0
        do i = 1, n_product
-          energy = energy * multi_energy(i)          
+          energy = energy * multi_energy(i)    
        end do
 
-       if(energy /= 0.0)then
-          do i = 1, n_product
+       do i = 1, n_product
+          if(multi_energy(i) /= 0.0)then
              eneg(1:n_targets) = eneg(1:n_targets) + &
                   energy / multi_energy(i) * multi_eneg(1:n_targets,i)
-          end do
-       end if
+          else
+             tmp_energy = 1.d0
+             do j = 1, n_product
+                if(i /= j)then
+                   tmp_energy = tmp_energy * multi_energy(j)
+                end if
+             end do
+             eneg(1:n_targets) = eneg(1:n_targets) + &
+                  tmp_energy * multi_eneg(1:n_targets,i)
+
+          end if
+       end do
 
     else
        call evaluate_electronegativity_component(n_targets,separations,distances,interaction,&
@@ -2611,8 +2644,8 @@ contains
     type(potential), intent(in) :: interaction
     double precision, intent(out) :: force(3,n_targets)
     type(atom), intent(in) :: atoms(n_targets)
-    double precision :: multi_energy(n_product), multi_force(3,n_targets,n_product), energy
-    integer :: i
+    double precision :: multi_energy(n_product), multi_force(3,n_targets,n_product), energy, tmp_energy
+    integer :: i, j
 
     if(n_product > 1)then
        call evaluate_energy_component(n_targets,separations,distances,interaction,&
@@ -2633,12 +2666,24 @@ contains
           energy = energy * multi_energy(i)          
        end do
 
-       if(energy /= 0.0)then
-          do i = 1, n_product
+       do i = 1, n_product
+          if(multi_energy(i) /= 0.0)then
              force(1:3,1:n_targets) = force(1:3,1:n_targets) + &
                   energy / multi_energy(i) * multi_force(1:3,1:n_targets,i)
-          end do
-       end if
+          else
+             tmp_energy = 1.d0
+             do j = 1, n_product
+                if(i /= j)then
+                   tmp_energy = tmp_energy * multi_energy(j)
+                end if
+             end do
+             force(1:3,1:n_targets) = force(1:3,1:n_targets) + &
+                  tmp_energy * multi_force(1:3,1:n_targets,i)
+
+          end if
+       end do
+
+
 
     else
        call evaluate_force_component(n_targets,separations,distances,interaction,&
@@ -2712,6 +2757,8 @@ contains
        call evaluate_force_table(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
     case (pair_shift_index) ! shifted potential
        call evaluate_force_shift(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
+    case (pair_step_index) ! step potential
+       call evaluate_force_step(separations(1:3,1),distances(1),interaction,force(1:3,1:2))
     end select
 
   end subroutine evaluate_force_component
@@ -2834,8 +2881,10 @@ contains
        call evaluate_energy_charge_pair(interaction,energy,atoms(1:2))
     case (pair_qabs_index) ! charge pair energy potential
        call evaluate_energy_charge_pair_abs(interaction,energy,atoms(1:2))
-    case (pair_shift_index) ! lennard-jones
+    case (pair_shift_index) ! shifted
        call evaluate_energy_shift(separations(1:3,1),distances(1),interaction,energy)
+    case (pair_step_index) ! step
+       call evaluate_energy_step(separations(1:3,1),distances(1),interaction,energy)
     end select
 
   end subroutine evaluate_energy_component
@@ -3270,9 +3319,9 @@ contains
 
 
 
-  !***************************!
-  ! dihedrral angle potential !
-  !***************************!
+  !**************************!
+  ! dihedral angle potential !
+  !**************************!
 
   ! dihedral angle characterizer initialization
   !
@@ -3850,7 +3899,7 @@ contains
     d2 = r3 + abs(r9 * (r5 - atoms(2)%charge))**r7
     energy = interaction%parameters(1)* &
          exp( 0.5d0*(d3*d1 + d4*d2) )
- 
+
   end subroutine evaluate_energy_charge_exp
 
 
@@ -4398,10 +4447,19 @@ contains
        n2 = int(interaction%parameters(3))
     end if
 
-    eneg(1) = -interaction%parameters(1) * & 
-         ( n1 * atoms(1)%charge**(n1-1) * atoms(2)%charge**n2 )
-    eneg(2) = -interaction%parameters(1) * & 
-         ( n2 * atoms(1)%charge**n1 * atoms(2)%charge**(n2-1) )
+    if(n1 > 0)then
+       eneg(1) = -interaction%parameters(1) * & 
+            ( n1 * atoms(1)%charge**(n1-1) * atoms(2)%charge**n2 )
+    else
+       eneg(1) = 0.0
+    end if
+
+    if(n2 > 0)then
+       eneg(2) = -interaction%parameters(1) * & 
+            ( n2 * atoms(1)%charge**n1 * atoms(2)%charge**(n2-1) )
+    else
+       eneg(2) = 0.0
+    end if
 
   end subroutine evaluate_electronegativity_charge_pair
 
@@ -4782,6 +4840,135 @@ contains
     energy = interaction%parameters(1) * ( (r1 - rr)/(r1 - r2) )**n
     
   end subroutine evaluate_energy_shift
+
+
+
+
+
+
+
+
+  !*****************!
+  ! Step potential  !
+  !*****************!
+
+  ! Step characterizer initialization
+  !
+  ! *index index of the potential
+  subroutine create_potential_characterizer_step(index)
+    implicit none
+    integer, intent(in) :: index
+
+    ! Record type index
+    potential_descriptors(index)%type_index = index
+
+    ! Record the name of the potential.
+    ! This is a keyword used for accessing the type of potential
+    ! in pysic, also in the python interface.
+    call pad_string('step', pot_name_length,potential_descriptors(index)%name)
+
+    ! Record the number of parameters
+    potential_descriptors(index)%n_parameters = 4
+
+    ! Record the number of targets (i.e., is the potential 1-body, 2-body etc.)
+    potential_descriptors(index)%n_targets = 2
+
+    ! Allocate space for storing the parameter names and descriptions.
+    allocate(potential_descriptors(index)%parameter_names(potential_descriptors(index)%n_parameters))
+    allocate(potential_descriptors(index)%parameter_notes(potential_descriptors(index)%n_parameters))
+
+    ! Record parameter names and descriptions.
+    ! Names are keywords with which one can intuitively 
+    ! and easily access the parameters in the python
+    ! interface.
+    ! Descriptions are short descriptions of the
+    ! physical or mathematical meaning of the parameters.
+    ! They can be viewed from the python interface to
+    ! remind the user how to parameterize the potential.
+    call pad_string('e1', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy at r1', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('e2', param_name_length,potential_descriptors(index)%parameter_names(1))
+    call pad_string('energy at r2', param_note_length,potential_descriptors(index)%parameter_notes(1))
+    call pad_string('r1', param_name_length,potential_descriptors(index)%parameter_names(3))
+    call pad_string('lower limit', param_note_length,potential_descriptors(index)%parameter_notes(3))
+    call pad_string('r2', param_name_length,potential_descriptors(index)%parameter_names(4))
+    call pad_string('upper limit', param_note_length,potential_descriptors(index)%parameter_notes(4))
+
+    ! Record a description of the entire potential.
+    ! This description can also be viewed in the python
+    ! interface as a reminder of the properties of the
+    ! potential.
+    ! The description should contain the mathematical
+    ! formulation of the potential as well as a short
+    ! verbal description.
+    call pad_string('A step potential: V(r) = e1, r<r1; e2 r>r2; (e1+e2)/2 ( 1 + 1/2 cos (pi (r-r1)/(r2-r1)) ) r1<r<r2', &
+         pot_note_length,potential_descriptors(index)%description)
+
+  end subroutine create_potential_characterizer_step
+
+
+  ! Step force
+  !
+  ! *n_targets number of targets
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`potential` containing the parameters
+  ! *force the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+  subroutine evaluate_force_step(separations,distances,interaction,force)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: force(3,2)
+    double precision :: rr, r1, r2, e1, e2
+
+    rr = distances(1)
+    e1 = interaction%parameters(1)
+    e2 = interaction%parameters(2)
+    r1 = interaction%parameters(3)
+    r2 = interaction%parameters(4)
+    
+    if(rr < r1 .or. rr > r2)then
+    	force(1:3,1:2) = 0.d0
+    else
+	    force(1:3,1) = (e1+e2)*0.25d0*pi/(r2-r1)*sin(pi*(rr-r1)/(r2-r1))
+    	force(1:3,2) = -force(1:3,1)
+	end	if
+
+  end subroutine evaluate_force_step
+
+
+  ! Shift energy
+  !  
+  ! *separations atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+  ! *distances atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+  ! *interaction a :data:`bond_order_parameters` containing the parameters
+  ! *energy the calculated energy :math:`v_{ijk}`
+  subroutine evaluate_energy_step(separations,distances,interaction,energy)
+    implicit none
+    double precision, intent(in) :: separations(3,1), distances(1)
+    type(potential), intent(in) :: interaction
+    double precision, intent(out) :: energy
+    double precision :: r1, r2, e1, e2, rr
+
+    rr = distances(1)
+    e1 = interaction%parameters(1)
+    e2 = interaction%parameters(2)
+    r1 = interaction%parameters(3)
+    r2 = interaction%parameters(4)
+    
+    if(rr < r1)then
+    	energy = e1
+    else if(rr > r2)then
+    	energy = e2
+    else
+	    energy = (e1+e2)*0.5d0*(1.d0+0.5d0*cos(pi*(rr-r1)/(r2-r1)))
+	end	if
+    
+  end subroutine evaluate_energy_step
+
+
+
+
 
 
 
@@ -5566,7 +5753,7 @@ contains
     double precision :: tmp1(3), tmp2(3)
 
     factor = 0.d0
-
+    
     if(bond_params%original_elements(1) /= atoms(2)%element)then
        return
     end if
@@ -5579,13 +5766,14 @@ contains
 
     r1 = distances(1)
     r2 = distances(2)
+    
 
     ! tmp1 and tmp2 are the vectors r_ij, r_ik
     tmp1 = -separations(1:3,1)
     tmp2 = separations(1:3,2)
     ! cosine of the angle between ij and ik
     cosine = (tmp1 .o. tmp2) / ( r1 * r2 )
-    
+        
     ! bond_params: mu_i, a_ij, a_ik, &
     !              c_ij^2, d_ij^2, h_ij, 
     !              c_ik^2, d_ik^2, h_ik
@@ -5595,7 +5783,7 @@ contains
     dd1 = bond_params%parameters(3,2)*bond_params%parameters(3,2)
     h1 = bond_params%parameters(4,2)
     
-    call smoothening_factor(r2,bond_params%cutoff,&
+        call smoothening_factor(r2,bond_params%cutoff,&
          bond_params%soft_cutoff,decay1)
     
     xi1 = decay1 * exp( (a1 * (r1-r2))**mu ) 
@@ -5769,7 +5957,6 @@ contains
                eta * (beta*raw_sum)**(eta-1.d0) * beta * raw_gradient       
        end if
     end if
-
 
   end subroutine post_process_bond_order_gradient_tersoff
 

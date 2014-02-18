@@ -56,6 +56,19 @@ Using the Python `map <http://docs.python.org/tutorial/datastructures.html#funct
 
 
 
+.. file:coulomb parameters
+
+.. _coulomb parameters:
+
+
+
+Automatic parameters
+------------------------
+
+As the summation algorithms are parameter dependent, one should always check numeric convergence before real simulations.
+As a first guess, the utility function :func:`pysic.interactions.coulomb.estimate_ewald_parameters` can be used for estimating the parameters of the Ewald method.
+
+
 .. file:list of summation modes
 
 .. _list of summation modes:
@@ -216,4 +229,7 @@ Full documentation of the CoulombSummation class
 .. autoclass:: CoulombSummation
    :members:
    :undoc-members:
+
+.. autofunction:: estimate_ewald_parameters
+
 

@@ -378,7 +378,7 @@ class Potential(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return ("Potential({name},symbols={symbs},"+ \
+        return ("Potential('{name}',symbols={symbs},"+ \
                 "tags={tags},indices={inds},parameters={params}"+ \
                 ",cutoff={cut},cutoff_margin={marg},"+ \
                 "coordinator={coord})").format(name=self.potential_type,
