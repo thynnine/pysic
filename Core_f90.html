@@ -164,6 +164,8 @@ to Python are simply calling routines here.</p>
 <h2>List of subroutines in pysic_core<a class="headerlink" href="#list-of-subroutines-in-pysic-core" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li><a class="reference internal" href="#core_add_bond_order_factor" title="core_add_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">core_add_bond_order_factor()</span></tt></a></li>
+<li><a class="reference internal" href="#core_add_bond_order_forces" title="core_add_bond_order_forces"><tt class="xref py py-func docutils literal"><span class="pre">core_add_bond_order_forces()</span></tt></a></li>
+<li><a class="reference internal" href="#core_add_pair_bond_order_forces" title="core_add_pair_bond_order_forces"><tt class="xref py py-func docutils literal"><span class="pre">core_add_pair_bond_order_forces()</span></tt></a></li>
 <li><a class="reference internal" href="#core_add_potential" title="core_add_potential"><tt class="xref py py-func docutils literal"><span class="pre">core_add_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#core_allocate_bond_order_factors" title="core_allocate_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">core_allocate_bond_order_factors()</span></tt></a></li>
 <li><a class="reference internal" href="#core_allocate_bond_order_storage" title="core_allocate_bond_order_storage"><tt class="xref py py-func docutils literal"><span class="pre">core_allocate_bond_order_storage()</span></tt></a></li>
@@ -571,6 +573,48 @@ to be given in the &#8216;orig_elements&#8217; lists.</p>
 <dd>index denoting the potential to which the factor is connected</dd>
 <dt><strong>success</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>logical tag specifying if creation of the factor succeeded</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_add_bond_order_forces">
+<tt class="descname">core_add_bond_order_forces</tt><big>(</big><em>group_index</em>, <em>atom_index</em>, <em>prefactor</em>, <em>forces</em>, <em>stress</em><big>)</big><a class="headerlink" href="#core_add_bond_order_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parameters:</p>
+<p>group_index: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>atom_index: integer  <em>intent(in)</em>    <em>scalar</em></p>
+<p>prefactor: double precision  <em>intent(in)</em>    <em>scalar</em></p>
+<p><strong>forces</strong>: double precision  <strong>intent(inout)</strong>    <em>size(:, :)</em></p>
+<p><strong>stress</strong>: double precision  <strong>intent(inout)</strong>    <em>size(6)</em></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="core_add_pair_bond_order_forces">
+<tt class="descname">core_add_pair_bond_order_forces</tt><big>(</big><em>index1</em>, <em>index2</em>, <em>prefactor</em>, <em>separation</em>, <em>direction</em>, <em>distance</em>, <em>group_index</em>, <em>pair_bo_sums</em>, <em>pair_bo_factors</em>, <em>forces</em>, <em>stress</em><big>)</big><a class="headerlink" href="#core_add_pair_bond_order_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluates the local force affecting two atoms from bond order factors.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index1: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the atom 1</dd>
+<dt>index2: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the atom 2</dd>
+<dt>prefactor: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>the precalculated part of the factor</dd>
+<dt>separation: double precision  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>distance vector from 1 to 2, as an array</dd>
+<dt>direction: double precision  <em>intent(in)</em>    <em>size(3)</em></dt>
+<dd>unit vector from 1 to 2, as an array</dd>
+<dt>distance: double precision  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>distance from 1 to 2, as an array</dd>
+<dt>group_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the potential</dd>
+<dt>pair_bo_sums: double precision  <em>intent(in)</em>    <em>size(2)</em></dt>
+<dd>precalculated bond order sum</dd>
+<dt>pair_bo_factors: double precision  <em>intent(in)</em>    <em>size(2)</em></dt>
+<dd>precalculated bond order factors</dd>
+<dt><strong>forces</strong>: double precision  <strong>intent(inout)</strong>    <em>size(:, :)</em></dt>
+<dd>calculated forces</dd>
+<dt><strong>stress</strong>: double precision  <strong>intent(inout)</strong>    <em>size(6)</em></dt>
+<dd>calculated stress</dd>
 </dl>
 </dd></dl>
 
@@ -1120,7 +1164,7 @@ but does not deallocate the arrays.</p>
 
 <dl class="function">
 <dt id="core_evaluate_local_doublet_electronegativities_B">
-<tt class="descname">core_evaluate_local_doublet_electronegativities_B</tt><big>(</big><em>atom_doublet</em>, <em>index1</em>, <em>index2</em>, <em>test_index1</em>, <em>interaction_indices</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>enegs</em>, <em>many_bodies_found</em><big>)</big><a class="headerlink" href="#core_evaluate_local_doublet_electronegativities_B" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">core_evaluate_local_doublet_electronegativities_B</tt><big>(</big><em>atom_doublet</em>, <em>index1</em>, <em>index2</em>, <em>test_index1</em>, <em>interaction_indices</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>enegs</em>, <em>many_bodies_found</em>, <em>manybody_indices</em>, <em>n_manybody</em><big>)</big><a class="headerlink" href="#core_evaluate_local_doublet_electronegativities_B" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluates the local electronegativity affecting two atoms. (Rearranged internally.)</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -1145,6 +1189,8 @@ but does not deallocate the arrays.</p>
 <dt><strong>many_bodies_found</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>returns true if the loop finds an interaction with 3 or more targets</dd>
 </dl>
+<p>manybody_indices: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></p>
+<p><strong>n_manybody</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></p>
 </dd></dl>
 
 <dl class="function">
@@ -1179,7 +1225,7 @@ but does not deallocate the arrays.</p>
 
 <dl class="function">
 <dt id="core_evaluate_local_doublet_energy_B">
-<tt class="descname">core_evaluate_local_doublet_energy_B</tt><big>(</big><em>atom_doublet</em>, <em>index1</em>, <em>index2</em>, <em>test_index1</em>, <em>interaction_indices</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>energy</em>, <em>many_bodies_found</em><big>)</big><a class="headerlink" href="#core_evaluate_local_doublet_energy_B" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">core_evaluate_local_doublet_energy_B</tt><big>(</big><em>atom_doublet</em>, <em>index1</em>, <em>index2</em>, <em>test_index1</em>, <em>interaction_indices</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>energy</em>, <em>many_bodies_found</em>, <em>manybody_indices</em>, <em>n_manybody</em><big>)</big><a class="headerlink" href="#core_evaluate_local_doublet_energy_B" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluates the local potential affecting two atoms. (Rearranged internally compared to &#8216;A&#8217;.)</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -1204,6 +1250,8 @@ but does not deallocate the arrays.</p>
 <dt><strong>many_bodies_found</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>returns true if the loop finds an interaction with 3 or more targets</dd>
 </dl>
+<p>manybody_indices: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></p>
+<p><strong>n_manybody</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></p>
 </dd></dl>
 
 <dl class="function">
@@ -1241,7 +1289,7 @@ but does not deallocate the arrays.</p>
 
 <dl class="function">
 <dt id="core_evaluate_local_doublet_forces_B">
-<tt class="descname">core_evaluate_local_doublet_forces_B</tt><big>(</big><em>atom_doublet</em>, <em>index1</em>, <em>index2</em>, <em>test_index1</em>, <em>interaction_indices</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>forces</em>, <em>stress</em>, <em>many_bodies_found</em><big>)</big><a class="headerlink" href="#core_evaluate_local_doublet_forces_B" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">core_evaluate_local_doublet_forces_B</tt><big>(</big><em>atom_doublet</em>, <em>index1</em>, <em>index2</em>, <em>test_index1</em>, <em>interaction_indices</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>forces</em>, <em>stress</em>, <em>many_bodies_found</em>, <em>manybody_indices</em>, <em>n_manybody</em><big>)</big><a class="headerlink" href="#core_evaluate_local_doublet_forces_B" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluates the local force affecting two atoms. (Rearranged internally.)</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -1252,7 +1300,7 @@ but does not deallocate the arrays.</p>
 <dt>index2: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>index of the atom 2</dd>
 <dt>test_index1: integer  <em>intent(in)</em>    <em>scalar</em></dt>
-<dd>if 1, test if the ineraction targets atom1; similarly for 2</dd>
+<dd>if 1, test if the interaction targets atom1; similarly for 2</dd>
 <dt>interaction_indices: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></dt>
 <dd>the interactions targeting the given atoms</dd>
 <dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 1)</em></dt>
@@ -1268,6 +1316,8 @@ but does not deallocate the arrays.</p>
 <dt><strong>many_bodies_found</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>returns true if the loop finds an interaction with 3 or more targets</dd>
 </dl>
+<p>manybody_indices: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></p>
+<p><strong>n_manybody</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></p>
 </dd></dl>
 
 <dl class="function">
@@ -1319,7 +1369,7 @@ but does not deallocate the arrays.</p>
 
 <dl class="function">
 <dt id="core_evaluate_local_quadruplet_B">
-<tt class="descname">core_evaluate_local_quadruplet_B</tt><big>(</big><em>atom_quadruplet</em>, <em>index1</em>, <em>index2</em>, <em>index3</em>, <em>index4</em>, <em>test_index1</em>, <em>test_index2</em>, <em>test_index3</em>, <em>interaction_indices</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>calculation_type</em>, <em>energy</em>, <em>forces</em>, <em>enegs</em>, <em>stress</em>, <em>many_bodies_found</em><big>)</big><a class="headerlink" href="#core_evaluate_local_quadruplet_B" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">core_evaluate_local_quadruplet_B</tt><big>(</big><em>atom_quadruplet</em>, <em>index1</em>, <em>index2</em>, <em>index3</em>, <em>index4</em>, <em>test_index1</em>, <em>test_index2</em>, <em>test_index3</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>calculation_type</em>, <em>energy</em>, <em>forces</em>, <em>enegs</em>, <em>stress</em>, <em>many_bodies_found</em>, <em>manybody_indices</em>, <em>n_manybody</em><big>)</big><a class="headerlink" href="#core_evaluate_local_quadruplet_B" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluates the interactions affecting four atoms. (Rearranged internally.)</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -1339,8 +1389,6 @@ but does not deallocate the arrays.</p>
 <dd>if 1, test if the ineraction targets atom1; similarly for 2, 3</dd>
 <dt>test_index3: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>if 1, test if the ineraction targets atom1; similarly for 2, 3</dd>
-<dt>interaction_indices: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></dt>
-<dd>the interactions targeting the given atoms</dd>
 <dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 3)</em></dt>
 <dd>distance vector from 1 to 2, 2 to 3 and 3 to 4 as an array</dd>
 <dt>directions: double precision  <em>intent(in)</em>    <em>size(3, 3)</em></dt>
@@ -1360,6 +1408,8 @@ but does not deallocate the arrays.</p>
 <dt><strong>many_bodies_found</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>returns true if the loop finds an interaction with 3 or more targets</dd>
 </dl>
+<p>manybody_indices: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></p>
+<p>n_manybody: integer  <em>intent(in)</em>    <em>scalar</em></p>
 </dd></dl>
 
 <dl class="function">
@@ -1432,7 +1482,7 @@ but does not deallocate the arrays.</p>
 
 <dl class="function">
 <dt id="core_evaluate_local_triplet_B">
-<tt class="descname">core_evaluate_local_triplet_B</tt><big>(</big><em>atom_triplet</em>, <em>index1</em>, <em>index2</em>, <em>index3</em>, <em>test_index1</em>, <em>test_index2</em>, <em>interaction_indices</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>calculation_type</em>, <em>energy</em>, <em>forces</em>, <em>enegs</em>, <em>stress</em>, <em>many_bodies_found</em><big>)</big><a class="headerlink" href="#core_evaluate_local_triplet_B" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">core_evaluate_local_triplet_B</tt><big>(</big><em>atom_triplet</em>, <em>index1</em>, <em>index2</em>, <em>index3</em>, <em>test_index1</em>, <em>test_index2</em>, <em>separations</em>, <em>directions</em>, <em>distances</em>, <em>calculation_type</em>, <em>energy</em>, <em>forces</em>, <em>enegs</em>, <em>stress</em>, <em>many_bodies_found</em>, <em>manybody_indices</em>, <em>n_manybody</em><big>)</big><a class="headerlink" href="#core_evaluate_local_triplet_B" title="Permalink to this definition">¶</a></dt>
 <dd><p>Evaluates the interactions affecting three atoms. (Rearranged internally.)</p>
 <p>Parameters:</p>
 <dl class="docutils">
@@ -1448,8 +1498,6 @@ but does not deallocate the arrays.</p>
 <dd>if 1, test if the ineraction targets atom1; similarly for 2, 3</dd>
 <dt>test_index2: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>if 1, test if the ineraction targets atom1; similarly for 2, 3</dd>
-<dt>interaction_indices: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></dt>
-<dd>the interactions targeting the given atoms</dd>
 <dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 2)</em></dt>
 <dd>distance vector from 1 to 2 and 2 to 3 as an array</dd>
 <dt>directions: double precision  <em>intent(in)</em>    <em>size(3, 2)</em></dt>
@@ -1469,6 +1517,8 @@ but does not deallocate the arrays.</p>
 <dt><strong>many_bodies_found</strong>: logical  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>returns true if the loop finds an interaction with 3 or more targets</dd>
 </dl>
+<p>manybody_indices: integer  <em>intent()</em>  <em>pointer</em>  <em>size(:)</em></p>
+<p>n_manybody: integer  <em>intent(in)</em>    <em>scalar</em></p>
 </dd></dl>
 
 <dl class="function">

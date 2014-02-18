@@ -33,6 +33,13 @@ Atomistic pair and many-body potentials typically depend on the local atomic str
 
 Typically one chooses a cutoff distance :math:`r_\mathrm{cut}` beyond which the atoms do not see each other. Then, the neighbor lists should always contain all the atoms within this cutoff radius :math:`r_{ij} \le r_\mathrm{cut}`. In dynamic simulations where the atoms move, the typical scheme is to list atoms within a slightly longer radius, :math:`r_\mathrm{cut} + r_\mathrm{skin}` because then the lists need not be updated until an atom has moved by more than :math:`r_\mathrm{skin}`.
 
+The skin width is a static variable of :class:`~pysic.calculator.FastNeighborList`, which you can directly change with::
+
+  new_skin_width = 1.0
+  pysic.calculator.FastNeighborList.neighbor_marginal = new_skin_width
+
+The currently set default value is automatically used when :class:`~pysic.calculator.Pysic` needs to build the neighbor list.
+
 .. file:fast search
 
 .. _fast search:
@@ -106,9 +113,7 @@ which list, for a specified atom, the indices and periodic boundary offsets of n
 Since the lists are created in the Fortran core according to specified interaction cutoffs, it is unfortunately not possible to inquire the neighbors within arbitrary radii without touching the potentials. Normally the lists contain the atoms which interact. In order to just analyse structures, a dummy calculator needs to be created::
 
  system = ase.Atoms(...)
- system.set_cell(5*np.identity(3))
- system.set_pbc([True,True,True])
-
+ 
  # create a dummy calculator
  dummy = pysic.Pysic()
  # Find neighbors at distance 3.0 + 0.5 (0.5 is the default marginal).
@@ -117,7 +122,7 @@ Since the lists are created in the Fortran core according to specified interacti
  pot = pysic.Potential('LJ', cutoff=3.0, symbols=...)
  dummy.add_potential(pot)
  system.set_calculator(dummy)
- # It is important to manually initialize the core since no actual calculations are not carried out.
+ # It is important to manually initialize the core since no actual calculations are carried out.
  dummy.set_core()
 
  # get the list and access its contents

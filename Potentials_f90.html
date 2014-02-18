@@ -211,6 +211,7 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#pair_qpair_index" title="pair_qpair_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_qpair_index</span></tt></a></li>
 <li><a class="reference internal" href="#pair_shift_index" title="pair_shift_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_shift_index</span></tt></a></li>
 <li><a class="reference internal" href="#pair_spring_index" title="pair_spring_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_spring_index</span></tt></a></li>
+<li><a class="reference internal" href="#pair_step_index" title="pair_step_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_step_index</span></tt></a></li>
 <li><a class="reference internal" href="#pair_table_index" title="pair_table_index"><tt class="xref py py-data docutils literal"><span class="pre">pair_table_index</span></tt></a></li>
 <li><a class="reference internal" href="#param_name_length" title="param_name_length"><tt class="xref py py-data docutils literal"><span class="pre">param_name_length</span></tt></a></li>
 <li><a class="reference internal" href="#param_note_length" title="param_note_length"><tt class="xref py py-data docutils literal"><span class="pre">param_note_length</span></tt></a></li>
@@ -281,6 +282,7 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#create_potential_characterizer_power" title="create_potential_characterizer_power"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_power()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_shift" title="create_potential_characterizer_shift"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_shift()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_spring" title="create_potential_characterizer_spring"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_spring()</span></tt></a></li>
+<li><a class="reference internal" href="#create_potential_characterizer_step" title="create_potential_characterizer_step"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_step()</span></tt></a></li>
 <li><a class="reference internal" href="#create_potential_characterizer_table" title="create_potential_characterizer_table"><tt class="xref py py-func docutils literal"><span class="pre">create_potential_characterizer_table()</span></tt></a></li>
 <li><a class="reference internal" href="#deallocate_ewald_arrays" title="deallocate_ewald_arrays"><tt class="xref py py-func docutils literal"><span class="pre">deallocate_ewald_arrays()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_bond_order_factor" title="evaluate_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_bond_order_factor()</span></tt></a></li>
@@ -315,6 +317,7 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#evaluate_energy_power" title="evaluate_energy_power"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_power()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_shift" title="evaluate_energy_shift"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_shift()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_spring" title="evaluate_energy_spring"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_spring()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_energy_step" title="evaluate_energy_step"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_step()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_energy_table" title="evaluate_energy_table"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_energy_table()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_LJ" title="evaluate_force_LJ"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_LJ()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_bond_bending" title="evaluate_force_bond_bending"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_bond_bending()</span></tt></a></li>
@@ -327,6 +330,7 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#evaluate_force_power" title="evaluate_force_power"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_power()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_shift" title="evaluate_force_shift"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_shift()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_spring" title="evaluate_force_spring"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_spring()</span></tt></a></li>
+<li><a class="reference internal" href="#evaluate_force_step" title="evaluate_force_step"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_step()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_force_table" title="evaluate_force_table"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_force_table()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_forces" title="evaluate_forces"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_forces()</span></tt></a></li>
 <li><a class="reference internal" href="#evaluate_pair_bond_order_factor" title="evaluate_pair_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">evaluate_pair_bond_order_factor()</span></tt></a></li>
@@ -344,6 +348,7 @@ must be updated accordingly.</p>
 <li><a class="reference internal" href="#get_index_of_parameter_of_potential" title="get_index_of_parameter_of_potential"><tt class="xref py py-func docutils literal"><span class="pre">get_index_of_parameter_of_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#get_index_of_potential" title="get_index_of_potential"><tt class="xref py py-func docutils literal"><span class="pre">get_index_of_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#get_level_of_bond_order_factor" title="get_level_of_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">get_level_of_bond_order_factor()</span></tt></a></li>
+<li><a class="reference internal" href="#get_level_of_bond_order_factor_index" title="get_level_of_bond_order_factor_index"><tt class="xref py py-func docutils literal"><span class="pre">get_level_of_bond_order_factor_index()</span></tt></a></li>
 <li><a class="reference internal" href="#get_names_of_parameters_of_bond_order_factor" title="get_names_of_parameters_of_bond_order_factor"><tt class="xref py py-func docutils literal"><span class="pre">get_names_of_parameters_of_bond_order_factor()</span></tt></a></li>
 <li><a class="reference internal" href="#get_names_of_parameters_of_potential" title="get_names_of_parameters_of_potential"><tt class="xref py py-func docutils literal"><span class="pre">get_names_of_parameters_of_potential()</span></tt></a></li>
 <li><a class="reference internal" href="#get_number_of_bond_order_factors" title="get_number_of_bond_order_factors"><tt class="xref py py-func docutils literal"><span class="pre">get_number_of_bond_order_factors()</span></tt></a></li>
@@ -484,7 +489,7 @@ must be updated accordingly.</p>
 <dt id="n_potential_types">
 <tt class="descname">n_potential_types</tt><a class="headerlink" href="#n_potential_types" title="Permalink to this definition">¶</a></dt>
 <dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
-<p><em>initial value</em> = 15</p>
+<p><em>initial value</em> = 16</p>
 <p>number of different types of potentials known</p>
 </dd></dl>
 
@@ -561,6 +566,13 @@ must be updated accordingly.</p>
 <dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
 <p><em>initial value</em> = 2</p>
 <p>internal index for the spring potential</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="pair_step_index">
+<tt class="descname">pair_step_index</tt><a class="headerlink" href="#pair_step_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>integer    <em>scalar</em>  <em>parameter</em></p>
+<p><em>initial value</em> = 16</p>
 </dd></dl>
 
 <dl class="data">
@@ -1467,6 +1479,17 @@ and returns a potential type wrapping them in one package.</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="create_potential_characterizer_step">
+<tt class="descname">create_potential_characterizer_step</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#create_potential_characterizer_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Step characterizer initialization</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>index of the potential</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="create_potential_characterizer_table">
 <tt class="descname">create_potential_characterizer_table</tt><big>(</big><em>index</em><big>)</big><a class="headerlink" href="#create_potential_characterizer_table" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tabulated characterizer initialization</p>
@@ -2089,6 +2112,23 @@ gradients of the energies returned by <a class="reference internal" href="#evalu
 </dd></dl>
 
 <dl class="function">
+<dt id="evaluate_energy_step">
+<tt class="descname">evaluate_energy_step</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>energy</em><big>)</big><a class="headerlink" href="#evaluate_energy_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shift energy</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 1)</em></dt>
+<dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
+<dt>distances: double precision  <em>intent(in)</em>    <em>size(1)</em></dt>
+<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#bond_order_parameters" title="bond_order_parameters"><tt class="xref py py-data docutils literal"><span class="pre">bond_order_parameters</span></tt></a> containing the parameters</dd>
+<dt><strong>energy</strong>: double precision  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>the calculated energy <span class="math">\(v_{ijk}\)</span></dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="evaluate_energy_table">
 <tt class="descname">evaluate_energy_table</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>energy</em><big>)</big><a class="headerlink" href="#evaluate_energy_table" title="Permalink to this definition">¶</a></dt>
 <dd><p>Tabulated energy</p>
@@ -2287,6 +2327,23 @@ gradients of the energies returned by <a class="reference internal" href="#evalu
 <dt id="evaluate_force_spring">
 <tt class="descname">evaluate_force_spring</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>force</em><big>)</big><a class="headerlink" href="#evaluate_force_spring" title="Permalink to this definition">¶</a></dt>
 <dd><p>spring force</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 1)</em></dt>
+<dd>atom-atom separation vectors <span class="math">\(\mathrm{r}_{12}\)</span>, <span class="math">\(\mathrm{r}_{23}\)</span> etc. for the atoms 123...</dd>
+<dt>distances: double precision  <em>intent(in)</em>    <em>size(1)</em></dt>
+<dd>atom-atom distances <span class="math">\(r_{12}\)</span>, <span class="math">\(r_{23}\)</span> etc. for the atoms 123..., i.e., the norms of the separation vectors.</dd>
+<dt>interaction: type(potential)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>a <a class="reference internal" href="#potential" title="potential"><tt class="xref py py-data docutils literal"><span class="pre">potential</span></tt></a> containing the parameters</dd>
+<dt><strong>force</strong>: double precision  <strong>intent(out)</strong>    <em>size(3, 2)</em></dt>
+<dd>the calculated force component <span class="math">\(\mathbf{f}_{\alpha,ijk}\)</span></dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="evaluate_force_step">
+<tt class="descname">evaluate_force_step</tt><big>(</big><em>separations</em>, <em>distances</em>, <em>interaction</em>, <em>force</em><big>)</big><a class="headerlink" href="#evaluate_force_step" title="Permalink to this definition">¶</a></dt>
+<dd><p>Step force</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>separations: double precision  <em>intent(in)</em>    <em>size(3, 1)</em></dt>
@@ -2592,6 +2649,19 @@ internal list of parameters.</p>
 <p>Parameters:</p>
 <dl class="docutils">
 <dt>bond_name: character(len=*)  <em>intent(in)</em>    <em>scalar</em></dt>
+<dd>name of the bond order factor</dd>
+<dt><strong>level</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></dt>
+<dd>level of the factor</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="get_level_of_bond_order_factor_index">
+<tt class="descname">get_level_of_bond_order_factor_index</tt><big>(</big><em>bond_index</em>, <em>level</em><big>)</big><a class="headerlink" href="#get_level_of_bond_order_factor_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the level of a bond order factor (i.e., is the factor per-atom or per-pair).</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>bond_index: integer  <em>intent(in)</em>    <em>scalar</em></dt>
 <dd>name of the bond order factor</dd>
 <dt><strong>level</strong>: integer  <strong>intent(out)</strong>    <em>scalar</em></dt>
 <dd>level of the factor</dd>

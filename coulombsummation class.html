@@ -57,6 +57,7 @@
   <ul>
 <li><a class="reference internal" href="#">CoulombSummation class</a><ul>
 <li><a class="reference internal" href="#charge-scaling">Charge scaling</a></li>
+<li><a class="reference internal" href="#automatic-parameters">Automatic parameters</a></li>
 <li><a class="reference internal" href="#list-of-currently-available-summation-algorithms">List of currently available summation algorithms</a><ul>
 <li><a class="reference internal" href="#ewald-summation">Ewald summation</a></li>
 </ul>
@@ -131,6 +132,11 @@
 <span class="go">[0.1, 0.1, -0.2]</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="automatic-parameters">
+<span id="coulomb-parameters"></span><h2>Automatic parameters<a class="headerlink" href="#automatic-parameters" title="Permalink to this headline">¶</a></h2>
+<p>As the summation algorithms are parameter dependent, one should always check numeric convergence before real simulations.
+As a first guess, the utility function <a class="reference internal" href="#pysic.interactions.coulomb.estimate_ewald_parameters" title="pysic.interactions.coulomb.estimate_ewald_parameters"><tt class="xref py py-func docutils literal"><span class="pre">pysic.interactions.coulomb.estimate_ewald_parameters()</span></tt></a> can be used for estimating the parameters of the Ewald method.</p>
 </div>
 <div class="section" id="list-of-currently-available-summation-algorithms">
 <span id="list-of-summation-modes"></span><h2>List of currently available summation algorithms<a class="headerlink" href="#list-of-currently-available-summation-algorithms" title="Permalink to this headline">¶</a></h2>
@@ -355,6 +361,28 @@ by invoking <a class="reference internal" href="#pysic.interactions.coulomb.Coul
 <dd><p>Names of the parameters of the summation algorithm.</p>
 </dd></dl>
 
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.interactions.coulomb.estimate_ewald_parameters">
+<tt class="descclassname">pysic.interactions.coulomb.</tt><tt class="descname">estimate_ewald_parameters</tt><big>(</big><em>real_cutoff=10.0</em>, <em>accuracy='normal'</em><big>)</big><a class="headerlink" href="#pysic.interactions.coulomb.estimate_ewald_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a tuple containing a good initial guess for Ewald parameters in the order <cite>real_cutoff, k_cutoff, sigma, epsilon</cite>.</p>
+<p>The returned values are (real_cutoff, k_cutoff, sigma, epsilon).
+Epsilon is always 0.00552635 <span class="math">\(\varepsilon_0\)</span> in units of <span class="math">\(\frac{e^2}{eV A}\)</span>
+Real cutoff can be given by the user and should be short enough to make the
+real space summation efficient (note that this affects neighborlisting and thus
+also other real space summations). Sigma and k_cutoff are determined by simple scaling rules
+where <span class="math">\(\sigma \sim r_\mathrm{cut}\)</span> and <span class="math">\(k_\mathrm{cut} \sim \sigma^{-1}\)</span>.
+The scaling constants are determined by the accuracy setting.</p>
+<p>Note that the given parameters are not analysed in any way - they are only a first guess.
+You should always test the parameters for accuracy and speed before production simulations.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>real_cutoff: double</dt>
+<dd>the real space cutoff to be used - it should be shorter than the size of the simulation box</dd>
+<dt>accuracy: string</dt>
+<dd>either &#8216;low&#8217;, &#8216;normal&#8217;, &#8216;high&#8217;, &#8216;real&#8217; or &#8216;reciprocal&#8217;</dd>
+</dl>
 </dd></dl>
 
 </div>

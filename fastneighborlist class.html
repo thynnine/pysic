@@ -107,6 +107,12 @@ The neighbor finding routine searches the neighborhoods of all atoms and for eac
 <span id="neighbor-lists"></span><h2>The benefit of neighbor lists<a class="headerlink" href="#the-benefit-of-neighbor-lists" title="Permalink to this headline">¶</a></h2>
 <p>Atomistic pair and many-body potentials typically depend on the local atomic structure and especially the relative coordinates of the atoms. However, finding the separation vector and distance between coordinates in periodic 3D space is computationally fairly costly operation and the number of atom-atom pairs in the system grows as <span class="math">\(\mathcal{O}(n^2)\)</span>. Therefore the evaluation of local potentials can be made efficient by storing lists of nearby atoms for all particles to narrow down the scope of search for interacting neighbors.</p>
 <p>Typically one chooses a cutoff distance <span class="math">\(r_\mathrm{cut}\)</span> beyond which the atoms do not see each other. Then, the neighbor lists should always contain all the atoms within this cutoff radius <span class="math">\(r_{ij} \le r_\mathrm{cut}\)</span>. In dynamic simulations where the atoms move, the typical scheme is to list atoms within a slightly longer radius, <span class="math">\(r_\mathrm{cut} + r_\mathrm{skin}\)</span> because then the lists need not be updated until an atom has moved by more than <span class="math">\(r_\mathrm{skin}\)</span>.</p>
+<p>The skin width is a static variable of <a class="reference internal" href="#pysic.calculator.FastNeighborList" title="pysic.calculator.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">FastNeighborList</span></tt></a>, which you can directly change with:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">new_skin_width</span> <span class="o">=</span> <span class="mf">1.0</span>
+<span class="n">pysic</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">FastNeighborList</span><span class="o">.</span><span class="n">neighbor_marginal</span> <span class="o">=</span> <span class="n">new_skin_width</span>
+</pre></div>
+</div>
+<p>The currently set default value is automatically used when <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> needs to build the neighbor list.</p>
 </div>
 <div class="section" id="faster-neighbor-search">
 <span id="fast-search"></span><h2>Faster neighbor search<a class="headerlink" href="#faster-neighbor-search" title="Permalink to this headline">¶</a></h2>
@@ -146,8 +152,6 @@ d_i & = & \frac{|\mathbf{v}_i \cdot \mathbf{n_i}|}{|\mathbf{n}_{i}|}\\
 <p>which list, for a specified atom, the indices and periodic boundary offsets of neighbors (cf. <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#ase.calculators.neighborlist.NeighborList.get_neighbors">get_neighbors</a> of the ASE neighbor list), separation vectors, and separation distances, respectively. The arrays can also be requested pre-sorted according to the atom-atom distance by providing the keyword <tt class="docutils literal"><span class="pre">sort=True</span></tt>.</p>
 <p>Since the lists are created in the Fortran core according to specified interaction cutoffs, it is unfortunately not possible to inquire the neighbors within arbitrary radii without touching the potentials. Normally the lists contain the atoms which interact. In order to just analyse structures, a dummy calculator needs to be created:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">system</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">Atoms</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
-<span class="n">system</span><span class="o">.</span><span class="n">set_cell</span><span class="p">(</span><span class="mi">5</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">identity</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
-<span class="n">system</span><span class="o">.</span><span class="n">set_pbc</span><span class="p">([</span><span class="bp">True</span><span class="p">,</span><span class="bp">True</span><span class="p">,</span><span class="bp">True</span><span class="p">])</span>
 
 <span class="c"># create a dummy calculator</span>
 <span class="n">dummy</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
@@ -157,7 +161,7 @@ d_i & = & \frac{|\mathbf{v}_i \cdot \mathbf{n_i}|}{|\mathbf{n}_{i}|}\\
 <span class="n">pot</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;LJ&#39;</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">symbols</span><span class="o">=...</span><span class="p">)</span>
 <span class="n">dummy</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">pot</span><span class="p">)</span>
 <span class="n">system</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">dummy</span><span class="p">)</span>
-<span class="c"># It is important to manually initialize the core since no actual calculations are not carried out.</span>
+<span class="c"># It is important to manually initialize the core since no actual calculations are carried out.</span>
 <span class="n">dummy</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
 
 <span class="c"># get the list and access its contents</span>

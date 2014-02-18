@@ -62,6 +62,7 @@
 <li><a class="reference internal" href="#list-of-currently-available-relaxation-methods">List of currently available relaxation methods</a><ul>
 <li><a class="reference internal" href="#damped-dynamics">Damped dynamics</a></li>
 <li><a class="reference internal" href="#potentiostat">Potentiostat</a></li>
+<li><a class="reference internal" href="#optimization">Optimization</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#list-of-methods">List of methods</a><ul>
@@ -183,6 +184,11 @@ M_q \ddot{q}_i & = & -\frac{\partial U}{\partial q_i} - \nu.
 <span class="eqno">(1)</span>\[M_q \ddot{q}_i = \Delta \chi_i - \eta \dot{q}_i.\]</div>
 <p>This leads to the charges being driven towards a state where the driving force vanishes <span class="math">\(\Delta \chi_i = 0\)</span>, i.e., the electronegativities are equal.</p>
 <p>During simulation such as molecular dynamics or geometry optimization, charge equilibration is done by running the damped charge dynamics <a href="#equation-charge_equation">(1)</a> before each force or energy evaluation.</p>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;dynamic&#39;</span><span class="p">)</span>
+<span class="go">[&#39;n_steps&#39;, &#39;timestep&#39;, &#39;inertia&#39;, &#39;friction&#39;, &#39;tolerance&#39;]</span>
+</pre></div>
+</div>
 </div>
 <div class="section" id="potentiostat">
 <span id="id4"></span><h3>Potentiostat<a class="headerlink" href="#potentiostat" title="Permalink to this headline">¶</a></h3>
@@ -193,6 +199,24 @@ with the dynamics</p>
 m_i \ddot{\mathbf{r}}_i & = & -\nabla_i U \\
 M_q \ddot{q}_i & = & -\frac{\partial U}{\partial q_i} - \Phi.
 \end{eqnarray}\]</div><p>Charge equilibration tries to optimize the charge distribution (with fixed total charge) so that the total energy is minimized. The potentiostat, however, connects the system to an electrode (a charge resevoir) at constant potential <span class="math">\(\Phi\)</span>. This means that the total charge of the system is allowed to change so that the electronegativity of each atom equals the external potential <span class="math">\(\chi_i = -\frac{\partial U}{\partial q_i} = \Phi\)</span>.</p>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;potentiostat&#39;</span><span class="p">)</span>
+<span class="go">[&#39;n_steps&#39;, &#39;timestep&#39;, &#39;inertia&#39;, &#39;potential&#39;]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="optimization">
+<span id="id5"></span><h3>Optimization<a class="headerlink" href="#optimization" title="Permalink to this headline">¶</a></h3>
+<p>This charge optimization method uses the
+<a class="reference external" href="SciPyfmin_slsqphttp://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.fmin_slsqp.html">SciPyfmin_slsqphttp://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.fmin_slsqp.html</a> function
+for constrained optimization using <a class="reference external" href="http://en.wikipedia.org/wiki/Sequential_quadratic_programming">Sequential Least Squares Programming (SLSQP)</a>.</p>
+<p>Instead of dynamic simulation, the algorithm searches for energy minimum <span class="math">\(U(\mathbf{q})\)</span> with the constraint of constant charge <span class="math">\(\sum_i q_i = Q\)</span>.</p>
+<p>As the external function does not support callback functions, observers cannot be attached to this algorthm.</p>
+<p>Keywords:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">names_of_parameters</span><span class="p">(</span><span class="s">&#39;optimize&#39;</span><span class="p">)</span>
+<span class="go">[&#39;n_steps&#39;, &#39;tolerance&#39;]</span>
+</pre></div>
+</div>
 </div>
 </div>
 <div class="section" id="list-of-methods">
@@ -328,7 +352,7 @@ intervals, after a given number of relaxation steps.</p>
 <p>The relaxation is always performed on the system associated with
 the <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a> calculator joint with this <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a>.
 The calculated equilibrium charges are returned as a numeric array.</p>
-<p>If an <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> structure is known by the 
+<p>If an <a class="reference external" href="https://wiki.fysik.dtu.dk/ase/ase/atoms.html">ASE Atoms</a> structure is known by the
 <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> 
 (given through <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation.set_atoms" title="pysic.charges.relaxation.ChargeRelaxation.set_atoms"><tt class="xref py py-meth docutils literal"><span class="pre">set_atoms()</span></tt></a>), the charges of
 the structure are updated according to the calculation result.
@@ -399,7 +423,7 @@ will be returned (or None).</p>
 
 <dl class="attribute">
 <dt id="pysic.charges.relaxation.ChargeRelaxation.relaxation_modes">
-<tt class="descname">relaxation_modes</tt><em class="property"> = ['dynamic', 'potentiostat']</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_modes" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">relaxation_modes</tt><em class="property"> = ['dynamic', 'potentiostat', 'optimize']</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_modes" title="Permalink to this definition">¶</a></dt>
 <dd><p>Names of the charge relaxation algorithms available.</p>
 <p>These are keywords needed when creating the
 <a class="reference internal" href="#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> objects as type specifiers.</p>
@@ -407,13 +431,13 @@ will be returned (or None).</p>
 
 <dl class="attribute">
 <dt id="pysic.charges.relaxation.ChargeRelaxation.relaxation_parameter_descriptions">
-<tt class="descname">relaxation_parameter_descriptions</tt><em class="property"> = {'dynamic': ['number of time steps of charge dynamics between molecular dynamics', 'time step of charge dynamics', 'fictional charge mass', 'friction coefficient for damped charge dynamics', 'convergence tolerance'], 'potentiostat': ['number of time steps of charge dynamics between molecular dynamics', 'time step of charge dynamics', 'fictional charge mass', 'external potential']}</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_parameter_descriptions" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">relaxation_parameter_descriptions</tt><em class="property"> = {'dynamic': ['number of time steps of charge dynamics between molecular dynamics', 'time step of charge dynamics', 'fictional charge mass', 'friction coefficient for damped charge dynamics', 'convergence tolerance'], 'optimize': ['maximum number of optimization steps', 'convergence tolerance'], 'potentiostat': ['number of time steps of charge dynamics between molecular dynamics', 'time step of charge dynamics', 'fictional charge mass', 'external potential']}</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_parameter_descriptions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Short descriptions of the relaxation parameters.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pysic.charges.relaxation.ChargeRelaxation.relaxation_parameters">
-<tt class="descname">relaxation_parameters</tt><em class="property"> = {'dynamic': ['n_steps', 'timestep', 'inertia', 'friction', 'tolerance'], 'potentiostat': ['n_steps', 'timestep', 'inertia', 'potential']}</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_parameters" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">relaxation_parameters</tt><em class="property"> = {'dynamic': ['n_steps', 'timestep', 'inertia', 'friction', 'tolerance'], 'optimize': ['n_steps', 'tolerance'], 'potentiostat': ['n_steps', 'timestep', 'inertia', 'potential']}</em><a class="headerlink" href="#pysic.charges.relaxation.ChargeRelaxation.relaxation_parameters" title="Permalink to this definition">¶</a></dt>
 <dd><p>Names of the parameters of the charge relaxation algorithms.</p>
 </dd></dl>
 
