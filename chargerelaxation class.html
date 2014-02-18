@@ -208,7 +208,7 @@ M_q \ddot{q}_i & = & -\frac{\partial U}{\partial q_i} - \Phi.
 <div class="section" id="optimization">
 <span id="id5"></span><h3>Optimization<a class="headerlink" href="#optimization" title="Permalink to this headline">¶</a></h3>
 <p>This charge optimization method uses the
-<a class="reference external" href="SciPyfmin_slsqphttp://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.fmin_slsqp.html">SciPyfmin_slsqphttp://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.fmin_slsqp.html</a> function
+<a class="reference external" href="http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.fmin_slsqp.html">Scipy fmin_slsqp</a> function
 for constrained optimization using <a class="reference external" href="http://en.wikipedia.org/wiki/Sequential_quadratic_programming">Sequential Least Squares Programming (SLSQP)</a>.</p>
 <p>Instead of dynamic simulation, the algorithm searches for energy minimum <span class="math">\(U(\mathbf{q})\)</span> with the constraint of constant charge <span class="math">\(\sum_i q_i = Q\)</span>.</p>
 <p>As the external function does not support callback functions, observers cannot be attached to this algorthm.</p>

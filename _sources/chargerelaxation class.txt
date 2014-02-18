@@ -205,7 +205,7 @@ Optimization
 _______________
 
 This charge optimization method uses the 
-`<SciPy fmin_slsqp http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.fmin_slsqp.html>`_ function
+`Scipy fmin_slsqp <http://docs.scipy.org/doc/scipy/reference/generated/scipy.optimize.fmin_slsqp.html>`_ function
 for constrained optimization using `Sequential Least Squares Programming (SLSQP) <http://en.wikipedia.org/wiki/Sequential_quadratic_programming>`_. 
 
 Instead of dynamic simulation, the algorithm searches for energy minimum :math:`U(\mathbf{q})` with the constraint of constant charge :math:`\sum_i q_i = Q`.
