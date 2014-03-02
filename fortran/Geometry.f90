@@ -808,6 +808,8 @@ contains
        do j = 0, splits(2)+1
           do i = 0, splits(1)+1
 
+             cell%subcells(i,j,k)%include = .true.
+
              ! loop over neighbors
              do k_n = -1,1
                 do j_n = -1,1
@@ -820,11 +822,10 @@ contains
 
                       ! initialize offsets and including/excluding tags
                       offsets = 0
-                      cell%subcells(i,j,k)%include = .true.
 
                       ! loop over three directions and check for periodicity
                       do axis = 1,3
-                         
+
                          if(cell%periodic(axis))then
 
                             do while(nbor_index(axis) > splits(axis))
@@ -837,7 +838,7 @@ contains
                             end do
 
                          else
-                            
+
                             ! if not periodic, make a note if the neighboring cell is non-existent
                             ! (out of bounds)
                             if(nbor_index(axis) < 0 .or. nbor_index(axis) > splits(axis)+1)then

@@ -63,7 +63,21 @@ This can be done by wrapping the potentials to be multiplied in a :class:`~pysic
 
 An immediate benefit of this functionality is the possibility to construct complicated potentials from simple building blocks
 without having to hardcode all the different variants.
+
+As an example::
+
+  pot1 = pysic.Potential('power', parameters=[1,1])
+  pot2 = pysic.Potential('charge_pair', parameters=[1,1,1])
+  prod = pysic.ProductPotential([pot1,pot2])
   
+defines the potentials
+
+.. math::
+
+  v^1_{ij} & = q_i q_j \\
+  v^2_{ij} & = \frac{1}{|\mathbf{r}_i - \mathbf{r}_j|} \\
+  V = \sum_{ij} v^1_{ij} v^2_{ij} & = \sum_{ij} \frac{q_i q_j}{|\mathbf{r}_i - \mathbf{r}_j|}.
+
 
 .. file:parameterization
 
@@ -149,7 +163,7 @@ copies of these potentials.
 If ``prod`` contained the original potential objects ``prod.set_symbols( [['H','H']] )`` 
 would affect ``pot1``, the leading potential, and change ``symbols``
 in ``pot1`` as well having both potentials end up targeting H-H pairs.
-This kind of behaviour could lead to one unintentional changes the properties of other potentials
+This kind of behaviour could lead to unintentional changes in the properties of other potentials
 
 On the other hand, this example::
 

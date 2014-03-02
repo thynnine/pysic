@@ -141,6 +141,7 @@ must be updated accordingly.
     - :data:`pair_qpair_index`
     - :data:`pair_shift_index`
     - :data:`pair_spring_index`
+    - :data:`pair_step_index`
     - :data:`pair_table_index`
     - :data:`param_name_length`
     - :data:`param_note_length`
@@ -208,6 +209,7 @@ must be updated accordingly.
     - :func:`create_potential_characterizer_power`
     - :func:`create_potential_characterizer_shift`
     - :func:`create_potential_characterizer_spring`
+    - :func:`create_potential_characterizer_step`
     - :func:`create_potential_characterizer_table`
     - :func:`deallocate_ewald_arrays`
     - :func:`evaluate_bond_order_factor`
@@ -242,6 +244,7 @@ must be updated accordingly.
     - :func:`evaluate_energy_power`
     - :func:`evaluate_energy_shift`
     - :func:`evaluate_energy_spring`
+    - :func:`evaluate_energy_step`
     - :func:`evaluate_energy_table`
     - :func:`evaluate_force_LJ`
     - :func:`evaluate_force_bond_bending`
@@ -254,6 +257,7 @@ must be updated accordingly.
     - :func:`evaluate_force_power`
     - :func:`evaluate_force_shift`
     - :func:`evaluate_force_spring`
+    - :func:`evaluate_force_step`
     - :func:`evaluate_force_table`
     - :func:`evaluate_forces`
     - :func:`evaluate_pair_bond_order_factor`
@@ -271,6 +275,7 @@ must be updated accordingly.
     - :func:`get_index_of_parameter_of_potential`
     - :func:`get_index_of_potential`
     - :func:`get_level_of_bond_order_factor`
+    - :func:`get_level_of_bond_order_factor_index`
     - :func:`get_names_of_parameters_of_bond_order_factor`
     - :func:`get_names_of_parameters_of_potential`
     - :func:`get_number_of_bond_order_factors`
@@ -415,7 +420,7 @@ Full documentation of global variables in potentials
 
     integer    *scalar*  *parameter*  
 
-    *initial value* = 15
+    *initial value* = 16
     
     number of different types of potentials known
     
@@ -498,6 +503,14 @@ Full documentation of global variables in potentials
     *initial value* = 2
     
     internal index for the spring potential
+    
+  .. data:: pair_step_index
+
+    integer    *scalar*  *parameter*  
+
+    *initial value* = 16
+    
+    
     
   .. data:: pair_table_index
 
@@ -672,7 +685,7 @@ Full documentation of custom types in potentials
     n_parameters: integer  *pointer*  *size(:)*
         number of parameters for each number of bodies (1-body parameters, 2-body parameters etc.)
     n_level: integer    *scalar*
-        
+        1 for atomic bond order factors, 2 for pairwise factors
     name: character(len=pot_name_length)    *scalar*
         The name of the bond order factor: this is a keyword according to which the factor may be recognized.
     description: character(len=pot_note_length)    *scalar*
@@ -701,7 +714,7 @@ Full documentation of custom types in potentials
     cutoff: double precision    *scalar*
         The hard cutoff for the bond order factor. If the atoms are farther away from each other than this, they do not contribute to the total bond order factor does not affect them.
     n_level: integer    *scalar*
-        
+        1 for atomic bond order factors, 2 for pairwise
     soft_cutoff: double precision    *scalar*
         The soft cutoff for the bond order factor. If this is smaller than the hard cutoff, the bond contribution is scaled to zero continuously when the interatomic distances grow from the soft to the hard cutoff.
     parameters: double precision  *pointer*  *size(:, :)*
@@ -915,7 +928,7 @@ Full documentation of subroutines in potentials
     real_cutoff: double precision  *intent(in)*    *scalar*  
         Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
     k_radius: double precision  *intent(in)*    *scalar*  
-        
+        Cutoff radius of k-space summation in inverse length. This is an absolute cutoff so that any k-point at a greater distance will be ignored. THis makes the k-cutoff spherical instead of summing over a rectangular box. (It also speeds up the summation.)
     reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
         The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
     gaussian_width: double precision  *intent(in)*    *scalar*  
@@ -1028,7 +1041,7 @@ Full documentation of subroutines in potentials
     real_cutoff: double precision  *intent(in)*    *scalar*  
         Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
     k_radius: double precision  *intent(in)*    *scalar*  
-        
+        absolute k-space cutoff
     reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
         The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
     gaussian_width: double precision  *intent(in)*    *scalar*  
@@ -1063,7 +1076,7 @@ Full documentation of subroutines in potentials
     real_cutoff: double precision  *intent(in)*    *scalar*  
         Cutoff radius of real-space interactions. Note that the neighbor lists stored in the atoms are used for neighbor finding so the cutoff cannot exceed the cutoff for the neighbor lists. (Or, it can, but the neighbors not in the lists will not be found.)
     k_radius: double precision  *intent(in)*    *scalar*  
-        
+        Cutoff radius of k-space summation in inverse length. This is an absolute cutoff so that any k-point at a greater distance will be ignored. THis makes the k-cutoff spherical instead of summing over a rectangular box. (It also speeds up the summation.)
     reciprocal_cutoff: integer  *intent(in)*    *size(3)*  
         The number of cells to be included in the reciprocal sum in the directions of the reciprocal cell vectors. For example, if ``reciprocal_cutoff = [3,4,5]``, the reciprocal sum will be truncated as :math:`\sum_{\mathbf{k} \ne 0} = \sum_{k_1=-3}^3 \sum_{k_2=-4}^4 \sum_{k_3 = -5,(k_1,k_2,k_3) \ne (0,0,0)}^5`.
     gaussian_width: double precision  *intent(in)*    *scalar*  
@@ -1396,6 +1409,16 @@ Full documentation of subroutines in potentials
   .. function:: create_potential_characterizer_spring(index)
 
     spring characterizer initialization
+    
+
+    Parameters:
+
+    index: integer  *intent(in)*    *scalar*  
+        index of the potential
+            
+  .. function:: create_potential_characterizer_step(index)
+
+    Step characterizer initialization
     
 
     Parameters:
@@ -2017,6 +2040,22 @@ Full documentation of subroutines in potentials
     **energy**: double precision  **intent(out)**    *scalar*  
         the calculated energy :math:`v_{ijk}`
             
+  .. function:: evaluate_energy_step(separations, distances, interaction, energy)
+
+    Shift energy
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`bond_order_parameters` containing the parameters
+    **energy**: double precision  **intent(out)**    *scalar*  
+        the calculated energy :math:`v_{ijk}`
+            
   .. function:: evaluate_energy_table(separations, distances, interaction, energy)
 
     Tabulated energy
@@ -2209,6 +2248,22 @@ Full documentation of subroutines in potentials
   .. function:: evaluate_force_spring(separations, distances, interaction, force)
 
     spring force
+    
+
+    Parameters:
+
+    separations: double precision  *intent(in)*    *size(3, 1)*  
+        atom-atom separation vectors :math:`\mathrm{r}_{12}`, :math:`\mathrm{r}_{23}` etc. for the atoms 123...
+    distances: double precision  *intent(in)*    *size(1)*  
+        atom-atom distances :math:`r_{12}`, :math:`r_{23}` etc. for the atoms 123..., i.e., the norms of the separation vectors.
+    interaction: type(potential)  *intent(in)*    *scalar*  
+        a :data:`potential` containing the parameters
+    **force**: double precision  **intent(out)**    *size(3, 2)*  
+        the calculated force component :math:`\mathbf{f}_{\alpha,ijk}`
+            
+  .. function:: evaluate_force_step(separations, distances, interaction, force)
+
+    Step force
     
 
     Parameters:
@@ -2512,6 +2567,18 @@ Full documentation of subroutines in potentials
     Parameters:
 
     bond_name: character(len=*)  *intent(in)*    *scalar*  
+        name of the bond order factor
+    **level**: integer  **intent(out)**    *scalar*  
+        level of the factor
+            
+  .. function:: get_level_of_bond_order_factor_index(bond_index, level)
+
+    Returns the level of a bond order factor (i.e., is the factor per-atom or per-pair).
+    
+
+    Parameters:
+
+    bond_index: integer  *intent(in)*    *scalar*  
         name of the bond order factor
     **level**: integer  **intent(out)**    *scalar*  
         level of the factor

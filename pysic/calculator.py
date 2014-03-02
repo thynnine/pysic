@@ -14,10 +14,10 @@ from pysic.interactions.coulomb import CoulombSummation
 from pysic.charges.relaxation import ChargeRelaxation
 
 import pysic.pysic_fortran as pf
-import ase.calculators.neighborlist as nbl
 import pysic.utility.f2py as pu
 
 import numpy as np
+import numpy.linalg as npla
 import ase.calculators.neighborlist as nbl
 from itertools import permutations
 import copy
@@ -27,11 +27,8 @@ import pysic.utility.debug as d
 
 
 
-neighbor_marginal = 0.5
-"""Default skin width for the neighbor list"""
-
 class FastNeighborList(nbl.NeighborList):
-    """ASE has a neighbor list class built in, but its implementation is
+    """ASE has a neighbor list class built in, `ASE NeighborList`_, but its implementation is
         currently inefficient, and building of the list is an :math:`O(n^2)`
         operation. This neighbor list class overrides the 
         :meth:`~pysic.calculator.FastNeighborList.build` method with
@@ -43,10 +40,20 @@ class FastNeighborList(nbl.NeighborList):
         the sum of the individual cutoffs + neighbor list skin. This list, however,
         searches for the neighbors of each atom at a distance of the cutoff of the
         given atom only, plus skin.
+        
+        
+        .. _ASE Atoms: https://wiki.fysik.dtu.dk/ase/ase/atoms.html
+        .. _ASE NeighborList: https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists
         """
+
+    neighbor_marginal = 0.5
+    """Default skin width for the neighbor list"""
+
     
-    def __init__(self, cutoffs, skin=neighbor_marginal):
-        nbl.NeighborList.__init__(self, 
+    def __init__(self, cutoffs, skin=None):
+        if skin is None:
+            skin = FastNeighborList.neighbor_marginal
+        nbl.NeighborList.__init__(self,
                               cutoffs=cutoffs, 
                               skin=skin, 
                               sorted=False, 
@@ -73,7 +80,7 @@ class FastNeighborList(nbl.NeighborList):
 
             Parameters:
             
-            atoms: ASE Atoms object
+            atoms: `ASE Atoms`_ object
                 the structure for which the neighbors are searched
             """
         
@@ -100,8 +107,87 @@ class FastNeighborList(nbl.NeighborList):
                 self.displacements[i] = np.transpose(self.displacements[i])
     
         self.nupdates += 1
+    
+    
+    def get_neighbors(self, index, atoms=None, sort=False):
+        """Returns arrays containing the indices and offsets of the neighbors of the given atom.
         
+        Overrides the method in `ASE NeighborList`_.
+        
+        Parameters:
+        
+        index: integer
+            the index of the central atom
+        atoms: ASE Atoms
+            the atoms object containing the absolute coordinates - needed only if sorting is necessary
+        sort: boolean
+            if True, the list will be sorted according to distance
+        """
+        n_nbs = pf.pysic_interface.get_number_of_neighbors_of_atom(index)
+        nbors = self.neighbors[index][0:n_nbs]
+        displ = self.displacements[index][0:n_nbs]
+        
+        if sort and atoms is not None and n_nbs > 0:
+            dists = self.get_neighbor_distances(index, atoms)
+            sorted_lists = np.array([np.append(o,np.array(n)) for (d,n,o) in sorted(zip(dists, nbors, displ), key=lambda dis: dis[0])])
+            return sorted_lists[:,3], sorted_lists[:,0:3]
+        
+        return nbors, displ
+    
+    
+    def get_neighbor_separations(self, index, atoms, sort=False):
+        """Returns an array of atom-atom separation vectors between the given atom and its neighbors.
+        
+        Parameters:
+        
+        index: integer
+            the index of the central atom
+        atoms: ASE Atoms
+            the atoms object containing the absolute coordinates
+        sort: boolean
+            if True, the list will be sorted according to distance
+        """
+        
+        indices, offsets = self.get_neighbors(index)
+        separations = np.array(len(indices)*[[0.0,0.0,0.0]])
+        dists = np.array(len(separations)*[0.0])
+        running = 0
+        for i, offset in zip(indices, offsets):
+            sep = atoms.positions[i] + np.dot(offset, atoms.get_cell()) - atoms.positions[index]
+            
+            separations[running] = sep
+            if sort:
+                dists[running] = math.sqrt(np.dot(sep,sep))                
+            running += 1
 
+        if sort:
+            return np.array([s for (d,s) in sorted(zip(dists, separations), key=lambda dis: dis[0])])
+        
+        return separations
+
+    def get_neighbor_distances(self, index, atoms, sort=False):
+        """Returns a list of atom-atom distances between the given atom and its neighbors.
+        
+        Parameters:
+        
+        index: integer
+            the index of the central atom
+        atoms: ASE Atoms
+            the atoms object containing the absolute coordinates
+        sort: boolean
+            if True, the list will be sorted according to distance
+        """
+        separations = self.get_neighbor_separations(index, atoms)
+        dists = np.array(len(separations)*[0.0])
+        running = 0
+        for sep in separations:
+            dists[running] = math.sqrt(np.dot(sep,sep))
+            running += 1
+
+        if sort:
+            return np.array(sorted(dists))
+            
+        return dists
 
 
 class Pysic:
@@ -155,13 +241,12 @@ class Pysic:
         self.potentials = None
         self.charge_relaxation = None
         self.coulomb = None
+        self.charges = None
         
         self.set_atoms(atoms)
         self.set_potentials(potentials)
         self.set_charge_relaxation(charge_relaxation)
         self.set_coulomb_summation(coulomb)
-        
-        self.charges = None
         
         self.forces = None
         self.stress = None
@@ -177,7 +262,7 @@ class Pysic:
         try:
             if self.structure != other.structure:
                 return False
-            if any(self.structure.get_charges() != other.structure.get_charges()):
+            if any(self.structure.get_initial_charges() != other.structure.get_initial_charges()):
                 return False
             if self.neighbor_list != other.neighbor_list:
                 return False
@@ -186,7 +271,19 @@ class Pysic:
             if self.extra_calculators != other.extra_calculators:
                 return False
         except:
-            return False
+            try:
+                if self.structure != other.structure:
+                    return False
+                if any(self.structure.get_charges() != other.structure.get_charges()):
+                    return False
+                if self.neighbor_list != other.neighbor_list:
+                    return False
+                if self.potentials != other.potentials:
+                    return False
+                if self.extra_calculators != other.extra_calculators:
+                    return False
+            except:
+                return False
 
         return True
 
@@ -322,7 +419,7 @@ class Pysic:
         return enegs - average_eneg
 
     
-    def get_forces(self, atoms=None):
+    def get_forces(self, atoms=None, skip_charge_relaxation=False):
         """Returns the forces.
 
         If the atoms parameter is given, it will be used for updating the
@@ -340,12 +437,13 @@ class Pysic:
         """
         self.set_atoms(atoms)
         if self.calculation_required(atoms,'forces'):
-            self.calculate_forces()
+            self.calculate_forces(skip_charge_relaxation=skip_charge_relaxation)
 
         return np.copy(self.forces)
 
 
-    def get_potential_energy(self, atoms=None, force_consistent=False):
+    def get_potential_energy(self, atoms=None, force_consistent=False,
+                             skip_charge_relaxation=False):
         """Returns the potential energy.
 
         If the atoms parameter is given, it will be used for updating the
@@ -365,12 +463,12 @@ class Pysic:
         """
         self.set_atoms(atoms)
         if self.calculation_required(atoms,'energy'):
-            self.calculate_energy()
+            self.calculate_energy(skip_charge_relaxation=skip_charge_relaxation)
 
         return self.energy
 
 
-    def get_stress(self, atoms=None):
+    def get_stress(self, atoms=None, skip_charge_relaxation=False):
         """Returns the stress tensor in the format 
         :math:`[\sigma_{xx},\sigma_{yy},\sigma_{zz},\sigma_{yz},\sigma_{xz},\sigma_{xy}]`
 
@@ -417,7 +515,7 @@ class Pysic:
         """
         self.set_atoms(atoms)
         if self.calculation_required(atoms,'stress'):
-            self.calculate_stress()
+            self.calculate_stress(skip_charge_relaxation=skip_charge_relaxation)
         
         # self.stress contains the potential contribution to the stress tensor
         # but we add the kinetic contribution on the fly
@@ -468,6 +566,7 @@ class Pysic:
         else:
             atoms_changed = False
             
+            # the call for charges was changed between ASE 3.6 and 3.7
             try:
                 atoms_changed = self.structure != atoms or \
                     (self.structure.get_initial_charges() != atoms.get_initial_charges()).any()
@@ -699,12 +798,18 @@ class Pysic:
         return self.charge_relaxation
     
     
-    def create_neighbor_lists(self,cutoffs=None,marginal=neighbor_marginal):
+    def create_neighbor_lists(self,cutoffs=None,marginal=None):
         """Initializes the neighbor lists.
 
         In order to do calculations at reasonable speed, the calculator needs 
-        a list of neighbors for each atom. For this purpose, the `ASE NeighborList`_
-        are used. This method initializes these lists according to the given
+        a list of neighbors for each atom. For this purpose, either the list
+        is built in the Fortran core or the `ASE NeighborList`_
+        are used. The ASE lists are very slow, but they will work even for small
+        systems where the cutoff is longer than cell size. The custom list
+        uses :class:`pysic.calculator.FastNeighborList`, but the build succeeds only
+        for cutoffs shorter than cell size. The type of list is determined automatically.
+        
+        This method initializes these lists according to the given
         cutoffs.
 
         .. _ASE NeighborList: https://wiki.fysik.dtu.dk/ase/ase/calculators/calculators.html#building-neighbor-lists
@@ -716,6 +821,11 @@ class Pysic:
         marginal: double
             the skin width of the neighbor list
         """
+        
+        if marginal is None:
+            marginal = FastNeighborList.neighbor_marginal
+
+        
         fastlist = True
         if cutoffs == None:
             cutoffs = self.get_individual_cutoffs(1.0)
@@ -742,7 +852,13 @@ class Pysic:
 
         self.neighbor_lists_waiting = True
         self.set_cutoffs(cutoffs)
-        
+    
+    
+    def get_neighbor_list(self):
+        """Returns the neighbor list object.
+        """
+        return self.neighbor_list
+    
             
     def get_individual_cutoffs(self,scaler=1.0):
         """Get a list of maximum cutoffs for all atoms.
@@ -782,7 +898,7 @@ class Pysic:
 
                     if potential.get_different_symbols().count(symbol) > 0 or potential.get_different_tags().count(tags) > 0 or potential.get_different_indices().count(index) > 0:
                         active_potential = True
-                    
+
                     if active_potential and potential.get_cutoff() > max_cut:
                         max_cut = potential.get_cutoff()
 
@@ -797,7 +913,7 @@ class Pysic:
                                     max_cut = bond.get_cutoff()
                     except:
                         pass
-
+            
                 cuts.append(max_cut*scaler)
             return cuts
 
@@ -812,7 +928,7 @@ class Pysic:
         self.electronegativities = pf.pysic_interface.calculate_electronegativities(n_atoms).transpose()
         
     
-    def calculate_forces(self):
+    def calculate_forces(self, skip_charge_relaxation=False):
         """Calculates forces (and the potential part of the stress tensor).
 
         Calls the Fortran core to calculate forces for the currently assigned structure.
@@ -821,7 +937,7 @@ class Pysic:
         relax the atomic charges before the forces are calculated.
         """
         self.set_core()
-        if self.charge_relaxation != None:
+        if self.charge_relaxation is not None and skip_charge_relaxation == False:
             self.charge_relaxation.charge_relaxation()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.forces, self.stress = pf.pysic_interface.calculate_forces(n_atoms)#.transpose()
@@ -839,7 +955,7 @@ class Pysic:
         
         
 
-    def calculate_energy(self):
+    def calculate_energy(self, skip_charge_relaxation=False):
         """Calculates the potential energy.
 
         Calls the Fortran core to calculate the potential energy for the currently assigned structure.
@@ -848,7 +964,8 @@ class Pysic:
         relax the atomic charges before the forces are calculated.
         """
         self.set_core()
-        if self.charge_relaxation != None:
+
+        if self.charge_relaxation is not None and skip_charge_relaxation == False:
             self.charge_relaxation.charge_relaxation()
         #n_atoms = pf.pysic_interface.get_number_of_atoms()
         self.energy = pf.pysic_interface.calculate_energy()
@@ -860,13 +977,13 @@ class Pysic:
                     self.energy = self.energy + calc.get_potential_energy(system_copy)
 
 
-    def calculate_stress(self):
+    def calculate_stress(self, skip_charge_relaxation=False):
         """Calculates the potential part of the stress tensor (and forces).
 
         Calls the Fortran core to calculate the stress tensor for the currently assigned structure.
         """
-        if self.charge_relaxation != None:
-            self.charge_relaxation.charge_relaxation()
+
+        if self.charge_relaxation is not None and skip_charge_relaxation == False:            self.charge_relaxation.charge_relaxation()
         
         self.set_core()
         n_atoms = pf.pysic_interface.get_number_of_atoms()
@@ -956,6 +1073,7 @@ class Pysic:
             
             n_atoms = pf.pysic_interface.get_number_of_atoms()
             pf.pysic_interface.allocate_bond_order_storage(n_atoms,0,0)
+            warn("There are no potentials associated with the Pysic calculator!",2)
             return
 
         if len(self.potentials) == 0:
@@ -963,6 +1081,7 @@ class Pysic:
             pf.pysic_interface.allocate_bond_order_factors(0)
             n_atoms = pf.pysic_interface.get_number_of_atoms()
             pf.pysic_interface.allocate_bond_order_storage(n_atoms,0,0)
+            warn("There are no potentials associated with the Pysic calculator!",2)
             return
         
         n_pots = 0
@@ -1085,6 +1204,10 @@ class Pysic:
             # warn for missing cutoffs
             if pots.get_number_of_targets() > 1 and pots.get_cutoff() < 0.01:
                 warn("Potential with zero cutoff present: \n\n"+str(pots),1)
+            if pots.get_symbols() is None and \
+                pots.get_tags() is None and \
+                pots.get_indices() is None:
+                warn("Potential with no targets present: \n\n"+str(pots),1)
         
             # reverse the lists so that the master potentials come last
             for rpot in reversed(pots.get_potentials()):
@@ -1392,21 +1515,39 @@ class Pysic:
         self.update_core_neighbor_lists()
 
 
-    def get_charges(self):
+    def get_charges(self, system=None):
         """Update for ASE 3.7"""
     
-        return self.charges
-    
+        if self.charges is not None:
+            return self.charges
+        else:
+            if system is not None:
+                try:
+                    return system.get_initial_charges()
+                except:
+                    return system.get_charges()
+            else:
+                try:
+                    return self.structure.get_initial_charges()
+                except:
+                    return self.structure.get_charges()
 
     def update_core_charges(self):
         """Updates atomic charges in the core."""
         
-        charges = np.array( self.structure.get_charges() )
+        try:
+            charges = np.array( self.structure.get_initial_charges() )
+        except:
+            charges = np.array( self.structure.get_charges() )
 
         self.forces = None
         self.energy = None
         self.stress = None
         self.electronegativities = None
+        
+        total_charge = np.sum(charges)
+        if total_charge > 0.001 or total_charge < -0.001:
+            warn("There is non-zero total charge in the system: {tc}".format(tc=total_charge),5)
         
         pf.pysic_interface.update_atom_charges(charges)
         self.charges = charges
@@ -1459,6 +1600,8 @@ class Pysic:
         
         
         masses = np.array( self.structure.get_masses() )
+        
+        # the call for charges was changed between ASE 3.6 and 3.7
         try:
             self.charges = np.array( self.structure.get_initial_charges() )
         except:
@@ -1477,6 +1620,11 @@ class Pysic:
 
         #self.create_neighbor_lists(self.get_individual_cutoffs(1.0))
         #self.neighbor_lists_waiting = True
+
+        total_charge = np.sum(self.charges)
+        if total_charge > 0.001 or total_charge < -0.001:
+            warn("There is non-zero total charge in the system: {tc}".format(tc=total_charge),5)
+
 
         pf.pysic_interface.create_atoms(masses,charges,positions,momenta,tags,elements)
         Pysic.core.set_atoms(self.structure)
@@ -1647,11 +1795,17 @@ class Pysic:
             system = atoms.copy()
             orig_system = self.structure.copy()
         
-        charges = system.get_charges()
+        try:
+            charges = system.get_charges()
+        except:
+            charges = system.get_initial_charges()
+        
         self.energy == None
         self.set_atoms(system)
         self.set_core()
         charges[atom_index] += 1.0*shift
+
+        # the call for charges was changed between ASE 3.6 and 3.7
         try:
             system.set_charges(charges)
         except:
@@ -1659,6 +1813,8 @@ class Pysic:
 
         energy_p = self.get_potential_energy(system)
         charges[atom_index] -= 2.0*shift
+        
+        # the call for charges was changed between ASE 3.6 and 3.7
         try:
             system.set_charges(charges)
         except:
@@ -1666,6 +1822,8 @@ class Pysic:
 
         energy_m = self.get_potential_energy(system)
         charges[atom_index] += 1.0*shift
+        
+        # the call for charges was changed between ASE 3.6 and 3.7
         try:
             system.set_charges(charges)
         except:

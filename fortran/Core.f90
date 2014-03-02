@@ -1729,27 +1729,27 @@ contains
        ! neighboring atom
        index3 = nbors1%neighbors(j)
        offset(1:3) = nbors1%pbc_offsets(1:3,j)
-
+       
+       atom3 = atoms(index3)
+       atom_list = (/ atom2, atom1, atom3 /)
+       
+       ! calculate atom1-atom3 separation vector
+       ! and distance
+       call separation_vector(atom1%position, &
+            atom3%position, &
+            offset(1:3), &
+            cell, &
+            separations(1:3,2)) ! in Geometry.f90
+       distances(2) = .norm.(separations(1:3,2))
+       if(distances(2) == 0.d0)then
+          directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+       else
+          directions(1:3,2) = separations(1:3,2) / distances(2)
+       end if
+       
        ! To prevent the case index2 - index1 - index2
-       if(index2 /= index3)then
-
-          atom3 = atoms(index3)
-          atom_list = (/ atom2, atom1, atom3 /)
-
-          ! calculate atom1-atom3 separation vector
-          ! and distance
-          call separation_vector(atom1%position, &
-               atom3%position, &
-               offset(1:3), &
-               cell, &
-               separations(1:3,2)) ! in Geometry.f90
-          distances(2) = .norm.(separations(1:3,2))
-          if(distances(2) == 0.d0)then
-             directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-          else
-             directions(1:3,2) = separations(1:3,2) / distances(2)
-          end if
-          
+       if(any(separations(1:3,1)+separations(1:3,2) /= 0.d0))then
+   
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! apply 3-body bond order factors !
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1835,26 +1835,26 @@ contains
        index3 = nbors2%neighbors(j)
        offset(1:3) = nbors2%pbc_offsets(1:3,j)
 
-       ! To prevent the case index1 - index2 - index1
-       if(index1 /= index3)then
+       atom3 = atoms(index3)
+       atom_list = (/ atom1, atom2, atom3 /)
+       
+       ! calculate atom2-atom3 separation vector
+       ! and distance
+       call separation_vector(atom2%position, &
+            atom3%position, &
+            offset(1:3), &
+            cell, &
+            separations(1:3,2)) ! in Geometry.f90
+       distances(2) = .norm.(separations(1:3,2))
+       if(distances(2) == 0.d0)then
+          directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+       else
+          directions(1:3,2) = separations(1:3,2) / distances(2)
+       end if
+       
+       ! To prevent the case index2 - index1 - index2
+       if(any(separations(1:3,1)+separations(1:3,2) /= 0.d0))then
 
-          atom3 = atoms(index3)
-          atom_list = (/ atom1, atom2, atom3 /)
-
-          ! calculate atom2-atom3 separation vector
-          ! and distance
-          call separation_vector(atom2%position, &
-               atom3%position, &
-               offset(1:3), &
-               cell, &
-               separations(1:3,2)) ! in Geometry.f90
-          distances(2) = .norm.(separations(1:3,2))
-          if(distances(2) == 0.d0)then
-             directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-          else
-             directions(1:3,2) = separations(1:3,2) / distances(2)
-          end if
-          
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! apply 3-body bond order factors !
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1941,7 +1941,6 @@ contains
          temp_gradient(1:3,1:n_atoms,1),total_gradient(1:3,1:n_atoms,1),virial(1:6,1),total_virial(1:6,1))
     call core_post_process_pair_bond_order_gradients(group_index,atom2,raw_sums(2),&
          temp_gradient(1:3,1:n_atoms,2),total_gradient(1:3,1:n_atoms,2),virial(1:6,2),total_virial(1:6,2))
-
 
   end subroutine core_calculate_pair_bond_order_gradients
 
@@ -2450,7 +2449,7 @@ contains
     type(neighbor_list) :: nbors1, nbors2
     type(bond_order_parameters) :: bond_params(1)
     integer, pointer :: bond_indices(:), bond_indices2(:)
-    logical :: is_active, is_in_group
+    logical :: is_active, is_in_group, is_allowed
     integer :: offset(3)
 
     bond_order_sum = 0.d0
@@ -2466,7 +2465,6 @@ contains
     atom2 = atoms(index2)
     nbors2 = atom2%neighbor_list
     bond_indices2 => atom2%bond_indices
-
 
     ! In the 3-body loop, we search the neighbors of both atom1
     ! and atom2 to find the triplets 
@@ -2491,29 +2489,30 @@ contains
        index3 = nbors1%neighbors(j)
        offset(1:3) = nbors1%pbc_offsets(1:3,j)
 
+       atom3 = atoms(index3)
+       atom_list = (/ atom2, atom1, atom3 /)
+       
+       ! calculate atom1-atom3 separation vector
+       ! and distance
+       call separation_vector(atom1%position, &
+            atom3%position, &
+            offset(1:3), &
+            cell, &
+            separations(1:3,2)) ! in Geometry.f90
+       distances(2) = .norm.(separations(1:3,2))
+       if(distances(2) == 0.d0)then
+          directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+       else
+          directions(1:3,2) = separations(1:3,2) / distances(2)
+       end if
+       
        ! To prevent the case index2 - index1 - index2
-       if(index2 /= index3)then
+       if(any(separations(1:3,1)+separations(1:3,2) /= 0.d0))then
 
-          atom3 = atoms(index3)
-          atom_list = (/ atom2, atom1, atom3 /)
-
-          ! calculate atom1-atom3 separation vector
-          ! and distance
-          call separation_vector(atom1%position, &
-               atom3%position, &
-               offset(1:3), &
-               cell, &
-               separations(1:3,2)) ! in Geometry.f90
-          distances(2) = .norm.(separations(1:3,2))
-          if(distances(2) == 0.d0)then
-             directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-          else
-             directions(1:3,2) = separations(1:3,2) / distances(2)
-          end if
-          
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! apply 3-body bond order factors !
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
 
           if(distances(2) < atom1%max_bond_radius)then
 
@@ -2521,13 +2520,11 @@ contains
              do k1 = 1, size(bond_indices)
                             
                 bond_params(1) = bond_factors(bond_indices(k1))
-                            
+                
                 ! filter the parameters by:
                 ! number of targets, atom2 and atom3 being targets, group index                   
                 call bond_order_factor_is_in_group(bond_params(1),&
                      group_index,is_in_group) ! in Potentials.f90
-                
-                !write(*,*) "group, level", is_in_group, bond_params(1)%n_level
                 
                 if( is_in_group .and. bond_params(1)%n_level == 2 )then
                    call bond_order_factor_affects_atom(bond_params(1),&
@@ -2546,7 +2543,7 @@ contains
                                  distances(1:2),bond_params(1),tmp_factor,atom_list)
                             
                             bond_order_sum(1) = bond_order_sum(1) + tmp_factor
-                            
+
                          end if ! is_active
                       end if ! n_targets == 3
                    end if ! is_active
@@ -2570,26 +2567,27 @@ contains
        index3 = nbors2%neighbors(j)
        offset(1:3) = nbors2%pbc_offsets(1:3,j)
 
-       ! To prevent the case index1 - index2 - index1
-       if(index1 /= index3)then
-
-          atom3 = atoms(index3)
-          atom_list = (/ atom1, atom2, atom3 /)
-
-          ! calculate atom1-atom3 separation vector
-          ! and distance
-          call separation_vector(atom2%position, &
-               atom3%position, &
-               offset(1:3), &
-               cell, &
-               separations(1:3,2)) ! in Geometry.f90
-          distances(2) = .norm.(separations(1:3,2))
-          if(distances(2) == 0.d0)then
-             directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
-          else
-             directions(1:3,2) = separations(1:3,2) / distances(2)
-          end if
-          
+       
+       atom3 = atoms(index3)
+       atom_list = (/ atom1, atom2, atom3 /)
+       
+       ! calculate atom1-atom3 separation vector
+       ! and distance
+       call separation_vector(atom2%position, &
+            atom3%position, &
+            offset(1:3), &
+            cell, &
+            separations(1:3,2)) ! in Geometry.f90
+       distances(2) = .norm.(separations(1:3,2))
+       if(distances(2) == 0.d0)then
+          directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+       else
+          directions(1:3,2) = separations(1:3,2) / distances(2)
+       end if
+       
+       ! To prevent the case index2 - index1 - index2
+       if(any(separations(1:3,1)+separations(1:3,2) /= 0.d0))then
+   
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
           ! apply 3-body bond order factors !
           !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2623,7 +2621,7 @@ contains
                                  distances(1:2),bond_params(1),tmp_factor,atom_list)
                             
                             bond_order_sum(2) = bond_order_sum(2) + tmp_factor
-                            
+
                          end if ! is_active
                       end if ! n_targets == 3
                    end if ! is_active
@@ -2634,7 +2632,6 @@ contains
        end if ! index3 /= index1
 
     end do ! j = 1, nbors2%n_neighbors
-
 
   end subroutine core_calculate_pair_bond_order_factor
 
@@ -2667,7 +2664,6 @@ contains
   ! The post processing is done per atom regardless of if the
   ! bond factor is of a pair or many body type.
   !
-  ! *n_atoms number of atoms
   ! *group_index an index denoting the potential to which the factor is connected
   ! *raw_sums precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
   ! *total_bond_orders the calculated bond order factors :math:`b_i`
@@ -2705,8 +2701,10 @@ contains
              bond_params = bond_factors(bond_indices(index2))
              if( bond_params%includes_post_processing .and. bond_params%n_level == 1 )then
                 if( bond_params%original_elements(1) == atom1%element )then
-                   post_process = bond_indices(index2)
-                   exit
+                    if( bond_params%group_index == group_index)then
+                       post_process = bond_indices(index2)
+                       exit
+                    end if
                 end if
              end if
           end do
@@ -2741,9 +2739,9 @@ contains
 
 
 
-! !!!: core_post_process_pair_bond_order_factors
+! !!!: core_post_process_pair_bond_order_factor
 
-  ! Bond-order post processing, i.e., application of per-atom scaling functions.
+  ! Bond-order post processing, i.e., application of per-pair scaling functions.
   !
   ! By post processing, we mean any operations done after calculating the
   ! sum of pair- and many-body terms. That is, if a factor is, say,
@@ -2757,10 +2755,10 @@ contains
   ! and the operation :math:`f(x) = 1 + x`
   ! remains to be carried out.
   !
-  ! *n_atoms number of atoms
+  ! *atom1 the central atom of the pair bond order factor
   ! *group_index an index denoting the potential to which the factor is connected
-  ! *raw_sums precalculated bond order sums, :math:`\sum_j c_{ij}`, in the above example.
-  ! *total_bond_orders the calculated bond order factors :math:`b_i`
+  ! *raw_sum precalculated bond order sum, :math:`\sum_k c_{ijk}`, in the above example.
+  ! *total_bond_order the calculated bond order factor :math:`b_{ij}`
   subroutine core_post_process_pair_bond_order_factor(atom1,group_index,raw_sum,total_bond_order)
     implicit none
     type(atom), intent(in) :: atom1
@@ -2788,8 +2786,10 @@ contains
        bond_params = bond_factors(bond_indices(index2))
        if( bond_params%includes_post_processing .and. bond_params%n_level == 2 )then
           if( bond_params%original_elements(1) == atom1%element )then
-             post_process = bond_indices(index2)
-             exit
+                if( bond_params%group_index == group_index)then
+                     post_process = bond_indices(index2)
+                    exit
+                end if
           end if
        end if
     end do
@@ -3108,7 +3108,7 @@ contains
   !     \nabla_\alpha b_{ij} = f'(\sum_k c_{ijk}) \nabla_\alpha \sum_k c_{ijk}
   !
   ! *group_index an index denoting the potential to which the factor is connected
-  ! *atom_index the index of the atom whose factor is differentiated (:math:`i`)
+  ! *atom1 the central atom of the pair bond order factor
   ! *raw_sum precalculated bond order sum for the given atom, :math:`\sum_j c_{ij}`, in the above example
   ! *raw_gradients precalculated gradients of bond order sums, :math:`\nabla_\alpha \sum_j c_{ij}`, in the above example
   ! *total_bond_gradients the calculated bond order gradients :math:`\nabla_\alpha b_i`
@@ -3250,7 +3250,7 @@ contains
     integer, intent(in) :: calculation_type
     double precision, intent(inout) :: total_energy, total_forces(:,:), &
          total_enegs(:), total_stress(6)
-    integer :: j, k, l, m, n_targets, index1, index2, index3, index4
+    integer :: j, k, l, m, n_targets, index1, index2, index3, index4, n_manybody
     double precision,save :: energy,  &
          stress(6), &
          separations(3,3), distances(3), directions(3,3), &
@@ -3258,13 +3258,13 @@ contains
     type(atom) :: atom1, atom2, atom3, atom4
     type(atom), save :: atom_list(4)
     type(neighbor_list) :: nbors1, nbors2, nbors3
-    integer, pointer :: interaction_indices(:)
+    integer, pointer :: interaction_indices(:), manybody_indices(:)
     logical :: is_active, many_bodies_found
     double precision :: max_cutoff, sigma, inv_eps_4pi, inv_sigma_sqrt_2, charge1, charge2, &
          inv_eps_2v, inv_dist, inv_sigma_sqrt_2pi, &
          inv_sigma_sqrt_2perpi, inv_sigma_sq_2, &
          tmp_forces(3), tmp_eneg, &
-         t00, t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb
+         t00, t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf
     integer, save :: reci_length(3), offset(3), tripleoffset(3), quadoffset(3), n_atoms
 
     t00 = 0.0
@@ -3280,6 +3280,14 @@ contains
     t9 = 0.0
     ta = 0.0
     tb = 0.0
+    tc = 0.0
+    td = 0.0
+    te = 0.0
+    tf = 0.0
+
+    nullify(manybody_indices)
+    allocate(manybody_indices(n_interactions))
+    n_manybody = 0
 
     n_atoms = size(atoms)
 
@@ -3459,7 +3467,9 @@ contains
                            interaction_indices, &
                            separations(1:3,1), directions(1:3,1), distances(1), &
                            energy, &
-                           many_bodies_found)
+                           many_bodies_found, &
+                           manybody_indices, &
+                           n_manybody )
                    case(force_evaluation_index)
                       call core_evaluate_local_doublet_forces_B(atom_list(1:2), &
                            index1, index2, &
@@ -3467,7 +3477,9 @@ contains
                            interaction_indices, &
                            separations(1:3,1), directions(1:3,1), distances(1), &
                            temp_forces,stress, &
-                           many_bodies_found)
+                           many_bodies_found, &
+                           manybody_indices, &
+                           n_manybody )
                    case(electronegativity_evaluation_index)
                       call core_evaluate_local_doublet_electronegativities_B(atom_list(1:2), &
                            index1, index2, &
@@ -3475,7 +3487,9 @@ contains
                            interaction_indices, &
                            separations(1:3,1), directions(1:3,1), distances(1), &
                            temp_enegs, &
-                           many_bodies_found)
+                           many_bodies_found, &
+                           manybody_indices, &
+                           n_manybody )
                    end select
                 end if
                 call mpi_wall_clock(t0)
@@ -3520,6 +3534,11 @@ contains
                 !                       B : 2 -> found A-C-B
                 !          B : 2 C : 3  A : 1 -> A < B (1 < 2) so ignored
                 !                       A : 1 -> A < C (1 < 3) so ignored
+
+
+                call start_timer()
+                call mpi_wall_clock(tc)
+                t00 = tc
 
                 if(many_bodies_found)then
 
@@ -3577,10 +3596,12 @@ contains
                             call core_evaluate_local_triplet_B(atom_list(1:3), &
                                  index2, index1, index3, & ! atom2 - atom1 - atom3
                                  1, 3, & ! atom1 is 2nd in the triplet, so test for 1st and 3rd
-                                 interaction_indices, &
+                                 !interaction_indices, &
                                  separations(1:3,1:2), directions(1:3,1:2), distances(1:2), &
                                  calculation_type, energy, temp_forces, temp_enegs, stress, &
-                                 many_bodies_found)
+                                 many_bodies_found, &
+                                 manybody_indices, &
+                                 n_manybody )
                          end if
 
                          if(many_bodies_found)then
@@ -3647,10 +3668,12 @@ contains
                                      call core_evaluate_local_quadruplet_B(atom_list(1:4), &
                                        index4, index2, index1, index3, & ! atom4 - atom2 - atom1 - atom3
                                        1, 2, 4, & ! atom1 is 3rd in the quadruplet
-                                       interaction_indices, &
+                                       !interaction_indices, &
                                        separations(1:3,1:3), directions(1:3,1:3), distances(1:3), &
                                        calculation_type, energy, temp_forces, temp_enegs, stress, &
-                                       many_bodies_found)
+                                       many_bodies_found, &
+                                       manybody_indices, &
+                                       n_manybody )
                                   end if
 
                                end if ! index4 > index3
@@ -3703,10 +3726,12 @@ contains
                                      call core_evaluate_local_quadruplet_B(atom_list(1:4), &
                                           index2, index1, index3, index4, & ! atom2 - atom1 - atom3 - atom4
                                           1, 3, 4, & ! atom1 is 2nd in the quadruplet
-                                          interaction_indices, &
+                                          !interaction_indices, &
                                           separations(1:3,1:3), directions(1:3,1:3), distances(1:3), &
                                           calculation_type, energy, temp_forces, temp_enegs, stress, &
-                                          many_bodies_found)
+                                          many_bodies_found, &
+                                          manybody_indices, &
+                                          n_manybody )
                                   end if
 
                                end if ! index4 > index3
@@ -3764,10 +3789,12 @@ contains
                             call core_evaluate_local_triplet_B(atom_list(1:3), &
                                  index1, index2, index3, & ! atom1 - atom2 - atom3
                                  2, 3, & ! atom1 is 1st in the triplet, so test for 2nd and 3rd
-                                 interaction_indices, &
+                                 !interaction_indices, &
                                  separations(1:3,1:2), directions(1:3,1:2), distances(1:2), &
                                  calculation_type, energy, temp_forces, temp_enegs, stress, &
-                                 many_bodies_found)
+                                 many_bodies_found, &
+                                 manybody_indices, &
+                                 n_manybody )
                          end if
 
                          if(many_bodies_found)then
@@ -3835,10 +3862,12 @@ contains
                                      call core_evaluate_local_quadruplet_B(atom_list(1:4), &
                                           index4, index1, index2, index3, & ! atom4 - atom1 - atom2 - atom3
                                           1, 3, 4, & ! atom1 is 2nd in the quadruplet
-                                          interaction_indices, &
+                                          !interaction_indices, &
                                           separations(1:3,1:3), directions(1:3,1:3), distances(1:3), &
                                           calculation_type, energy, temp_forces, temp_enegs, stress, &
-                                          many_bodies_found)
+                                          many_bodies_found, &
+                                          manybody_indices, &
+                                          n_manybody )
                                   end if
 
                                end if ! index4 > index3
@@ -3892,10 +3921,12 @@ contains
                                      call core_evaluate_local_quadruplet_B(atom_list(1:4), &
                                           index1, index2, index3, index4, & ! atom1 - atom2 - atom3 - atom4
                                           2, 3, 4, & ! atom1 is 1st in the quadruplet
-                                          interaction_indices, &
+                                          !interaction_indices, &
                                           separations(1:3,1:3), directions(1:3,1:3), distances(1:3), &
                                           calculation_type, energy, temp_forces, temp_enegs, stress, &
-                                          many_bodies_found)
+                                          many_bodies_found, &
+                                          manybody_indices, &
+                                          n_manybody )
                                   end if
 
                                end if ! index4 > index3
@@ -3908,6 +3939,9 @@ contains
                    end do ! l
 
                 end if ! many-bodies_found
+
+                call mpi_wall_clock(t0)
+                td = td+t0-t00
 
              end if ! index2 > index1
 
@@ -4023,7 +4057,7 @@ contains
     call core_empty_bond_order_storage()
 
     call mpi_wall_clock(tb)
-    t9 = t1+t2+t3+t4+t5+t6+t7
+    t9 = t1+t2+t3+t4+t5+t6+t7+td
     t8 = tb-ta
     if(.false.)then
     write(*,*) ""
@@ -4032,15 +4066,19 @@ contains
     write(*,'(A, F7.3, F7.1, A)') "singlets:     ", t2,  100*t2/t8, " %"
     write(*,'(A, F7.3, F7.1, A)') "distances:    ", t3,  100*t3/t8, " %"
     write(*,'(A, F7.3, F7.1, A)') "doublets:     ", t4,  100*t4/t8, " %"
+    write(*,'(A, F7.3, F7.1, A)') "manybody:     ", td,  100*td/t8, " %"
     write(*,'(A, F7.3, F7.1, A)') "mpi:          ", t5,  100*t5/t8, " %"
     write(*,'(A, F7.3, F7.1, A)') "ewald:        ", t6,  100*t6/t8, " %"
     write(*,'(A, F7.3, F7.1, A)') "clear:        ", t7,  100*t7/t8, " %"
     write(*,'(A, F7.3)') "sum:          ", t9
     write(*,'(A, F7.3)') "total:        ", t8
     write(*,*) ""
- end if
+  end if
+
+  deallocate(manybody_indices)  
 
   end subroutine core_loop_over_local_interactions
+
 
   ! Evaluates the local potential affecting a single atom
   !
@@ -4050,6 +4088,7 @@ contains
   ! *calculation_type specifies if we are evaluating the energy, forces, or electronegativities
   ! *energy calculated energy
   ! *forces calculated forces
+  ! *stress calculated stress
   ! *enegs calculated electronegativities
   subroutine core_evaluate_local_singlet(index1, &
        atom_singlet, &
@@ -4125,11 +4164,12 @@ contains
              if(interaction%pot_index > -1)then
                 call core_get_bond_order_factors(interaction%pot_index,&
                      bo_factors)
-                call core_get_bond_order_gradients(interaction%pot_index,&
-                     index1,& ! atom index
-                     1, & ! slot_index
-                     bo_gradients(1:3,1:n_atoms,1),&
-                     bo_virial)
+                
+                !call core_get_bond_order_gradients(interaction%pot_index,&
+                !     index1,& ! atom index
+                !     1, & ! slot_index
+                !     bo_gradients(1:3,1:n_atoms,1),&
+                !     bo_virial)
 
                 ! Add the bond order gradient terms involving the atom1 self energy for all atoms.
                 ! That is, add the (\nabla_a b_i) v_i term with the given i (atom1) for all a.
@@ -4137,18 +4177,23 @@ contains
                      tmp_energy,atoms(index1:index1))  ! in Potentials.f90
 !!$                forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) - &
 !!$                     tmp_energy*bo_gradients(1:3,1:n_atoms,1)
-                do index2 = 1, n_atoms
-                   if(bo_scaling(index2))then
-                      forces(1:3,index2) = forces(1:3,index2) - tmp_energy*bo_gradients(1:3,index2,1)
-                   end if
-                end do
+                
+                !do index2 = 1, n_atoms
+                !   if(bo_scaling(index2))then
+                !      forces(1:3,index2) = forces(1:3,index2) - tmp_energy*bo_gradients(1:3,index2,1)
+                !   end if
+                !end do
+
+                call core_add_bond_order_forces( &
+                     interaction%pot_index, index1, tmp_energy, &
+                     forces, stress )
 
                 ! Add the contribution of bond order gradients to the stress tensor
-                stress(1:6) = stress(1:6) - tmp_energy*bo_virial(1:6)
+                !stress(1:6) = stress(1:6) - tmp_energy*bo_virial(1:6)
 
-                 ! Add the force due to potential gradient             
-                 forces(1:3,index1) = forces(1:3,index1) + &
-                      tmp_forces(1:3,1)*bo_factors(index1)
+                ! Add the force due to potential gradient             
+                !forces(1:3,index1) = forces(1:3,index1) + &
+                !     tmp_forces(1:3,1)*bo_factors(index1)
 
              else
 
@@ -4195,16 +4240,31 @@ contains
  
 
 
+  ! Evaluates the local potential affecting two atoms. (Rearranged internally compared to 'A'.)
+  !
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *energy calculated energy
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet_energy_B(atom_doublet, &
        index1, index2, &
        test_index1, &
        interaction_indices, &
        separations, directions, distances, &
        energy, &
-       many_bodies_found)
+       many_bodies_found, &
+       manybody_indices, &
+       n_manybody)
     implicit none
     integer, intent(in) :: index1, index2, test_index1
-    integer, pointer :: interaction_indices(:)
+    integer, intent(out) :: n_manybody
+    integer, pointer :: interaction_indices(:), manybody_indices(:)
     double precision, intent(inout) :: energy
     type(atom), intent(in) :: atom_doublet(2)
     double precision, intent(in) :: separations(3,1), directions(3,1), distances(1)
@@ -4219,6 +4279,7 @@ contains
     logical :: is_active
 
     many_bodies_found = .false.
+    n_manybody = 0
     atom1 = atom_doublet(1)
     atom2 = atom_doublet(2)
     index_pair = (/ index1, index2 /)
@@ -4270,7 +4331,7 @@ contains
                         interaction%pot_index, &
                         pair_bo_sums(2), &
                         pair_bo_factors(2))
-
+                        
                 else
 
                 end if
@@ -4292,12 +4353,14 @@ contains
                 call evaluate_energy(2,interaction%n_product,separations(1:3,1),distances(1),&
                      interaction,tmp_energy,atom_doublet)  ! in Potentials.f90
 
+                    
                 ! add the term: b_ij v_ij f(rij)
                 if(interaction%pot_index > -1)then
                     energy = energy + tmp_energy*cut_factors(1)*&
                          (saved_bond_order_factors(index1,group_index_save_slot(interaction%pot_index))+&
                          saved_bond_order_factors(index2,group_index_save_slot(interaction%pot_index))+&
                          pair_bo_factors(1)+pair_bo_factors(2))*0.5d0
+
                 else
                     energy = energy + tmp_energy*cut_factors(1)
                 end if
@@ -4308,6 +4371,8 @@ contains
              ! we have found a many-body potential.
              ! Make a note that we must also evaluate the many-body terms.
              many_bodies_found = .true.
+             n_manybody = n_manybody + 1
+             manybody_indices(n_manybody) = interaction_indices(k)
 
           end if ! n_targets == 2
 
@@ -4319,6 +4384,18 @@ contains
 
 
 
+  ! Evaluates the local potential affecting two atoms.
+  !
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *energy calculated energy
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet_energy(n_atoms, &
        atom_doublet, &
        index1, index2, &
@@ -4440,6 +4517,20 @@ contains
 
 
 
+  ! Evaluates the local force affecting two atoms.
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet_forces(n_atoms, &
        atom_doublet, &
        index1, index2, &
@@ -4649,7 +4740,631 @@ contains
 
 
 
+  subroutine core_add_bond_order_forces(group_index,atom_index,&      
+       prefactor, forces, stress)
+    implicit none
+    integer, intent(in) ::group_index, atom_index
+    double precision, intent(inout) :: forces(:,:), stress(6)
+    double precision, intent(in) :: prefactor
 
+    type(atom) :: atom1, atom2, atom3
+    type(atom) :: atom_list(3)
+    type(neighbor_list) :: nbors1, nbors2
+    type(bond_order_parameters) :: bond_params(2)
+    integer, pointer :: bond_indices(:), bond_indices2(:)
+    integer :: index1, index2, index3, indexA, k1, k2, j, l, n_targets, n_atoms, n_level, post_process1
+    double precision :: separations(3,2), distances(2), directions(3,2), tmp_grad(3,3,3), &
+         new_grad(3,3), virial(6), total_virial(6)
+    logical :: is_active, is_in_group, many_bodies_found, separation3_unknown
+
+    call core_get_bond_order_sums(group_index,bo_sums)
+
+    n_atoms = size(atoms)
+    virial = 0.d0
+    total_virial = 0.d0
+
+    ! target atom, given as argument 
+    ! (the atom moved in differentiation or 
+    ! the atom whose factor is differentiated)
+    index1 = atom_index
+    atom1 = atoms(atom_index)
+    nbors1 = atom1%neighbor_list
+    bond_indices => atom1%bond_indices
+          
+
+    ! Check all the bond factors that affect the atoms and see
+    ! if any of them require post processing.
+    ! If such a factor is found, the corresponding parameters
+    ! are saved to be used for the post processing.
+    ! Note that only one set of post processing parameters will
+    ! be used: the first found. This is because there may well
+    ! be several factors acting on the same type of atom and
+    ! we do not want to apply the post processing several times.
+    post_process1 = -1
+    do indexA = 1, size(bond_indices)
+       bond_params(1) = bond_factors(bond_indices(indexA))
+       call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group) ! in Potentials.f90
+       if(is_in_group)then
+          if( bond_params(1)%includes_post_processing .and. bond_params(1)%n_level == 1 )then
+             if( bond_params(1)%original_elements(1) == atom1%element )then
+                ! store the index of the parameters 
+                post_process1 = bond_indices(indexA)
+                exit
+             end if
+          end if
+       end if
+    end do
+
+
+    ! loop over neighbors
+    do j = 1, nbors1%n_neighbors
+       
+       ! neighboring atom
+       index2 = nbors1%neighbors(j)          
+       atom2 = atoms(index2)
+       atom_list(1) = atom1
+       atom_list(2) = atom2
+
+       ! calculate atom1-atom2 separation vector
+       ! and distance
+       call separation_vector(atom1%position, &
+            atom2%position, &
+            nbors1%pbc_offsets(1:3,j), &
+            cell, &
+            separations(1:3,1)) ! in Geometry.f90
+       distances(1) = .norm.(separations(1:3,1))
+       if(distances(1) == 0.d0)then
+          directions(1:3,1) = (/ 0.d0, 0.d0, 0.d0 /)
+       else
+          directions(1:3,1) = separations(1:3,1) / distances(1)
+       end if
+          
+       many_bodies_found = .false.
+
+       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       ! apply 2-body bond order factors !
+       !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+       if(distances(1) < atom1%max_bond_radius)then
+
+          ! loop over bond order factors affecting atom1
+          do k1 = 1, size(bond_indices)
+          
+             bond_params(1) = bond_factors(bond_indices(k1))
+
+             ! filter the bond indices before applying by checking:
+             ! number of targets,
+             ! is atom2 affected by the factor,
+             ! is the factor in the correct group
+             call bond_order_factor_is_in_group(bond_params(1),group_index,is_in_group) ! in Potentials.f90
+             if( is_in_group .and. bond_params(1)%cutoff > distances(1) )then
+                call bond_order_factor_affects_atom(bond_params(1),atom2,is_active,2) ! in Potentials.f90
+                if( is_active )then
+                   call get_number_of_targets_of_bond_order_factor_index(bond_params(1)%type_index,&
+                        n_targets) ! in Potentials.f90
+                   if( n_targets == 2 )then
+                      
+                      ! evaluate the atom1-atom2 term in the bond gradient sum
+                      call evaluate_bond_order_gradient(2,&
+                           separations(1:3,1),&
+                           distances(1),&
+                           bond_params(1),&
+                           tmp_grad(1:3,1:2,1:2),&
+                           atom_list(1:2)) ! in Potentials.f90
+
+
+                      if( post_process1 > 0)then
+                         call post_process_bond_order_gradient(bo_sums(index1),&
+                              tmp_grad(1:3,1,1),&
+                              bond_factors( post_process1 ),&
+                              new_grad(1:3,1))
+                         call post_process_bond_order_gradient(bo_sums(index1),&
+                              tmp_grad(1:3,1,2),&
+                              bond_factors( post_process1 ),&
+                              new_grad(1:3,2))
+                         new_grad(1:3,1) = - prefactor*new_grad(1:3,1)
+                         new_grad(1:3,2) = - prefactor*new_grad(1:3,2)
+                      else
+                         new_grad(1:3,1) = - prefactor*tmp_grad(1:3,1,1)
+                         new_grad(1:3,2) = - prefactor*tmp_grad(1:3,1,2)
+                      end if
+                      
+                      forces(1:3,index1) = forces(1:3,index1) + new_grad(1:3,1)
+                      forces(1:3,index2) = forces(1:3,index2) + new_grad(1:3,2)
+
+                      !temp_gradient(1:3,index1,1) = temp_gradient(1:3,index1,1) + tmp_grad(1:3,1,1)
+                      !temp_gradient(1:3,index2,1) = temp_gradient(1:3,index2,1) + tmp_grad(1:3,1,2)
+                      
+                      ! virial: r_a*f_b (xx, yy, zz, yz, xz, xy)
+                      virial(1) = virial(1) + separations(1,1) * tmp_grad(1,1,2)
+                      virial(2) = virial(2) + separations(2,1) * tmp_grad(2,1,2)
+                      virial(3) = virial(3) + separations(3,1) * tmp_grad(3,1,2)
+                      virial(4) = virial(4) + separations(2,1) * tmp_grad(3,1,2)
+                      virial(5) = virial(5) + separations(1,1) * tmp_grad(3,1,2)
+                      virial(6) = virial(6) + separations(1,1) * tmp_grad(2,1,2)
+                      
+                   else if( n_targets > 2 )then
+                      
+                      ! If the number of targets is greater than 2,
+                      ! we have found a many-body bond order factor.
+                      ! Make a note that we must also evaluate the many-body factors.
+
+                      ! many bodies are only relevant for per-atom factors here
+                      call get_level_of_bond_order_factor_index(bond_params(1)%type_index, n_level)
+                      if(n_level == 1)then
+                         many_bodies_found = .true.
+                      end if
+
+                   end if ! n_targets == 2
+                end if ! is_active
+             end if ! is_in_group
+             
+          end do ! k1 = 1, size(bond_indices)
+       end if ! distance < max_cut
+    end do ! j
+
+    if( many_bodies_found )then
+          write(*,*) " **** The many-body per-atom bond order factors are currently turned off, **** "
+          write(*,*) " **** since only the slow debug version has been implemented.             **** "
+          call exit(1)
+    end if
+
+    ! Post process the virial in two batches
+    ! The scaling function is the same as for the
+    ! gradient itself
+    if( post_process1 > 0 )then
+       call post_process_bond_order_gradient(bo_sums(index1),&
+            virial(1:3),&
+            bond_factors( post_process1 ),&
+            total_virial(1:3))
+       call post_process_bond_order_gradient(bo_sums(index1),&
+            virial(4:6),&
+            bond_factors( post_process1 ),&
+            total_virial(4:6))
+    else
+       total_virial = virial
+    end if
+
+    ! Add the contribution of bond order gradients to the stress tensor
+    stress(1:6) = stress(1:6) - prefactor * total_virial(1:6)
+
+  end subroutine core_add_bond_order_forces
+
+
+
+
+  ! Evaluates the local force affecting two atoms from bond order factors.
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
+  subroutine core_add_pair_bond_order_forces(  &
+       !atom_doublet, &
+       index1, index2, &
+       interaction, prefactor, &
+       separation, direction, distance, &
+       group_index, pair_bo_sums, pair_bo_factors, &
+       forces, stress )
+    implicit none
+    integer, intent(in) :: index1, index2, group_index
+    double precision, intent(inout) :: forces(:,:), stress(6)
+    !type(atom), intent(in) :: atom_doublet(2)
+    double precision, intent(in) :: separation(3), direction(3), distance, &
+         prefactor, pair_bo_factors(2), pair_bo_sums(2)
+    
+    integer :: i,j,k,k1,l, index3, n_targets, index_pair(2), n_atoms, offset(3), &
+         post_process1, post_process2, indexA
+    type(potential) :: interaction
+    type(bond_order_parameters) :: bond_params
+    double precision :: &
+         separations(3,2), directions(3,2), distances(2), &
+         tmp_energy, tmp_grad(3,3), new_grad(3,3), tmp_forces(3,2), &
+         virial(6,2), total_virial(6,2), dummy_grad(3,2), process_factor(2)
+
+    logical :: is_active, is_in_group
+    integer, pointer :: bond_indices(:), bond_indices2(:)
+
+    type(atom) :: atom1, atom2, atom3
+    type(atom) :: atom_list(3)
+    type(neighbor_list) :: nbors1, nbors2
+
+
+    n_atoms = size(atoms)
+    !atom1 = atom_doublet(1)
+    !atom2 = atom_doublet(2)
+    index_pair = (/ index1, index2 /)
+
+    ! target atom 1
+    atom1 = atoms(index1)
+    nbors1 = atom1%neighbor_list
+    bond_indices => atom1%bond_indices
+
+    ! target atom 2
+    atom2 = atoms(index2)
+    nbors2 = atom2%neighbor_list
+    bond_indices2 => atom2%bond_indices
+
+
+    ! Check all the bond factors that affect the atoms and see
+    ! if any of them require post processing.
+    ! If such a factor is found, the corresponding parameters
+    ! are saved to be used for the post processing.
+    ! Note that only one set of post processing parameters will
+    ! be used: the first found. This is because there may well
+    ! be several factors acting on the same type of atom and
+    ! we do not want to apply the post processing several times.
+    post_process1 = -1
+    do indexA = 1, size(bond_indices)
+       bond_params = bond_factors(bond_indices(indexA))
+       call bond_order_factor_is_in_group(bond_params,group_index,is_in_group) ! in Potentials.f90
+       if(is_in_group)then
+          if( bond_params%includes_post_processing .and. bond_params%n_level == 2 )then
+             if( bond_params%original_elements(1) == atom1%element )then
+                ! store the index of the parameters 
+                post_process1 = bond_indices(indexA)
+                dummy_grad = 1.d0
+                call post_process_bond_order_gradient(pair_bo_sums(1), &
+                     dummy_grad(1:3,1), &
+                     bond_params, &
+                     dummy_grad(1:3,2) ) ! in Potentials.f90
+                process_factor(1) = dummy_grad(1,2)
+                exit
+             end if
+          end if
+       end if
+    end do
+
+    post_process2 = -1
+    do indexA = 1, size(bond_indices2)
+       bond_params = bond_factors(bond_indices2(indexA))
+       call bond_order_factor_is_in_group(bond_params,group_index,is_in_group) ! in Potentials.f90
+       if(is_in_group)then
+          if( bond_params%includes_post_processing .and. bond_params%n_level == 2 )then
+             if( bond_params%original_elements(1) == atom2%element )then
+                ! store the index of the parameters 
+                post_process2 = bond_indices2(indexA)
+                dummy_grad = 1.d0
+                call post_process_bond_order_gradient(pair_bo_sums(2), &
+                     dummy_grad(1:3,1), &
+                     bond_params, &
+                     dummy_grad(1:3,2) ) ! in Potentials.f90
+                process_factor(2) = dummy_grad(1,2)
+                exit
+             end if
+          end if
+       end if
+    end do
+
+    ! In the 3-body loop, we search the neighbors of both atom1
+    ! and atom2 to find the triplets 
+    ! atom1-atom2-atom3 and
+    ! atom2-atom1-atom3
+    ! These are considered to be different, since the middle atom of
+    ! the triplet is different (atom2 vs. atom1).
+    
+    ! First we try to find ordered triplets atom2 -- atom1 -- atom3
+    ! Therefore we need separations a2--a1 and a1--a3.
+
+    ! atom2 - atom1 vector
+    separations(1:3,1) = -separation(1:3)
+    distances(1) = distance
+    directions(1:3,1) = -direction(1:3)
+        
+
+    ! loop over neighbors of atom 1
+    do j = 1, nbors1%n_neighbors
+       
+       ! neighboring atom
+       index3 = nbors1%neighbors(j)
+       offset(1:3) = nbors1%pbc_offsets(1:3,j)
+       
+       atom3 = atoms(index3)
+       atom_list = (/ atom2, atom1, atom3 /)
+       
+       ! calculate atom1-atom3 separation vector
+       ! and distance
+       call separation_vector(atom1%position, &
+            atom3%position, &
+            offset(1:3), &
+            cell, &
+            separations(1:3,2)) ! in Geometry.f90
+       distances(2) = .norm.(separations(1:3,2))
+       if(distances(2) == 0.d0)then
+          directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+       else
+          directions(1:3,2) = separations(1:3,2) / distances(2)
+       end if
+       
+       ! To prevent the case index2 - index1 - index2
+       if(any(separations(1:3,1)+separations(1:3,2) /= 0.d0))then
+   
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          ! apply 3-body bond order factors !
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+          if(distances(2) < atom1%max_bond_radius)then
+
+             ! search for the first bond params containing the parameters for (atom2-atom1) -- atom3
+             do k1 = 1, size(bond_indices)
+                
+                bond_params = bond_factors(bond_indices(k1))
+                
+                ! filter the parameters by:
+                ! number of targets, atom2 and atom3 being targets, group index                   
+                call bond_order_factor_is_in_group(bond_params,&
+                     group_index,is_in_group) ! in Potentials.f90
+                            
+                if( is_in_group )then
+                   call bond_order_factor_affects_atom(bond_params,&
+                        atom2,is_active,2) ! in Potentials.f90
+                   if( is_active )then
+                      call get_number_of_targets_of_bond_order_factor_index(bond_params%type_index,&
+                           n_targets) ! in Potentials.f90
+                      if( n_targets == 3 )then
+                         call bond_order_factor_affects_atom(bond_params,&
+                              atom3,is_active,3) ! in Potentials.f90
+                         if( is_active )then
+                            
+                            
+                            ! Evaluate the atom2-atom1-atom3 triplet contribution
+                            ! in the bond gradient sum.
+                            ! The gradient is stored in tmp_grad whose indices are
+                            ! (xyz, factor index, moved atom index)
+                            call evaluate_pair_bond_order_gradient(3,&
+                                 separations(1:3,1:2),&
+                                 distances(1:2),&
+                                 bond_params,&
+                                 tmp_grad(1:3,1:3),&
+                                 atom_list) ! in Potentials.f90
+                            
+               
+                            if( post_process1 > 0)then
+!!$                               call post_process_bond_order_gradient(pair_bo_sums(1),&
+!!$                                    tmp_grad(1:3,1),&
+!!$                                    bond_factors( post_process1 ),&
+!!$                                    new_grad(1:3,1))
+!!$                               call post_process_bond_order_gradient(pair_bo_sums(1),&
+!!$                                    tmp_grad(1:3,2),&
+!!$                                    bond_factors( post_process1 ),&
+!!$                                    new_grad(1:3,2))
+!!$                               call post_process_bond_order_gradient(pair_bo_sums(1),&
+!!$                                    tmp_grad(1:3,3),&
+!!$                                    bond_factors( post_process1 ),&
+!!$                                    new_grad(1:3,3))
+                               new_grad(1:3,1:3) = - process_factor(1)*prefactor*tmp_grad(1:3,1:3)
+                            else
+                               new_grad(1:3,1:3) = - prefactor*tmp_grad(1:3,1:3)
+                            end if
+ 
+                            ! store the gradients of the pair bond factor
+                            ! with respect to moving atom1, atom2, atom3
+                            ! The triplet is atom2-atom1-atom3, so index2 gets the first
+                            ! entry in the second column of tmp_grad.
+                            forces(1:3,index2) = forces(1:3,index2) + new_grad(1:3,1)
+                            forces(1:3,index1) = forces(1:3,index1) + new_grad(1:3,2)
+                            forces(1:3,index3) = forces(1:3,index3) + new_grad(1:3,3)
+
+                            ! virial: r_a*f_b (xx, yy, zz, yz, xz, xy) 
+                            ! r from atom1 to other atoms - now atom1 is center atom
+                            virial(1,1) = virial(1,1) - separations(1,1) * tmp_grad(1,1) & ! r_12*f2
+                                 + separations(1,2) * tmp_grad(1,3)   ! r_13*f3
+                            virial(2,1) = virial(2,1) - separations(2,1) * tmp_grad(2,1) & ! r_12*f2
+                                 + separations(2,2) * tmp_grad(2,3)   ! r_13*f3
+                            virial(3,1) = virial(3,1) - separations(3,1) * tmp_grad(3,1) & ! r_12*f2
+                                 + separations(3,2) * tmp_grad(3,3)   ! r_13*f3
+                            virial(4,1) = virial(4,1) - separations(2,1) * tmp_grad(3,1) & ! r_12*f2
+                                 + separations(2,2) * tmp_grad(3,3)   ! r_13*f3
+                            virial(5,1) = virial(5,1) - separations(1,1) * tmp_grad(3,1) & ! r_12*f2
+                                 + separations(1,2) * tmp_grad(3,3)   ! r_13*f3
+                            virial(6,1) = virial(6,1) - separations(1,1) * tmp_grad(2,1) & ! r_12*f2
+                                 + separations(1,2) * tmp_grad(2,3)   ! r_13*f3
+                            
+                         end if ! is_active
+                      end if ! n_targets == 3
+                   end if ! is_active
+                end if ! is_in_group
+             end do ! k1
+          end if ! distance < max_cut
+       end if ! index3 /= index2
+
+    end do ! j = 1, nbors1%n_neighbors
+
+
+    ! Next we try to find ordered triplets atom1 -- atom2 -- atom3
+    ! Therefore we need separations a1--a2 and a2--a3.
+    separations(1:3,1) = -separations(1:3,1)
+    directions(1:3,1) = -directions(1:3,1)
+
+    ! loop over neighbors of atom 2
+    do j = 1, nbors2%n_neighbors
+       
+       ! neighboring atom
+       index3 = nbors2%neighbors(j)
+       offset(1:3) = nbors2%pbc_offsets(1:3,j)
+
+       atom3 = atoms(index3)
+       atom_list = (/ atom1, atom2, atom3 /)
+       
+       ! calculate atom2-atom3 separation vector
+       ! and distance
+       call separation_vector(atom2%position, &
+            atom3%position, &
+            offset(1:3), &
+            cell, &
+            separations(1:3,2)) ! in Geometry.f90
+       distances(2) = .norm.(separations(1:3,2))
+       if(distances(2) == 0.d0)then
+          directions(1:3,2) = (/ 0.d0, 0.d0, 0.d0 /)
+       else
+          directions(1:3,2) = separations(1:3,2) / distances(2)
+       end if
+       
+       ! To prevent the case index2 - index1 - index2
+       if(any(separations(1:3,1)+separations(1:3,2) /= 0.d0))then
+
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          ! apply 3-body bond order factors !
+          !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+          if(distances(2) < atom2%max_bond_radius)then
+
+             ! search for the bond params containing the parameters for (atom1-atom2) -- atom3
+             do k1 = 1, size(bond_indices2)
+                
+                bond_params = bond_factors(bond_indices2(k1))
+                
+                ! filter the parameters by:
+                ! number of targets, atom2 and atom3 being targets, group index                   
+                call bond_order_factor_is_in_group(bond_params,&
+                     group_index,is_in_group) ! in Potentials.f90
+                
+                if( is_in_group )then
+                   call bond_order_factor_affects_atom(bond_params,&
+                        atom1,is_active,2) ! in Potentials.f90
+                   if( is_active )then
+                      call get_number_of_targets_of_bond_order_factor_index(bond_params%type_index,&
+                           n_targets) ! in Potentials.f90
+                      if( n_targets == 3 )then
+                         call bond_order_factor_affects_atom(bond_params,&
+                              atom3,is_active,3) ! in Potentials.f90
+                         if( is_active )then            
+                            
+                            ! Evaluate the atom2-atom1-atom3 triplet contribution
+                            ! in the bond gradient sum.
+                            ! The gradient is stored in tmp_grad whose indices are
+                            ! (xyz, factor index, moved atom index)
+                            call evaluate_pair_bond_order_gradient(3,&
+                                 separations(1:3,1:2),&
+                                 distances(1:2),&
+                                 bond_params,&
+                                 tmp_grad(1:3,1:3),&
+                                 atom_list) ! in Potentials.f90
+                                                        
+                            if( post_process2 > 0)then                               
+!!$                               call post_process_bond_order_gradient(pair_bo_sums(2),&
+!!$                                    tmp_grad(1:3,1),&
+!!$                                    bond_factors( post_process2 ),&
+!!$                                    new_grad(1:3,1))
+!!$                               call post_process_bond_order_gradient(pair_bo_sums(2),&
+!!$                                    tmp_grad(1:3,2),&
+!!$                                    bond_factors( post_process2 ),&
+!!$                                    new_grad(1:3,2))
+!!$                               call post_process_bond_order_gradient(pair_bo_sums(2),&
+!!$                                    tmp_grad(1:3,3),&
+!!$                                    bond_factors( post_process2 ),&
+!!$                                    new_grad(1:3,3))
+!!$                               new_grad(1:3,1) = - prefactor*new_grad(1:3,1)
+!!$                               new_grad(1:3,2) = - prefactor*new_grad(1:3,2)
+!!$                               new_grad(1:3,3) = - prefactor*new_grad(1:3,3)
+                               new_grad(1:3,1:3) = - process_factor(2)*prefactor*tmp_grad(1:3,1:3)
+                            else
+                               new_grad(1:3,1) = - prefactor*tmp_grad(1:3,1)
+                               new_grad(1:3,2) = - prefactor*tmp_grad(1:3,2)
+                               new_grad(1:3,3) = - prefactor*tmp_grad(1:3,3)
+                            end if
+
+
+                            ! store the gradients of the pair bond factor
+                            ! with respect to moving atom1, atom2, atom3
+                            ! The triplet is atom1-atom2-atom3, so index1 gets the first
+                            ! entry in the second column of tmp_grad.                            
+                            forces(1:3,index1) = forces(1:3,index1) + new_grad(1:3,1)
+                            forces(1:3,index2) = forces(1:3,index2) + new_grad(1:3,2)
+                            forces(1:3,index3) = forces(1:3,index3) + new_grad(1:3,3)
+
+                            ! virial: r_a*f_b (xx, yy, zz, yz, xz, xy) 
+                            ! r from atom1 to other atoms - now atom1 is center atom
+                            virial(1,2) = virial(1,2) - separations(1,1) * tmp_grad(1,1) & ! r_12*f2
+                                 + separations(1,2) * tmp_grad(1,3)   ! r_13*f3
+                            virial(2,2) = virial(2,2) - separations(2,1) * tmp_grad(2,1) & ! r_12*f2
+                                 + separations(2,2) * tmp_grad(2,3)   ! r_13*f3
+                            virial(3,2) = virial(3,2) - separations(3,1) * tmp_grad(3,1) & ! r_12*f2
+                                 + separations(3,2) * tmp_grad(3,3)   ! r_13*f3
+                            virial(4,2) = virial(4,2) - separations(2,1) * tmp_grad(3,1) & ! r_12*f2
+                                 + separations(2,2) * tmp_grad(3,3)   ! r_13*f3
+                            virial(5,2) = virial(5,2) - separations(1,1) * tmp_grad(3,1) & ! r_12*f2
+                                 + separations(1,2) * tmp_grad(3,3)   ! r_13*f3
+                            virial(6,2) = virial(6,2) - separations(1,1) * tmp_grad(2,1) & ! r_12*f2
+                                 + separations(1,2) * tmp_grad(2,3)   ! r_13*f3
+                            
+                         end if ! is_active
+                      end if ! n_targets == 3
+                   end if ! is_active
+                end if ! is_in_group
+             end do ! k1
+          end if ! distance < max_cut
+       end if ! index3 /= index1
+
+    end do ! j = 1, nbors2%n_neighbors
+
+
+    ! Post process the virial in two batches
+    ! The scaling function is the same as for the
+    ! gradient itself
+    if( post_process1 > 0 )then
+
+       call post_process_bond_order_gradient(pair_bo_sums(1), &
+            virial(1:3,1), &
+            bond_factors( post_process1 ), &
+            total_virial(1:3,1) ) ! in Potentials.f90
+       call post_process_bond_order_gradient(pair_bo_sums(1), &
+            virial(4:6,1), &
+            bond_factors( post_process1 ), &
+            total_virial(4:6,1) ) ! in Potentials.f90
+
+    else
+
+       total_virial(1:6,1) = virial(1:6,1)
+
+    end if
+
+    if( post_process2 > 0 )then
+
+       call post_process_bond_order_gradient(pair_bo_sums(2), &
+            virial(1:3,2), &
+            bond_factors( post_process2 ), &
+            total_virial(1:3,2) ) ! in Potentials.f90
+       call post_process_bond_order_gradient(pair_bo_sums(2), &
+            virial(4:6,2), &
+            bond_factors( post_process2 ), &
+            total_virial(4:6,2) ) ! in Potentials.f90
+    else
+
+       total_virial(1:6,2) = virial(1:6,2)
+
+    end if
+
+    ! Add the contribution of bond order gradients to the stress tensor
+    stress(1:6) = stress(1:6) - prefactor * ( total_virial(1:6,1) + total_virial(1:6,2) )
+
+
+  end subroutine core_add_pair_bond_order_forces
+
+
+
+  ! Evaluates the local force affecting two atoms. (Rearranged internally.)
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the interaction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet_forces_B( &
        atom_doublet, &
        index1, index2, &
@@ -4657,10 +5372,13 @@ contains
        interaction_indices, &
        separations, directions, distances, &
        forces,stress, &
-       many_bodies_found)
+       many_bodies_found, &
+       manybody_indices, &
+       n_manybody)
     implicit none
     integer, intent(in) :: index1, index2, test_index1
-    integer, pointer :: interaction_indices(:)
+    integer, intent(out) :: n_manybody
+    integer, pointer :: interaction_indices(:), manybody_indices(:)
     double precision, intent(inout) :: forces(:,:), stress(6)
     type(atom), intent(in) :: atom_doublet(2)
     double precision, intent(in) :: separations(3,1), directions(3,1), distances(1)
@@ -4679,6 +5397,7 @@ contains
 
     n_atoms = size(atoms)
     many_bodies_found = .false.
+    n_manybody = 0
     atom1 = atom_doublet(1)
     atom2 = atom_doublet(2)
     index_pair = (/ index1, index2 /)
@@ -4745,23 +5464,7 @@ contains
              !     = - \sum_ij (\nabla_a b_ij) v_ij + b_ij f_a,ij
              !
              if(interaction%pot_index > -1)then
-                ! get b_i (for all i, they have been precalculated)
-                call core_get_bond_order_factors(interaction%pot_index,&
-                     bo_factors)
-                ! get (\nabla_a b_i) (for all a)
-                call core_get_bond_order_gradients(interaction%pot_index,&
-                     index1,& ! atom index
-                     1, & ! slot_index
-                     bo_gradients(1:3,1:n_atoms,1), &
-                     bo_virial(1:6,1))
-                ! get (\nabla_a b_j) (for all a)
-                call core_get_bond_order_gradients(interaction%pot_index,&
-                     index2,& ! atom index
-                     2, & ! slot_index
-                     bo_gradients(1:3,1:n_atoms,2), &
-                     bo_virial(1:6,2))
-                
-                
+
                 ! get B_ij and \nabla_a B_ij for this ij (not precalculated)
                 ! this is 
                 ! B_ij = (B*_ij + B*_ji) / 2
@@ -4777,29 +5480,68 @@ contains
                      interaction%pot_index, &
                      pair_bo_sums(2), &
                      pair_bo_factors(2))
+
+                ! get b_i (for all i, they have been precalculated)
+                call core_get_bond_order_factors(interaction%pot_index,&
+                     bo_factors)
                 
-                call core_calculate_pair_bond_order_gradients(index_pair, &
-                     separations(1:3,1), distances(1), directions(1:3,1), &
-                     interaction%pot_index, &                        
-                     pair_bo_sums(1:2), &
-                     bo_gradients(1:3,1:n_atoms,3:4), &
-                     pair_bo_virial(1:6,1:2))
-                
-                
-                ! Add the bond order gradient terms involving the 
-                ! atom1-atom2 energy for all atoms.
-                ! That is, add the (\nabla_a b_ij) v_ij term with 
-                ! the given ij (atom1,atom2) for all a.
-                forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
-                     - tmp_energy*cut_factors(1)*&
-                     (bo_gradients(1:3,1:n_atoms,1) + bo_gradients(1:3,1:n_atoms,2) + &
-                     bo_gradients(1:3,1:n_atoms,3) + bo_gradients(1:3,1:n_atoms,4))*0.5d0
-                
-                ! Add the contribution of bond order gradients to the stress tensor
-                stress(1:6) = stress(1:6) - tmp_energy*cut_factors(1)* &
-                     (bo_virial(1:6,1) + bo_virial(1:6,2) + pair_bo_virial(1:6,1) + pair_bo_virial(1:6,2))*0.5d0
-                
-             else
+                if(.false.)then ! slow debug version where all gradients are first calculated
+
+                   ! get (\nabla_a b_i) (for all a)
+                   call core_get_bond_order_gradients(interaction%pot_index,&
+                        index1,& ! atom index
+                        1, & ! slot_index
+                        bo_gradients(1:3,1:n_atoms,1), &
+                        bo_virial(1:6,1))
+                   ! get (\nabla_a b_j) (for all a)
+                   call core_get_bond_order_gradients(interaction%pot_index,&
+                        index2,& ! atom index
+                        2, & ! slot_index
+                        bo_gradients(1:3,1:n_atoms,2), &
+                        bo_virial(1:6,2))
+
+
+                   call core_calculate_pair_bond_order_gradients(index_pair, &
+                        separations(1:3,1), distances(1), directions(1:3,1), &
+                        interaction%pot_index, &                        
+                        pair_bo_sums(1:2), &
+                        bo_gradients(1:3,1:n_atoms,3:4), &
+                        pair_bo_virial(1:6,1:2))
+
+                   ! Add the bond order gradient terms involving the 
+                   ! atom1-atom2 energy for all atoms.
+                   ! That is, add the (\nabla_a b_ij) v_ij term with 
+                   ! the given ij (atom1,atom2) for all a.
+                   forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
+                        - tmp_energy*cut_factors(1)*&
+                        (bo_gradients(1:3,1:n_atoms,1) + bo_gradients(1:3,1:n_atoms,2) + &
+                        bo_gradients(1:3,1:n_atoms,3) + bo_gradients(1:3,1:n_atoms,4))*0.5d0
+
+                   ! Add the contribution of bond order gradients to the stress tensor
+                   stress(1:6) = stress(1:6) - tmp_energy*cut_factors(1)* &
+                        (bo_virial(1:6,1) + bo_virial(1:6,2) + pair_bo_virial(1:6,1) + pair_bo_virial(1:6,2))*0.5d0
+
+                else
+
+                   call core_add_bond_order_forces( &
+                        interaction%pot_index, index1, 0.5d0*tmp_energy*cut_factors(1), &
+                        forces, stress )
+
+                   call core_add_bond_order_forces( &
+                        interaction%pot_index, index2, 0.5d0*tmp_energy*cut_factors(1), &
+                        forces, stress )
+
+                   call core_add_pair_bond_order_forces( &
+                        !atom_doublet, &
+                        index1, index2, &
+                        interaction, 0.5d0*tmp_energy*cut_factors(1), &
+                        separations(1:3,1), directions(1:3,1), distances(1), &
+                        interaction%pot_index, pair_bo_sums, pair_bo_factors, &
+                        forces, stress )
+
+                end if
+
+             !else
                 !bo_factors = 1.d0
                 !bo_sums = 0.d0
                 !bo_gradients = 0.d0
@@ -4810,6 +5552,7 @@ contains
                   interaction,tmp_forces(1:3,1:2),atom_doublet) ! in Potentials.f90
              
              if(interaction%pot_index > -1)then
+
                 ! force on atom 1:                 
                 pair_forces(1:3,1) = ( tmp_forces(1:3,1) * cut_factors(1) + &
                      tmp_energy * cut_gradients(1:3,1) ) * &
@@ -4849,6 +5592,8 @@ contains
              ! we have found a many-body potential.
              ! Make a note that we must also evaluate the many-body terms.
              many_bodies_found = .true.
+             n_manybody = n_manybody + 1
+             manybody_indices(n_manybody) = interaction_indices(k)
 
           end if ! n_targets == 2
 
@@ -4860,16 +5605,31 @@ contains
 
 
 
+  ! Evaluates the local electronegativity affecting two atoms. (Rearranged internally.)
+  !
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet_electronegativities_B(atom_doublet, &
        index1, index2, &
        test_index1, &
        interaction_indices, &
        separations, directions, distances, &
        enegs, &
-       many_bodies_found)
+       many_bodies_found, &
+       manybody_indices, &
+       n_manybody)
     implicit none
     integer, intent(in) :: index1, index2, test_index1
-    integer, pointer :: interaction_indices(:)
+    integer, intent(out) :: n_manybody
+    integer, pointer :: interaction_indices(:), manybody_indices(:)
     double precision, intent(inout) :: enegs(:)
     type(atom), intent(in) :: atom_doublet(2)
     double precision, intent(in) :: separations(3,1), directions(3,1), distances(1)
@@ -4886,6 +5646,8 @@ contains
 
     n_atoms = size(atoms)
     many_bodies_found = .false.
+    n_manybody = 0
+
     atom1 = atom_doublet(1)
     atom2 = atom_doublet(2)
     index_pair = (/ index1, index2 /)
@@ -4982,6 +5744,8 @@ contains
              ! we have found a many-body potential.
              ! Make a note that we must also evaluate the many-body terms.
              many_bodies_found = .true.
+             n_manybody = n_manybody + 1
+             manybody_indices(n_manybody) = interaction_indices(k)
 
           end if ! n_targets == 2
 
@@ -4993,6 +5757,19 @@ contains
 
 
 
+
+  ! Evaluates the local electronegativity affecting two atoms.
+  !
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet_electronegativities(n_atoms, &
        atom_doublet, &
        index1, index2, &
@@ -5127,6 +5904,24 @@ contains
 
 
 
+
+  ! Evaluates the interactions affecting two atoms.
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *atom_doublet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, as an array
+  ! *directions unit vector from 1 to 2, as an array
+  ! *distances distance from 1 to 2, as an array
+  ! *calculation_type the type of information requested
+  ! *energy calculated energy
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_doublet(n_atoms, &
        atom_doublet, &
        index1, index2, &
@@ -5351,6 +6146,7 @@ contains
                      interaction,tmp_forces(1:3,1:2),atom_doublet) ! in Potentials.f90
 
                 if(interaction%pot_index > -1)then
+
                     ! force on atom 1:                 
                     pair_forces(1:3,1) = ( tmp_forces(1:3,1) * cut_factors(1) + &
                          tmp_energy * cut_gradients(1:3,1) ) * &
@@ -5475,6 +6271,25 @@ contains
 
 
 
+  ! Evaluates the interactions affecting three atoms.
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *index3 index of the atom 3
+  ! *atom_triplet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *test_index2 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2 and 2 to 3 as an array
+  ! *directions unit vector from 1 to 2 and 2 to 3 as an array
+  ! *distances distance from 1 to 2 and 2 to 3 as an array
+  ! *calculation_type the type of information requested
+  ! *energy calculated energy
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_triplet(n_atoms, &
        atom_triplet, &
        index1, index2, index3, &
@@ -5817,16 +6632,39 @@ contains
 
 
 
+  ! Evaluates the interactions affecting three atoms. (Rearranged internally.)
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *index3 index of the atom 3
+  ! *atom_triplet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *test_index2 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2 and 2 to 3 as an array
+  ! *directions unit vector from 1 to 2 and 2 to 3 as an array
+  ! *distances distance from 1 to 2 and 2 to 3 as an array
+  ! *calculation_type the type of information requested
+  ! *energy calculated energy
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_triplet_B(atom_triplet, &
        index1, index2, index3, &
        test_index1, test_index2, &
-       interaction_indices, &
+       !interaction_indices, &
        separations, directions, distances, &
        calculation_type,energy,forces,enegs,stress, &
-       many_bodies_found)
+       many_bodies_found, &
+       manybody_indices, &
+       n_manybody )
     implicit none
-    integer, intent(in) :: calculation_type, index1, index2, index3, test_index1, test_index2
-    integer, pointer :: interaction_indices(:)
+    integer, intent(in) :: calculation_type, index1, index2, index3, &
+         test_index1, test_index2, n_manybody
+    !integer, pointer :: interaction_indices(:), manybody_indices(:)
+    integer, pointer :: manybody_indices(:)
     double precision, intent(inout) :: energy, forces(:,:), enegs(:), stress(6)
     double precision, intent(in) :: separations(3,2), directions(3,2), distances(2)
     logical, intent(out) :: many_bodies_found
@@ -5837,7 +6675,7 @@ contains
     type(potential) :: interaction
     double precision :: tmp_energy, tmp_forces(3,3), tmp_enegs(3), &
          cut_factors(2), cut_gradients(3,2), &
-         triplet_forces(3,3), bo_virial(6,3)
+         triplet_forces(3,3), bo_virial(6,3), prefactor
     logical :: is_active
 
     many_bodies_found = .false.
@@ -5846,9 +6684,9 @@ contains
     atom3 = atom_triplet(3)
 
     ! loop over the potentials affecting atom1
-    do k = 1, size(interaction_indices)
+    do k = 1, n_manybody !size(interaction_indices)
 
-       interaction = interactions(interaction_indices(k))
+       interaction = interactions(manybody_indices(k))
        call get_number_of_targets_of_potential_index(interaction%type_index,&
             n_targets) ! in Potentials.f90
        call potential_affects_atom(interaction,atom_triplet(test_index1),is_active,2) ! in Potentials.f90
@@ -5977,39 +6815,55 @@ contains
                       ! get b_i (for all i, they have been precalculated)
                       call core_get_bond_order_factors(interaction%pot_index,&
                            bo_factors)
-                      ! get (\nabla_a b_i) (for all a)
-                      call core_get_bond_order_gradients(interaction%pot_index,&
-                           index1,& ! atom index
-                           1, & ! slot_index
-                           bo_gradients(1:3,1:n_atoms,1), &
-                           bo_virial(1:6,1))
-                      ! get (\nabla_a b_j) (for all a)
-                      call core_get_bond_order_gradients(interaction%pot_index,&
-                           index2,& ! atom index
-                           2, & ! slot_index
-                           bo_gradients(1:3,1:n_atoms,2), &
-                           bo_virial(1:6,2))
-                      ! get (\nabla_a b_k) (for all a)
-                      call core_get_bond_order_gradients(interaction%pot_index,&
-                           index3,& ! atom index
-                           3, & ! slot_index
-                           bo_gradients(1:3,1:n_atoms,3), &
-                           bo_virial(1:6,3))
+                      
+                      prefactor = tmp_energy*cut_factors(1)*cut_factors(2)/3.d0
 
-                      ! Add the bond order gradient terms involving the 
-                      ! atom2-atom1-atom3 energy for all atoms.
-                      ! That is, add the (\nabla_a b_ijk) v_ijk term with 
-                      ! the given ijk (atom2,atom1,atom3) for all a.
-                      forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
-                           - tmp_energy*cut_factors(1)*cut_factors(2)*&
-                           ( bo_gradients(1:3,1:n_atoms,1) &
-                           + bo_gradients(1:3,1:n_atoms,2) &
-                           + bo_gradients(1:3,1:n_atoms,3) )/3.d0
+                      call core_add_bond_order_forces( &
+                           interaction%pot_index, index1, prefactor, &
+                           forces, stress )
 
-                      stress(1:6) = stress(1:6) - tmp_energy*cut_factors(1)*cut_factors(2)*&
-                           ( bo_virial(1:6,1) &
-                           + bo_virial(1:6,2) &
-                           + bo_virial(1:6,3) )/3.d0
+                      call core_add_bond_order_forces( &
+                           interaction%pot_index, index2, prefactor, &
+                           forces, stress )
+
+                      call core_add_bond_order_forces( &
+                           interaction%pot_index, index3, prefactor, &
+                           forces, stress )
+
+!!$                      ! get (\nabla_a b_i) (for all a)
+!!$                      call core_get_bond_order_gradients(interaction%pot_index,&
+!!$                           index1,& ! atom index
+!!$                           1, & ! slot_index
+!!$                           bo_gradients(1:3,1:n_atoms,1), &
+!!$                           bo_virial(1:6,1))
+!!$                      ! get (\nabla_a b_j) (for all a)
+!!$                      call core_get_bond_order_gradients(interaction%pot_index,&
+!!$                           index2,& ! atom index
+!!$                           2, & ! slot_index
+!!$                           bo_gradients(1:3,1:n_atoms,2), &
+!!$                           bo_virial(1:6,2))
+!!$                      ! get (\nabla_a b_k) (for all a)
+!!$                      call core_get_bond_order_gradients(interaction%pot_index,&
+!!$                           index3,& ! atom index
+!!$                           3, & ! slot_index
+!!$                           bo_gradients(1:3,1:n_atoms,3), &
+!!$                           bo_virial(1:6,3))
+!!$
+!!$
+!!$                      ! Add the bond order gradient terms involving the 
+!!$                      ! atom2-atom1-atom3 energy for all atoms.
+!!$                      ! That is, add the (\nabla_a b_ijk) v_ijk term with 
+!!$                      ! the given ijk (atom2,atom1,atom3) for all a.
+!!$                      forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
+!!$                           - tmp_energy*cut_factors(1)*cut_factors(2)*&
+!!$                           ( bo_gradients(1:3,1:n_atoms,1) &
+!!$                           + bo_gradients(1:3,1:n_atoms,2) &
+!!$                           + bo_gradients(1:3,1:n_atoms,3) )/3.d0
+!!$
+!!$                      stress(1:6) = stress(1:6) - tmp_energy*cut_factors(1)*cut_factors(2)*&
+!!$                           ( bo_virial(1:6,1) &
+!!$                           + bo_virial(1:6,2) &
+!!$                           + bo_virial(1:6,3) )/3.d0
 
                    else
                       !bo_factors = 1.d0
@@ -6020,7 +6874,6 @@ contains
                    ! evaluate the 3-body force
                    call evaluate_forces(3,interaction%n_product,separations(1:3,1:2),distances(1:2),interaction,&
                         tmp_forces(1:3,1:3),atom_triplet) ! in Potentials.f90
-
 
                    if(interaction%pot_index > -1)then
                       ! force on atom 1:
@@ -6178,6 +7031,27 @@ contains
 
 
 
+  ! Evaluates the interactions affecting four atoms.
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *index3 index of the atom 3
+  ! *index4 index of the atom 4
+  ! *atom_quadruplet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *test_index2 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *test_index3 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, 2 to 3 and 3 to 4 as an array
+  ! *directions unit vector from 1 to 2, 2 to 3 and 3 to 4 as an array
+  ! *distances distance from 1 to 2, 2 to 3 and 3 to 4 as an array
+  ! *calculation_type the type of information requested
+  ! *energy calculated energy
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_quadruplet(n_atoms, &
        atom_quadruplet, &
        index1, index2, index3, index4, &
@@ -6548,17 +7422,43 @@ contains
 
 
 
+
+
+  ! Evaluates the interactions affecting four atoms. (Rearranged internally.)
+  !
+  ! *n_atoms total number of atoms in the system
+  ! *index1 index of the atom 1
+  ! *index2 index of the atom 2
+  ! *index3 index of the atom 3
+  ! *index4 index of the atom 4
+  ! *atom_quadruplet the atoms that are targeted
+  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *test_index2 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *test_index3 if 1, test if the ineraction targets atom1; similarly for 2, 3
+  ! *interaction_indices the interactions targeting the given atoms
+  ! *separations distance vector from 1 to 2, 2 to 3 and 3 to 4 as an array
+  ! *directions unit vector from 1 to 2, 2 to 3 and 3 to 4 as an array
+  ! *distances distance from 1 to 2, 2 to 3 and 3 to 4 as an array
+  ! *calculation_type the type of information requested
+  ! *energy calculated energy
+  ! *forces calculated forces
+  ! *stress calculated stress
+  ! *enegs calculated electronegativities
+  ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_evaluate_local_quadruplet_B(atom_quadruplet, &
        index1, index2, index3, index4, &
        test_index1, test_index2, test_index3, &
-       interaction_indices, &
+       !interaction_indices, &
        separations, directions, distances, &
        calculation_type,energy,forces,enegs,stress, &
-       many_bodies_found)
+       many_bodies_found, &
+       manybody_indices, &
+       n_manybody )
     implicit none
     integer, intent(in) :: calculation_type, index1, index2, index3, index4, &
-         test_index1, test_index2, test_index3
-    integer, pointer :: interaction_indices(:)
+         test_index1, test_index2, test_index3, n_manybody
+    !integer, pointer :: interaction_indices(:)
+    integer, pointer :: manybody_indices(:)
     double precision, intent(inout) :: energy, forces(:,:), enegs(:), stress(6)
     double precision, intent(in) :: separations(3,3), directions(3,3), distances(3)
     logical, intent(out) :: many_bodies_found
@@ -6567,7 +7467,7 @@ contains
     type(atom) :: atom1, atom2, atom3, atom4
     integer :: k, n_targets, n_atoms
     type(potential) :: interaction
-    double precision :: tmp_energy, tmp_forces(3,4), tmp_enegs(4), &
+    double precision :: tmp_energy, tmp_forces(3,4), tmp_enegs(4), prefactor, &
          cut_factors(3), cut_gradients(3,3), quad_forces(3,4), bo_virial(6,4)
     logical :: is_active
 
@@ -6579,9 +7479,9 @@ contains
     atom4 = atom_quadruplet(3)
 
     ! loop over the potentials affecting atom1
-    do k = 1, size(interaction_indices)
+    do k = 1, n_manybody !size(interaction_indices)
 
-       interaction = interactions(interaction_indices(k))
+       interaction = interactions(manybody_indices(k))
        call get_number_of_targets_of_potential_index(interaction%type_index,&
             n_targets) ! in Potentials.f90
        call potential_affects_atom(interaction,atom_quadruplet(test_index1),is_active,2) ! in Potentials.f90
@@ -6724,47 +7624,62 @@ contains
                          ! get b_i (for all i, they have been precalculated)
                          call core_get_bond_order_factors(interaction%pot_index,&
                               bo_factors) ! in Potentials.f90
-                         ! get (\nabla_a b_i) (for all a)
-                         call core_get_bond_order_gradients(interaction%pot_index,&
-                              index1,& ! atom index
-                              1, & ! slot_index
-                              bo_gradients(1:3,1:n_atoms,1), &
-                              bo_virial(1:6,1)) ! in Potentials.f90
-                         ! get (\nabla_a b_j) (for all a)
-                         call core_get_bond_order_gradients(interaction%pot_index,&
-                              index2,& ! atom index
-                              2, & ! slot_index
-                              bo_gradients(1:3,1:n_atoms,2), &
-                              bo_virial(1:6,2)) ! in Potentials.f90
-                         ! get (\nabla_a b_k) (for all a)
-                         call core_get_bond_order_gradients(interaction%pot_index,&
-                              index3,& ! atom index
-                              3, & ! slot_index
-                              bo_gradients(1:3,1:n_atoms,3), &
-                              bo_virial(1:6,3)) ! in Potentials.f90
-                         ! get (\nabla_a b_l) (for all a)
-                         call core_get_bond_order_gradients(interaction%pot_index,&
-                              index4,& ! atom index
-                              4, & ! slot_index
-                              bo_gradients(1:3,1:n_atoms,4), &
-                              bo_virial(1:6,4)) ! in Potentials.f90
 
-                         ! Add the bond order gradient terms involving the 
-                         ! atom2-atom1-atom3 energy for all atoms.
-                         ! That is, add the (\nabla_a b_ijk) v_ijk term with 
-                         ! the given ijk (atom2,atom1,atom3) for all a.
-                         forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
-                              - tmp_energy*cut_factors(1)*cut_factors(2)*cut_factors(3)* &
-                              ( bo_gradients(1:3,1:n_atoms,1) &
-                              + bo_gradients(1:3,1:n_atoms,2) &
-                              + bo_gradients(1:3,1:n_atoms,3) &
-                              + bo_gradients(1:3,1:n_atoms,4) )/4.d0
+                         prefactor = -tmp_energy*cut_factors(1)*cut_factors(2)*cut_factors(3)*0.25d0
+                         call core_add_bond_order_forces( &
+                              interaction%pot_index, index1, prefactor, &
+                              forces, stress )
+                         call core_add_bond_order_forces( &
+                              interaction%pot_index, index2, prefactor, &
+                              forces, stress )
+                         call core_add_bond_order_forces( &
+                              interaction%pot_index, index3, prefactor, &
+                              forces, stress )
+                         call core_add_bond_order_forces( &
+                              interaction%pot_index, index4, prefactor, &
+                              forces, stress )
 
-                         stress(1:6) = stress(1:6) - tmp_energy*cut_factors(1)*cut_factors(2)*cut_factors(3)* &
-                              ( bo_virial(1:6,1) &
-                              + bo_virial(1:6,2) &
-                              + bo_virial(1:6,3) &
-                              + bo_virial(1:6,4) )/4.d0
+!!$                         ! get (\nabla_a b_i) (for all a)
+!!$                         call core_get_bond_order_gradients(interaction%pot_index,&
+!!$                              index1,& ! atom index
+!!$                              1, & ! slot_index
+!!$                              bo_gradients(1:3,1:n_atoms,1), &
+!!$                              bo_virial(1:6,1)) ! in Potentials.f90
+!!$                         ! get (\nabla_a b_j) (for all a)
+!!$                         call core_get_bond_order_gradients(interaction%pot_index,&
+!!$                              index2,& ! atom index
+!!$                              2, & ! slot_index
+!!$                              bo_gradients(1:3,1:n_atoms,2), &
+!!$                              bo_virial(1:6,2)) ! in Potentials.f90
+!!$                         ! get (\nabla_a b_k) (for all a)
+!!$                         call core_get_bond_order_gradients(interaction%pot_index,&
+!!$                              index3,& ! atom index
+!!$                              3, & ! slot_index
+!!$                              bo_gradients(1:3,1:n_atoms,3), &
+!!$                              bo_virial(1:6,3)) ! in Potentials.f90
+!!$                         ! get (\nabla_a b_l) (for all a)
+!!$                         call core_get_bond_order_gradients(interaction%pot_index,&
+!!$                              index4,& ! atom index
+!!$                              4, & ! slot_index
+!!$                              bo_gradients(1:3,1:n_atoms,4), &
+!!$                              bo_virial(1:6,4)) ! in Potentials.f90
+!!$
+!!$                         ! Add the bond order gradient terms involving the 
+!!$                         ! atom2-atom1-atom3 energy for all atoms.
+!!$                         ! That is, add the (\nabla_a b_ijk) v_ijk term with 
+!!$                         ! the given ijk (atom2,atom1,atom3) for all a.
+!!$                         forces(1:3,1:n_atoms) = forces(1:3,1:n_atoms) &
+!!$                              - tmp_energy*cut_factors(1)*cut_factors(2)*cut_factors(3)* &
+!!$                              ( bo_gradients(1:3,1:n_atoms,1) &
+!!$                              + bo_gradients(1:3,1:n_atoms,2) &
+!!$                              + bo_gradients(1:3,1:n_atoms,3) &
+!!$                              + bo_gradients(1:3,1:n_atoms,4) )/4.d0
+!!$
+!!$                         stress(1:6) = stress(1:6) - tmp_energy*cut_factors(1)*cut_factors(2)*cut_factors(3)* &
+!!$                              ( bo_virial(1:6,1) &
+!!$                              + bo_virial(1:6,2) &
+!!$                              + bo_virial(1:6,3) &
+!!$                              + bo_virial(1:6,4) )/4.d0
 
                       else
                          !bo_factors = 1.d0
@@ -7176,7 +8091,8 @@ contains
   ! Sets the parameters for Ewald summation in the core. 
   !
   ! *real_cut the real-space cutoff
-  ! *reciprocal_cut the k-space cutoffs
+  ! *k_radius the k-space cutoff (in inverse length)
+  ! *reciprocal_cut the k-space cutoffs (in numbers of k-space cells)
   ! *sigma the split parameter
   ! *epsilon electric constant
   ! *scaler scaling factors for the individual charges
@@ -7260,7 +8176,6 @@ contains
     n_nbs = 0
 
     nbors_and_offsets = 0
-    
 
     do atom1_index = 1, size(atoms)
 

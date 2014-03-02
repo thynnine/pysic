@@ -1007,291 +1007,309 @@ Full documentation of subroutines in pysic_core
             
   .. function:: core_evaluate_local_doublet(n_atoms, atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found)
 
+    Evaluates the interactions affecting two atoms.
+    
 
     Parameters:
 
     n_atoms: integer  *intent(in)*    *scalar*  
-        
+        total number of atoms in the system
     atom_doublet: type(atom)  *intent(in)*    *size(2)*  
-        
+        the atoms that are targeted
     index1: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 1
     index2: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 2
     test_index1: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2
     interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        
+        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 1)*  
-        
+        distance vector from 1 to 2, as an array
     directions: double precision  *intent(in)*    *size(3, 1)*  
-        
+        unit vector from 1 to 2, as an array
     distances: double precision  *intent(in)*    *size(1)*  
-        
+        distance from 1 to 2, as an array
     calculation_type: integer  *intent(in)*    *scalar*  
-        
+        the type of information requested
     **energy**: double precision  **intent(inout)**    *scalar*  
-        
+        calculated energy
     **forces**: double precision  **intent(inout)**    *size(3, n_atoms)*  
-        
+        calculated forces
     **enegs**: double precision  **intent(inout)**    *size(n_atoms)*  
-        
+        calculated electronegativities
     **stress**: double precision  **intent(inout)**    *size(6)*  
-        
+        calculated stress
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
-        
+        returns true if the loop finds an interaction with 3 or more targets
             
   .. function:: core_evaluate_local_doublet_electronegativities(n_atoms, atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, enegs, many_bodies_found)
 
+    Evaluates the local electronegativity affecting two atoms.
+    
 
     Parameters:
 
     n_atoms: integer  *intent(in)*    *scalar*  
         
     atom_doublet: type(atom)  *intent(in)*    *size(2)*  
-        
+        the atoms that are targeted
     index1: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 1
     index2: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 2
     test_index1: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2
     interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        
+        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 1)*  
-        
+        distance vector from 1 to 2, as an array
     directions: double precision  *intent(in)*    *size(3, 1)*  
-        
+        unit vector from 1 to 2, as an array
     distances: double precision  *intent(in)*    *size(1)*  
-        
+        distance from 1 to 2, as an array
     **enegs**: double precision  **intent(inout)**    *size(n_atoms)*  
-        
+        calculated electronegativities
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
-        
+        returns true if the loop finds an interaction with 3 or more targets
             
   .. function:: core_evaluate_local_doublet_electronegativities_B(atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, enegs, many_bodies_found)
 
+    Evaluates the local electronegativity affecting two atoms. (Rearranged internally.)
+    
 
     Parameters:
 
     atom_doublet: type(atom)  *intent(in)*    *size(2)*  
-        
+        the atoms that are targeted
     index1: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 1
     index2: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 2
     test_index1: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2
     interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        
+        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 1)*  
-        
+        distance vector from 1 to 2, as an array
     directions: double precision  *intent(in)*    *size(3, 1)*  
-        
+        unit vector from 1 to 2, as an array
     distances: double precision  *intent(in)*    *size(1)*  
-        
+        distance from 1 to 2, as an array
     **enegs**: double precision  **intent(inout)**    *size(:)*  
-        
+        calculated electronegativities
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
-        
+        returns true if the loop finds an interaction with 3 or more targets
             
   .. function:: core_evaluate_local_doublet_energy(n_atoms, atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, energy, many_bodies_found)
 
+    Evaluates the local potential affecting two atoms.
+    
 
     Parameters:
 
     n_atoms: integer  *intent(in)*    *scalar*  
         
     atom_doublet: type(atom)  *intent(in)*    *size(2)*  
-        
+        the atoms that are targeted
     index1: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 1
     index2: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 2
     test_index1: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2
     interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        
+        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 1)*  
-        
+        distance vector from 1 to 2, as an array
     directions: double precision  *intent(in)*    *size(3, 1)*  
-        
+        unit vector from 1 to 2, as an array
     distances: double precision  *intent(in)*    *size(1)*  
-        
+        distance from 1 to 2, as an array
     **energy**: double precision  **intent(inout)**    *scalar*  
-        
+        calculated energy
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
-        
+        returns true if the loop finds an interaction with 3 or more targets
             
   .. function:: core_evaluate_local_doublet_energy_B(atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, energy, many_bodies_found)
 
+    Evaluates the local potential affecting two atoms. (Rearranged internally compared to 'A'.)
+    
 
     Parameters:
 
     atom_doublet: type(atom)  *intent(in)*    *size(2)*  
-        
+        the atoms that are targeted
     index1: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 1
     index2: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 2
     test_index1: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2
     interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        
+        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 1)*  
-        
+        distance vector from 1 to 2, as an array
     directions: double precision  *intent(in)*    *size(3, 1)*  
-        
+        unit vector from 1 to 2, as an array
     distances: double precision  *intent(in)*    *size(1)*  
-        
+        distance from 1 to 2, as an array
     **energy**: double precision  **intent(inout)**    *scalar*  
-        
+        calculated energy
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
-        
+        returns true if the loop finds an interaction with 3 or more targets
             
   .. function:: core_evaluate_local_doublet_forces(n_atoms, atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, forces, stress, many_bodies_found)
 
+    Evaluates the local force affecting two atoms.
+    
 
     Parameters:
 
     n_atoms: integer  *intent(in)*    *scalar*  
-        
+        total number of atoms in the system
     atom_doublet: type(atom)  *intent(in)*    *size(2)*  
-        
+        the atoms that are targeted
     index1: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 1
     index2: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 2
     test_index1: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2
     interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        
+        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 1)*  
-        
+        distance vector from 1 to 2, as an array
     directions: double precision  *intent(in)*    *size(3, 1)*  
-        
+        unit vector from 1 to 2, as an array
     distances: double precision  *intent(in)*    *size(1)*  
-        
+        distance from 1 to 2, as an array
     **forces**: double precision  **intent(inout)**    *size(3, n_atoms)*  
-        
+        calculated forces
     **stress**: double precision  **intent(inout)**    *size(6)*  
-        
+        calculated stress
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
-        
+        returns true if the loop finds an interaction with 3 or more targets
             
   .. function:: core_evaluate_local_doublet_forces_B(atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, forces, stress, many_bodies_found)
 
+    Evaluates the local force affecting two atoms. (Rearranged internally.)
+    
 
     Parameters:
 
     atom_doublet: type(atom)  *intent(in)*    *size(2)*  
-        
+        the atoms that are targeted
     index1: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 1
     index2: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 2
     test_index1: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2
     interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        
+        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 1)*  
-        
+        distance vector from 1 to 2, as an array
     directions: double precision  *intent(in)*    *size(3, 1)*  
-        
+        unit vector from 1 to 2, as an array
     distances: double precision  *intent(in)*    *size(1)*  
-        
+        distance from 1 to 2, as an array
     **forces**: double precision  **intent(inout)**    *size(:, :)*  
-        
+        calculated forces
     **stress**: double precision  **intent(inout)**    *size(6)*  
-        
+        calculated stress
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
-        
+        returns true if the loop finds an interaction with 3 or more targets
             
   .. function:: core_evaluate_local_quadruplet(n_atoms, atom_quadruplet, index1, index2, index3, index4, test_index1, test_index2, test_index3, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found)
 
+    Evaluates the interactions affecting four atoms.
+    
 
     Parameters:
 
     n_atoms: integer  *intent(in)*    *scalar*  
-        
+        total number of atoms in the system
     atom_quadruplet: type(atom)  *intent(in)*    *size(4)*  
-        
+        the atoms that are targeted
     index1: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 1
     index2: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 2
     index3: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 3
     index4: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 4
     test_index1: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2, 3
     test_index2: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2, 3
     test_index3: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2, 3
     interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        
+        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 3)*  
-        
+        distance vector from 1 to 2, 2 to 3 and 3 to 4 as an array
     directions: double precision  *intent(in)*    *size(3, 3)*  
-        
+        unit vector from 1 to 2, 2 to 3 and 3 to 4 as an array
     distances: double precision  *intent(in)*    *size(3)*  
-        
+        distance from 1 to 2, 2 to 3 and 3 to 4 as an array
     calculation_type: integer  *intent(in)*    *scalar*  
-        
+        the type of information requested
     **energy**: double precision  **intent(out)**    *scalar*  
-        
+        calculated energy
     **forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
-        
+        calculated forces
     **enegs**: double precision  **intent(out)**    *size(n_atoms)*  
-        
+        calculated electronegativities
     **stress**: double precision  **intent(out)**    *size(6)*  
-        
+        calculated stress
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
-        
+        returns true if the loop finds an interaction with 3 or more targets
             
   .. function:: core_evaluate_local_quadruplet_B(atom_quadruplet, index1, index2, index3, index4, test_index1, test_index2, test_index3, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found)
 
+    Evaluates the interactions affecting four atoms. (Rearranged internally.)
+    
 
     Parameters:
 
     atom_quadruplet: type(atom)  *intent(in)*    *size(4)*  
-        
+        the atoms that are targeted
     index1: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 1
     index2: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 2
     index3: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 3
     index4: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 4
     test_index1: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2, 3
     test_index2: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2, 3
     test_index3: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2, 3
     interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        
+        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 3)*  
-        
+        distance vector from 1 to 2, 2 to 3 and 3 to 4 as an array
     directions: double precision  *intent(in)*    *size(3, 3)*  
-        
+        unit vector from 1 to 2, 2 to 3 and 3 to 4 as an array
     distances: double precision  *intent(in)*    *size(3)*  
-        
+        distance from 1 to 2, 2 to 3 and 3 to 4 as an array
     calculation_type: integer  *intent(in)*    *scalar*  
-        
+        the type of information requested
     **energy**: double precision  **intent(inout)**    *scalar*  
-        
+        calculated energy
     **forces**: double precision  **intent(inout)**    *size(:, :)*  
-        
+        calculated forces
     **enegs**: double precision  **intent(inout)**    *size(:)*  
-        
+        calculated electronegativities
     **stress**: double precision  **intent(inout)**    *size(6)*  
-        
+        calculated stress
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
-        
+        returns true if the loop finds an interaction with 3 or more targets
             
   .. function:: core_evaluate_local_singlet(index1, atom_singlet, interaction_indices, calculation_type, energy, forces, stress, enegs)
 
@@ -1313,87 +1331,91 @@ Full documentation of subroutines in pysic_core
     **forces**: double precision  **intent(inout)**    *size(:, :)*  
         calculated forces
     **stress**: double precision  **intent(inout)**    *size(6)*  
-        
+        calculated stress
     **enegs**: double precision  **intent(inout)**    *size(:)*  
         calculated electronegativities
             
   .. function:: core_evaluate_local_triplet(n_atoms, atom_triplet, index1, index2, index3, test_index1, test_index2, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found)
 
+    Evaluates the interactions affecting three atoms.
+    
 
     Parameters:
 
     n_atoms: integer  *intent(in)*    *scalar*  
-        
+        total number of atoms in the system
     atom_triplet: type(atom)  *intent(in)*    *size(3)*  
-        
+        the atoms that are targeted
     index1: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 1
     index2: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 2
     index3: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 3
     test_index1: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2, 3
     test_index2: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2, 3
     interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        
+        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 2)*  
-        
+        distance vector from 1 to 2 and 2 to 3 as an array
     directions: double precision  *intent(in)*    *size(3, 2)*  
-        
+        unit vector from 1 to 2 and 2 to 3 as an array
     distances: double precision  *intent(in)*    *size(2)*  
-        
+        distance from 1 to 2 and 2 to 3 as an array
     calculation_type: integer  *intent(in)*    *scalar*  
-        
+        the type of information requested
     **energy**: double precision  **intent(out)**    *scalar*  
-        
+        calculated energy
     **forces**: double precision  **intent(out)**    *size(3, n_atoms)*  
-        
+        calculated forces
     **enegs**: double precision  **intent(out)**    *size(n_atoms)*  
-        
+        calculated electronegativities
     **stress**: double precision  **intent(out)**    *size(6)*  
-        
+        calculated stress
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
-        
+        returns true if the loop finds an interaction with 3 or more targets
             
   .. function:: core_evaluate_local_triplet_B(atom_triplet, index1, index2, index3, test_index1, test_index2, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found)
 
+    Evaluates the interactions affecting three atoms. (Rearranged internally.)
+    
 
     Parameters:
 
     atom_triplet: type(atom)  *intent(in)*    *size(3)*  
-        
+        the atoms that are targeted
     index1: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 1
     index2: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 2
     index3: integer  *intent(in)*    *scalar*  
-        
+        index of the atom 3
     test_index1: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2, 3
     test_index2: integer  *intent(in)*    *scalar*  
-        
+        if 1, test if the ineraction targets atom1; similarly for 2, 3
     interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        
+        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 2)*  
-        
+        distance vector from 1 to 2 and 2 to 3 as an array
     directions: double precision  *intent(in)*    *size(3, 2)*  
-        
+        unit vector from 1 to 2 and 2 to 3 as an array
     distances: double precision  *intent(in)*    *size(2)*  
-        
+        distance from 1 to 2 and 2 to 3 as an array
     calculation_type: integer  *intent(in)*    *scalar*  
-        
+        the type of information requested
     **energy**: double precision  **intent(inout)**    *scalar*  
-        
+        calculated energy
     **forces**: double precision  **intent(inout)**    *size(:, :)*  
-        
+        calculated forces
     **enegs**: double precision  **intent(inout)**    *size(:)*  
-        
+        calculated electronegativities
     **stress**: double precision  **intent(inout)**    *size(6)*  
-        
+        calculated stress
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
-        
+        returns true if the loop finds an interaction with 3 or more targets
             
   .. function:: core_fill_bond_order_storage()
 
@@ -1713,7 +1735,7 @@ Full documentation of subroutines in pysic_core
             
   .. function:: core_post_process_pair_bond_order_factor(atom1, group_index, raw_sum, total_bond_order)
 
-    Bond-order post processing, i.e., application of per-atom scaling functions.
+    Bond-order post processing, i.e., application of per-pair scaling functions.
     
     By post processing, we mean any operations done after calculating the
     sum of pair- and many-body terms. That is, if a factor is, say,
@@ -1731,13 +1753,13 @@ Full documentation of subroutines in pysic_core
     Parameters:
 
     atom1: type(atom)  *intent(in)*    *scalar*  
-        
+        the central atom of the pair bond order factor
     group_index: integer  *intent(in)*    *scalar*  
         an index denoting the potential to which the factor is connected
     raw_sum: double precision  *intent(in)*    *scalar*  
-        
+        precalculated bond order sum, :math:`\sum_k c_{ijk}`, in the above example.
     **total_bond_order**: double precision  **intent(out)**    *scalar*  
-        
+        the calculated bond order factor :math:`b_{ij}`
             
   .. function:: core_post_process_pair_bond_order_gradients(group_index, atom1, raw_sum, raw_gradients, total_bond_gradients, raw_virial, total_virial, mpi_split)
 
@@ -1770,7 +1792,7 @@ Full documentation of subroutines in pysic_core
     group_index: integer  *intent(in)*    *scalar*  
         an index denoting the potential to which the factor is connected
     atom1: type(atom)  *intent(in)*    *scalar*  
-        
+        the central atom of the pair bond order factor
     raw_sum: double precision  *intent(in)*    *scalar*  
         precalculated bond order sum for the given atom, :math:`\sum_j c_{ij}`, in the above example
     raw_gradients: double precision  *intent(in)*    *size(:, :)*  
@@ -1799,9 +1821,9 @@ Full documentation of subroutines in pysic_core
     real_cut: double precision  *intent(in)*    *scalar*  
         the real-space cutoff
     k_radius: double precision  *intent(in)*    *scalar*  
-        
+        the k-space cutoff (in inverse length)
     reciprocal_cut: integer  *intent(in)*    *size(3)*  
-        the k-space cutoffs
+        the k-space cutoffs (in numbers of k-space cells)
     sigma: double precision  *intent(in)*    *scalar*  
         the split parameter
     epsilon: double precision  *intent(in)*    *scalar*  
