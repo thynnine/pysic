@@ -4935,20 +4935,20 @@ contains
 
   ! Evaluates the local force affecting two atoms from bond order factors.
   !
-  ! *n_atoms total number of atoms in the system
   ! *index1 index of the atom 1
   ! *index2 index of the atom 2
-  ! *atom_doublet the atoms that are targeted
-  ! *test_index1 if 1, test if the ineraction targets atom1; similarly for 2
   ! *interaction the interactions targeting the given atoms
-  ! *separations distance vector from 1 to 2, as an array
-  ! *directions unit vector from 1 to 2, as an array
-  ! *distances distance from 1 to 2, as an array
+  ! *prefactor the precalculated part of the factor
+  ! *separation distance vector from 1 to 2, as an array
+  ! *direction unit vector from 1 to 2, as an array
+  ! *distance distance from 1 to 2, as an array
+  ! *group_index index of the potential
+  ! *pair_bo_sums precalculated bond order sum
+  ! *pair_bo_factors precalculated bond order factors
   ! *forces calculated forces
   ! *stress calculated stress
   ! *many_bodies_found returns true if the loop finds an interaction with 3 or more targets
   subroutine core_add_pair_bond_order_forces(  &
-       !atom_doublet, &
        index1, index2, &
        interaction, prefactor, &
        separation, direction, distance, &
@@ -4957,7 +4957,6 @@ contains
     implicit none
     integer, intent(in) :: index1, index2, group_index
     double precision, intent(inout) :: forces(:,:), stress(6)
-    !type(atom), intent(in) :: atom_doublet(2)
     double precision, intent(in) :: separation(3), direction(3), distance, &
          prefactor, pair_bo_factors(2), pair_bo_sums(2)
     
