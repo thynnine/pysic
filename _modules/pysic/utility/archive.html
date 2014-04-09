@@ -1,0 +1,348 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.utility.archive &mdash; Pysic 0.5 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.5 documentation" href="../../../index.html" />
+    <link rel="up" title="pysic" href="../../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.5 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.utility.archive</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">h5py</span>
+<span class="k">except</span><span class="p">:</span>
+    <span class="k">print</span> <span class="s">&quot;h5py not found, archiving tools not available&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">Atoms</span>
+
+<div class="viewcode-block" id="Archive"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive">[docs]</a><span class="k">class</span> <span class="nc">Archive</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;A class representing a data archive in the hdf5 format.</span>
+<span class="sd">    </span>
+<span class="sd">    The archive is built on h5py. See its </span>
+<span class="sd">    `documentation &lt;http://docs.h5py.org/en/latest/quick.html&gt;`_</span>
+<span class="sd">    to access further functionality.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">    </span>
+<span class="sd">    filename: string</span>
+<span class="sd">        path to the file storing the data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span> <span class="o">=</span> <span class="bp">None</span>
+
+
+<div class="viewcode-block" id="Archive.get_contents"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.get_contents">[docs]</a>    <span class="k">def</span> <span class="nf">get_contents</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Archive.list"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.list">[docs]</a>    <span class="k">def</span> <span class="nf">list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="p">:</span>
+            <span class="k">print</span> <span class="n">name</span>
+</div>
+<div class="viewcode-block" id="Archive.state"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.state">[docs]</a>    <span class="k">def</span> <span class="nf">state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;current group: &quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;current dataset: &quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span><span class="o">.</span><span class="n">name</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;no dataset accessed&quot;</span>
+</div>
+<div class="viewcode-block" id="Archive.group"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.group">[docs]</a>    <span class="k">def</span> <span class="nf">group</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;current group: &quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_group_metadata</span><span class="p">()</span>
+        <span class="k">print</span> <span class="s">&quot;attributes:&quot;</span>
+        <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;  &quot;</span><span class="o">+</span><span class="n">attribute</span><span class="o">+</span><span class="s">&quot; = &quot;</span><span class="o">+</span><span class="n">meta</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span>
+
+</div>
+<div class="viewcode-block" id="Archive.data"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.data">[docs]</a>    <span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">print</span> <span class="s">&quot;current dataset: &quot;</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">meta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_dataset_metadata</span><span class="p">()</span>
+        <span class="k">print</span> <span class="s">&quot;attributes:&quot;</span>
+        <span class="k">for</span> <span class="n">attribute</span> <span class="ow">in</span> <span class="n">meta</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;  &quot;</span><span class="o">+</span><span class="n">attribute</span><span class="o">+</span><span class="s">&quot; = &quot;</span><span class="o">+</span><span class="n">meta</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span>
+</div>
+<div class="viewcode-block" id="Archive.get_group_name"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.get_group_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_group_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="o">.</span><span class="n">name</span>
+</div>
+<div class="viewcode-block" id="Archive.get_group"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.get_group">[docs]</a>    <span class="k">def</span> <span class="nf">get_group</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span>
+</div>
+<div class="viewcode-block" id="Archive.create_subgroup"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.create_subgroup">[docs]</a>    <span class="k">def</span> <span class="nf">create_subgroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="n">new_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="o">.</span><span class="n">create_group</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="c">#self.active_group = new_group</span>
+</div>
+<div class="viewcode-block" id="Archive.delete_subgroup"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.delete_subgroup">[docs]</a>    <span class="k">def</span> <span class="nf">delete_subgroup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Archive.move_to_group"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.move_to_group">[docs]</a>    <span class="k">def</span> <span class="nf">move_to_group</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Archive.move_to_parent_group"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.move_to_parent_group">[docs]</a>    <span class="k">def</span> <span class="nf">move_to_parent_group</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="o">.</span><span class="n">parent</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="Archive.move_to_root_group"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.move_to_root_group">[docs]</a>    <span class="k">def</span> <span class="nf">move_to_root_group</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="Archive.delete_group"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.delete_group">[docs]</a>    <span class="k">def</span> <span class="nf">delete_group</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">delname</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="o">.</span><span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">move_to_parent_group</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">delete_subgroup</span><span class="p">(</span><span class="n">delname</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span> <span class="o">=</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="Archive.move"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.move">[docs]</a>    <span class="k">def</span> <span class="nf">move</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">destination</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">source</span><span class="p">,</span> <span class="n">destination</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Archive.get_dataset_name"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.get_dataset_name">[docs]</a>    <span class="k">def</span> <span class="nf">get_dataset_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span><span class="o">.</span><span class="n">name</span>
+</div>
+<div class="viewcode-block" id="Archive.get_dataset"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.get_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">get_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span>
+</div>
+<div class="viewcode-block" id="Archive.access_dataset"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.access_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">access_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span>
+</div>
+<div class="viewcode-block" id="Archive.create_dataset"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.create_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">create_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">):</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwds</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span> <span class="o">=</span> <span class="n">dataset</span>
+</div>
+<div class="viewcode-block" id="Archive.delete_dataset"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.delete_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">delete_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Archive.delete_current_dataset"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.delete_current_dataset">[docs]</a>    <span class="k">def</span> <span class="nf">delete_current_dataset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">file</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span><span class="o">.</span><span class="n">name</span><span class="p">]</span>
+
+
+</div>
+<div class="viewcode-block" id="Archive.get_group_metadata"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.get_group_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">get_group_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="o">.</span><span class="n">attrs</span>
+</div>
+<div class="viewcode-block" id="Archive.get_dataset_metadata"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.get_dataset_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">get_dataset_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span><span class="o">.</span><span class="n">attrs</span>
+</div>
+<div class="viewcode-block" id="Archive.add_group_metadata"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.add_group_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">add_group_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">metadata</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span>
+</div>
+<div class="viewcode-block" id="Archive.add_dataset_metadata"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.add_dataset_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">add_dataset_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">metadata</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span>
+</div>
+<div class="viewcode-block" id="Archive.remove_group_metadata"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.remove_group_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">remove_group_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_group</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Archive.remove_dataset_metadata"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.remove_dataset_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">remove_dataset_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">active_dataset</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">attribute</span><span class="p">]</span>
+
+
+</div>
+<div class="viewcode-block" id="Archive.store_system"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.store_system">[docs]</a>    <span class="k">def</span> <span class="nf">store_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">calculate</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Stores the information of an atomic system.</span>
+<span class="sd">        </span>
+<span class="sd">        The routine creates a group with the given name and</span>
+<span class="sd">        stores the atomic information there as named datasets::</span>
+<span class="sd">        </span>
+<span class="sd">         &#39;atomic numbers&#39;</span>
+<span class="sd">         &#39;positions&#39;</span>
+<span class="sd">         &#39;charges&#39;</span>
+<span class="sd">         &#39;magnetic moments&#39;</span>
+<span class="sd">         &#39;tags&#39;</span>
+<span class="sd">         &#39;cell&#39;</span>
+<span class="sd">         &#39;pbc&#39;</span>
+<span class="sd">         &#39;momenta&#39;</span>
+<span class="sd">         &#39;potential energy&#39;</span>
+<span class="sd">         &#39;forces&#39;</span>
+<span class="sd">         &#39;stress&#39;</span>
+<span class="sd">         &#39;electronegativites&#39;</span>
+<span class="sd">         </span>
+<span class="sd">        The data requiring calculation is stored only if a calculator</span>
+<span class="sd">        is attached to the atoms, electronegativities only if the</span>
+<span class="sd">        calculator is :class:`~pysic.calculator.Pysic`.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        name: string</span>
+<span class="sd">            the name of the group for storing the data</span>
+<span class="sd">        atoms: Atoms object</span>
+<span class="sd">            the structure to be stored</span>
+<span class="sd">        calculate: boolean</span>
+<span class="sd">            if True, the data requiring calculations will not be stored</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_subgroup</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">move_to_group</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;atomic numbers&#39;</span><span class="p">,</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;positions&#39;</span><span class="p">,</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_positions</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;charges&#39;</span><span class="p">,</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_initial_charges</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;magnetic moments&#39;</span><span class="p">,</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_initial_magnetic_moments</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;tags&#39;</span><span class="p">,</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_tags</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;cell&#39;</span><span class="p">,</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_cell</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;pbc&#39;</span><span class="p">,</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_pbc</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;momenta&#39;</span><span class="p">,</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_momenta</span><span class="p">())</span>
+
+        <span class="k">if</span> <span class="n">calculate</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;potential energy&#39;</span><span class="p">,</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">())</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;forces&#39;</span><span class="p">,</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_forces</span><span class="p">())</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;stress&#39;</span><span class="p">,</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_stress</span><span class="p">())</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="s">&#39;electronegativities&#39;</span><span class="p">,</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_calculator</span><span class="p">()</span><span class="o">.</span><span class="n">get_electronegativities</span><span class="p">())</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="k">pass</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">move_to_parent_group</span><span class="p">()</span>
+        
+</div>
+<div class="viewcode-block" id="Archive.get_system"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.archive.Archive.get_system">[docs]</a>    <span class="k">def</span> <span class="nf">get_system</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Restore a stored system.</span>
+<span class="sd">        </span>
+<span class="sd">        The function returns a tuple with the data::</span>
+<span class="sd">        </span>
+<span class="sd">          system, energy, forces, stress, electronegativities</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        name: string</span>
+<span class="sd">            name of the group storing the system</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">move_to_group</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+        <span class="n">numbers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_dataset</span><span class="p">(</span><span class="s">&#39;atomic numbers&#39;</span><span class="p">)[:]</span>
+        <span class="n">system</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">numbers</span><span class="p">))</span>
+        <span class="n">system</span><span class="o">.</span><span class="n">set_atomic_numbers</span><span class="p">(</span><span class="n">numbers</span><span class="p">)</span>
+        <span class="n">system</span><span class="o">.</span><span class="n">set_positions</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">access_dataset</span><span class="p">(</span><span class="s">&#39;positions&#39;</span><span class="p">)[:,:]))</span>
+        <span class="n">system</span><span class="o">.</span><span class="n">set_initial_charges</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">access_dataset</span><span class="p">(</span><span class="s">&#39;charges&#39;</span><span class="p">)[:])</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">system</span><span class="o">.</span><span class="n">set_initial_magnetic_moments</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">access_dataset</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="s">&#39;magnetic moments&#39;</span><span class="p">)[:,:]))</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">pass</span>
+        
+        <span class="n">system</span><span class="o">.</span><span class="n">set_tags</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">access_dataset</span><span class="p">(</span><span class="s">&#39;tags&#39;</span><span class="p">)[:])</span>
+        <span class="n">system</span><span class="o">.</span><span class="n">set_cell</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">access_dataset</span><span class="p">(</span><span class="s">&#39;cell&#39;</span><span class="p">)[:])</span>
+        <span class="n">system</span><span class="o">.</span><span class="n">set_pbc</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">access_dataset</span><span class="p">(</span><span class="s">&#39;pbc&#39;</span><span class="p">)[:])</span>
+        <span class="n">system</span><span class="o">.</span><span class="n">set_momenta</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">access_dataset</span><span class="p">(</span><span class="s">&#39;momenta&#39;</span><span class="p">)[:,:])</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">ene</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_dataset</span><span class="p">(</span><span class="s">&#39;potential energy&#39;</span><span class="p">)[()]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">ene</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">forces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_dataset</span><span class="p">(</span><span class="s">&#39;forces&#39;</span><span class="p">)[()]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">forces</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">stress</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_dataset</span><span class="p">(</span><span class="s">&#39;stress&#39;</span><span class="p">)[()]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">stress</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">enega</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">access_dataset</span><span class="p">(</span><span class="s">&#39;electronegativities&#39;</span><span class="p">)[:]</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">enega</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">move_to_parent_group</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">(</span><span class="n">system</span><span class="p">,</span> <span class="n">ene</span><span class="p">,</span> <span class="n">forces</span><span class="p">,</span> <span class="n">stress</span><span class="p">,</span> <span class="n">enega</span><span class="p">)</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.5 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2013, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

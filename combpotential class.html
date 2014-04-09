@@ -1,0 +1,264 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>CombPotential class &mdash; Pysic 0.5 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.5 documentation" href="index.html" />
+    <link rel="up" title="CompoundPotential class" href="compoundpotential class.html" />
+    <link rel="next" title="ChargeRelaxation class" href="chargerelaxation class.html" />
+    <link rel="prev" title="SuttonChenPotential class" href="suttonchenpotential class.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="chargerelaxation class.html" title="ChargeRelaxation class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="suttonchenpotential class.html" title="SuttonChenPotential class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" >Pysic module</a> &raquo;</li>
+          <li><a href="compoundpotential class.html" accesskey="U">CompoundPotential class</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">CombPotential class</a><ul>
+<li><a class="reference internal" href="#full-documentation-of-the-combpotential-class">Full documentation of the CombPotential class</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="suttonchenpotential class.html"
+                        title="previous chapter">SuttonChenPotential class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="chargerelaxation class.html"
+                        title="next chapter">ChargeRelaxation class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/combpotential class.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="combpotential-class">
+<span id="id1"></span><h1>CombPotential class<a class="headerlink" href="#combpotential-class" title="Permalink to this headline">¶</a></h1>
+<p>This class constructs the Comb potential for silicon and silica <a class="footnote-reference" href="#id3" id="id2">[1]</a> as a subclass of <a class="reference internal" href="compoundpotential class.html#pysic.interactions.compound.CompoundPotential" title="pysic.interactions.compound.CompoundPotential"><tt class="xref py py-class docutils literal"><span class="pre">CompoundPotential</span></tt></a>.</p>
+<p>Load the potential with:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">pysic.interactions.comb</span> <span class="kn">import</span> <span class="n">CombPotential</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pysic</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pot</span> <span class="o">=</span> <span class="n">CombPotential</span><span class="p">()</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">pot</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calc</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The potential is only defined for Si and SiO and parameters have been hard coded, so symbols need not be set. The potential also automatically includes screened <a class="reference internal" href="coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation" title="pysic.interactions.coulomb.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">CoulombSummation</span></tt></a>, which is why the calculator should be given to it explicitly with <tt class="xref py py-meth docutils literal"><span class="pre">set_calculator()</span></tt>.</p>
+<p>Comb is a fairly complicated potential with many components such as local attractive and repulsive terms, bond angle terms and electrostatics. The class allows the user to switch terms on and off in order to analyze their contribution.</p>
+<table class="docutils footnote" frame="void" id="id3" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[1]</a></td><td>T.-R. Shan, D. Bryce, J. Hawkins, A. Asthagiri, S. Phillpot, and S. Sinnott, Phys Rev B 82, 235302 (2010).</td></tr>
+</tbody>
+</table>
+<div class="section" id="full-documentation-of-the-combpotential-class">
+<h2>Full documentation of the CombPotential class<a class="headerlink" href="#full-documentation-of-the-combpotential-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pysic.interactions.comb.CombPotential">
+<em class="property">class </em><tt class="descclassname">pysic.interactions.comb.</tt><tt class="descname">CombPotential</tt><big>(</big><em>excludes=['direct_coulomb', 'long_coulomb']</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class representing a COMB potential.</p>
+<p>Use:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pysic</span>
+<span class="kn">import</span> <span class="nn">pysic.interactions.comb</span> <span class="kn">as</span> <span class="nn">comb_sio</span>
+
+<span class="n">calc</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+<span class="n">pot</span> <span class="o">=</span> <span class="n">comb_sio</span><span class="o">.</span><span class="n">CombPotential</span><span class="p">()</span>     
+<span class="n">pot</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">calc</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Since the potential may also define CoulombSummation (which it by default
+does), you should always pass the calculator to the potential in addition
+to passing the potential to the calculator.</p>
+<p>The potential can be modified through the exclusion list. This
+defines which chuncks of the potential are incorporated at any time.
+For instance:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">pot</span><span class="o">.</span><span class="n">exclude</span><span class="p">(</span><span class="s">&#39;si_self&#39;</span><span class="p">)</span>
+<span class="n">calc</span><span class="o">.</span><span class="n">set_potentials</span><span class="p">(</span><span class="n">pot</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>will remove the self energy contribution from Si atoms. If you modify
+the potential, you need to confirm the changes by passing the potential
+to the calculator. This is because the potential is built in the calculator
+as it is passed. Therefore any changes made after that to the potential will not
+propagate to the calculator.</p>
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.check_exclude">
+<tt class="descname">check_exclude</tt><big>(</big><em>ex</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.check_exclude"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.check_exclude" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns True, if <tt class="docutils literal"><span class="pre">ex</span></tt> is a valid keyword of the list of components
+for this potential.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.define_elements">
+<tt class="descname">define_elements</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.define_elements"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.define_elements" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates the components of the potential.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.exclude">
+<tt class="descname">exclude</tt><big>(</big><em>ex</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.exclude"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.exclude" title="Permalink to this definition">¶</a></dt>
+<dd><p>Excludes the given component from the potential.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.exclude_all">
+<tt class="descname">exclude_all</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.exclude_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.exclude_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Excludes everything.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.include">
+<tt class="descname">include</tt><big>(</big><em>ex</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.include"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.include" title="Permalink to this definition">¶</a></dt>
+<dd><p>Includes the given component in the potential.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.include_all">
+<tt class="descname">include_all</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.include_all"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.include_all" title="Permalink to this definition">¶</a></dt>
+<dd><p>Includes all components in the potential, except long range Coulomb interaction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.is_excluded">
+<tt class="descname">is_excluded</tt><big>(</big><em>ex</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.is_excluded"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.is_excluded" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if the given component is excluded from the potential.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.is_included">
+<tt class="descname">is_included</tt><big>(</big><em>ex</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.is_included"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.is_included" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="docutils literal"><span class="pre">True</span></tt> if the given component is included in the potential.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.list_excludes">
+<tt class="descname">list_excludes</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.list_excludes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.list_excludes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lists the excluded components.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.list_possible_excludes">
+<tt class="descname">list_possible_excludes</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.list_possible_excludes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.list_possible_excludes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lists the keywords of the list of components of the potential.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.set_calculator">
+<tt class="descname">set_calculator</tt><big>(</big><em>calc</em>, <em>reciprocal=False</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.set_calculator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.set_calculator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Attaches the calculator to the potential. This is needed so that a CoulombSummation
+can be set. If the argument <tt class="docutils literal"><span class="pre">reciprocal=True</span></tt> is given, also the command
+<tt class="docutils literal"><span class="pre">calc.set_potentials(self)</span></tt> is run.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.set_ewald">
+<tt class="descname">set_ewald</tt><big>(</big><em>calc</em>, <em>cheat</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.set_ewald"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.set_ewald" title="Permalink to this definition">¶</a></dt>
+<dd><p>Switches on Ewald summation in <tt class="docutils literal"><span class="pre">calc</span></tt>. If <tt class="docutils literal"><span class="pre">cheat</span> <span class="pre">==</span> <span class="pre">True</span></tt>, a short ranged screened
+interaction is used. For internal use.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interactions.comb.CombPotential.toggle_exclude">
+<tt class="descname">toggle_exclude</tt><big>(</big><em>ex</em><big>)</big><a class="reference internal" href="_modules/pysic/interactions/comb.html#CombPotential.toggle_exclude"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interactions.comb.CombPotential.toggle_exclude" title="Permalink to this definition">¶</a></dt>
+<dd><p>Changes the state of the given component from included to excluded, or from excluded to included.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="chargerelaxation class.html" title="ChargeRelaxation class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="suttonchenpotential class.html" title="SuttonChenPotential class"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" >Pysic module</a> &raquo;</li>
+          <li><a href="compoundpotential class.html" >CompoundPotential class</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2013, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

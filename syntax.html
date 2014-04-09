@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Structure and syntax of Pysic &mdash; Pysic 0.4.8 documentation</title>
+    <title>Structure and syntax of Pysic &mdash; Pysic 0.5 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.8',
+        VERSION:     '0.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.8 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.5 documentation" href="index.html" />
     <link rel="next" title="Pysic module" href="pysic.html" />
     <link rel="prev" title="Examples" href="run examples.html" /> 
   </head>
@@ -46,20 +46,11 @@
         <li class="right" >
           <a href="run examples.html" title="Examples"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.8 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Structure and syntax of Pysic</a><ul>
-<li><a class="reference internal" href="#modules">Modules</a></li>
-<li><a class="reference internal" href="#classes">Classes</a></li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="run examples.html"
                         title="previous chapter">Examples</a></p>
@@ -98,47 +89,6 @@
 <p>In addition to the Python documentation, also the variables, types, and routines in the Fortran core are listed with comments and explanations. Besides the interface module <a class="reference internal" href="PyInterface_f90.html#pysic-interface"><em>pysic_interface (PyInterface.f90)</em></a>, this part of the code is not accessible through Python. Thus, you need not know what the core contains. However, if you plan to modify the core, studying also the Fortran documentation is useful.</p>
 <p>The graph below show the main dependancies between the Python and Fortran classes and modules. (This is not a full UML diagram, just a schematic presentation.)</p>
 <p><img alt="class and module graph" src="_images/pysic_diagram.pdf" style="height: 400px;" /></p>
-<div class="section" id="modules">
-<h2>Modules<a class="headerlink" href="#modules" title="Permalink to this headline">¶</a></h2>
-<p>Pysic contains many modules, but most of the functionality is automatically imported
-from the submodules with <tt class="docutils literal"><span class="pre">import</span> <span class="pre">pysic</span></tt>. Especially the classes needed for constructing
-the calculator are imported under <tt class="docutils literal"><span class="pre">pysic</span></tt>.</p>
-<ul class="simple">
-<li><a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a></li>
-<li><a class="reference internal" href="pysic class.html#module-pysic.calculator" title="pysic.calculator"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.calculator</span></tt></a></li>
-<li><a class="reference internal" href="coremirror class.html#module-pysic.core" title="pysic.core"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.core</span></tt></a></li>
-<li><a class="reference internal" href="potential class.html#module-pysic.interactions" title="pysic.interactions"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.interactions</span></tt></a></li>
-<li><a class="reference internal" href="potential class.html#module-pysic.interactions.local" title="pysic.interactions.local"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.interactions.local</span></tt></a></li>
-<li><a class="reference internal" href="coordinator class.html#module-pysic.interactions.bondorder" title="pysic.interactions.bondorder"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.interactions.bondorder</span></tt></a></li>
-<li><a class="reference internal" href="coulombsummation class.html#module-pysic.interactions.coulomb" title="pysic.interactions.coulomb"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.interactions.coulomb</span></tt></a></li>
-<li><a class="reference internal" href="chargerelaxation class.html#module-pysic.charges" title="pysic.charges"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.charges</span></tt></a></li>
-<li><a class="reference internal" href="chargerelaxation class.html#module-pysic.charges.relaxation" title="pysic.charges.relaxation"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.charges.relaxation</span></tt></a></li>
-<li><a class="reference internal" href="pysic_utility.html#module-pysic.utility" title="pysic.utility"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.utility</span></tt></a></li>
-<li><a class="reference internal" href="pysic_utility.html#module-pysic.utility.plot" title="pysic.utility.plot"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.utility.plot</span></tt></a></li>
-<li><a class="reference internal" href="pysic_utility.html#module-pysic.utility.convenience" title="pysic.utility.convenience"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.utility.convenience</span></tt></a></li>
-<li><a class="reference internal" href="pysic_utility.html#module-pysic.utility.geometry" title="pysic.utility.geometry"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.utility.geometry</span></tt></a></li>
-<li><a class="reference internal" href="pysic_utility.html#module-pysic.utility.error" title="pysic.utility.error"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.utility.error</span></tt></a></li>
-<li><a class="reference internal" href="pysic_utility.html#module-pysic.utility.debug" title="pysic.utility.debug"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.utility.debug</span></tt></a></li>
-<li><a class="reference internal" href="pysic_utility.html#module-pysic.utility.f2py" title="pysic.utility.f2py"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.utility.f2py</span></tt></a></li>
-<li><a class="reference internal" href="pysic_fortran.html#module-pysic.pysic_fortran" title="pysic.pysic_fortran"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.pysic_fortran</span></tt></a></li>
-<li><a class="reference internal" href="pysic_fortran.html#module-pysic.pysic_fortran.pysic_interface" title="pysic.pysic_fortran.pysic_interface"><tt class="xref py py-mod docutils literal"><span class="pre">pysic.pysic_fortran.pysic_interface</span></tt></a></li>
-</ul>
-</div>
-<div class="section" id="classes">
-<h2>Classes<a class="headerlink" href="#classes" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">pysic.calculator.Pysic</span></tt></a></li>
-<li><a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">pysic.interactions.local.Potential</span></tt></a></li>
-<li><a class="reference internal" href="productpotential class.html#pysic.interactions.local.ProductPotential" title="pysic.interactions.local.ProductPotential"><tt class="xref py py-class docutils literal"><span class="pre">pysic.interactions.local.ProductPotential</span></tt></a></li>
-<li><a class="reference internal" href="coulombsummation class.html#pysic.interactions.coulomb.CoulombSummation" title="pysic.interactions.coulomb.CoulombSummation"><tt class="xref py py-class docutils literal"><span class="pre">pysic.interactions.coulomb.CoulombSummation</span></tt></a></li>
-<li><a class="reference internal" href="coordinator class.html#pysic.interactions.bondorder.Coordinator" title="pysic.interactions.bondorder.Coordinator"><tt class="xref py py-class docutils literal"><span class="pre">pysic.interactions.bondorder.Coordinator</span></tt></a></li>
-<li><a class="reference internal" href="bondorderparameters class.html#pysic.interactions.bondorder.BondOrderParameters" title="pysic.interactions.bondorder.BondOrderParameters"><tt class="xref py py-class docutils literal"><span class="pre">pysic.interactions.bondorder.BondOrderParameters</span></tt></a></li>
-<li><a class="reference internal" href="compoundpotential class.html#pysic.interactions.compound.CompoundPotential" title="pysic.interactions.compound.CompoundPotential"><tt class="xref py py-class docutils literal"><span class="pre">pysic.interactions.compound.CompoundPotential</span></tt></a></li>
-<li><a class="reference internal" href="chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">pysic.charges.relaxation.ChargeRelaxation</span></tt></a></li>
-<li><a class="reference internal" href="fastneighborlist class.html#pysic.calculator.FastNeighborList" title="pysic.calculator.FastNeighborList"><tt class="xref py py-class docutils literal"><span class="pre">pysic.calculator.FastNeighborList</span></tt></a></li>
-<li><a class="reference internal" href="coremirror class.html#pysic.core.CoreMirror" title="pysic.core.CoreMirror"><tt class="xref py py-class docutils literal"><span class="pre">pysic.core.CoreMirror</span></tt></a></li>
-</ul>
-</div>
 </div>
 
 
@@ -162,7 +112,7 @@ the calculator are imported under <tt class="docutils literal"><span class="pre"
         <li class="right" >
           <a href="run examples.html" title="Examples"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.8 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

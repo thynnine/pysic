@@ -42,7 +42,7 @@ Sometimes, you may want to scale the effective charges before calculating the Co
 Using the Python `map <http://docs.python.org/tutorial/datastructures.html#functional-programming-tools>`_ function is a convenient way to generate such atom-by-atom lists. For instance, if you want to generate a list by element::
 
   >>> atoms = ase.Atoms('H2O')  
-  >>> def by_elem(elem):
+  >>> def charge_by_elem(elem):
   ...     if elem == 'H':
   ...         return 0.1
   ...     elif elem == 'O':
@@ -50,7 +50,7 @@ Using the Python `map <http://docs.python.org/tutorial/datastructures.html#funct
   ...     else:
   ...         return 0.0
   ... 
-  >>> charges = map(atoms, ch_by_elem)
+  >>> system.set_initial_charges(map(charge_by_elem, system.get_chemical_symbols()))
   >>> charges
   [0.1, 0.1, -0.2]
 
@@ -113,10 +113,10 @@ The short ranged interactions are directly calculated in real space
     
        \begin{eqnarray}
        E_s & = & \frac{1}{4 \pi \varepsilon_0} \int \frac{\rho_s(\mathbf{r}) \rho_s(\mathbf{r}')}{|\mathbf{r} - \mathbf{r}'|} \mathrm{d}^3 r \mathrm{d}^3 r' \\
-           & = & \frac{1}{4 \pi \varepsilon_0} \sum_{(i,j)} \frac{q_i q_j}{r_{ij}} \mathrm{erfc} \left( \frac{r_{ij}}{\sigma \sqrt{2}} \right).
+           & = & \frac{1}{4 \pi \varepsilon_0} \sum_{(i,j)} \frac{q_i q_j}{r_{ij}} \mathrm{erfc} \left( \frac{r_{ij}}{\sigma \sqrt{2}} \right) - \frac{1}{4 \pi \varepsilon_0} \frac{1}{\sqrt{2 \pi} \sigma} \sum_i^N q_i^2.
        \end{eqnarray}
     
-The complementary error function :math:`\mathrm{erfc}(r) = 1 - \mathrm{erf}(r) = 1 - \frac{2}{\sqrt{\pi}} \int_0^r e^{-t^2/2} \mathrm{d}t` makes the sum converge rapidly as :math:`\frac{r_{ij}}{\sigma} \to \infty`.
+The complementary error function :math:`\mathrm{erfc}(r) = 1 - \mathrm{erf}(r) = 1 - \frac{2}{\sqrt{\pi}} \int_0^r e^{-t^2/2} \mathrm{d}t` makes the sum converge rapidly as :math:`\frac{r_{ij}}{\sigma} \to \infty`. The latter sum is the self energy of each point charge in the potential of the particular Gaussian that screens the charge, and the sum runs over all charges in the supercell spanning the periodic system. (The self energy is cancelled by the long range part of the energy.)
     
 The long ranged interaction 
 
@@ -130,11 +130,11 @@ can be calculated in reciprocal space by Fourier transformation. The result is
        :nowrap:
     
        \begin{eqnarray}
-       E_l & = & \frac{1}{2 V \varepsilon_0} \sum_{\mathbf{k} \ne 0} \frac{e^{-\sigma^2 k^2 / 2}}{k^2} |S(\mathbf{k})|^2 - \frac{1}{4 \pi \varepsilon_0} \frac{1}{\sqrt{2 \pi} \sigma} \sum_i^N q_i^2\\
+       E_l & = & \frac{1}{2 V \varepsilon_0} \sum_{\mathbf{k} \ne 0} \frac{e^{-\sigma^2 k^2 / 2}}{k^2} |S(\mathbf{k})|^2 \\
        S(\mathbf{k}) & = & \sum_i^N q_i e^{\mathrm{i} \mathbf{k} \cdot \mathbf{r}_i}
        \end{eqnarray}
     
-The first sum in :math:`E_l` runs over the reciprocal lattice :math:`\mathbf{k} = k_1 \mathbf{b}_1 + k_2 \mathbf{b}_2 + k_3 \mathbf{b}_3` where :math:`\mathbf{b}_i` are the vectors spanning the reciprocal cell (:math:`[\mathbf{b}_1 \mathbf{b}_2 \mathbf{b}_3] = ([\mathbf{v}_1 \mathbf{v}_2 \mathbf{v}_3]^{-1})^T` where :math:`\mathbf{v}_i` are the real space cell vectors). The latter sum is the self energy of each point charge in the potential of the particular Gaussian that screens the charge, and the sum runs over all charges in the supercell spanning the periodic system. (The self energy must be removed because it is present in the first sum even though when evaluating the potential at the position of a charge due to the other charges, no screening Gaussian function should be placed over the charge itself.) Likewise the sum in the structure factor :math:`S(\mathbf{k})` runs over all charges in the supercell.
+The sum in :math:`E_l` runs over the reciprocal lattice :math:`\mathbf{k} = k_1 \mathbf{b}_1 + k_2 \mathbf{b}_2 + k_3 \mathbf{b}_3` where :math:`\mathbf{b}_i` are the vectors spanning the reciprocal cell (:math:`[\mathbf{b}_1 \mathbf{b}_2 \mathbf{b}_3] = ([\mathbf{v}_1 \mathbf{v}_2 \mathbf{v}_3]^{-1})^T` where :math:`\mathbf{v}_i` are the real space cell vectors). Likewise the sum in the structure factor :math:`S(\mathbf{k})` runs over all charges in the supercell.
     
 The total energy is then the sum of the short and long range energies
     

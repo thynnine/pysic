@@ -138,6 +138,8 @@ the name of the submodule containing the potential.
   :maxdepth: 1
 
   suttonchenpotential class
+  combpotential class
+
 
 
 

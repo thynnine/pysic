@@ -515,19 +515,19 @@ Full documentation of subroutines in pysic_core
     index2: integer  *intent(in)*    *scalar*  
         index of the atom 2
     prefactor: double precision  *intent(in)*    *scalar*  
-        the precalculated part of the factor
+        
     separation: double precision  *intent(in)*    *size(3)*  
-        distance vector from 1 to 2, as an array
+        
     direction: double precision  *intent(in)*    *size(3)*  
-        unit vector from 1 to 2, as an array
+        
     distance: double precision  *intent(in)*    *scalar*  
-        distance from 1 to 2, as an array
+        
     group_index: integer  *intent(in)*    *scalar*  
-        index of the potential
+        
     pair_bo_sums: double precision  *intent(in)*    *size(2)*  
-        precalculated bond order sum
+        
     pair_bo_factors: double precision  *intent(in)*    *size(2)*  
-        precalculated bond order factors
+        
     **forces**: double precision  **intent(inout)**    *size(:, :)*  
         calculated forces
     **stress**: double precision  **intent(inout)**    *size(6)*  

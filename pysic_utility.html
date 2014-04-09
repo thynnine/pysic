@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Pysic Utility modules &mdash; Pysic 0.4.8 documentation</title>
+    <title>Pysic Utility modules &mdash; Pysic 0.5 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.4.8',
+        VERSION:     '0.5',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.4.8 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.5 documentation" href="index.html" />
     <link rel="next" title="Pysic Fortran module" href="pysic_fortran.html" />
     <link rel="prev" title="CoreMirror class" href="coremirror class.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="coremirror class.html" title="CoreMirror class"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.8 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -55,6 +55,8 @@
   <ul>
 <li><a class="reference internal" href="#">Pysic Utility modules</a><ul>
 <li><a class="reference internal" href="#plot">Plot</a></li>
+<li><a class="reference internal" href="#mpi">MPI</a></li>
+<li><a class="reference internal" href="#archive">Archive</a></li>
 <li><a class="reference internal" href="#convenience">Convenience</a></li>
 <li><a class="reference internal" href="#geometry">Geometry</a></li>
 <li><a class="reference internal" href="#error">Error</a></li>
@@ -101,7 +103,7 @@
 <p>Modules for providing utility tools and parameters.</p>
 <div class="section" id="plot">
 <span id="plot-utility"></span><h2>Plot<a class="headerlink" href="#plot" title="Permalink to this headline">¶</a></h2>
-<p>The plot utility defines a group of tools for exploring and plotting energy and force landscapes.</p>
+<p>The plot utility defines a group of tools for exploring and plotting energy and force landscapes. It uses the <a class="reference external" href="http://matplotlib.org">matplotlib library</a>.</p>
 <span class="target" id="module-pysic.utility.plot"></span><dl class="function">
 <dt id="pysic.utility.plot.plot_abs_force_on_line">
 <tt class="descclassname">pysic.utility.plot.</tt><tt class="descname">plot_abs_force_on_line</tt><big>(</big><em>index, system, direction=None, length=None, steps=100, start=None, end=None, lims=[-10000000000.0, 10000000000.0]</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/plot.html#plot_abs_force_on_line"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.plot.plot_abs_force_on_line" title="Permalink to this definition">¶</a></dt>
@@ -301,6 +303,313 @@ the distances traveled on the plane and the recorded forces is returned.</p>
 <dt>lims: double 2-vector (array or list)</dt>
 <dd>lower and upper truncation limits - if a recorded value is smaller than the lower limit or larger than the upper, it is replaced by the corresponding truncation value</dd>
 </dl>
+</dd></dl>
+
+</div>
+<div class="section" id="mpi">
+<span id="mpi-utility"></span><h2>MPI<a class="headerlink" href="#mpi" title="Permalink to this headline">¶</a></h2>
+<p>The mpi utility defines a group of tools for parallel computations.</p>
+<span class="target" id="module-pysic.utility.mpi"></span><p>Defines MPI safe routines for printing, file access etc.</p>
+<dl class="function">
+<dt id="pysic.utility.mpi.append_file">
+<tt class="descclassname">pysic.utility.mpi.</tt><tt class="descname">append_file</tt><big>(</big><em>lines</em>, <em>filename</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/mpi.html#append_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.mpi.append_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends the given lines to a text file so that only the master cpu writes.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>lines: list of strings</dt>
+<dd>lines to be written</dd>
+<dt>filename: string</dt>
+<dd>the name of the file</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.mpi.cd">
+<tt class="descclassname">pysic.utility.mpi.</tt><tt class="descname">cd</tt><big>(</big><em>dir</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/mpi.html#cd"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.mpi.cd" title="Permalink to this definition">¶</a></dt>
+<dd><p>Changes to the given directory on all cpus.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>dir: string</dt>
+<dd>the name of the directory</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.mpi.cpu_id">
+<tt class="descclassname">pysic.utility.mpi.</tt><tt class="descname">cpu_id</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/mpi.html#cpu_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.mpi.cpu_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the cpu ID from the Fortran MPI.</p>
+<p>Equivalent to <a class="reference internal" href="#pysic.utility.mpi.get_cpu_id" title="pysic.utility.mpi.get_cpu_id"><tt class="xref py py-func docutils literal"><span class="pre">get_cpu_id()</span></tt></a>.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.mpi.finish_mpi">
+<tt class="descclassname">pysic.utility.mpi.</tt><tt class="descname">finish_mpi</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/mpi.html#finish_mpi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.mpi.finish_mpi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Terminates the MPI framework.</p>
+<p>If the Fortran core is compiled in MPI mode, <a class="reference internal" href="pysic.html#module-pysic" title="pysic"><tt class="xref py py-mod docutils literal"><span class="pre">pysic</span></tt></a> will automatically
+initialize MPI upon being imported. This method terminates the MPI.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.mpi.get_cpu_id">
+<tt class="descclassname">pysic.utility.mpi.</tt><tt class="descname">get_cpu_id</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/mpi.html#get_cpu_id"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.mpi.get_cpu_id" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the cpu ID from the Fortran MPI.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.mpi.get_number_of_cpus">
+<tt class="descclassname">pysic.utility.mpi.</tt><tt class="descname">get_number_of_cpus</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/mpi.html#get_number_of_cpus"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.mpi.get_number_of_cpus" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets the number of cpus from the Fortran MPI.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.mpi.is_master">
+<tt class="descclassname">pysic.utility.mpi.</tt><tt class="descname">is_master</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/mpi.html#is_master"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.mpi.is_master" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns <tt class="docutils literal"><span class="pre">True</span></tt> for the cpu with ID 0.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.mpi.mkdir">
+<tt class="descclassname">pysic.utility.mpi.</tt><tt class="descname">mkdir</tt><big>(</big><em>dir</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/mpi.html#mkdir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.mpi.mkdir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates a new directory only with the master cpu.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>dir: string</dt>
+<dd>the name of the directory</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.mpi.mpi_barrier">
+<tt class="descclassname">pysic.utility.mpi.</tt><tt class="descname">mpi_barrier</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/mpi.html#mpi_barrier"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.mpi.mpi_barrier" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls MPI barrier from the Fortran core MPI framework.</p>
+<p>This is equivalent to <a class="reference internal" href="#pysic.utility.mpi.sync_mpi" title="pysic.utility.mpi.sync_mpi"><tt class="xref py py-func docutils literal"><span class="pre">sync_mpi()</span></tt></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.mpi.mprint">
+<tt class="descclassname">pysic.utility.mpi.</tt><tt class="descname">mprint</tt><big>(</big><em>string</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/mpi.html#mprint"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.mpi.mprint" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints the string to stdout only from the master cpu.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>string: string</dt>
+<dd>the string to be written</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.mpi.sync_mpi">
+<tt class="descclassname">pysic.utility.mpi.</tt><tt class="descname">sync_mpi</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/mpi.html#sync_mpi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.mpi.sync_mpi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calls MPI barrier from the Fortran core MPI framework.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.mpi.write_file">
+<tt class="descclassname">pysic.utility.mpi.</tt><tt class="descname">write_file</tt><big>(</big><em>lines</em>, <em>filename</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/mpi.html#write_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.mpi.write_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Writes the given lines to a text file so that only the master cpu writes.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>lines: list of strings</dt>
+<dd>lines to be written</dd>
+<dt>filename: string</dt>
+<dd>the name of the file</dd>
+</dl>
+</dd></dl>
+
+</div>
+<div class="section" id="archive">
+<span id="archive-utility"></span><h2>Archive<a class="headerlink" href="#archive" title="Permalink to this headline">¶</a></h2>
+<p>The archive utility defines a group of functions for archiving and retrieving simulation data in the hdf5 format. This requires <a class="reference external" href="http://www.hdfgroup.org/HDF5/">hdf5</a>  and the <a class="reference external" href="http://www.h5py.org/">h5py Python library</a>.</p>
+<span class="target" id="module-pysic.utility.archive"></span><dl class="class">
+<dt id="pysic.utility.archive.Archive">
+<em class="property">class </em><tt class="descclassname">pysic.utility.archive.</tt><tt class="descname">Archive</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive" title="Permalink to this definition">¶</a></dt>
+<dd><p>A class representing a data archive in the hdf5 format.</p>
+<p>The archive is built on h5py. See its 
+<a class="reference external" href="http://docs.h5py.org/en/latest/quick.html">documentation</a>
+to access further functionality.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>filename: string</dt>
+<dd>path to the file storing the data</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.access_dataset">
+<tt class="descname">access_dataset</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.access_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.access_dataset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.add_dataset_metadata">
+<tt class="descname">add_dataset_metadata</tt><big>(</big><em>attribute</em>, <em>metadata</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.add_dataset_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.add_dataset_metadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.add_group_metadata">
+<tt class="descname">add_group_metadata</tt><big>(</big><em>attribute</em>, <em>metadata</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.add_group_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.add_group_metadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.create_dataset">
+<tt class="descname">create_dataset</tt><big>(</big><em>name</em>, <em>data</em>, <em>**kwds</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.create_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.create_dataset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.create_subgroup">
+<tt class="descname">create_subgroup</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.create_subgroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.create_subgroup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.data">
+<tt class="descname">data</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.delete_current_dataset">
+<tt class="descname">delete_current_dataset</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.delete_current_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.delete_current_dataset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.delete_dataset">
+<tt class="descname">delete_dataset</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.delete_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.delete_dataset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.delete_group">
+<tt class="descname">delete_group</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.delete_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.delete_group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.delete_subgroup">
+<tt class="descname">delete_subgroup</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.delete_subgroup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.delete_subgroup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.get_contents">
+<tt class="descname">get_contents</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.get_contents"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.get_contents" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.get_dataset">
+<tt class="descname">get_dataset</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.get_dataset"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.get_dataset" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.get_dataset_metadata">
+<tt class="descname">get_dataset_metadata</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.get_dataset_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.get_dataset_metadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.get_dataset_name">
+<tt class="descname">get_dataset_name</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.get_dataset_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.get_dataset_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.get_group">
+<tt class="descname">get_group</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.get_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.get_group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.get_group_metadata">
+<tt class="descname">get_group_metadata</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.get_group_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.get_group_metadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.get_group_name">
+<tt class="descname">get_group_name</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.get_group_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.get_group_name" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.get_system">
+<tt class="descname">get_system</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.get_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.get_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Restore a stored system.</p>
+<p>The function returns a tuple with the data:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">system</span><span class="p">,</span> <span class="n">energy</span><span class="p">,</span> <span class="n">forces</span><span class="p">,</span> <span class="n">stress</span><span class="p">,</span> <span class="n">electronegativities</span>
+</pre></div>
+</div>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>name: string</dt>
+<dd>name of the group storing the system</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.group">
+<tt class="descname">group</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.list">
+<tt class="descname">list</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.list" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.move">
+<tt class="descname">move</tt><big>(</big><em>source</em>, <em>destination</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.move"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.move" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.move_to_group">
+<tt class="descname">move_to_group</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.move_to_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.move_to_group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.move_to_parent_group">
+<tt class="descname">move_to_parent_group</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.move_to_parent_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.move_to_parent_group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.move_to_root_group">
+<tt class="descname">move_to_root_group</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.move_to_root_group"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.move_to_root_group" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.remove_dataset_metadata">
+<tt class="descname">remove_dataset_metadata</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.remove_dataset_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.remove_dataset_metadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.remove_group_metadata">
+<tt class="descname">remove_group_metadata</tt><big>(</big><em>attribute</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.remove_group_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.remove_group_metadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.state">
+<tt class="descname">state</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.state"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.state" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.archive.Archive.store_system">
+<tt class="descname">store_system</tt><big>(</big><em>name</em>, <em>atoms</em>, <em>calculate=True</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/archive.html#Archive.store_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.archive.Archive.store_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stores the information of an atomic system.</p>
+<p>The routine creates a group with the given name and
+stores the atomic information there as named datasets:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="s">&#39;atomic numbers&#39;</span>
+<span class="s">&#39;positions&#39;</span>
+<span class="s">&#39;charges&#39;</span>
+<span class="s">&#39;magnetic moments&#39;</span>
+<span class="s">&#39;tags&#39;</span>
+<span class="s">&#39;cell&#39;</span>
+<span class="s">&#39;pbc&#39;</span>
+<span class="s">&#39;momenta&#39;</span>
+<span class="s">&#39;potential energy&#39;</span>
+<span class="s">&#39;forces&#39;</span>
+<span class="s">&#39;stress&#39;</span>
+<span class="s">&#39;electronegativites&#39;</span>
+</pre></div>
+</div>
+<p>The data requiring calculation is stored only if a calculator
+is attached to the atoms, electronegativities only if the
+calculator is <a class="reference internal" href="pysic class.html#pysic.calculator.Pysic" title="pysic.calculator.Pysic"><tt class="xref py py-class docutils literal"><span class="pre">Pysic</span></tt></a>.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>name: string</dt>
+<dd>the name of the group for storing the data</dd>
+<dt>atoms: Atoms object</dt>
+<dd>the structure to be stored</dd>
+<dt>calculate: boolean</dt>
+<dd>if True, the data requiring calculations will not be stored</dd>
+</dl>
+</dd></dl>
+
 </dd></dl>
 
 </div>
@@ -713,7 +1022,7 @@ will be added to the end.</p>
         <li class="right" >
           <a href="coremirror class.html" title="CoreMirror class"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.4.8 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

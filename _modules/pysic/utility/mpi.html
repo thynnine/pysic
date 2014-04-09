@@ -1,0 +1,233 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.utility.mpi &mdash; Pysic 0.5 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.5 documentation" href="../../../index.html" />
+    <link rel="up" title="pysic" href="../../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.5 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.utility.mpi</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;Defines MPI safe routines for printing, file access etc.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">pysic.pysic_fortran</span> <span class="kn">as</span> <span class="nn">pf</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<div class="viewcode-block" id="finish_mpi"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.mpi.finish_mpi">[docs]</a><span class="k">def</span> <span class="nf">finish_mpi</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Terminates the MPI framework.</span>
+<span class="sd">        </span>
+<span class="sd">        If the Fortran core is compiled in MPI mode, :mod:`~pysic` will automatically</span>
+<span class="sd">        initialize MPI upon being imported. This method terminates the MPI.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">finish_mpi</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="sync_mpi"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.mpi.sync_mpi">[docs]</a><span class="k">def</span> <span class="nf">sync_mpi</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Calls MPI barrier from the Fortran core MPI framework.&quot;&quot;&quot;</span>
+    
+    <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">sync_mpi</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="get_number_of_cpus"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.mpi.get_number_of_cpus">[docs]</a><span class="k">def</span> <span class="nf">get_number_of_cpus</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Gets the number of cpus from the Fortran MPI.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_number_of_cpus</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="get_cpu_id"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.mpi.get_cpu_id">[docs]</a><span class="k">def</span> <span class="nf">get_cpu_id</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Gets the cpu ID from the Fortran MPI.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">get_cpu_id</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="cpu_id"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.mpi.cpu_id">[docs]</a><span class="k">def</span> <span class="nf">cpu_id</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Gets the cpu ID from the Fortran MPI.</span>
+
+<span class="sd">        Equivalent to :func:`~pysic.utility.mpi.get_cpu_id`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">get_cpu_id</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="is_master"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.mpi.is_master">[docs]</a><span class="k">def</span> <span class="nf">is_master</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Returns ``True`` for the cpu with ID 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">cpu_id</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span>
+
+</div>
+<div class="viewcode-block" id="mkdir"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.mpi.mkdir">[docs]</a><span class="k">def</span> <span class="nf">mkdir</span><span class="p">(</span><span class="nb">dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a new directory only with the master cpu.</span>
+<span class="sd">        </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">    dir: string</span>
+<span class="sd">        the name of the directory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">is_master</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">mprint</span><span class="p">(</span><span class="s">&quot;Failed to create directory &quot;</span><span class="o">+</span><span class="nb">dir</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="cd"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.mpi.cd">[docs]</a><span class="k">def</span> <span class="nf">cd</span><span class="p">(</span><span class="nb">dir</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Changes to the given directory on all cpus.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        dir: string</span>
+<span class="sd">            the name of the directory</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">os</span><span class="o">.</span><span class="n">chdir</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">mprint</span><span class="p">(</span><span class="s">&quot;Failed to change to directory &quot;</span><span class="o">+</span><span class="nb">dir</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="mprint"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.mpi.mprint">[docs]</a><span class="k">def</span> <span class="nf">mprint</span><span class="p">(</span><span class="n">string</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Prints the string to stdout only from the master cpu.</span>
+<span class="sd">        </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">     </span>
+<span class="sd">    string: string</span>
+<span class="sd">        the string to be written        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+    
+    <span class="k">if</span> <span class="n">is_master</span><span class="p">():</span>
+        <span class="k">print</span> <span class="n">string</span>
+
+</div>
+<div class="viewcode-block" id="write_file"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.mpi.write_file">[docs]</a><span class="k">def</span> <span class="nf">write_file</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Writes the given lines to a text file so that only the master cpu writes.</span>
+<span class="sd">        </span>
+<span class="sd">    Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">    lines: list of strings</span>
+<span class="sd">        lines to be written</span>
+<span class="sd">        </span>
+<span class="sd">    filename: string</span>
+<span class="sd">        the name of the file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">is_master</span><span class="p">():</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">+=</span> <span class="n">line</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">string</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="append_file"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.mpi.append_file">[docs]</a><span class="k">def</span> <span class="nf">append_file</span><span class="p">(</span><span class="n">lines</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Appends the given lines to a text file so that only the master cpu writes.</span>
+
+<span class="sd">    Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">    lines: list of strings</span>
+<span class="sd">        lines to be written</span>
+<span class="sd">    </span>
+<span class="sd">    filename: string</span>
+<span class="sd">        the name of the file</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">is_master</span><span class="p">():</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="nb">file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span><span class="s">&#39;a&#39;</span><span class="p">)</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">lines</span><span class="p">:</span>
+            <span class="n">string</span> <span class="o">+=</span> <span class="n">line</span><span class="o">+</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">&quot;</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">string</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+</div>
+<div class="viewcode-block" id="mpi_barrier"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.mpi.mpi_barrier">[docs]</a><span class="k">def</span> <span class="nf">mpi_barrier</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Calls MPI barrier from the Fortran core MPI framework.</span>
+<span class="sd">    </span>
+<span class="sd">    This is equivalent to :func:`~pysic.utility.mpi.sync_mpi`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pf</span><span class="o">.</span><span class="n">pysic_interface</span><span class="o">.</span><span class="n">sync_mpi</span><span class="p">()</span>
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.5 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2013, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>
