@@ -279,9 +279,9 @@ Finally, we run the dynamics::
 
 
 
-.. file:potential targets
+.. file:potential targeting
 
-.. _potential targets:
+.. _potential targeting:
 
 
 

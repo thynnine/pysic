@@ -95,7 +95,6 @@ Development of Pysic
    :maxdepth: 3
 
    version
-   roadmap
    issues
 
 

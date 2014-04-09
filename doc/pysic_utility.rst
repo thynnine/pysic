@@ -21,10 +21,39 @@ Modules for providing utility tools and parameters.
 Plot
 ----
 
-The plot utility defines a group of tools for exploring and plotting energy and force landscapes.
+The plot utility defines a group of tools for exploring and plotting energy and force landscapes. It uses the `matplotlib library <http://matplotlib.org>`_.
 
 .. automodule:: pysic.utility.plot
    :members:
+
+.. file:mpi utility
+
+.. _mpi utility:
+
+
+
+MPI
+----
+
+The mpi utility defines a group of tools for parallel computations.
+
+.. automodule:: pysic.utility.mpi
+   :members:
+
+.. file:archive utility
+
+.. _archive utility:
+
+
+
+Archive
+---------
+
+The archive utility defines a group of functions for archiving and retrieving simulation data in the hdf5 format. This requires `hdf5 <http://www.hdfgroup.org/HDF5/>`_  and the `h5py Python library <http://www.h5py.org/>`_.
+
+.. automodule:: pysic.utility.archive
+   :members:
+   :undoc-members:
 
 .. file:convenience utility
 

@@ -1,7 +1,10 @@
 #! /usr/bin/env python
 
 import numpy as np
-from scipy.optimize import fmin_slsqp
+try:
+    from scipy.optimize import fmin_slsqp
+except:
+    print "scipy not found, slsqp charge optimization not available"
 from pysic.utility.error import InvalidRelaxationError
 
 class ChargeRelaxation:

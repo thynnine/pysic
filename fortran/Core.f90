@@ -1692,7 +1692,7 @@ contains
     total_gradient = 0.d0
     virial = 0.d0
     total_virial = 0.d0
-    
+
   
     ! target atom 1
     index1 = atom_pair(1)
@@ -2026,6 +2026,7 @@ contains
     integer, pointer :: bond_indices(:), bond_indices2(:)
     logical :: is_active, is_in_group, many_bodies_found, separation3_unknown
     integer :: offset(3), n_atoms
+
 
     n_atoms = size(atoms)
     bo_temp = 0.d0
@@ -3040,7 +3041,7 @@ contains
           end if ! evaluate
           
        end do ! index1
-       
+
        ! Post process the virial in two batches
        ! The scaling function is the same as for the
        ! gradient itself
@@ -3186,6 +3187,7 @@ contains
           end if ! evaluate
           
        end do ! index1
+
        
        ! Post process the virial in two batches
        ! The scaling function is the same as for the
@@ -3436,7 +3438,7 @@ contains
                          !***************!
                          ! stress tensor !
                          !***************!
-                         
+
                          ! s_xx, s_yy, s_zz, s_yz, s_xz, s_xy:
                          stress(1) = stress(1) - separations(1,1) * tmp_forces(1)
                          stress(2) = stress(2) - separations(2,1) * tmp_forces(2)
@@ -4992,6 +4994,7 @@ contains
     atom2 = atoms(index2)
     nbors2 = atom2%neighbor_list
     bond_indices2 => atom2%bond_indices
+    virial = 0.d0
 
 
     ! Check all the bond factors that affect the atoms and see
@@ -5522,7 +5525,6 @@ contains
                         (bo_virial(1:6,1) + bo_virial(1:6,2) + pair_bo_virial(1:6,1) + pair_bo_virial(1:6,2))*0.5d0
 
                 else
-
                    call core_add_bond_order_forces( &
                         interaction%pot_index, index1, 0.5d0*tmp_energy*cut_factors(1), &
                         forces, stress )

@@ -77,6 +77,8 @@ to Python are simply calling routines here.
     ---------------------------------
         
     - :func:`core_add_bond_order_factor`
+    - :func:`core_add_bond_order_forces`
+    - :func:`core_add_pair_bond_order_forces`
     - :func:`core_add_potential`
     - :func:`core_allocate_bond_order_factors`
     - :func:`core_allocate_bond_order_storage`
@@ -484,6 +486,52 @@ Full documentation of subroutines in pysic_core
         index denoting the potential to which the factor is connected
     **success**: logical  **intent(out)**    *scalar*  
         logical tag specifying if creation of the factor succeeded
+            
+  .. function:: core_add_bond_order_forces(group_index, atom_index, prefactor, forces, stress)
+
+
+    Parameters:
+
+    group_index: integer  *intent(in)*    *scalar*  
+        
+    atom_index: integer  *intent(in)*    *scalar*  
+        
+    prefactor: double precision  *intent(in)*    *scalar*  
+        
+    **forces**: double precision  **intent(inout)**    *size(:, :)*  
+        
+    **stress**: double precision  **intent(inout)**    *size(6)*  
+        
+            
+  .. function:: core_add_pair_bond_order_forces(index1, index2, prefactor, separation, direction, distance, group_index, pair_bo_sums, pair_bo_factors, forces, stress)
+
+    Evaluates the local force affecting two atoms from bond order factors.
+    
+
+    Parameters:
+
+    index1: integer  *intent(in)*    *scalar*  
+        index of the atom 1
+    index2: integer  *intent(in)*    *scalar*  
+        index of the atom 2
+    prefactor: double precision  *intent(in)*    *scalar*  
+        
+    separation: double precision  *intent(in)*    *size(3)*  
+        
+    direction: double precision  *intent(in)*    *size(3)*  
+        
+    distance: double precision  *intent(in)*    *scalar*  
+        
+    group_index: integer  *intent(in)*    *scalar*  
+        
+    pair_bo_sums: double precision  *intent(in)*    *size(2)*  
+        
+    pair_bo_factors: double precision  *intent(in)*    *size(2)*  
+        
+    **forces**: double precision  **intent(inout)**    *size(:, :)*  
+        calculated forces
+    **stress**: double precision  **intent(inout)**    *size(6)*  
+        calculated stress
             
   .. function:: core_add_potential(n_targets, n_params, pot_name, parameters, cutoff, smooth_cut, elements, tags, indices, orig_elements, orig_tags, orig_indices, pot_index, is_multiplier, success)
 
@@ -1073,7 +1121,7 @@ Full documentation of subroutines in pysic_core
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         returns true if the loop finds an interaction with 3 or more targets
             
-  .. function:: core_evaluate_local_doublet_electronegativities_B(atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, enegs, many_bodies_found)
+  .. function:: core_evaluate_local_doublet_electronegativities_B(atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, enegs, many_bodies_found, manybody_indices, n_manybody)
 
     Evaluates the local electronegativity affecting two atoms. (Rearranged internally.)
     
@@ -1100,6 +1148,10 @@ Full documentation of subroutines in pysic_core
         calculated electronegativities
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         returns true if the loop finds an interaction with 3 or more targets
+    manybody_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    **n_manybody**: integer  **intent(out)**    *scalar*  
+        
             
   .. function:: core_evaluate_local_doublet_energy(n_atoms, atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, energy, many_bodies_found)
 
@@ -1131,7 +1183,7 @@ Full documentation of subroutines in pysic_core
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         returns true if the loop finds an interaction with 3 or more targets
             
-  .. function:: core_evaluate_local_doublet_energy_B(atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, energy, many_bodies_found)
+  .. function:: core_evaluate_local_doublet_energy_B(atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, energy, many_bodies_found, manybody_indices, n_manybody)
 
     Evaluates the local potential affecting two atoms. (Rearranged internally compared to 'A'.)
     
@@ -1158,6 +1210,10 @@ Full documentation of subroutines in pysic_core
         calculated energy
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         returns true if the loop finds an interaction with 3 or more targets
+    manybody_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    **n_manybody**: integer  **intent(out)**    *scalar*  
+        
             
   .. function:: core_evaluate_local_doublet_forces(n_atoms, atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, forces, stress, many_bodies_found)
 
@@ -1191,7 +1247,7 @@ Full documentation of subroutines in pysic_core
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         returns true if the loop finds an interaction with 3 or more targets
             
-  .. function:: core_evaluate_local_doublet_forces_B(atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, forces, stress, many_bodies_found)
+  .. function:: core_evaluate_local_doublet_forces_B(atom_doublet, index1, index2, test_index1, interaction_indices, separations, directions, distances, forces, stress, many_bodies_found, manybody_indices, n_manybody)
 
     Evaluates the local force affecting two atoms. (Rearranged internally.)
     
@@ -1205,7 +1261,7 @@ Full documentation of subroutines in pysic_core
     index2: integer  *intent(in)*    *scalar*  
         index of the atom 2
     test_index1: integer  *intent(in)*    *scalar*  
-        if 1, test if the ineraction targets atom1; similarly for 2
+        if 1, test if the interaction targets atom1; similarly for 2
     interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
         the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 1)*  
@@ -1220,6 +1276,10 @@ Full documentation of subroutines in pysic_core
         calculated stress
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         returns true if the loop finds an interaction with 3 or more targets
+    manybody_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    **n_manybody**: integer  **intent(out)**    *scalar*  
+        
             
   .. function:: core_evaluate_local_quadruplet(n_atoms, atom_quadruplet, index1, index2, index3, index4, test_index1, test_index2, test_index3, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found)
 
@@ -1267,7 +1327,7 @@ Full documentation of subroutines in pysic_core
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         returns true if the loop finds an interaction with 3 or more targets
             
-  .. function:: core_evaluate_local_quadruplet_B(atom_quadruplet, index1, index2, index3, index4, test_index1, test_index2, test_index3, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found)
+  .. function:: core_evaluate_local_quadruplet_B(atom_quadruplet, index1, index2, index3, index4, test_index1, test_index2, test_index3, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found, manybody_indices, n_manybody)
 
     Evaluates the interactions affecting four atoms. (Rearranged internally.)
     
@@ -1290,8 +1350,6 @@ Full documentation of subroutines in pysic_core
         if 1, test if the ineraction targets atom1; similarly for 2, 3
     test_index3: integer  *intent(in)*    *scalar*  
         if 1, test if the ineraction targets atom1; similarly for 2, 3
-    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 3)*  
         distance vector from 1 to 2, 2 to 3 and 3 to 4 as an array
     directions: double precision  *intent(in)*    *size(3, 3)*  
@@ -1310,6 +1368,10 @@ Full documentation of subroutines in pysic_core
         calculated stress
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         returns true if the loop finds an interaction with 3 or more targets
+    manybody_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    n_manybody: integer  *intent(in)*    *scalar*  
+        
             
   .. function:: core_evaluate_local_singlet(index1, atom_singlet, interaction_indices, calculation_type, energy, forces, stress, enegs)
 
@@ -1377,7 +1439,7 @@ Full documentation of subroutines in pysic_core
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         returns true if the loop finds an interaction with 3 or more targets
             
-  .. function:: core_evaluate_local_triplet_B(atom_triplet, index1, index2, index3, test_index1, test_index2, interaction_indices, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found)
+  .. function:: core_evaluate_local_triplet_B(atom_triplet, index1, index2, index3, test_index1, test_index2, separations, directions, distances, calculation_type, energy, forces, enegs, stress, many_bodies_found, manybody_indices, n_manybody)
 
     Evaluates the interactions affecting three atoms. (Rearranged internally.)
     
@@ -1396,8 +1458,6 @@ Full documentation of subroutines in pysic_core
         if 1, test if the ineraction targets atom1; similarly for 2, 3
     test_index2: integer  *intent(in)*    *scalar*  
         if 1, test if the ineraction targets atom1; similarly for 2, 3
-    interaction_indices: integer  *intent()*  *pointer*  *size(:)*  
-        the interactions targeting the given atoms
     separations: double precision  *intent(in)*    *size(3, 2)*  
         distance vector from 1 to 2 and 2 to 3 as an array
     directions: double precision  *intent(in)*    *size(3, 2)*  
@@ -1416,6 +1476,10 @@ Full documentation of subroutines in pysic_core
         calculated stress
     **many_bodies_found**: logical  **intent(out)**    *scalar*  
         returns true if the loop finds an interaction with 3 or more targets
+    manybody_indices: integer  *intent()*  *pointer*  *size(:)*  
+        
+    n_manybody: integer  *intent(in)*    *scalar*  
+        
             
   .. function:: core_fill_bond_order_storage()
 
