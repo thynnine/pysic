@@ -16,6 +16,13 @@ The version number is available in Pysic as the variable::
   pysic.version
 
 
+Version 0.5
+---------------
+
+- Added hdf5 archiving module :mod:`pysic.utility.archive`.
+- Added the Comb potential for Si/SiO
+
+
 Version 0.4.8
 ----------------
 
