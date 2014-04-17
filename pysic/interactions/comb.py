@@ -46,7 +46,7 @@ class CombPotential(CompoundPotential):
         super(CombPotential,self).__init__(n_params=0,
                                            n_targets=3)
         self.set_potential_type('comb')
-        self.description = "Comb trial."
+        self.description = "Comb potential."
         self.excludes = excludes
         self.calc = None
         self.possible_excludes = ['siosi_bend', # 0
@@ -70,7 +70,459 @@ class CombPotential(CompoundPotential):
                                   'sio_coulomb', #18
                                   'direct_coulomb', #19
                                   'long_coulomb' #20
-                                  ] 
+                                  ]
+    
+        
+        self.names_of_params = []
+        self.params = {}
+        self.n_params = 0
+
+
+        newparam = 'coulomb cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 12.0
+        self.n_params += 1
+        newparam = 'coulomb sigma'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.535533906
+        self.n_params += 1
+        newparam = 'coulomb epsilon'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = .00552635
+        self.n_params += 1
+
+        newparam = 'si-o-si bend epsilon'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 2.6
+        self.n_params += 1
+        newparam = 'si-o-si bend theta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 2.508561734
+        self.n_params += 1
+        newparam = 'si-o-si bend cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.05
+        self.n_params += 1
+        newparam = 'si-o-si bend cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.5
+        self.n_params += 1
+        
+        newparam = 'o-si-o bend epsilon'
+        self.names_of_params.append('osio bend epsilon')
+        self.params[newparam] = 0.3122
+        self.n_params += 1
+        newparam = 'o-si-o bend theta'
+        self.names_of_params.append('osio bend theta')
+        self.params[newparam] = 1.910611932
+        self.n_params += 1
+        newparam = 'o-si-o bend cutoff'
+        self.names_of_params.append('osio bend cutoff')
+        self.params[newparam] = 3.05
+        self.n_params += 1
+        newparam = 'o-si-o bend cutoff margin'
+        self.names_of_params.append('osio bend cutoff margin')
+        self.params[newparam] = 0.5
+        self.n_params += 1
+
+        newparam = 'si attractive epsilon'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 471.18
+        self.n_params += 1
+        newparam = 'si rmax'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = -1.658949
+        self.n_params += 1
+        newparam = 'si rmin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1.651725
+        self.n_params += 1
+        newparam = 'si qmax'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 4
+        self.n_params += 1
+        newparam = 'si qmin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = -4
+        self.n_params += 1
+        newparam = 'si attractive alpha'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1.7322
+        self.n_params += 1
+        newparam = 'si attractive a'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1.0
+        self.n_params += 1
+        newparam = 'si attractive b'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = -9.536743164062500e-07
+        self.n_params += 1
+        newparam = 'si attractive q'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.0
+        self.n_params += 1
+        newparam = 'si attractive n'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 10
+        self.n_params += 1
+        newparam = 'si attractive zeta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1.7322
+        self.n_params += 1
+        newparam = 'si attractive cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.0
+        self.n_params += 1
+        newparam = 'si attractive cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.2
+        self.n_params += 1
+    
+        newparam = 'si bondorder beta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1.0999E-6
+        self.n_params += 1
+        newparam = 'si bondorder eta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.78734
+        self.n_params += 1
+        newparam = 'si bondorder mu'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3
+        self.n_params += 1
+        newparam = 'si bondorder a'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1.7322
+        self.n_params += 1
+        newparam = 'si bondorder c'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 100390
+        self.n_params += 1
+        newparam = 'si bondorder d'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 16.218
+        self.n_params += 1
+        newparam = 'si bondorder h'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = -0.59826
+        self.n_params += 1
+        newparam = 'si-si-o bondorder cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.05
+        self.n_params += 1
+        newparam = 'si-si-o bondorder cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.5
+        self.n_params += 1
+        newparam = 'si-si-si bondorder cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.0
+        self.n_params += 1
+        newparam = 'si-si-si bondorder cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.2
+        self.n_params += 1
+        
+        newparam = 'o attractive epsilon'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 260.8931
+        self.n_params += 1
+        newparam = 'o rmax'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = -0.00112
+        self.n_params += 1
+        newparam = 'o rmin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.00148
+        self.n_params += 1
+        newparam = 'o qmax'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 5.5046
+        self.n_params += 1
+        newparam = 'o qmin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = -1.8349
+        self.n_params += 1
+        newparam = 'o attractive alpha'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 2.68
+        self.n_params += 1
+        newparam = 'o attractive a'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1.00098
+        self.n_params += 1
+        newparam = 'o attractive b'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = -.00000226
+        self.n_params += 1
+        newparam = 'o attractive q'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1.83485
+        self.n_params += 1
+        newparam = 'o attractive n'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 10
+        self.n_params += 1
+        newparam = 'o attractive zeta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 2.68
+        self.n_params += 1
+        newparam = 'o attractive cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.0
+        self.n_params += 1
+        newparam = 'o attractive cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.4
+        self.n_params += 1
+    
+        newparam = 'o bondorder beta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 2.0
+        self.n_params += 1
+        newparam = 'o bondorder eta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1.0
+        self.n_params += 1
+        newparam = 'o bondorder mu'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1
+        self.n_params += 1
+        newparam = 'o bondorder a'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 2.68
+        self.n_params += 1
+        newparam = 'o bondorder c'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 6.6
+        self.n_params += 1
+        newparam = 'o bondorder d'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1
+        self.n_params += 1
+        newparam = 'o bondorder h'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = -0.229
+        self.n_params += 1
+        newparam = 'o-o-si bondorder cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.05
+        self.n_params += 1
+        newparam = 'o-o-si bondorder cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.5
+        self.n_params += 1
+        newparam = 'o-o-o bondorder cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.0
+        self.n_params += 1
+        newparam = 'o-o-o bondorder cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.4
+        self.n_params += 1
+        
+        newparam = 'si-o attractive epsilon'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = math.sqrt( \
+            self.params['si attractive epsilon'] * \
+            self.params['o attractive epsilon'] )
+        self.n_params += 1
+        newparam = 'si-o attractive zeta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = ( \
+            self.params['si attractive zeta'] + \
+            self.params['o attractive zeta'] ) * 0.5
+        self.n_params += 1
+        newparam = 'si-o attractive cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.05
+        self.n_params += 1
+        newparam = 'si-o attractive cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.5
+        self.n_params += 1
+    
+        newparam = 'si-o bondorder a'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = ( \
+            self.params['si bondorder a'] + \
+            self.params['o bondorder a'] ) * 0.5
+        self.n_params += 1
+        newparam = 'o-si-si bondorder cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.05
+        self.n_params += 1
+        newparam = 'o-si-si bondorder cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.5
+        self.n_params += 1
+        newparam = 'o-si-o bondorder cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.05
+        self.n_params += 1
+        newparam = 'o-si-o bondorder cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.5
+        self.n_params += 1
+        newparam = 'si-o-si bondorder cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.05
+        self.n_params += 1
+        newparam = 'si-o-si bondorder cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.5
+        self.n_params += 1
+        newparam = 'si-o-o bondorder cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.05
+        self.n_params += 1
+        newparam = 'si-o-o bondorder cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.5
+        self.n_params += 1
+    
+        newparam = 'si repulsive epsilon'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1830.8
+        self.n_params += 1
+        newparam = 'si repulsive lambda'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 2.4799
+        self.n_params += 1
+        newparam = 'si repulsive zeta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 2.4799
+        self.n_params += 1
+        newparam = 'si repulsive cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.0
+        self.n_params += 1
+        newparam = 'si repulsive cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.2
+        self.n_params += 1
+    
+        newparam = 'o repulsive epsilon'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3326.699
+        self.n_params += 1
+        newparam = 'o repulsive lambda'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 5.36
+        self.n_params += 1
+        newparam = 'o repulsive zeta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 5.36
+        self.n_params += 1
+        newparam = 'o repulsive cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.0
+        self.n_params += 1
+        newparam = 'o repulsive cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.4
+        self.n_params += 1
+    
+        newparam = 'si-o repulsive epsilon'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = math.sqrt( \
+            self.params['si repulsive epsilon'] * \
+            self.params['o repulsive epsilon'] )
+        self.n_params += 1
+        newparam = 'si-o repulsive zeta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = ( \
+            self.params['si repulsive zeta'] + \
+            self.params['o repulsive zeta'] ) * 0.5
+        self.n_params += 1
+        newparam = 'si-o repulsive cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.05
+        self.n_params += 1
+        newparam = 'si-o repulsive cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.5
+        self.n_params += 1
+
+        newparam = 'si charge c1'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.0
+        self.n_params += 1
+        newparam = 'si charge c2'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 3.625144859
+        self.n_params += 1
+        newparam = 'si charge c3'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.0
+        self.n_params += 1
+        newparam = 'si charge c4'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.087067714
+        self.n_params += 1
+
+        newparam = 'o charge c1'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 5.63441383
+        self.n_params += 1
+        newparam = 'o charge c2'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 7.689598017
+        self.n_params += 1
+        newparam = 'o charge c3'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 4.51426991
+        self.n_params += 1
+        newparam = 'o charge c4'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 1.330079082
+        self.n_params += 1
+    
+        newparam = 'si field rho1'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = -0.499378
+        self.n_params += 1
+        newparam = 'si field rho2'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 2.999911
+        self.n_params += 1
+        newparam = 'o field rho1'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = -3.922011000
+        self.n_params += 1
+        newparam = 'o field rho2'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.971086
+        self.n_params += 1
+        newparam = 'field cutoff'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 12.0
+        self.n_params += 1
+        newparam = 'field cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.1
+        self.n_params += 1
+        
+        newparam = 'si slater zeta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.772871
+        self.n_params += 1
+        newparam = 'o slater zeta'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 2.243072
+        self.n_params += 1
+        newparam = 'slater cutoff margin'
+        self.names_of_params.append(newparam)
+        self.params[newparam] = 0.1
+        self.n_params += 1
+    
+
+    def get_parameter_value(self,param_name):
+        return self.params[param_name]
+
+    def set_parameter_value(self,param_name,value):
+        self.params[param_name] = value
+
 
     def set_calculator(self, calc, reciprocal = False):
         """Attaches the calculator to the potential. This is needed so that a CoulombSummation
@@ -162,13 +614,13 @@ class CombPotential(CompoundPotential):
         ewald = pysic.CoulombSummation()
         if cheat:
             #print "Ewald cheat"
-            real_cutoff = 12.0
+            real_cutoff = self.params['coulomb cutoff']
             k_cutoff = 0.0
-            sigma = 3.535533906
-            epsilon = .00552635
+            sigma = self.params['coulomb sigma']
+            epsilon = self.params['coulomb epsilon']
         else:
             #print "Ewald real"
-            real_cutoff, k_cutoff, sigma, epsilon = estimate_ewald_parameters(12.0)
+            real_cutoff, k_cutoff, sigma, epsilon = estimate_ewald_parameters(self.params['coulomb cutoff'])
         ewald.set_parameter_value('real_cutoff',real_cutoff)
         ewald.set_parameter_value('k_cutoff',k_cutoff)
         ewald.set_parameter_value('sigma',sigma)
@@ -186,13 +638,13 @@ class CombPotential(CompoundPotential):
         if self.possible_excludes[0] not in self.excludes:
             #print "including Si-O-Si bond bending"
             bond_bend_pot = pysic.Potential('bond_bend')
-            bond_bend_pot.set_parameter_value('epsilon',2.6)
-            bond_bend_pot.set_parameter_value('theta_0',2.508561734)
+            bond_bend_pot.set_parameter_value('epsilon', self.params['si-o-si bend epsilon'])
+            bond_bend_pot.set_parameter_value('theta_0', self.params['si-o-si bend theta'])
             bond_bend_pot.set_parameter_value('n',1)
             bond_bend_pot.set_parameter_value('m',2)
             bond_bend_pot.set_symbols(['Si','O','Si'])
-            bond_bend_pot.set_cutoff(3.05)
-            bond_bend_pot.set_cutoff_margin(0.5) #is cutoff_margin correct?
+            bond_bend_pot.set_cutoff(self.params['si-o-si bend cutoff'])
+            bond_bend_pot.set_cutoff_margin(self.params['si-o-si bend cutoff margin'])
 
             self.pieces.append(bond_bend_pot)
 
@@ -200,13 +652,13 @@ class CombPotential(CompoundPotential):
         if self.possible_excludes[1] not in self.excludes:
             #print "including O-Si-O bond bending"
             bond_bend_pot2 = pysic.Potential('bond_bend')
-            bond_bend_pot2.set_parameter_value('epsilon',0.3122)
-            bond_bend_pot2.set_parameter_value('theta_0',1.910611932)
+            bond_bend_pot2.set_parameter_value('epsilon', self.params['o-si-o bend epsilon'])
+            bond_bend_pot2.set_parameter_value('theta_0', self.params['o-si-o bend theta'])
             bond_bend_pot2.set_parameter_value('n',1)
             bond_bend_pot2.set_parameter_value('m',2)
             bond_bend_pot2.set_symbols(['O','Si','O'])
-            bond_bend_pot2.set_cutoff(3.05)
-            bond_bend_pot2.set_cutoff_margin(0.5)
+            bond_bend_pot2.set_cutoff(self.params['o-si-o bend cutoff'])
+            bond_bend_pot2.set_cutoff_margin(self.params['o-si-o bend cutoff margin'])
 
             self.pieces.append(bond_bend_pot2)
             
@@ -214,36 +666,36 @@ class CombPotential(CompoundPotential):
         if self.possible_excludes[2] not in self.excludes:
             #print "including Si-Si attraction"
             B_ISiSi = pysic.Potential('charge_exp')
-            B_ISiSi.set_parameter_value('epsilon',471.18)  #B_Si 
-            B_ISiSi.set_parameter_value('Rmax1',-1.658949)
-            B_ISiSi.set_parameter_value('Rmin1',1.651725)
-            B_ISiSi.set_parameter_value('Qmax1',4)
-            B_ISiSi.set_parameter_value('Qmin1',-4)
-            B_ISiSi.set_parameter_value('Rmax2',-1.658949)
-            B_ISiSi.set_parameter_value('Rmin2',1.651725)
-            B_ISiSi.set_parameter_value('Qmax2',4)
-            B_ISiSi.set_parameter_value('Qmin2',-4)
-            B_ISiSi.set_parameter_value('xi1',1.7322)  #alpha_Si
-            B_ISiSi.set_parameter_value('xi2',1.7322)
+            B_ISiSi.set_parameter_value('epsilon', self.params['si attractive epsilon'])  #B_Si
+            B_ISiSi.set_parameter_value('Rmax1', self.params['si rmax'])
+            B_ISiSi.set_parameter_value('Rmin1', self.params['si rmin'])
+            B_ISiSi.set_parameter_value('Qmax1', self.params['si qmax'])
+            B_ISiSi.set_parameter_value('Qmin1', self.params['si qmin'])
+            B_ISiSi.set_parameter_value('Rmax2', self.params['si rmax'])
+            B_ISiSi.set_parameter_value('Rmin2', self.params['si rmin'])
+            B_ISiSi.set_parameter_value('Qmax2', self.params['si qmax'])
+            B_ISiSi.set_parameter_value('Qmin2', self.params['si qmin'])
+            B_ISiSi.set_parameter_value('xi1', self.params['si attractive alpha'])  #alpha_Si
+            B_ISiSi.set_parameter_value('xi2', self.params['si attractive alpha'])
 
             B_IISiSi = pysic.Potential('charge_abs')
-            B_IISiSi.set_parameter_value('a1',1) #aB
-            B_IISiSi.set_parameter_value('b1',-9.536743164062500e-07) #-abs(bB)**nB = -9.53674E-7
-            B_IISiSi.set_parameter_value('Q1',0) #QO
-            B_IISiSi.set_parameter_value('n1',10) #nB
-            B_IISiSi.set_parameter_value('a2',1)
-            B_IISiSi.set_parameter_value('b2',-9.536743164062500e-07) 
-            B_IISiSi.set_parameter_value('Q2',0) #QO
-            B_IISiSi.set_parameter_value('n2',10)
+            B_IISiSi.set_parameter_value('a1', self.params['si attractive a']) #aB
+            B_IISiSi.set_parameter_value('b1', self.params['si attractive b']) #-abs(bB)**nB = -9.53674E-7
+            B_IISiSi.set_parameter_value('Q1', self.params['si attractive q']) #QO
+            B_IISiSi.set_parameter_value('n1', self.params['si attractive n']) #nB
+            B_IISiSi.set_parameter_value('a2', self.params['si attractive a'])
+            B_IISiSi.set_parameter_value('b2', self.params['si attractive b'])
+            B_IISiSi.set_parameter_value('Q2', self.params['si attractive q']) #QO
+            B_IISiSi.set_parameter_value('n2', self.params['si attractive n'])
 
             exp_potBSiSi = pysic.Potential('exponential')
             exp_potBSiSi.set_parameter_value('epsilon',-1)
-            exp_potBSiSi.set_parameter_value('zeta',1.7322)  #alpha
+            exp_potBSiSi.set_parameter_value('zeta', self.params['si attractive zeta'])  #alpha
 
             prodBSiSi = pysic.ProductPotential([B_ISiSi,B_IISiSi,exp_potBSiSi])
 
-            prodBSiSi.set_cutoff(3.0) # was 3.0
-            prodBSiSi.set_cutoff_margin(0.2) # was 0.2
+            prodBSiSi.set_cutoff(self.params['si attractive cutoff'])
+            prodBSiSi.set_cutoff_margin(self.params['si attractive cutoff margin'])
             prodBSiSi.set_symbols(['Si','Si'])
 
             self.pieces.append(prodBSiSi)
@@ -253,26 +705,26 @@ class CombPotential(CompoundPotential):
                 #print "including Si-Si bond order factor"
 
                 bijSiSi1 = pysic.BondOrderParameters('tersoff', symbols=['Si','Si','O'])
-                bijSiSi1.set_parameter_value('beta',1.0999E-6)  #all Si parameters
-                bijSiSi1.set_parameter_value('eta',0.78734)
-                bijSiSi1.set_parameter_value('mu',3)
-                bijSiSi1.set_parameter_value('a',1.7322)
-                bijSiSi1.set_parameter_value('c',100390)
-                bijSiSi1.set_parameter_value('d',16.218)
-                bijSiSi1.set_parameter_value('h',-0.59826)
-                bijSiSi1.set_cutoff(3.05)
-                bijSiSi1.set_cutoff_margin(0.5)
+                bijSiSi1.set_parameter_value('beta', self.params['si bondorder beta'])  #all Si parameters
+                bijSiSi1.set_parameter_value('eta', self.params['si bondorder eta'])
+                bijSiSi1.set_parameter_value('mu', self.params['si bondorder mu'])
+                bijSiSi1.set_parameter_value('a', self.params['si bondorder a'])
+                bijSiSi1.set_parameter_value('c', self.params['si bondorder c'])
+                bijSiSi1.set_parameter_value('d', self.params['si bondorder d'])
+                bijSiSi1.set_parameter_value('h', self.params['si bondorder h'])
+                bijSiSi1.set_cutoff(self.params['si-si-o bondorder cutoff'])
+                bijSiSi1.set_cutoff_margin(self.params['si-si-o bondorder cutoff margin'])
 
                 bijSiSi2 = pysic.BondOrderParameters('tersoff', symbols=['Si','Si','Si'])
-                bijSiSi2.set_parameter_value('beta',1.0999E-6)  #all Si parameters
-                bijSiSi2.set_parameter_value('eta',0.78734)
-                bijSiSi2.set_parameter_value('mu',3)
-                bijSiSi2.set_parameter_value('a',1.7322)
-                bijSiSi2.set_parameter_value('c',100390)
-                bijSiSi2.set_parameter_value('d',16.218)
-                bijSiSi2.set_parameter_value('h',-0.59826)
-                bijSiSi2.set_cutoff(3.0)
-                bijSiSi2.set_cutoff_margin(0.2)
+                bijSiSi2.set_parameter_value('beta', self.params['si bondorder beta'])  #all Si parameters
+                bijSiSi2.set_parameter_value('eta', self.params['si bondorder eta'])
+                bijSiSi2.set_parameter_value('mu', self.params['si bondorder mu'])
+                bijSiSi2.set_parameter_value('a', self.params['si bondorder a'])
+                bijSiSi2.set_parameter_value('c', self.params['si bondorder c'])
+                bijSiSi2.set_parameter_value('d', self.params['si bondorder d'])
+                bijSiSi2.set_parameter_value('h', self.params['si bondorder h'])
+                bijSiSi2.set_cutoff(self.params['si-si-si bondorder cutoff'])
+                bijSiSi2.set_cutoff_margin(self.params['si-si-si bondorder cutoff margin'])
 
                 coordSiSi = pysic.Coordinator([bijSiSi1,bijSiSi2])
 
@@ -284,36 +736,36 @@ class CombPotential(CompoundPotential):
             #print "including O-O attraction"
 
             B_IOO = pysic.Potential('charge_exp')
-            B_IOO.set_parameter_value('epsilon',260.8931)  #B_O
-            B_IOO.set_parameter_value('Rmax1',-0.00112)
-            B_IOO.set_parameter_value('Rmin1',0.00148)
-            B_IOO.set_parameter_value('Qmax1',5.5046)
-            B_IOO.set_parameter_value('Qmin1',-1.8349)
-            B_IOO.set_parameter_value('Rmax2',-0.00112)
-            B_IOO.set_parameter_value('Rmin2',0.00148)
-            B_IOO.set_parameter_value('Qmax2',5.5046)
-            B_IOO.set_parameter_value('Qmin2',-1.8349)
-            B_IOO.set_parameter_value('xi1',2.68)  #alpha_O
-            B_IOO.set_parameter_value('xi2',2.68)
+            B_IOO.set_parameter_value('epsilon', self.params['o attractive epsilon'])  #B_O
+            B_IOO.set_parameter_value('Rmax1', self.params['o rmax'])
+            B_IOO.set_parameter_value('Rmin1', self.params['o rmin'])
+            B_IOO.set_parameter_value('Qmax1', self.params['o qmax'])
+            B_IOO.set_parameter_value('Qmin1', self.params['o qmin'])
+            B_IOO.set_parameter_value('Rmax2', self.params['o rmax'])
+            B_IOO.set_parameter_value('Rmin2', self.params['o rmin'])
+            B_IOO.set_parameter_value('Qmax2', self.params['o qmax'])
+            B_IOO.set_parameter_value('Qmin2', self.params['o qmin'])
+            B_IOO.set_parameter_value('xi1', self.params['o attractive alpha'])  #alpha_O
+            B_IOO.set_parameter_value('xi2', self.params['o attractive alpha'])
 
             B_IIOO = pysic.Potential('charge_abs')
-            B_IIOO.set_parameter_value('a1',1.00098)#1.071772002265933) #aB
-            B_IIOO.set_parameter_value('b1',-.00000226)#-2.419566797838410e-06) #-abs(bB)**nB = -2.41926E-6
-            B_IIOO.set_parameter_value('Q1',1.83485) #QO
-            B_IIOO.set_parameter_value('n1',10) #nB
-            B_IIOO.set_parameter_value('a2',1.00098)#1.071772002265933)
-            B_IIOO.set_parameter_value('b2',-.00000226)#-2.419566797838410e-06) 
-            B_IIOO.set_parameter_value('Q2',1.83485) #QO
-            B_IIOO.set_parameter_value('n2',10)
+            B_IIOO.set_parameter_value('a1', self.params['o attractive a']) #aB
+            B_IIOO.set_parameter_value('b1', self.params['o attractive b'])# #-abs(bB)**nB = -2.41926E-6
+            B_IIOO.set_parameter_value('Q1', self.params['o attractive q']) #QO
+            B_IIOO.set_parameter_value('n1', self.params['o attractive n']) #nB
+            B_IIOO.set_parameter_value('a2', self.params['o attractive a'])#
+            B_IIOO.set_parameter_value('b2', self.params['o attractive b'])#
+            B_IIOO.set_parameter_value('Q2', self.params['o attractive q']) #QO
+            B_IIOO.set_parameter_value('n2', self.params['o attractive n'])
             
             exp_potBOO = pysic.Potential('exponential')
             exp_potBOO.set_parameter_value('epsilon',-1)
-            exp_potBOO.set_parameter_value('zeta',2.68) #alpha
+            exp_potBOO.set_parameter_value('zeta', self.params['o attractive zeta']) #alpha
 
             prodBOO = pysic.ProductPotential([B_IOO,B_IIOO,exp_potBOO])
             
-            prodBOO.set_cutoff(3.0)
-            prodBOO.set_cutoff_margin(0.4)
+            prodBOO.set_cutoff(self.params['o attractive cutoff'])
+            prodBOO.set_cutoff_margin(self.params['o attractive cutoff margin'])
             prodBOO.set_symbols(['O','O'])
 
             self.pieces.append(prodBOO)
@@ -323,26 +775,26 @@ class CombPotential(CompoundPotential):
                 #print "including O-O bond order factor"
 
                 bijOO1 = pysic.BondOrderParameters('tersoff', symbols=['O','O','Si'])
-                bijOO1.set_parameter_value('beta',2.0) #all O parameters
-                bijOO1.set_parameter_value('eta',1)
-                bijOO1.set_parameter_value('mu',1)
-                bijOO1.set_parameter_value('a',2.68)
-                bijOO1.set_parameter_value('c',6.6)
-                bijOO1.set_parameter_value('d',1)
-                bijOO1.set_parameter_value('h',-0.229)
-                bijOO1.set_cutoff(3.05)
-                bijOO1.set_cutoff_margin(0.5)
+                bijOO1.set_parameter_value('beta', self.params['o bondorder beta']) #all O parameters
+                bijOO1.set_parameter_value('eta', self.params['o bondorder eta'])
+                bijOO1.set_parameter_value('mu', self.params['o bondorder mu'])
+                bijOO1.set_parameter_value('a', self.params['o bondorder a'])
+                bijOO1.set_parameter_value('c', self.params['o bondorder c'])
+                bijOO1.set_parameter_value('d', self.params['o bondorder d'])
+                bijOO1.set_parameter_value('h', self.params['o bondorder h'])
+                bijOO1.set_cutoff(self.params['o-o-si bondorder cutoff'])
+                bijOO1.set_cutoff_margin(self.params['o-o-si bondorder cutoff margin'])
 
                 bijOO2 = pysic.BondOrderParameters('tersoff', symbols=['O','O','O'])
-                bijOO2.set_parameter_value('beta',2.0) #all O parameters
-                bijOO2.set_parameter_value('eta',1)
-                bijOO2.set_parameter_value('mu',1)
-                bijOO2.set_parameter_value('a',2.68)
-                bijOO2.set_parameter_value('c',6.6)
-                bijOO2.set_parameter_value('d',1)
-                bijOO2.set_parameter_value('h',-0.229)
-                bijOO2.set_cutoff(3.0)
-                bijOO2.set_cutoff_margin(0.4)
+                bijOO2.set_parameter_value('beta', self.params['o bondorder beta']) #all O parameters
+                bijOO2.set_parameter_value('eta', self.params['o bondorder eta'])
+                bijOO2.set_parameter_value('mu', self.params['o bondorder mu'])
+                bijOO2.set_parameter_value('a', self.params['o bondorder a'])
+                bijOO2.set_parameter_value('c', self.params['o bondorder c'])
+                bijOO2.set_parameter_value('d', self.params['o bondorder d'])
+                bijOO2.set_parameter_value('h', self.params['o bondorder h'])
+                bijOO2.set_cutoff(self.params['o-o-o bondorder cutoff'])
+                bijOO2.set_cutoff_margin(self.params['o-o-o bondorder cutoff margin'])
 
                 coordOO = pysic.Coordinator([bijOO1,bijOO2])
 
@@ -355,36 +807,36 @@ class CombPotential(CompoundPotential):
             #print "including Si-O attraction"
 
             B_ISiO = pysic.Potential('charge_exp')
-            B_ISiO.set_parameter_value('epsilon',350.6103405)  # sqrt(B_Si*B_O)
-            B_ISiO.set_parameter_value('Rmax1',-1.658949)
-            B_ISiO.set_parameter_value('Rmin1',1.651725)
-            B_ISiO.set_parameter_value('Qmax1',4)
-            B_ISiO.set_parameter_value('Qmin1',-4)
-            B_ISiO.set_parameter_value('Rmax2',-0.00112)
-            B_ISiO.set_parameter_value('Rmin2',0.00148)
-            B_ISiO.set_parameter_value('Qmax2',5.5046)
-            B_ISiO.set_parameter_value('Qmin2',-1.8349)
-            B_ISiO.set_parameter_value('xi1',1.7322)  #alpha_Si
-            B_ISiO.set_parameter_value('xi2',2.68)  #alpha O
+            B_ISiO.set_parameter_value('epsilon', self.params['si-o attractive epsilon'])  # sqrt(B_Si*B_O)
+            B_ISiO.set_parameter_value('Rmax1', self.params['si rmax'])
+            B_ISiO.set_parameter_value('Rmin1', self.params['si rmin'])
+            B_ISiO.set_parameter_value('Qmax1', self.params['si qmax'])
+            B_ISiO.set_parameter_value('Qmin1', self.params['si qmin'])
+            B_ISiO.set_parameter_value('Rmax2', self.params['o rmax'])
+            B_ISiO.set_parameter_value('Rmin2', self.params['o rmin'])
+            B_ISiO.set_parameter_value('Qmax2', self.params['o qmax'])
+            B_ISiO.set_parameter_value('Qmin2', self.params['o qmin'])
+            B_ISiO.set_parameter_value('xi1', self.params['si attractive alpha'])  #alpha_Si
+            B_ISiO.set_parameter_value('xi2', self.params['o attractive alpha'])  #alpha O
 
             B_IISiO = pysic.Potential('charge_abs')
-            B_IISiO.set_parameter_value('a1',1) #aB_Si
-            B_IISiO.set_parameter_value('b1', -9.536743164062500e-07) #-abs(bB)**nB for Si
-            B_IISiO.set_parameter_value('Q1',0) #QO of Si
-            B_IISiO.set_parameter_value('n1',10) #nB
-            B_IISiO.set_parameter_value('a2',1.00098)#1.071772002265933) #aB_O
-            B_IISiO.set_parameter_value('b2',-.00000226)#-2.419566797838410e-06) #-abs(bB)**nB for O
-            B_IISiO.set_parameter_value('Q2',1.83485) #QO of O
-            B_IISiO.set_parameter_value('n2',10)
+            B_IISiO.set_parameter_value('a1', self.params['si attractive a']) #aB_Si
+            B_IISiO.set_parameter_value('b1', self.params['si attractive b']) #-abs(bB)**nB for Si
+            B_IISiO.set_parameter_value('Q1', self.params['si attractive q']) #QO of Si
+            B_IISiO.set_parameter_value('n1', self.params['si attractive n']) #nB
+            B_IISiO.set_parameter_value('a2', self.params['o attractive a'])# #aB_O
+            B_IISiO.set_parameter_value('b2', self.params['o attractive b'])# #-abs(bB)**nB for O
+            B_IISiO.set_parameter_value('Q2', self.params['o attractive q']) #QO of O
+            B_IISiO.set_parameter_value('n2', self.params['o attractive n'])
             
             exp_potBSiO = pysic.Potential('exponential')
             exp_potBSiO.set_parameter_value('epsilon',-1) 
-            exp_potBSiO.set_parameter_value('zeta',2.2061)  #alpha_SiO = (alpha_Si+alpha_O)/2
+            exp_potBSiO.set_parameter_value('zeta', self.params['si-o attractive zeta'])  #alpha_SiO = (alpha_Si+alpha_O)/2
 
             prodBSiO = pysic.ProductPotential([B_ISiO,B_IISiO,exp_potBSiO])
             
-            prodBSiO.set_cutoff(3.05)        # sqrt
-            prodBSiO.set_cutoff_margin(0.5)#0.3018)  # Rs_both is sqrt(Rs1*Rs2) 
+            prodBSiO.set_cutoff(self.params['si-o attractive cutoff'])
+            prodBSiO.set_cutoff_margin(self.params['si-o attractive cutoff margin'])
             prodBSiO.set_symbols(['Si','O'])
 
             self.pieces.append(prodBSiO)
@@ -394,39 +846,50 @@ class CombPotential(CompoundPotential):
                 #print "including Si-O bond order factor"
 
                 bijOSi1 = pysic.BondOrderParameters('tersoff', symbols=['O','Si','Si'])
-                bijOSi1.set_parameter_value('beta',2)  #O
-                bijOSi1.set_parameter_value('eta',1) #O
-                bijOSi1.set_parameter_value('mu',1) #O
-                bijOSi1.set_parameter_value('a',2.2061) #media between Si and O parameters
-                bijOSi1.set_parameter_value('c',6.6) # O
-                bijOSi1.set_parameter_value('d',1) #O
-                bijOSi1.set_parameter_value('h',-0.229) #O
-                bijOSi1.set_cutoff(3.05)
-                bijOSi1.set_cutoff_margin(0.5) #for O
+                bijOSi1.set_parameter_value('beta', self.params['o bondorder beta'])  #O
+                bijOSi1.set_parameter_value('eta', self.params['o bondorder eta']) #O
+                bijOSi1.set_parameter_value('mu', self.params['o bondorder mu']) #O
+                bijOSi1.set_parameter_value('a', self.params['si-o bondorder a']) #media between Si and O parameters
+                bijOSi1.set_parameter_value('c', self.params['o bondorder c']) # O
+                bijOSi1.set_parameter_value('d', self.params['o bondorder d']) #O
+                bijOSi1.set_parameter_value('h', self.params['o bondorder h']) #O
+                bijOSi1.set_cutoff(self.params['o-si-si bondorder cutoff'])
+                bijOSi1.set_cutoff_margin(self.params['o-si-si bondorder cutoff margin'])
 
                 bijOSi2 = pysic.BondOrderParameters('tersoff', symbols=['O','Si','O'])
-                bijOSi2.set_parameter_value('beta',2)  #O
-                bijOSi2.set_parameter_value('eta',1) #O
-                bijOSi2.set_parameter_value('mu',1) #O
-                bijOSi2.set_parameter_value('a',2.2061) #media between Si and O parameters
-                bijOSi2.set_parameter_value('c',6.6) # O
-                bijOSi2.set_parameter_value('d',1) #O
-                bijOSi2.set_parameter_value('h',-0.229) #O
-                bijOSi2.set_cutoff(3.05)
-                bijOSi2.set_cutoff_margin(0.5) #for O
+                bijOSi2.set_parameter_value('beta', self.params['o bondorder beta'])  #O
+                bijOSi2.set_parameter_value('eta', self.params['o bondorder eta']) #O
+                bijOSi2.set_parameter_value('mu', self.params['o bondorder mu']) #O
+                bijOSi2.set_parameter_value('a', self.params['si-o bondorder a']) #media between Si and O parameters
+                bijOSi2.set_parameter_value('c', self.params['o bondorder c']) # O
+                bijOSi2.set_parameter_value('d', self.params['o bondorder d']) #O
+                bijOSi2.set_parameter_value('h', self.params['o bondorder h']) #O
+                bijOSi2.set_cutoff(self.params['o-si-o bondorder cutoff'])
+                bijOSi2.set_cutoff_margin(self.params['o-si-o bondorder cutoff margin'])
 
-                bijSiO = pysic.BondOrderParameters('tersoff', symbols=[['Si','O','O'],['Si','O','Si']])
-                bijSiO.set_parameter_value('beta',1.0999E-6)  #Si
-                bijSiO.set_parameter_value('eta',0.78734) #Si
-                bijSiO.set_parameter_value('mu',3) #Si
-                bijSiO.set_parameter_value('a',2.2061)   #media between Si and O parameters
-                bijSiO.set_parameter_value('c',100390) #Si
-                bijSiO.set_parameter_value('d',16.218) #Si
-                bijSiO.set_parameter_value('h',-0.59826) #Si
-                bijSiO.set_cutoff(3.05)
-                bijSiO.set_cutoff_margin(0.5) #for Si
+                bijSiO1 = pysic.BondOrderParameters('tersoff', symbols=['Si','O','O'])
+                bijSiO1.set_parameter_value('beta', self.params['si bondorder beta'])  #Si
+                bijSiO1.set_parameter_value('eta', self.params['si bondorder eta']) #Si
+                bijSiO1.set_parameter_value('mu', self.params['si bondorder mu']) #Si
+                bijSiO1.set_parameter_value('a', self.params['si-o bondorder a'])   #media between Si and O parameters
+                bijSiO1.set_parameter_value('c', self.params['si bondorder c']) #Si
+                bijSiO1.set_parameter_value('d', self.params['si bondorder d']) #Si
+                bijSiO1.set_parameter_value('h', self.params['si bondorder h']) #Si
+                bijSiO1.set_cutoff(self.params['si-o-o bondorder cutoff'])
+                bijSiO1.set_cutoff_margin(self.params['si-o-o bondorder cutoff margin'])
 
-                coordSiO = pysic.Coordinator([bijOSi1,bijOSi2, bijSiO])
+                bijSiO2 = pysic.BondOrderParameters('tersoff', symbols=['Si','O','Si'])
+                bijSiO2.set_parameter_value('beta', self.params['si bondorder beta'])  #Si
+                bijSiO2.set_parameter_value('eta', self.params['si bondorder eta']) #Si
+                bijSiO2.set_parameter_value('mu', self.params['si bondorder mu']) #Si
+                bijSiO2.set_parameter_value('a', self.params['si-o bondorder a'])   #media between Si and O parameters
+                bijSiO2.set_parameter_value('c', self.params['si bondorder c']) #Si
+                bijSiO2.set_parameter_value('d', self.params['si bondorder d']) #Si
+                bijSiO2.set_parameter_value('h', self.params['si bondorder h']) #Si
+                bijSiO2.set_cutoff(self.params['si-o-si bondorder cutoff'])
+                bijSiO2.set_cutoff_margin(self.params['si-o-si bondorder cutoff margin'])
+                
+                coordSiO = pysic.Coordinator([bijOSi1,bijOSi2, bijSiO1, bijSiO2])
 
                 prodBSiO.set_coordinator(coordSiO)
 
@@ -436,26 +899,26 @@ class CombPotential(CompoundPotential):
             #print "including Si-Si repulsion"
 
             ASiSi = pysic.Potential('charge_exp')
-            ASiSi.set_parameter_value('epsilon',1830.8)  #A_Si
-            ASiSi.set_parameter_value('Rmax1',-1.658949)
-            ASiSi.set_parameter_value('Rmin1',1.651725)
-            ASiSi.set_parameter_value('Qmax1',4)
-            ASiSi.set_parameter_value('Qmin1',-4)
-            ASiSi.set_parameter_value('Rmax2',-1.658949)
-            ASiSi.set_parameter_value('Rmin2',1.651725)
-            ASiSi.set_parameter_value('Qmax2',4)
-            ASiSi.set_parameter_value('Qmin2',-4)
-            ASiSi.set_parameter_value('xi1',2.4799) #lambda
-            ASiSi.set_parameter_value('xi2',2.4799)
+            ASiSi.set_parameter_value('epsilon', self.params['si repulsive epsilon'])  #A_Si
+            ASiSi.set_parameter_value('Rmax1', self.params['si rmax'])
+            ASiSi.set_parameter_value('Rmin1', self.params['si rmin'])
+            ASiSi.set_parameter_value('Qmax1', self.params['si qmax'])
+            ASiSi.set_parameter_value('Qmin1', self.params['si qmin'])
+            ASiSi.set_parameter_value('Rmax2', self.params['si rmax'])
+            ASiSi.set_parameter_value('Rmin2', self.params['si rmin'])
+            ASiSi.set_parameter_value('Qmax2', self.params['si qmax'])
+            ASiSi.set_parameter_value('Qmin2', self.params['si qmin'])
+            ASiSi.set_parameter_value('xi1', self.params['si repulsive lambda']) #lambda
+            ASiSi.set_parameter_value('xi2', self.params['si repulsive lambda'])
 
             exp_potSi = pysic.Potential('exponential')
             exp_potSi.set_parameter_value('epsilon',1)
-            exp_potSi.set_parameter_value('zeta', 2.4799)  #lambda_Si
+            exp_potSi.set_parameter_value('zeta',  self.params['si repulsive zeta'])  #lambda_Si
             
             prodASiSi = pysic.ProductPotential([ASiSi,exp_potSi])
 
-            prodASiSi.set_cutoff(3.0) # was 3.0
-            prodASiSi.set_cutoff_margin(0.2) # was 0.2
+            prodASiSi.set_cutoff(self.params['si repulsive cutoff'])
+            prodASiSi.set_cutoff_margin(self.params['si repulsive cutoff margin'])
             prodASiSi.set_symbols(['Si','Si'])
 
             self.pieces.append(prodASiSi)
@@ -465,26 +928,26 @@ class CombPotential(CompoundPotential):
             #print "including O-O repulsion"
 
             AOO = pysic.Potential('charge_exp')
-            AOO.set_parameter_value('epsilon',3326.699)  #A_O
-            AOO.set_parameter_value('Rmax1',-0.00112)
-            AOO.set_parameter_value('Rmin1',0.00148)
-            AOO.set_parameter_value('Qmax1',5.5046)
-            AOO.set_parameter_value('Qmin1',-1.8349)
-            AOO.set_parameter_value('Rmax2',-0.00112)
-            AOO.set_parameter_value('Rmin2',0.00148)
-            AOO.set_parameter_value('Qmax2',5.5046)
-            AOO.set_parameter_value('Qmin2',-1.8349)
-            AOO.set_parameter_value('xi1',5.36) #lambda
-            AOO.set_parameter_value('xi2',5.36)
+            AOO.set_parameter_value('epsilon', self.params['o repulsive epsilon'])  #A_O
+            AOO.set_parameter_value('Rmax1', self.params['o rmax'])
+            AOO.set_parameter_value('Rmin1', self.params['o rmin'])
+            AOO.set_parameter_value('Qmax1', self.params['o qmax'])
+            AOO.set_parameter_value('Qmin1', self.params['o qmin'])
+            AOO.set_parameter_value('Rmax2', self.params['o rmax'])
+            AOO.set_parameter_value('Rmin2', self.params['o rmin'])
+            AOO.set_parameter_value('Qmax2', self.params['o qmax'])
+            AOO.set_parameter_value('Qmin2', self.params['o qmin'])
+            AOO.set_parameter_value('xi1', self.params['o repulsive lambda']) #lambda
+            AOO.set_parameter_value('xi2', self.params['o repulsive lambda'])
 
             exp_potO = pysic.Potential('exponential')
             exp_potO.set_parameter_value('epsilon',1)
-            exp_potO.set_parameter_value('zeta',5.36)  #lambda_O
+            exp_potO.set_parameter_value('zeta', self.params['o repulsive zeta'])  #lambda_O
 
             prodAOO = pysic.ProductPotential([AOO,exp_potO])
  
-            prodAOO.set_cutoff(3.0)
-            prodAOO.set_cutoff_margin(0.4)
+            prodAOO.set_cutoff(self.params['o repulsive cutoff'])
+            prodAOO.set_cutoff_margin(self.params['o repulsive cutoff margin'])
             prodAOO.set_symbols(['O','O'])
 
             self.pieces.append(prodAOO)
@@ -495,26 +958,26 @@ class CombPotential(CompoundPotential):
             #print "including Si-O repulsion"
 
             ASiO = pysic.Potential('charge_exp')
-            ASiO.set_parameter_value('epsilon',2467.894659826) #sqrt(A_Si*A_O)
-            ASiO.set_parameter_value('Rmax1',-1.658949)
-            ASiO.set_parameter_value('Rmin1',1.651725)
-            ASiO.set_parameter_value('Qmax1',4)
-            ASiO.set_parameter_value('Qmin1',-4)
-            ASiO.set_parameter_value('Rmax2',-0.00112)
-            ASiO.set_parameter_value('Rmin2',0.00148)
-            ASiO.set_parameter_value('Qmax2',5.5046)
-            ASiO.set_parameter_value('Qmin2',-1.8349)
-            ASiO.set_parameter_value('xi1',2.4799) #lambda
-            ASiO.set_parameter_value('xi2',5.36)
+            ASiO.set_parameter_value('epsilon', self.params['si-o repulsive epsilon']) #sqrt(A_Si*A_O)
+            ASiO.set_parameter_value('Rmax1', self.params['si rmax'])
+            ASiO.set_parameter_value('Rmin1', self.params['si rmin'])
+            ASiO.set_parameter_value('Qmax1', self.params['si qmax'])
+            ASiO.set_parameter_value('Qmin1', self.params['si qmin'])
+            ASiO.set_parameter_value('Rmax2', self.params['o rmax'])
+            ASiO.set_parameter_value('Rmin2', self.params['o rmin'])
+            ASiO.set_parameter_value('Qmax2', self.params['o qmax'])
+            ASiO.set_parameter_value('Qmin2', self.params['o qmin'])
+            ASiO.set_parameter_value('xi1', self.params['si repulsive lambda']) #lambda
+            ASiO.set_parameter_value('xi2', self.params['o repulsive lambda'])
             
             exp_potSiO = pysic.Potential('exponential')
             exp_potSiO.set_parameter_value('epsilon',1)
-            exp_potSiO.set_parameter_value('zeta', 3.91995)  # (lambda_Si + lambda_O)/2
+            exp_potSiO.set_parameter_value('zeta', self.params['si-o repulsive zeta'])  # (lambda_Si + lambda_O)/2
 
             prodASiO = pysic.ProductPotential([ASiO,exp_potSiO])
 
-            prodASiO.set_cutoff(3.05)
-            prodASiO.set_cutoff_margin(0.5)#0.3018)  # Rs_both is sqrt(Rs1*Rs2) 
+            prodASiO.set_cutoff(self.params['si-o repulsive cutoff'])
+            prodASiO.set_cutoff_margin(self.params['si-o repulsive cutoff margin'])
             prodASiO.set_symbols(['Si','O'])
 
             self.pieces.append(prodASiO)
@@ -524,289 +987,135 @@ class CombPotential(CompoundPotential):
         if self.possible_excludes[11] not in self.excludes:
             #print "including Si self energy"
 
+            chiSiX = pysic.Potential('charge_self')
+            chiSiX.set_parameter_value('epsilon', self.params['si charge c1'])
+            chiSiX.set_parameter_value('n',1)
+            chiSiX.set_symbols(['Si'])
             chiSiJ = pysic.Potential('charge_self')
-            chiSiJ.set_parameter_value('epsilon', 3.625144859)      #J, X = 0 and K = 0 for Si
+            chiSiJ.set_parameter_value('epsilon', self.params['si charge c2'])
             chiSiJ.set_parameter_value('n',2)
-
-            chiSiL = pysic.Potential('charge_self')
-            chiSiL.set_parameter_value('epsilon', 0.087067714)       # L
-            chiSiL.set_parameter_value('n',4)
             chiSiJ.set_symbols(['Si'])
+            chiSiK = pysic.Potential('charge_self')
+            chiSiK.set_parameter_value('epsilon', self.params['si charge c3'])
+            chiSiK.set_parameter_value('n',3)
+            chiSiK.set_symbols(['Si'])
+            chiSiL = pysic.Potential('charge_self')
+            chiSiL.set_parameter_value('epsilon', self.params['si charge c4'])
+            chiSiL.set_parameter_value('n',4)
             chiSiL.set_symbols(['Si'])
             
-            #selfpot offset
-            selfpotsi = pysic.Potential('charge_self')
-            selfpotsi.set_parameter_value('epsilon',-0.000413097)
-            selfpotsi.set_parameter_value('n',2)
-            selfpotsi.set_symbols(['Si'])
-
+            self.pieces.append([chiSiX])
             self.pieces.append([chiSiJ])
+            self.pieces.append([chiSiK])
             self.pieces.append([chiSiL])
-            #self.pieces.append([selfpotsi])
-
             
         # charge self-energy O
         if self.possible_excludes[12] not in self.excludes:
             #print "including O self energy"
 
             chiOX = pysic.Potential('charge_self')
-            chiOX.set_parameter_value('epsilon', 5.63441383)     #X
+            chiOX.set_parameter_value('epsilon', self.params['o charge c1'])
             chiOX.set_parameter_value('n',1)
-            chiOJ = pysic.Potential('charge_self')
-            chiOJ.set_parameter_value('epsilon', 7.689598017)   #J
-            chiOJ.set_parameter_value('n',2)
-            chiOK = pysic.Potential('charge_self')
-            chiOK.set_parameter_value('epsilon', 4.51426991)    #K
-            chiOK.set_parameter_value('n', 3)
-            chiOL = pysic.Potential('charge_self')
-            chiOL.set_parameter_value('epsilon', 1.330079082)      #L
-            chiOL.set_parameter_value('n', 4)
             chiOX.set_symbols(['O'])
+            chiOJ = pysic.Potential('charge_self')
+            chiOJ.set_parameter_value('epsilon', self.params['o charge c2'])
+            chiOJ.set_parameter_value('n',2)
             chiOJ.set_symbols(['O'])
+            chiOK = pysic.Potential('charge_self')
+            chiOK.set_parameter_value('epsilon', self.params['o charge c3'])
+            chiOK.set_parameter_value('n', 3)
             chiOK.set_symbols(['O'])
+            chiOL = pysic.Potential('charge_self')
+            chiOL.set_parameter_value('epsilon', self.params['o charge c4'])
+            chiOL.set_parameter_value('n', 4)
             chiOL.set_symbols(['O'])
-
-            #selfpot contribution
-            selfpoto = pysic.Potential('charge_self')
-            selfpoto.set_parameter_value('epsilon',-0.000413097)
-            selfpoto.set_parameter_value('n',2)
-            selfpoto.set_symbols(['O'])
 
             self.pieces.append(chiOX)
             self.pieces.append(chiOJ)
             self.pieces.append(chiOK)
             self.pieces.append(chiOL)
-            #self.pieces.append(selfpoto)
 
-        pow1 = pysic.Potential('power')           #just multiplies by r
+        pow1 = pysic.Potential('power') # just multiplies by r
         pow1.set_parameter_value('epsilon',1)
         pow1.set_parameter_value('a',1)
         pow1.set_parameter_value('n',-1)
-        pow2 = pysic.Potential('power')           #just multiplies by (1/r^5)
+        
+        pow2 = pysic.Potential('power') # just multiplies by (1/r^5)
         pow2.set_parameter_value('epsilon',1)
         pow2.set_parameter_value('a',1)
         pow2.set_parameter_value('n',5) 
 
-
-        chp1 = pysic.Potential('charge_pair')
-        chp1.set_parameter_value('epsilon',-8.362034089934842e-07)  #is (5/rc^6 * rho1_Si)
-        chp1.set_parameter_value('n1',0)
-        chp1.set_parameter_value('n2',1)          # multiplies by q_j 
-
         chp4 = pysic.Potential('charge_pair')
-        chp4.set_parameter_value('epsilon', -0.499378)  #is (rho1_Si)
+        chp4.set_parameter_value('epsilon', self.params['si field rho1']) # is (rho1_Si)
         chp4.set_parameter_value('n1',0)
-        chp4.set_parameter_value('n2',1)          # multiplies by q_j 
-
-        chp1b = pysic.Potential('charge_pair')
-        chp1b.set_parameter_value('epsilon', 5.023320620606138e-06)  #is (5/rc^6 * rho2_Si)
-        chp1b.set_parameter_value('n1',0)
-        chp1b.set_parameter_value('n2',2)          # multiplies by q_j^2 
+        chp4.set_parameter_value('n2',1) # multiplies by q_j
 
         chp4b = pysic.Potential('charge_pair')
-        chp4b.set_parameter_value('epsilon', 2.999911)  #is (rho2_Si)
+        chp4b.set_parameter_value('epsilon', self.params['si field rho2']) # is (rho2_Si)
         chp4b.set_parameter_value('n1',0)
-        chp4b.set_parameter_value('n2',2)          # multiplies by q_j^2 
-
-        chp1c = pysic.Potential('charge_pair')
-        chp1c.set_parameter_value('epsilon',-8.362034089934842e-07)  #is (5/rc^6 * rho1_Si)
-        chp1c.set_parameter_value('n1',1)
-        chp1c.set_parameter_value('n2',0)          # multiplies by q_i
+        chp4b.set_parameter_value('n2',2) # multiplies by q_j^2
 
         chp4c = pysic.Potential('charge_pair')
-        chp4c.set_parameter_value('epsilon', -0.499378)  #is (rho1_Si)
+        chp4c.set_parameter_value('epsilon', self.params['si field rho1'])
         chp4c.set_parameter_value('n1',1)
-        chp4c.set_parameter_value('n2',0)          # multiplies by q_i 
-
-        chp1d = pysic.Potential('charge_pair')
-        chp1d.set_parameter_value('epsilon', 5.023320620606138e-06)  #is (5/rc^6 * rho2_Si)
-        chp1d.set_parameter_value('n1',2)
-        chp1d.set_parameter_value('n2',0)          # multiplies by q_i^2 
+        chp4c.set_parameter_value('n2',0) # multiplies by q_i
 
         chp4d = pysic.Potential('charge_pair')
-        chp4d.set_parameter_value('epsilon', 2.999911)  #is (rho2_Si)
+        chp4d.set_parameter_value('epsilon', self.params['si field rho2'])
         chp4d.set_parameter_value('n1',2)
-        chp4d.set_parameter_value('n2',0)          # multiplies by q_i^2 
+        chp4d.set_parameter_value('n2',0) # multiplies by q_i^2
 
         
         # penalty function Si-Si
         if self.possible_excludes[13] not in self.excludes:
             #print "including Si-Si penalty"
 
-            prod1 = pysic.ProductPotential([chp1, pow1])
-            prod1.set_symbols(['Si','Si'])
-            prod1.set_cutoff(12)   
-            #prod1.set_cutoff_margin(0.2)
-            self.pieces.append(prod1)
-
-            chp2 = pysic.Potential('charge_pair')
-            chp2.set_parameter_value('epsilon',1.003444090792181e-05)  #is -(5/rc^5 * rho1_Si)
-            chp2.set_parameter_value('n1',0)
-            chp2.set_parameter_value('n2',1)          # multiplies by q_j 
-            chp2.set_symbols(['Si','Si'])
-            chp2.set_cutoff(12)
-            #chp2.set_cutoff_margin(0.2)
-            self.pieces.append(chp2)
-
-            chp3 = pysic.Potential('charge_pair')
-            chp3.set_parameter_value('epsilon', 2.006888181584362e-06)  #is -(1/rc^5 * rho1_Si)
-            chp3.set_parameter_value('n1',0)
-            chp3.set_parameter_value('n2',1)          # multiplies by q_j 
-            chp3.set_symbols(['Si','Si'])
-            chp3.set_cutoff(12)
-            #chp3.set_cutoff_margin(0.2)
-            self.pieces.append(chp3)
-
             chp4.set_symbols(['Si','Si'])
-            chp4.set_cutoff(12)
-            #chp4.set_cutoff_margin(0.2)
             prod2 = pysic.ProductPotential([chp4, pow2])
             prod2.set_symbols(['Si','Si'])
-            prod2.set_cutoff(12)
-            #prod2.set_cutoff_margin(0.2)
+            prod2.set_cutoff(self.params['field cutoff'])
+            prod2.set_cutoff_margin(self.params['field cutoff margin'])
             self.pieces.append(prod2)
 
-            #Second term------------------------------------------------------------------------------------------
-            prod1b = pysic.ProductPotential([chp1b, pow1])
-            prod1b.set_symbols(['Si','Si'])
-            prod1b.set_cutoff(12)
-            #prod1b.set_cutoff_margin(0.2)
-            self.pieces.append(prod1b)
-
-            chp2b = pysic.Potential('charge_pair')
-            chp2b.set_parameter_value('epsilon',-6.027984744727366e-05)  #is -(5/rc^5 * rho2_Si)
-            chp2b.set_parameter_value('n1',0)
-            chp2b.set_parameter_value('n2',2)          # multiplies by q_j^2 
-            chp2b.set_symbols(['Si','Si'])
-            chp2b.set_cutoff(12)
-            #chp2b.set_cutoff_margin(0.2)
-            self.pieces.append(chp2b)
-
-            chp3b = pysic.Potential('charge_pair')
-            chp3b.set_parameter_value('epsilon',-1.205596948945473e-05)  #is -(1/rc^5 * rho2_Si)
-            chp3b.set_parameter_value('n1',0)
-            chp3b.set_parameter_value('n2',2)          # multiplies by q_j^2 
-            chp3b.set_symbols(['Si','Si'])
-            chp3b.set_cutoff(12)
-            #chp3b.set_cutoff_margin(0.2)
-            self.pieces.append(chp3b)
-
             chp4b.set_symbols(['Si','Si'])
-            chp4b.set_cutoff(12)
-            chp4b.set_cutoff_margin(0.2)
             prod2b = pysic.ProductPotential([chp4b, pow2])
             prod2b.set_symbols(['Si','Si'])
-            prod2b.set_cutoff(12)
-            #prod2b.set_cutoff_margin(0.2)
+            prod2b.set_cutoff(self.params['field cutoff'])
+            prod2b.set_cutoff_margin(self.params['field cutoff margin'])
             self.pieces.append(prod2b)
 
-            #Third term---------------------------------------------------------------------------------------
-            prod1c = pysic.ProductPotential([chp1c, pow1])
-            prod1c.set_symbols(['Si','Si'])
-            prod1c.set_cutoff(12)
-            #prod1c.set_cutoff_margin(0.2)
-            self.pieces.append(prod1c)
-
-            chp2c = pysic.Potential('charge_pair')
-            chp2c.set_parameter_value('epsilon',1.003444090792181e-05)  #is -(5/rc^5 * rho1_Si)
-            chp2c.set_parameter_value('n1',1)
-            chp2c.set_parameter_value('n2',0)          # multiplies by q_i
-            chp2c.set_symbols(['Si','Si'])
-            chp2c.set_cutoff(12)
-            #chp2c.set_cutoff_margin(0.2)
-            self.pieces.append(chp2c)
-
-            chp3c = pysic.Potential('charge_pair')
-            chp3c.set_parameter_value('epsilon', 2.006888181584362e-06)  #is -(1/rc^5 * rho1_Si)
-            chp3c.set_parameter_value('n1',1)
-            chp3c.set_parameter_value('n2',0)          # multiplies by q_i
-            chp3c.set_symbols(['Si','Si'])
-            chp3c.set_cutoff(12)
-            #chp3c.set_cutoff_margin(0.2)
-            self.pieces.append(chp3c)
-
             chp4c.set_symbols(['Si','Si'])
-            chp4c.set_cutoff(12)
-            #chp4c.set_cutoff_margin(0.2)
             prod2c = pysic.ProductPotential([chp4c, pow2])
             prod2c.set_symbols(['Si','Si'])
-            prod2c.set_cutoff(12)
-            #prod2c.set_cutoff_margin(0.2)
+            prod2c.set_cutoff(self.params['field cutoff'])
+            prod2c.set_cutoff_margin(self.params['field cutoff margin'])
             self.pieces.append(prod2c)
 
-            #Forth term-------------------------------------------------------------------------------------
-            prod1d = pysic.ProductPotential([chp1d, pow1])
-            prod1d.set_symbols(['Si','Si'])
-            prod1d.set_cutoff(12)
-            #prod1d.set_cutoff_margin(0.2)
-            self.pieces.append(prod1d)
-
-            chp2d = pysic.Potential('charge_pair')
-            chp2d.set_parameter_value('epsilon',-6.027984744727366e-05)  #is -(5/rc^5 * rho2_Si)
-            chp2d.set_parameter_value('n1',2)
-            chp2d.set_parameter_value('n2',0)          # multiplies by q_i^2 
-            chp2d.set_symbols(['Si','Si'])
-            chp2d.set_cutoff(12)
-            #chp2d.set_cutoff_margin(0.2)
-            self.pieces.append(chp2d)
-
-            chp3d = pysic.Potential('charge_pair')
-            chp3d.set_parameter_value('epsilon',-1.205596948945473e-05)  #is -(1/rc^5 * rho2_Si)
-            chp3d.set_parameter_value('n1',2)
-            chp3d.set_parameter_value('n2',0)          # multiplies by q_i^2 
-            chp3d.set_symbols(['Si','Si'])
-            chp3d.set_cutoff(12)
-            #chp3d.set_cutoff_margin(0.2)
-            self.pieces.append(chp3d)
-
             chp4d.set_symbols(['Si','Si'])
-            chp4d.set_cutoff(12)
-            #chp4d.set_cutoff_margin(0.2)
             prod2d = pysic.ProductPotential([chp4d, pow2])
             prod2d.set_symbols(['Si','Si'])
-            prod2d.set_cutoff(12)
-            #prod2d.set_cutoff_margin(0.2)
+            prod2d.set_cutoff(self.params['field cutoff'])
+            prod2d.set_cutoff_margin(self.params['field cutoff margin'])
             self.pieces.append(prod2d)
 
 
-
-        chp1O = pysic.Potential('charge_pair')
-        chp1O.set_parameter_value('epsilon',-6.567367742091049e-06)  #is (5/rc^6 * rho1_O)
-        chp1O.set_parameter_value('n1',0)
-        chp1O.set_parameter_value('n2',1)          # multiplies by q_j 
-
         chp4O = pysic.Potential('charge_pair')
-        chp4O.set_parameter_value('epsilon', -3.9220110000000)  #is (rho1_O)
+        chp4O.set_parameter_value('epsilon', self.params['o field rho1'])
         chp4O.set_parameter_value('n1',0)
-        chp4O.set_parameter_value('n2',1)          # multiplies by q_j 
- 
-        chp1bO = pysic.Potential('charge_pair')
-        chp1bO.set_parameter_value('epsilon', 1.626073682913237e-06)  #is (5/rc^6 * rho2_O)
-        chp1bO.set_parameter_value('n1',0)
-        chp1bO.set_parameter_value('n2',2)          # multiplies by q_j^2 
+        chp4O.set_parameter_value('n2',1)          # multiplies by q_j
 
         chp4bO = pysic.Potential('charge_pair')
-        chp4bO.set_parameter_value('epsilon',0.971086)  #is (rho2_O)
+        chp4bO.set_parameter_value('epsilon', self.params['o field rho2'])
         chp4bO.set_parameter_value('n1',0)
-        chp4bO.set_parameter_value('n2',2)          # multiplies by q_j^2 
-
-        chp1cO = pysic.Potential('charge_pair')
-        chp1cO.set_parameter_value('epsilon',-6.567367742091049e-06)  #is (5/rc^6 * rho1_O)
-        chp1cO.set_parameter_value('n1',1)
-        chp1cO.set_parameter_value('n2',0)          # multiplies by q_i
+        chp4bO.set_parameter_value('n2',2)          # multiplies by q_j^2
 
         chp4cO = pysic.Potential('charge_pair')
-        chp4cO.set_parameter_value('epsilon', -3.922011000)  # is (rho1_O)
+        chp4cO.set_parameter_value('epsilon', self.params['o field rho1'])
         chp4cO.set_parameter_value('n1',1)
-        chp4cO.set_parameter_value('n2',0)                   # multiplies by q_i 
-
-        chp1dO = pysic.Potential('charge_pair')
-        chp1dO.set_parameter_value('epsilon', 1.626073682913237e-06)  #is (5/rc^6 * rho2_O)
-        chp1dO.set_parameter_value('n1',2)
-        chp1dO.set_parameter_value('n2',0)          # multiplies by q_i^2 
+        chp4cO.set_parameter_value('n2',0)          # multiplies by q_i
 
         chp4dO = pysic.Potential('charge_pair')
-        chp4dO.set_parameter_value('epsilon', 0.971086)  #is (rho2_O)
+        chp4dO.set_parameter_value('epsilon', self.params['o field rho2'])
         chp4dO.set_parameter_value('n1',2)
         chp4dO.set_parameter_value('n2',0)          # multiplies by q_i^2 
 
@@ -815,129 +1124,28 @@ class CombPotential(CompoundPotential):
         if self.possible_excludes[14] not in self.excludes: 
             #print "including O-O penalty"
 
-            #First term--------------------------------------------------------------------------------------
-            prod1O = pysic.ProductPotential([chp1O, pow1])
-            prod1O.set_symbols(['O','O'])
-            prod1O.set_cutoff(12)
-            #prod1O.set_cutoff_margin(0.2)
-            self.pieces.append(prod1O)
-
-            chp2O = pysic.Potential('charge_pair')
-            chp2O.set_parameter_value('epsilon',7.880841290509259e-05)  #is -(5/rc^5 * rho1_O)
-            chp2O.set_parameter_value('n1',0)
-            chp2O.set_parameter_value('n2',1)          # multiplies by q_j 
-            chp2O.set_symbols(['O','O'])
-            chp2O.set_cutoff(12)
-            #chp2O.set_cutoff_margin(0.2)
-            self.pieces.append(chp2O)
-
-            chp3O = pysic.Potential('charge_pair')
-            chp3O.set_parameter_value('epsilon',1.576168258101852e-05)  #is -(1/rc^5 * rho1_O)
-            chp3O.set_parameter_value('n1',0)
-            chp3O.set_parameter_value('n2',1)          # multiplies by q_j 
-            chp3O.set_symbols(['O','O'])
-            chp3O.set_cutoff(12)
-            #chp3O.set_cutoff_margin(0.2)
-            self.pieces.append(chp3O)
-
             prod2O = pysic.ProductPotential([chp4O, pow2])
             prod2O.set_symbols(['O','O'])
-            prod2O.set_cutoff(12)
-            #prod2O.set_cutoff_margin(0.2)
+            prod2O.set_cutoff(self.params['field cutoff'])
+            prod2O.set_cutoff_margin(self.params['field cutoff margin'])
             self.pieces.append(prod2O)
-
-
-            #Second term-----------------------------------------------------------------------------------------
-            prod1bO = pysic.ProductPotential([chp1bO, pow1])
-            prod1bO.set_symbols(['O','O'])
-            prod1bO.set_cutoff(12)
-            #prod1bO.set_cutoff_margin(0.2)
-            self.pieces.append(prod1bO)
- 
-            chp2bO = pysic.Potential('charge_pair')
-            chp2bO.set_parameter_value('epsilon',-1.951288419495885e-05)  #is -(5/rc^5 * rho2_O)
-            chp2bO.set_parameter_value('n1',0)
-            chp2bO.set_parameter_value('n2',2)          # multiplies by q_j^2 
-            chp2bO.set_symbols(['O','O'])
-            chp2bO.set_cutoff(12)
-            #chp2bO.set_cutoff_margin(0.2)
-            self.pieces.append(chp2bO)
-
-            chp3bO = pysic.Potential('charge_pair')
-            chp3bO.set_parameter_value('epsilon',-3.902576838991770e-06)  #is -(1/rc^5 * rho2_O)
-            chp3bO.set_parameter_value('n1',0)
-            chp3bO.set_parameter_value('n2',2)          # multiplies by q_j^2 
-            chp3bO.set_symbols(['O','O'])
-            chp3bO.set_cutoff(12)
-            #chp3bO.set_cutoff_margin(0.2)
-            self.pieces.append(chp3bO)
 
             prod2bO = pysic.ProductPotential([chp4bO, pow2])
             prod2bO.set_symbols(['O','O'])
-            prod2bO.set_cutoff(12)
-            #prod2bO.set_cutoff_margin(0.2)
+            prod2bO.set_cutoff(self.params['field cutoff'])
+            prod2bO.set_cutoff_margin(self.params['field cutoff margin'])
             self.pieces.append(prod2bO)
-
-            #Third term---------------------------------------------------------------------------------------
-            prod1cO = pysic.ProductPotential([chp1cO, pow1])
-            prod1cO.set_symbols(['O','O'])
-            prod1cO.set_cutoff(12)
-            #prod1cO.set_cutoff_margin(0.2)
-            self.pieces.append(prod1cO)
-
-            chp2cO = pysic.Potential('charge_pair')
-            chp2cO.set_parameter_value('epsilon',7.880841290509259e-05)  #is -(5/rc^5 * rho1_O)
-            chp2cO.set_parameter_value('n1',1)
-            chp2cO.set_parameter_value('n2',0)          # multiplies by q_i
-            chp2cO.set_symbols(['O','O'])
-            chp2cO.set_cutoff(12)
-            #chp2cO.set_cutoff_margin(0.2)
-            self.pieces.append(chp2cO)
-
-            chp3cO = pysic.Potential('charge_pair')
-            chp3cO.set_parameter_value('epsilon', 1.576168258101852e-05)  #is -(1/rc^5 * rho1_O)
-            chp3cO.set_parameter_value('n1',1)
-            chp3cO.set_parameter_value('n2',0)          # multiplies by q_i
-            chp3cO.set_symbols(['O','O'])
-            chp3cO.set_cutoff(12)
-            #chp3cO.set_cutoff_margin(0.2)
-            self.pieces.append(chp3cO)
 
             prod2cO = pysic.ProductPotential([chp4cO, pow2])
             prod2cO.set_symbols(['O','O'])
-            prod2cO.set_cutoff(12)
-            #prod2cO.set_cutoff_margin(0.2)
+            prod2cO.set_cutoff(self.params['field cutoff'])
+            prod2cO.set_cutoff_margin(self.params['field cutoff margin'])
             self.pieces.append(prod2cO)
-
-            #Forth term------------------------------------------------------------------------------------------
-            prod1dO = pysic.ProductPotential([chp1dO, pow1])
-            prod1dO.set_symbols(['O','O'])
-            prod1dO.set_cutoff(12)
-            #prod1dO.set_cutoff_margin(0.2)
-            self.pieces.append(prod1dO)
-
-            chp2dO = pysic.Potential('charge_pair')
-            chp2dO.set_parameter_value('epsilon', -1.951288419495885e-05)  #is -(5/rc^5 * rho2_O)
-            chp2dO.set_parameter_value('n1',2)
-            chp2dO.set_parameter_value('n2',0)          # multiplies by q_i^2 
-            chp2dO.set_symbols(['O','O'])
-            chp2dO.set_cutoff(12)
-            #chp2dO.set_cutoff_margin(0.2)
-            self.pieces.append(chp2dO)
-
-            chp3dO = pysic.Potential('charge_pair')
-            chp3dO.set_parameter_value('epsilon',-3.902576838991770e-06)  #is -(1/rc^5 * rho2_O)
-            chp3dO.set_parameter_value('n1',2)
-            chp3dO.set_parameter_value('n2',0)          # multiplies by q_i^2 
-            chp3dO.set_symbols(['O','O'])
-            chp3dO.set_cutoff(12)
-            #chp3dO.set_cutoff_margin(0.2)
-            self.pieces.append(chp3dO)
 
             prod2dO = pysic.ProductPotential([chp4dO, pow2])
             prod2dO.set_symbols(['O','O'])
-            prod2dO.set_cutoff(12)
-            #prod2dO.set_cutoff_margin(0.2)
+            prod2dO.set_cutoff(self.params['field cutoff'])
+            prod2dO.set_cutoff_margin(self.params['field cutoff margin'])
             self.pieces.append(prod2dO)
 
 
@@ -945,128 +1153,28 @@ class CombPotential(CompoundPotential):
         if self.possible_excludes[15] not in self.excludes:
             #print "including Si-O penalty"
 
-            #First term--------------------------------------------------------------------------------------
-            prod1mix = pysic.ProductPotential([chp1, pow1])
-            prod1mix.set_symbols(['Si','O'])
-            prod1mix.set_cutoff(12)
-            #prod1mix.set_cutoff_margin(0.2)
-            self.pieces.append(prod1mix)
-
-            chp2mix = pysic.Potential('charge_pair')
-            chp2mix.set_parameter_value('epsilon',1.003444090792181e-05)  #is -(5/rc^5 * rho1_Si)
-            chp2mix.set_parameter_value('n1',0)
-            chp2mix.set_parameter_value('n2',1)          # multiplies by q_j 
-            chp2mix.set_symbols(['Si','O'])
-            chp2mix.set_cutoff(12)
-            #chp2mix.set_cutoff_margin(0.2)
-            self.pieces.append(chp2mix)
-
-            chp3mix = pysic.Potential('charge_pair')
-            chp3mix.set_parameter_value('epsilon', 2.006888181584362e-06)  #is -(1/rc^5 * rho1_Si)
-            chp3mix.set_parameter_value('n1',0)
-            chp3mix.set_parameter_value('n2',1)          # multiplies by q_j 
-            chp3mix.set_symbols(['Si','O'])
-            chp3mix.set_cutoff(12)
-            #chp3mix.set_cutoff_margin(0.2)
-            self.pieces.append(chp3mix)
-
             prod2mix = pysic.ProductPotential([chp4, pow2])
             prod2mix.set_symbols(['Si','O'])
-            prod2mix.set_cutoff(12)
-            #prod2mix.set_cutoff_margin(0.2)
+            prod2mix.set_cutoff(self.params['field cutoff'])
+            prod2mix.set_cutoff_margin(self.params['field cutoff margin'])
             self.pieces.append(prod2mix)
-
-            #Second term--------------------------------------------------------------------------------------
-            prod1bmix = pysic.ProductPotential([chp1b, pow1])
-            prod1bmix.set_symbols(['Si','O'])
-            prod1bmix.set_cutoff(12)
-            #prod1bmix.set_cutoff_margin(0.2)
-            self.pieces.append(prod1bmix)
-
-            chp2bmix = pysic.Potential('charge_pair')
-            chp2bmix.set_parameter_value('epsilon',-6.027984744727366e-05)  #is -(5/rc^5 * rho2_Si)
-            chp2bmix.set_parameter_value('n1',0)
-            chp2bmix.set_parameter_value('n2',2)          # multiplies by q_j^2 
-            chp2bmix.set_symbols(['Si','O'])
-            chp2bmix.set_cutoff(12)
-            #chp2bmix.set_cutoff_margin(0.2)
-            self.pieces.append(chp2bmix)
-
-            chp3bmix = pysic.Potential('charge_pair')
-            chp3bmix.set_parameter_value('epsilon',-1.205596948945473e-05)  #is -(1/rc^5 * rho2_Si)
-            chp3bmix.set_parameter_value('n1',0)
-            chp3bmix.set_parameter_value('n2',2)          # multiplies by q_j^2 
-            chp3bmix.set_symbols(['Si','O'])
-            chp3bmix.set_cutoff(12)
-            #chp3bmix.set_cutoff_margin(0.2)
-            self.pieces.append(chp3bmix)
 
             prod2bmix = pysic.ProductPotential([chp4b, pow2])
             prod2bmix.set_symbols(['Si','O'])
-            prod2bmix.set_cutoff(12)
-            #prod2bmix.set_cutoff_margin(0.2)
+            prod2bmix.set_cutoff(self.params['field cutoff'])
+            prod2bmix.set_cutoff_margin(self.params['field cutoff margin'])
             self.pieces.append(prod2bmix)
-
-            #Third term---------------------------------------------------------------------------------------------
-            prod1cmix = pysic.ProductPotential([chp1cO, pow1])
-            prod1cmix.set_symbols(['Si','O'])
-            prod1cmix.set_cutoff(12)
-            #prod1cmix.set_cutoff_margin(0.2)
-            self.pieces.append(prod1cmix)
-
-            chp2cmix = pysic.Potential('charge_pair')
-            chp2cmix.set_parameter_value('epsilon',7.880841290509259e-05)  #is -(5/rc^5 * rho1_O)
-            chp2cmix.set_parameter_value('n1',1)
-            chp2cmix.set_parameter_value('n2',0)          # multiplies by q_i
-            chp2cmix.set_symbols(['Si','O'])
-            chp2cmix.set_cutoff(12)
-            #chp2cmix.set_cutoff_margin(0.2)
-            self.pieces.append(chp2cmix)
-
-            chp3cmix = pysic.Potential('charge_pair')
-            chp3cmix.set_parameter_value('epsilon', 1.576168258101852e-05)  #is -(1/rc^5 * rho1_O)
-            chp3cmix.set_parameter_value('n1',1)
-            chp3cmix.set_parameter_value('n2',0)          # multiplies by q_i
-            chp3cmix.set_symbols(['Si','O'])
-            chp3cmix.set_cutoff(12)
-            #chp3cmix.set_cutoff_margin(0.2)
-            self.pieces.append(chp3cmix)
 
             prod2cmix = pysic.ProductPotential([chp4cO, pow2])
             prod2cmix.set_symbols(['Si','O'])
-            prod2cmix.set_cutoff(12)
-            #prod2cmix.set_cutoff_margin(0.2)
+            prod2cmix.set_cutoff(self.params['field cutoff'])
+            prod2cmix.set_cutoff_margin(self.params['field cutoff margin'])
             self.pieces.append(prod2cmix)
-
-            #Forth term------------------------------------------------------------------------------------------
-            prod1dmix = pysic.ProductPotential([chp1dO, pow1])
-            prod1dmix.set_symbols(['Si','O'])
-            prod1dmix.set_cutoff(12)
-            #prod1dmix.set_cutoff_margin(0.2)
-            self.pieces.append(prod1dmix)
-
-            chp2dmix = pysic.Potential('charge_pair')
-            chp2dmix.set_parameter_value('epsilon', -1.951288419495885e-05)  #is -(5/rc^5 * rho2_O)
-            chp2dmix.set_parameter_value('n1',2)
-            chp2dmix.set_parameter_value('n2',0)          # multiplies by q_i^2 
-            chp2dmix.set_symbols(['Si','O'])
-            chp2dmix.set_cutoff(12)
-            #chp2dmix.set_cutoff_margin(0.2)
-            self.pieces.append(chp2dmix)
-
-            chp3dmix = pysic.Potential('charge_pair')
-            chp3dmix.set_parameter_value('epsilon',-3.902576838991770e-06)  #is -(1/rc^5 * rho2_O)
-            chp3dmix.set_parameter_value('n1',2)
-            chp3dmix.set_parameter_value('n2',0)          # multiplies by q_i^2 
-            chp3dmix.set_symbols(['Si','O'])
-            chp3dmix.set_cutoff(12)
-            #chp3dmix.set_cutoff_margin(0.2)
-            self.pieces.append(chp3dmix)
 
             prod2dmix = pysic.ProductPotential([chp4dO, pow2])
             prod2dmix.set_symbols(['Si','O'])
-            prod2dmix.set_cutoff(12)
-            #prod2dmix.set_cutoff_margin(0.2)
+            prod2dmix.set_cutoff(self.params['field cutoff'])
+            prod2dmix.set_cutoff_margin(self.params['field cutoff margin'])
             self.pieces.append(prod2dmix)
 
         charged = pysic.Potential('charge_pair')
@@ -1079,8 +1187,8 @@ class CombPotential(CompoundPotential):
         decay.set_parameter_value('a',1)
         decay.set_parameter_value('n',1)
 
-        si_zeta = 0.772871
-        o_zeta  = 2.243072
+        si_zeta = self.params['si slater zeta']
+        o_zeta  = self.params['o slater zeta']
 
         si_exp_decay = pysic.Potential('exponential')
         si_exp_decay.set_parameter_value('epsilon',-1)
@@ -1113,25 +1221,6 @@ class CombPotential(CompoundPotential):
             poly_sisi3.set_parameter_value('r2',1)
             poly_sisi3.set_parameter_value('n',3)
             
-            
-            # offsets
-            sisi_offset1 = pysic.Potential('charge_pair')
-            sisi_offset1.set_parameter_value('epsilon',-0.000919025)
-            sisi_offset1.set_parameter_value('n1',1)
-            sisi_offset1.set_parameter_value('n2',1)
-            
-            sisi_offset2 = pysic.Potential('shift_power')
-            sisi_offset2.set_parameter_value('epsilon',1.0)
-            sisi_offset2.set_parameter_value('r1',0)
-            sisi_offset2.set_parameter_value('r2',1)
-            sisi_offset2.set_parameter_value('n',1)
-                        
-            sisi_offsetB = pysic.Potential('charge_pair')
-            sisi_offsetB.set_parameter_value('epsilon',0.0118523)
-            sisi_offsetB.set_parameter_value('n1',1)
-            sisi_offsetB.set_parameter_value('n2',1)
-                        
-            
 
             coul_sisi = []
             if self.possible_excludes[19] not in self.excludes:
@@ -1142,12 +1231,10 @@ class CombPotential(CompoundPotential):
             coul_sisi.append( pysic.ProductPotential([charged,decay,si_exp_decay,poly_sisi2]) )
             coul_sisi.append( pysic.ProductPotential([charged,decay,si_exp_decay,poly_sisi3]) )
 
-            #coul_sisi.append( pysic.ProductPotential([sisi_offset1,sisi_offset2]) )
-            #coul_sisi.append( sisi_offsetB )
-
             for c_sisi in coul_sisi:
                 c_sisi.set_symbols(['Si','Si'])
-                c_sisi.set_cutoff(12.0)
+                c_sisi.set_cutoff(self.params['coulomb cutoff'])
+                c_sisi.set_cutoff_margin(self.params['slater cutoff margin'])
                 self.pieces.append(c_sisi)
 
             
@@ -1173,25 +1260,6 @@ class CombPotential(CompoundPotential):
             poly_oo3.set_parameter_value('r2',1)
             poly_oo3.set_parameter_value('n',3)
 
-
-            # offsets
-            oo_offset1 = pysic.Potential('charge_pair')
-            oo_offset1.set_parameter_value('epsilon',-0.000922181)
-            oo_offset1.set_parameter_value('n1',1)
-            oo_offset1.set_parameter_value('n2',1)
-            
-            oo_offset2 = pysic.Potential('shift_power')
-            oo_offset2.set_parameter_value('epsilon',1.0)
-            oo_offset2.set_parameter_value('r1',0)
-            oo_offset2.set_parameter_value('r2',1)
-            oo_offset2.set_parameter_value('n',1)
-                        
-            oo_offsetB = pysic.Potential('charge_pair')
-            oo_offsetB.set_parameter_value('epsilon',0.0118924)
-            oo_offsetB.set_parameter_value('n1',1)
-            oo_offsetB.set_parameter_value('n2',1)
-
-
             coul_oo = []
             if self.possible_excludes[19] not in self.excludes:
                 #print "including O-O direct coulomb"
@@ -1200,13 +1268,11 @@ class CombPotential(CompoundPotential):
             coul_oo.append( pysic.ProductPotential([charged,decay,o_exp_decay,poly_oo1]) )
             coul_oo.append( pysic.ProductPotential([charged,decay,o_exp_decay,poly_oo2]) )
             coul_oo.append( pysic.ProductPotential([charged,decay,o_exp_decay,poly_oo3]) )
-
-            #coul_oo.append( pysic.ProductPotential([oo_offset1,oo_offset2]) )
-            #coul_oo.append( oo_offsetB )
             
             for c_oo in coul_oo:
                 c_oo.set_symbols(['O','O'])
-                c_oo.set_cutoff(12.0)
+                c_oo.set_cutoff(self.params['coulomb cutoff'])
+                c_oo.set_cutoff(self.params['slater cutoff margin'])
                 self.pieces.append(c_oo)
 
         # coulomb Si-O
@@ -1235,26 +1301,6 @@ class CombPotential(CompoundPotential):
             scaled_o_exp_decay.set_parameter_value('epsilon',-(1+kappa)*(1+kappa)*(2-kappa)/4.0)
             scaled_o_exp_decay.set_parameter_value('zeta',2*o_zeta)
 
-
-
-            # offsets
-            sio_offset1 = pysic.Potential('charge_pair')
-            sio_offset1.set_parameter_value('epsilon',-0.000921978)
-            sio_offset1.set_parameter_value('n1',1)
-            sio_offset1.set_parameter_value('n2',1)
-            
-            sio_offset2 = pysic.Potential('shift_power')
-            sio_offset2.set_parameter_value('epsilon',1.0)
-            sio_offset2.set_parameter_value('r1',0)
-            sio_offset2.set_parameter_value('r2',1)
-            sio_offset2.set_parameter_value('n',1)
-                        
-            sio_offsetB = pysic.Potential('charge_pair')
-            sio_offsetB.set_parameter_value('epsilon',0.0118897)
-            sio_offsetB.set_parameter_value('n1',1)
-            sio_offsetB.set_parameter_value('n2',1)
-
-
             coul_sio = []
             if self.possible_excludes[19] not in self.excludes:
                 #print "including Si-O direct coulomb"
@@ -1264,12 +1310,10 @@ class CombPotential(CompoundPotential):
             coul_sio.append( pysic.ProductPotential([charged,decay,poly_sio1,si_exp_decay]) )
             coul_sio.append( pysic.ProductPotential([charged,decay,poly_sio2,o_exp_decay]) )
 
-            #coul_sio.append( pysic.ProductPotential([sio_offset1,sio_offset2]) )
-            #coul_sio.append( sio_offsetB )
-
             for c_sio in coul_sio:
                 c_sio.set_symbols(['Si','O'])
-                c_sio.set_cutoff(12.0)
+                c_sio.set_cutoff(self.params['coulomb cutoff'])
+                c_sio.set_cutoff_margin(self.params['slater cutoff margin'])
                 self.pieces.append(c_sio)
                 
         if self.possible_excludes[19] in self.excludes:
