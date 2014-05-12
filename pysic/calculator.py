@@ -26,7 +26,6 @@ import math
 import pysic.utility.debug as d
 
 
-
 class FastNeighborList(nbl.NeighborList):
     """ASE has a neighbor list class built in, `ASE NeighborList`_, but its implementation is
         currently inefficient, and building of the list is an :math:`O(n^2)`
@@ -55,7 +54,7 @@ class FastNeighborList(nbl.NeighborList):
             skin = FastNeighborList.neighbor_marginal
         nbl.NeighborList.__init__(self,
                               cutoffs=cutoffs, 
-                              skin=skin, 
+                              skin=skin,
                               sorted=False, 
                               self_interaction=False,
                               bothways=True)    
@@ -242,6 +241,10 @@ class Pysic:
         self.charge_relaxation = None
         self.coulomb = None
         self.charges = None
+
+        self.subsystem_calculators = {}
+        self.subsystem_indices = {}
+        self.subsystems = {}
         
         self.set_atoms(atoms)
         self.set_potentials(potentials)
@@ -296,7 +299,7 @@ class Pysic:
                                                                                           pots=str(self.potentials),
                                                                                           init=str(self.force_core_initialization))
 
-
+    
     def core_initialization_is_forced(self):
         """Returns true if the core is always fully initialized, false otherwise."""
 
@@ -1782,7 +1785,6 @@ class Pysic:
 
 
 
-    
     def get_numerical_electronegativity(self, atom_index, shift=0.001, atoms=None):
         """Numerically calculates the derivative of energy with respect to charging a single particle.
             
@@ -1835,8 +1837,104 @@ class Pysic:
         
         return (energy_m-energy_p)/(2.0*shift)
 
+###############################################################################
+    
+    def set_subsystem(self, name, atom_indices=None, special_set=None):
+        """Add a subsystem to the structure.
+            
+        Create a named subsystem consisting of a list of indices in an ase
+        Atoms object. For the typical subdivision with two subsystems please use
+        "set_primary_system()" and "set_secondary_system()" 
 
+        Args:
+            name: string
+                the name for the subsystem.
+           atom_indices: list of ints
+                a list of atomic indices
+        """
+        if atom_indices == None:
+            if special_set == "remaining":
+                atom_indices = self.get_unsubsystemized_atoms()
+            else:
+                warn("No subsystem specified", 5)
+                return
+        if self.check_subsystem_existence(atom_indices):
+            if not self.check_if_overlaps(atom_indices):
+                if name in self.subsystem_indices:
+                    warn("Overriding an existing subsystem", 5)
+                self.subsystem_indices[name] = atom_indices
+                self.set_subsystem_calculator(name,self)
+            else:
+                warn("The subsystem overlaps with another system", 5)
+                return
+        else:
+            warn("The subsystem does not exist in the system", 5)
+            return
 
+    def set_primary_system(self, atom_indices=None, special_set=None):
+        """Set a primary subsystem."""
+        self.set_subsystem('primary', atom_indices)
 
+    def set_secondary_system(self, atom_indices=None, special_set=None):
+        """Set a secondary subsystem."""
+        self.set_subsystem('secondary', atom_indices, special_set)
 
+    def check_subsystem_existence(self, atom_indices):
+        """Check that the defined subsystem exists"""
+        if self.structure == None:
+            warn("The total system is not set", 5)
+            return False
+        n_atoms = len(self.structure)
+        for index in atom_indices:
+            if index > n_atoms or index < 0:
+                warn("Invalid index in the index list", 5)
+                return False
+        return True
 
+    def get_unsubsystemized_atoms(self):
+        """Return a list of indices for the atoms not already in a subsystem."""
+        n_atoms = len(self.structure)
+        used_indices = []
+        unsubsystemized_atoms = []
+        for subsystem in self.subsystem_indices.values():
+            used_indices += subsystem
+        for index in range(n_atoms):
+            if index not in used_indices:
+                unsubsystemized_atoms.append(index)
+        return unsubsystemized_atoms
+
+    def get_subsystem_indices(self, subsystem_name):
+        """Return a list of atomic indices for the subsystem."""
+        if subsystem_name not in self.subsystem_indices:
+            warn("No such subsystem", 5)
+            return
+        return self.subsystem_indices[subsystem_name]
+
+    def check_if_overlaps(self, atom_indices):
+        """Check that the subsystems don't overlap"""
+        new_indices = []
+        new_indices += atom_indices
+        for subsystem in self.subsystem_indices.values():
+            new_indices += subsystem
+        if len(new_indices) > len(set(new_indices)):
+            return True
+        return False
+
+    def set_subsystem_calculator(self, subsystem_name, calculator):
+        """Set a specific calculator to a subsystem."""
+        if subsystem_name not in self.subsystem_indices:
+            warn("Subsystem "+subsystem_name+" not defined", 5)
+            return
+        self.subsystem_calculators[subsystem_name] = calculator
+
+    def set_primary_calculator(self, calculator):
+        """Set a calcutor for the primary subsystem."""
+        self.set_subsystem_calculator('primary', calculator)
+ 
+    def materialize_subsystems(self):
+        """Create a new atoms object for all the specified subsystems."""
+        subsystems = {}
+        for name, subsystem in self.subsystem_indices.iteritems():
+            atoms = self.structure[subsystem]
+            subsystems[name] = atoms
+        self.subsystems = subsystems
