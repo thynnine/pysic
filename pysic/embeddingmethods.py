@@ -3,7 +3,8 @@
 
 from pysic.utility.error import *
 from abc import ABCMeta, abstractmethod
-from ase import Atom
+from ase import Atom, Atoms
+from pysic import Pysic, CoulombSummation
 import numpy as np
 
 #===============================================================================
@@ -46,10 +47,9 @@ class EmbeddingMethod(object):
 
 #===============================================================================
 class MEHL(EmbeddingMethod):
-    """A class derived from EmbeddingMethod that describes an mechanical
-    embedding scheme with hydrogen link atoms.
+    """Describes a mechanical embedding scheme with hydrogen link atoms.
     """
-    def __init__(self, primary, secondary, parameters, pbc):
+    def __init__(self, primary, secondary, primary_indices, secondary_indices, parameters):
         """
         Args:
             primary: dictionary
@@ -63,6 +63,9 @@ class MEHL(EmbeddingMethod):
                 of lists contianing the cut bonds as pairs of atoms. The first
                 index refers to the primary, quantum mechanical system and the
                 second index refers to the secondary system 
+        
+        Attributes:
+            
 
         """
         # Check that parameters are OK
@@ -73,9 +76,10 @@ class MEHL(EmbeddingMethod):
 
         self.primary_system = primary
         self.secondary_system = secondary
+        self.primary_system_index_map = primary_indices
+        self.secondary_system_index_map = secondary_indices
         self.links = parameters["links"]
         self.chl = parameters['CHL']
-        self.pbc = pbc
         self.ready = False
 
     def is_ready(self):
@@ -85,14 +89,13 @@ class MEHL(EmbeddingMethod):
     def initialize(self):
         """docstring for initialize"""
         # Setup the hydrogen link atoms inside the primary subsystem
-        hydrogen_counter = -1
         for link in self.links:
 
             # Extract the position of the boundary atoms  
             q1_index = link[0]
             m1_index = link[1]
-            q1 = self.primary_system[q1_index]
-            m1 = self.secondary_system[m1_index]
+            q1 = self.primary_system_index_map[q1_index]
+            m1 = self.secondary_system_index_map[m1_index]
             rq1 = np.array(q1.position)
             rm1 = np.array(m1.position)
 
@@ -100,11 +103,9 @@ class MEHL(EmbeddingMethod):
             distance = rm1-rq1
             rh = rq1+self.chl*distance
 
-            # Create a hydrogen atom at the specified position. These link
-            # hydrogens have negative indices
+            # Create a hydrogen atom at the specified position.
             hydrogen = Atom('H', rh.tolist())
-            self.primary_system[hydrogen_counter] = hydrogen
-            hydrogen_counter -= 1
+            self.primary_system.append(hydrogen)
 
         self.ready = True
 
@@ -115,11 +116,79 @@ class MEHL(EmbeddingMethod):
         if not self.ready:
             warn("The connection is not ready!", 4)
             return 0
-        if self.pbc[0] or self.pbc[1] or self.pbc[2]:
-            # Periodic system, use Ewald sums
-            
-            return 0
-        else:
-            # Finite system, traditional Coulomb potential energy
 
+        # Find the charged atoms
+        primary_charges = []
+        primary_positions = []
+        secondary_charges = []
+        secondary_positions = []
+        for atom in self.primary_system:
+            charge = atom.charge
+            if not np.allclose(charge, 0):
+                primary_charges.append(charge)
+                primary_positions.append(np.array(atom.position))
+        for atom in self.secondary_system:
+            charge = atom.charge
+            if not np.allclose(charge, 0):
+                secondary_charges.append(charge)
+                secondary_positions.append(np.array(atom.position))
+        
+        # Do calculations only if there is charge on both subsystems
+        if (len(primary_charges) is not 0) and (len(seconday_charges) is not 0):
+
+            # Periodic system, use Ewald sums
+            pbc = self.primary_system.get_pbc()
+            if pbc[0] or pbc[1] or pbc[2]:
+                print "PERIODIC SYSTEM"
+
+                # Setup the pysic calculator. It is used for calculating the
+                # electrostatic energies with Ewald sums. Because the pysic
+                # implementation can't target certain atoms in the system, we do the
+                # calculation in three pieces.
+                calc = Pysic()
+                ewald = CoulombSummation()
+                ewald.set_parameter_value('epsilon',0.00552635)
+                ewald.set_parameter_value('k_cutoff',0.7)
+                ewald.set_parameter_value('real_cutoff',10.0) #
+                ewald.set_parameter_value('sigma',1.4)
+                calc.set_coulomb_summation(ewald)
+
+                # Combined system Coulomb energy
+                combined = self.primary_system + self.secondary_system
+                calc.set_atoms(combined)
+                combined_energy = calc.get_potential_energy()
+
+                # Primary system coulomb energy
+                calc.set_atoms(self.primary_system)
+                primary_energy = calc.get_potential_energy()
+
+                # Secondary system coulomb energy
+                calc.set_atoms(self.secondary_system)
+                secondary_energy = calc.get_potential_energy()
+
+                # Remove calculators from the subsystems
+                self.primary_system.set_calculator(None)
+                self.secondary_system.set_calculator(None)
+
+                # Return the binding energy
+                return combined_energy - primary_energy - secondary_energy
+
+            # Finite system, traditional Coulomb potential energy
+            else:
+                # Numpy arrays for vectorized calculations
+                charge_p = np.array(primary_charges)
+                charge_s = np.array(secondary_charges)
+                r_p = np.array(primary_positions)
+                r_s = np.array(secondary_positions)
+
+                # Calculate coulomb energy between the charges
+                energy = 0
+                for idx, charge in enumerate(charge_p):
+                    r_temp = np.array([r_p[idx,:],]*len(r_s))
+                    r = np.linalg.norm(r_s - r_temp, axis=1)
+                    energy += np.sum(1/(4*np.pi*0.00552635)*charge*charge_s/r)
+                    
+                return energy
+        else:
+            warn("There is no electrostatic interaction between the subsystems", 5)
             return 0

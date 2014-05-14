@@ -9,12 +9,29 @@ from ase.visualize import view # ASEs internal viewer
 #===============================================================================
 class HybridCalculation():
     """Used to handle hybrid calculations.
+
+    Attributes:
+
+        structure: Atoms
+            a copy of the system structure
+        subsystem_calculators: dictionary
+            apping between set_subsystem name and calculator
+        subsystems: dictionary
+            mapping between subsystem name and Atoms
+        subsystem_index_map: dictionary
+            mapping between subsystem name and a dictionary containing mapping 
+            between atom index and atom
+        embedding_modes: dictionary
+            mapping between pair of subsystems and their EmbeddingMethod
+        allowed_embedding_modes: tuple
+            the allowed embedding modes as strings
     """
     def __init__(self):
-        self.structure = None
+        self.structure = None 
         self.subsystem_calculators = {}
+        self.subsystem_index_map = {}
         self.subsystems = {}
-        self.embedding_modes = {}
+        self.subsystem_connections = {}
         self.allowed_embedding_modes = ('MEHL')
 
     def set_system(self, atoms):
@@ -36,31 +53,44 @@ class HybridCalculation():
             
         Create a named subsystem consisting of a list of indices in an ase
         Atoms object. For the typical subdivision with two subsystems please use
-        "set_primary_system()" and "set_secondary_system()" 
+        :meth:'set_primary_system()' and :meth:'set_secondary_system()' 
 
-        Parameters:
-
-        name: string
-            the name for the subsystem.
-        atom_indices: list of ints
-            a list of atomic indices
+        Args:
+            name: string
+                the name for the subsystem.
+            atom_indices: list of ints
+                a list of atomic indices
         """
         if atom_indices == None:
             if special_set == "remaining":
                 atom_indices = self.get_unsubsystemized_atoms()
             else:
-                warn("No subsystem specified", 5)
+                warn("Invalid special set", 5)
                 return
 
         if self.check_subsystem_existence(atom_indices):
             if not self.check_if_overlaps(atom_indices):
                 if self.check_subsystem_name_exists(name):
                     warn("Overriding an existing subsystem", 5)
+
+                # Create a copy of the subsystem
+                temp_system = Atoms()
+                for index in atom_indices:
+                    atom = self.structure[index]
+                    temp_system.append(atom)
+                subsystem = temp_system.copy()
+                subsystem.set_pbc(self.structure.get_pbc())
+                subsystem.set_cell(self.structure.get_cell())
+                self.subsystems[name] = subsystem
+    
+                # Create a dictionary containing mapping between index in the
+                # original system and atom in a subsystem
                 index_and_atom = {}
                 for index in atom_indices:
                     atom = self.structure[index]
                     index_and_atom[index] = atom
-                self.subsystems[name] = index_and_atom
+                self.subsystem_index_map[name] = index_and_atom
+
             else:
                 warn("The subsystem overlaps with another system", 5)
                 return
@@ -99,7 +129,7 @@ class HybridCalculation():
         n_atoms = len(self.structure)
         used_indices = []
         unsubsystemized_atoms = []
-        for subsystem in self.subsystems.values():
+        for subsystem in self.subsystem_index_map.values():
             for index in subsystem.keys():
              used_indices.append(index)
         for index in range(n_atoms):
@@ -112,7 +142,7 @@ class HybridCalculation():
         if not self.check_subsystem_name_exists(subsystem_name):
             warn("No such subsystem", 5)
             return
-        return self.subsystems[subsystem_name].keys()
+        return self.subsystem_index_map[subsystem_name].keys()
 
     def check_if_overlaps(self, atom_indices):
         """Check that the subsystems don't overlap"""
@@ -120,18 +150,18 @@ class HybridCalculation():
             return False
         new_indices = []
         new_indices += atom_indices
-        for subsystem in self.subsystems.values():
+        for subsystem in self.subsystem_index_map.values():
             new_indices += subsystem.keys()
         if len(new_indices) > len(set(new_indices)):
             return True
         return False
 
-    def set_subsystem_calculator(self, subsystem_name, calculator):
+    def set_subsystem_calculator(self, name, calculator):
         """Set a specific calculator to a subsystem."""
-        if not self.check_subsystem_name_exists(subsystem_name):
-            warn("Subsystem "+subsystem_name+" not defined", 5)
+        if not self.check_subsystem_name_exists(name):
+            warn("Subsystem "+name+" not defined", 5)
             return
-        self.subsystem_calculators[subsystem_name] = calculator
+        self.subsystem_calculators[name] = calculator
 
     def set_primary_calculator(self, calculator):
         """Set a calcutor for the primary subsystem."""
@@ -153,11 +183,12 @@ class HybridCalculation():
             warn("The given subsystem "+secondary+" does not exist.", 5)
             return
         if mode == "MEHL":
-            self.embedding_modes[(primary, secondary)] = \
+            self.subsystem_connections[(primary, secondary)] = \
                     embeddingmethods.MEHL(self.subsystems[primary],
                             self.subsystems[secondary],
-                            parameters,
-                            self.structure.get_pbc())
+                            self.subsystem_index_map[primary],
+                            self.subsystem_index_map[secondary],
+                            parameters)
 
     def get_potential_energy(self):
         """Returns the potential energy of the hybrid system.
@@ -169,29 +200,26 @@ class HybridCalculation():
         total_potential_energy = 0
 
         # The connections have to be initialized before energies are calculated!
-        for connection in self.embedding_modes.values():
+        for connection in self.subsystem_connections.values():
             connection.initialize()
             total_potential_energy += connection.get_connection_energy()
 
         # The connection initialization may alter the subsystem
         # (e.g. add a hydrogen link atom) so make sure that the connections are
         # initialized before using any calculators
-        for subsystem_name in self.subsystems.keys():
-            calculator = self.subsystem_calculators[subsystem_name]
-            subsystem = Atoms()
-            for atom in self.subsystems[subsystem_name].values():
-                subsystem.append(atom)
+        for name in self.subsystems.keys():
+            calculator = self.subsystem_calculators[name]
+            subsystem = self.subsystems[name] 
 
-            # Set the properties of the subsystem to match the initial system
-            # (pbc, unit cell)
-            subsystem.set_pbc(self.structure.get_pbc())
-            subsystem.set_cell(self.structure.get_cell())
-
-            #Display the temporary subsystem
-            view(subsystem)
             subsystem.set_calculator(calculator)
             total_potential_energy += subsystem.get_potential_energy()
 
-        # Display original system
-        view(self.structure)
         return total_potential_energy
+    
+    def view_subsystems(self):
+        """@todo: Docstring for view_subsystems.
+        :returns: @todo
+
+        """
+        for subsystem in self.subsystems.values():
+            view(subsystem)
