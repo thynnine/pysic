@@ -38,12 +38,10 @@ class Warning:
         the warning is smaller (more severe) than the global warning_level.
         """
         if Warning.warning_level >= self.level:
-    
             warn = """
-*** """+Warning.headers[self.level]+""" ***
-"""+inspect.stack()[2][3]+": "+self.message+"""
-*** """+Warning.headers[self.level]+""" ***
-"""
+    --------------{level}--------------
+    {message}
+    from function: {function}()\n""".format(level=Warning.headers[self.level], function=inspect.stack()[2][3], message=self.message)
             mprint(warn)
 
         if Warning.warning_level == 6:

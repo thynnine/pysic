@@ -19,7 +19,7 @@ class HybridCalculation():
         subsystems: dictionary
             mapping between subsystem name and Atoms
         subsystem_index_map: dictionary
-            mapping between subsystem name and a dictionary containing mapping 
+            mapping between subsystem name and a dictionary containing mapping
             between atom index and atom
         embedding_modes: dictionary
             mapping between pair of subsystems and their EmbeddingMethod
@@ -27,7 +27,7 @@ class HybridCalculation():
             the allowed embedding modes as strings
     """
     def __init__(self):
-        self.structure = None 
+        self.structure = None
         self.subsystem_calculators = {}
         self.subsystem_index_map = {}
         self.subsystems = {}
@@ -50,10 +50,10 @@ class HybridCalculation():
 
     def set_subsystem(self, name, atom_indices=None, special_set=None):
         """Add a subsystem to the structure.
-            
+ 
         Create a named subsystem consisting of a list of indices in an ase
         Atoms object. For the typical subdivision with two subsystems please use
-        :meth:'set_primary_system()' and :meth:'set_secondary_system()' 
+        :meth:'set_primary_system()' and :meth:'set_secondary_system()'
 
         Args:
             name: string
@@ -82,7 +82,7 @@ class HybridCalculation():
                 subsystem.set_pbc(self.structure.get_pbc())
                 subsystem.set_cell(self.structure.get_cell())
                 self.subsystems[name] = subsystem
-    
+
                 # Create a dictionary containing mapping between index in the
                 # original system and atom in a subsystem
                 index_and_atom = {}
@@ -161,6 +161,7 @@ class HybridCalculation():
         if not self.check_subsystem_name_exists(name):
             warn("Subsystem "+name+" not defined", 5)
             return
+        self.subsystems[name].set_calculator(calculator)
         self.subsystem_calculators[name] = calculator
 
     def set_primary_calculator(self, calculator):
@@ -184,15 +185,18 @@ class HybridCalculation():
             return
         if mode == "MEHL":
             self.subsystem_connections[(primary, secondary)] = \
-                    embeddingmethods.MEHL(self.subsystems[primary],
+                    embeddingmethods.MEHL(
+                            self.subsystems[primary],
                             self.subsystems[secondary],
+                            self.subsystem_calculators[primary],
+                            self.subsystem_calculators[secondary],
                             self.subsystem_index_map[primary],
                             self.subsystem_index_map[secondary],
                             parameters)
 
     def get_potential_energy(self):
         """Returns the potential energy of the hybrid system.
-        
+
         This method will use a spedific method defined by
         :meth:'~pysic.hybridcalculation.set_embedding_mode' to combine and
         calculate the total potential energy of the combined subsystems.
@@ -207,15 +211,11 @@ class HybridCalculation():
         # The connection initialization may alter the subsystem
         # (e.g. add a hydrogen link atom) so make sure that the connections are
         # initialized before using any calculators
-        for name in self.subsystems.keys():
-            calculator = self.subsystem_calculators[name]
-            subsystem = self.subsystems[name] 
-
-            subsystem.set_calculator(calculator)
+        for subsystem in self.subsystems.values():
             total_potential_energy += subsystem.get_potential_energy()
 
         return total_potential_energy
-    
+ 
     def view_subsystems(self):
         """@todo: Docstring for view_subsystems.
         :returns: @todo

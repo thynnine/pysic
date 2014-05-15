@@ -4,6 +4,7 @@
 from pysic.utility.error import *
 from abc import ABCMeta, abstractmethod
 from ase import Atom, Atoms
+from ase.visualize import view
 from pysic import Pysic, CoulombSummation
 import numpy as np
 
@@ -19,7 +20,24 @@ class EmbeddingMethod(object):
     You can easily create new embedding schemes by subclassing this class, and
     using the MEHL-class as an example.
     """
-    __metaclass__ = ABCMeta
+    def __init__(
+            self,
+            primary_system,
+            secondary_system,
+            primary_calculator,
+            secondary_calculator):
+        """@todo: Docstring for __init__.
+
+        :arg1: @todo
+        :returns: @todo
+
+        """
+        __metaclass__ = ABCMeta
+        self.ready = False
+        self.primary_system = primary_system
+        self.secondary_system = secondary_system
+        self.primary_calculator = primary_calculator
+        self.secondary_calculator = secondary_calculator
 
     @abstractmethod
     def is_ready(self):
@@ -28,14 +46,20 @@ class EmbeddingMethod(object):
         The connection is ready when all modifications to the connected subsystems
         are made and the connection energy can be calculated.
         """
-        pass
+        return self.ready
 
     @abstractmethod
     def initialize(self):
         """This method should setup the connection scheme. Any alterations to
         the subsystems are made here.
+
+        The calculators for the subsystems are also set here. Notice that this
+        should be done after altering the system, because the calculators make a
+        copy of the system.
         """
-        pass
+        self.primary_system.set_calculator(self.primary_calculator)
+        self.secondary_system.set_calculator(self.secondary_calculator)
+        self.ready = True
 
     @abstractmethod
     def get_connection_energy(self):
@@ -44,12 +68,19 @@ class EmbeddingMethod(object):
         """
         pass
 
-
 #===============================================================================
 class MEHL(EmbeddingMethod):
     """Describes a mechanical embedding scheme with hydrogen link atoms.
     """
-    def __init__(self, primary, secondary, primary_indices, secondary_indices, parameters):
+    def __init__(
+            self,
+            primary_system,
+            secondary_system,
+            primary_calculator,
+            secondary_calculator,
+            primary_indices,
+            secondary_indices,
+            parameters):
         """
         Args:
             primary: dictionary
@@ -65,26 +96,25 @@ class MEHL(EmbeddingMethod):
                 second index refers to the secondary system 
         
         Attributes:
-            
-
         """
         # Check that parameters are OK
         if 'links' not in parameters:
             warn("The list of links not specified in parameters", 5)
         if 'CHL' not in parameters:
             warn("CHL not specified in parameters", 5)
-
-        self.primary_system = primary
-        self.secondary_system = secondary
+        
+        EmbeddingMethod.__init__(
+                self,
+                primary_system,
+                secondary_system,
+                primary_calculator,
+                secondary_calculator)
+        self.primary_system_original = primary_system.copy()
+        self.secondary_system_original = secondary_system.copy()
         self.primary_system_index_map = primary_indices
         self.secondary_system_index_map = secondary_indices
         self.links = parameters["links"]
         self.chl = parameters['CHL']
-        self.ready = False
-
-    def is_ready(self):
-        """docstring for ready"""
-        return self.ready
 
     def initialize(self):
         """docstring for initialize"""
@@ -107,39 +137,41 @@ class MEHL(EmbeddingMethod):
             hydrogen = Atom('H', rh.tolist())
             self.primary_system.append(hydrogen)
 
-        self.ready = True
+        # Call base class initialize() only after modifying the system
+        EmbeddingMethod.initialize(self)
 
     def get_connection_energy(self):
         """Calculates the electrostatic energy involved in binding the two
         subsystems together.
         """
         if not self.ready:
-            warn("The connection is not ready!", 4)
+            warn("The connection is not ready. Call initialize() first.", 4)
             return 0
 
-        # Find the charged atoms
+        # Ask the charges from the calculators
+        primary_charge_list = self.primary_calculator.get_charges()
+        secondary_charge_list = self.secondary_calculator.get_charges()
+        
         primary_charges = []
         primary_positions = []
         secondary_charges = []
         secondary_positions = []
-        for atom in self.primary_system:
-            charge = atom.charge
+
+        for index, charge in enumerate(primary_charge_list):
             if not np.allclose(charge, 0):
                 primary_charges.append(charge)
-                primary_positions.append(np.array(atom.position))
-        for atom in self.secondary_system:
-            charge = atom.charge
+                primary_positions.append(np.array(self.primary_system[index].position))
+        for index, charge in enumerate(secondary_charge_list):
             if not np.allclose(charge, 0):
                 secondary_charges.append(charge)
-                secondary_positions.append(np.array(atom.position))
+                secondary_positions.append(np.array(self.secondary_system[index].position))
         
         # Do calculations only if there is charge on both subsystems
-        if (len(primary_charges) is not 0) and (len(seconday_charges) is not 0):
+        if (len(primary_charges) is not 0) and (len(secondary_charges) is not 0):
 
             # Periodic system, use Ewald sums
             pbc = self.primary_system.get_pbc()
             if pbc[0] or pbc[1] or pbc[2]:
-                print "PERIODIC SYSTEM"
 
                 # Setup the pysic calculator. It is used for calculating the
                 # electrostatic energies with Ewald sums. Because the pysic
@@ -154,24 +186,22 @@ class MEHL(EmbeddingMethod):
                 calc.set_coulomb_summation(ewald)
 
                 # Combined system Coulomb energy
-                combined = self.primary_system + self.secondary_system
+                combined = self.primary_system_original + self.secondary_system_original
                 calc.set_atoms(combined)
                 combined_energy = calc.get_potential_energy()
 
                 # Primary system coulomb energy
-                calc.set_atoms(self.primary_system)
+                calc.set_atoms(self.primary_system_original)
                 primary_energy = calc.get_potential_energy()
 
                 # Secondary system coulomb energy
-                calc.set_atoms(self.secondary_system)
+                calc.set_atoms(self.secondary_system_original)
                 secondary_energy = calc.get_potential_energy()
 
-                # Remove calculators from the subsystems
-                self.primary_system.set_calculator(None)
-                self.secondary_system.set_calculator(None)
-
                 # Return the binding energy
-                return combined_energy - primary_energy - secondary_energy
+                connection_energy = combined_energy - primary_energy - secondary_energy
+                warn("The connecting electrostatic energy between the subsystems is: "+str(connection_energy)+". Calculated in a periodic system with Ewald summation.", 5)
+                return connection_energy
 
             # Finite system, traditional Coulomb potential energy
             else:
@@ -182,13 +212,14 @@ class MEHL(EmbeddingMethod):
                 r_s = np.array(secondary_positions)
 
                 # Calculate coulomb energy between the charges
-                energy = 0
+                connection_energy = 0
                 for idx, charge in enumerate(charge_p):
                     r_temp = np.array([r_p[idx,:],]*len(r_s))
                     r = np.linalg.norm(r_s - r_temp, axis=1)
-                    energy += np.sum(1/(4*np.pi*0.00552635)*charge*charge_s/r)
+                    connection_energy += np.sum(1/(4*np.pi*0.00552635)*charge*charge_s/r)
                     
-                return energy
+                warn("The connecting electrostatic energy between the subsystems is: "+str(connection_energy)+". Calculated in a finite system with Coulomb potentials.", 5)
+                return connection_energy
         else:
             warn("There is no electrostatic interaction between the subsystems", 5)
             return 0
