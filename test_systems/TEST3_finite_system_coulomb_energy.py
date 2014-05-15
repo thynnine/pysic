@@ -5,8 +5,7 @@
 #
 #===============================================================================
 from ase import Atoms, Atom
-from pysic import Pysic, CoulombSummation, Potential
-from pysic import hybridcalculation
+from pysic import Pysic, CoulombSummation, Potential, HybridCalculation
 from ase.visualize import view
 
 #-------------------------------------------------------------------------------
@@ -27,7 +26,7 @@ view(system)
 
 #-------------------------------------------------------------------------------
 # Setup a hybrid calculation environment
-hybrid_calculation = hybridcalculation.HybridCalculation()
+hybrid_calculation = HybridCalculation()
 hybrid_calculation.set_system(system)
 
 # Define QM/MM regions. You can get the indices by e.g.

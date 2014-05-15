@@ -6,8 +6,7 @@
 #
 #===============================================================================
 from ase import Atoms
-from pysic import Pysic, CoulombSummation, Potential
-from pysic import hybridcalculation
+from pysic import Pysic, CoulombSummation, Potential, HybridCalculation
 from ase.visualize import view
 
 #-------------------------------------------------------------------------------
@@ -23,7 +22,7 @@ h2.set_pbc(True)
 
 #-------------------------------------------------------------------------------
 # Setup a hybrid calculation environment
-hybrid_calculation = hybridcalculation.HybridCalculation()
+hybrid_calculation = HybridCalculation()
 hybrid_calculation.set_system(h2)
 
 # Define QM/MM regions. You can get the indices by e.g.
@@ -61,11 +60,16 @@ hybrid_energy = hybrid_calculation.get_potential_energy()
 #hybrid_calculation.view_subsystems()
 
 # Calculate the energy of the same setup, but use only one region. In this
-# special case these energies should be same.
+# special case these energies should be (nearly) same.
 pysic_calc3 = Pysic()
 pysic_calc3.add_potential(potential)
 h2.set_calculator(pysic_calc3)
 real_energy = h2.get_potential_energy()
 
+# If there are periodic boundary conditions, and depending on the potential and
+# it's cutoff value these two different calculations may give slightly different
+# results. This is due to the different cutoff regions for the entire system and
+# for the subsystems
 print "Energy with hybrid calculation: " + str(hybrid_energy)
 print "Energy with traditional calculation: " + str(real_energy)
+
