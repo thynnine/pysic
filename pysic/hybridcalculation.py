@@ -211,6 +211,7 @@ class HybridSystem():
         # (e.g. add a hydrogen link atom) so make sure that the connections are
         # initialized before using any calculators
         for name, subsystem in self.subsystems.iteritems():
+            warn("Calculating potential energy in subsystem "+name, 5)
             subsystem_energy = subsystem.get_potential_energy()
             total_potential_energy += subsystem_energy
         return total_potential_energy
@@ -265,6 +266,6 @@ class SubSystem(object):
             warn("""Please setup the embedding method for the subsystem
 before calculating it's potential energy""", 2)
             return None
-        self.potential_energy = self.calculator.get_potential_energy() + self.embedding_correction
+        self.potential_energy = self.modified_atoms.get_potential_energy() + self.embedding_correction
         return self.potential_energy
 

@@ -36,7 +36,6 @@ class EmbeddingMethod(object):
     def get_connection_energy(self):
         """Returns the connection energy.
         """
-
         self.initialize()
         self.calculate_connection_energy()
         return self.connection_energy
@@ -46,10 +45,8 @@ class EmbeddingMethod(object):
         """This method should setup the connection scheme. Any alterations to
         the subsystems are made here.
         """
-        #self.primary_system.modified_atoms.set_calculator(self.primary_system.calculator)
-        #self.secondary_system.modified_atoms.set_calculator(self.secondary_system.calculator)
-        self.primary_system.calculator.set_atoms(self.primary_system.modified_atoms)
-        self.secondary_system.calculator.set_atoms(self.secondary_system.modified_atoms)
+        self.primary_system.modified_atoms.set_calculator(self.primary_system.calculator)
+        self.secondary_system.modified_atoms.set_calculator(self.secondary_system.calculator)
         self.initialized = True
         self.primary_system.connection_ready = True
         self.secondary_system.connection_ready = True
@@ -93,18 +90,18 @@ class MEHL(EmbeddingMethod):
             warn("CHL not specified in parameters", 5)
         if 'epsilon' not in parameters:
             warn("epsilon not specified in parameters", 5)
-        if 'k_cutoff' not in parameters:
-            self.k_cutoff = None
-        else:
-            self.k_cutoff = parameters['k_cutoff']
-        if 'real_cutoff' not in parameters:
-            self.real_cutoff = None
-        else:
-            self.real_cutoff = parameters['real_cutoff']
-        if 'sigma' not in parameters:
-            self.sigma = None
-        else:
-            self.sigma = parameters['sigma']
+
+        pbc = primary_system.original_atoms.get_pbc()
+        if pbc[0] or pbc[1] or pbc[2]:
+            self.k_cutoff = parameters.get('k_cutoff')
+            if 'k_cutoff' is None: 
+                warn("k_cutoff not specified in parameters", 5)
+            self.real_cutoff = parameters.get('real_cutoff')
+            if 'real_cutoff' is None: 
+                warn("real_cutoff not specified in parameters", 5)
+            self.sigma = parameters.get('sigma')
+            if 'sigma' is None: 
+                warn("sigma not specified in parameters", 5)
 
         EmbeddingMethod.__init__(
                 self,
@@ -129,8 +126,14 @@ class MEHL(EmbeddingMethod):
             # Extract the position of the boundary atoms  
             q1_index = link[0]
             m1_index = link[1]
-            q1 = self.primary_system.index_map[q1_index]
-            m1 = self.secondary_system.index_map[m1_index]
+            q1 = self.primary_system.index_map.get(q1_index)
+            m1 = self.secondary_system.index_map.get(m1_index)
+
+            if q1 is None:
+                warn("Invalid link: "+str(q1_index)+"-"+str(m1_index)+". The first index does not point to an atom in the primary system.", 2)
+            if m1 is None:
+                warn("Invalid link: "+str(q1_index)+"-"+str(m1_index)+". The second index does not point to an atom in the secondary system.", 2)
+
             rq1 = np.array(q1.position)
             rm1 = np.array(m1.position)
 
@@ -146,10 +149,11 @@ class MEHL(EmbeddingMethod):
             link_system.append(hydrogen)
 
         # Remove the potential energy in the link system from the energy of the
-        # primary system. We do a deep copy of the calculator to ensure that the
+        # primary system. We do a copy of the calculator to ensure that the
         # calculator for the subsystem doesn't break
-        link_calculator = copy.deepcopy(self.primary_system.calculator)
+        link_calculator = copy.copy(self.primary_system.calculator)
         link_system.set_calculator(link_calculator)
+        warn("Calculating potential energy between link atoms", 5)
         extra_energy = link_system.get_potential_energy()
         self.primary_system.embedding_correction = -extra_energy
             
@@ -159,42 +163,53 @@ class MEHL(EmbeddingMethod):
     def calculate_connection_energy(self):
         """Calculates the electrostatic energy involved in binding the two
         subsystems together.
+
+        If the system is periodic, Ewald summation provided by pysic
+        is used. Because the Ewald summation can't target specific
+        atoms in the system, the binding energy is calculated by substracting
+        the subsystem Coulomb energies from the combined system Coulomb energy.
+
+        If the system is finite...
         """
         if not self.initialized:
             warn("The connection is not ready. Call initialize() first.", 2)
             return None
 
-        # Asks the charges from the calculators
-        primary_charge_list = self.primary_system.calculator.get_charges()
-        secondary_charge_list = self.secondary_system.calculator.get_charges()
-        
         primary_charges = []
         primary_positions = []
         secondary_charges = []
         secondary_positions = []
 
-        for index, charge in enumerate(primary_charge_list):
-            if not np.allclose(charge, 0):
-                primary_charges.append(charge)
-                primary_positions.append(np.array(self.primary_system.original_atoms[index].position))
-        for index, charge in enumerate(secondary_charge_list):
-            if not np.allclose(charge, 0):
-                secondary_charges.append(charge)
-                secondary_positions.append(np.array(self.secondary_system.original_atoms[index].position))
+        for atom in self.primary_system.original_atoms:
+            if not np.allclose(atom.charge, 0):
+                primary_charges.append(atom.charge)
+                primary_positions.append(np.array(atom.position))
+        for atom in self.secondary_system.original_atoms:
+            if not np.allclose(atom.charge, 0):
+                secondary_charges.append(atom.charge)
+                secondary_positions.append(np.array(atom.position))
+
+        ## Asks the charges from the calculators
+        #primary_charge_list = self.primary_system.calculator.get_charges()
+        #secondary_charge_list = self.secondary_system.calculator.get_charges()
+        
+        #for index, charge in enumerate(primary_charge_list):
+            #if not np.allclose(charge, 0):
+                #primary_charges.append(charge)
+                #primary_positions.append(np.array(self.primary_system.original_atoms[index].position))
+        #for index, charge in enumerate(secondary_charge_list):
+            #if not np.allclose(charge, 0):
+                #secondary_charges.append(charge)
+                #secondary_positions.append(np.array(self.secondary_system.original_atoms[index].position))
         
         # Do calculations only if there is charge on both subsystems
         if (len(primary_charges) is not 0) and (len(secondary_charges) is not 0):
+            
+            warn("Calculating electrostatic binding energy between subsystems", 5)
 
             # Periodic system, use Ewald sums
             pbc = self.primary_system.original_atoms.get_pbc()
             if pbc[0] or pbc[1] or pbc[2]:
-
-                if self.k_cutoff is None:
-                    warn("k_cutoff not specified in parameters", 2)
-                if self.real_cutoff is None:
-                    warn("real_cutoff not specified in parameters", 2)
-                if self.sigma is None:
-                    warn("sigma not specified in parameters", 2)
 
                 # Setup the pysic calculator. It is used for calculating the
                 # electrostatic energies with Ewald sums. Because the pysic

@@ -1,5 +1,4 @@
 #! /usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 # Tests that the Ewald summation is done correctly for hybrid systems with
 # charges and pbc.
@@ -66,7 +65,6 @@ hybrid_system.set_embedding('MEHL', 'primary', 'secondary', parameters)
 #-------------------------------------------------------------------------------
 # Calculate the potential energy of the hybrid qm/mm system.
 hybrid_energy = hybrid_system.get_potential_energy()
-#hybrid_system.view_subsystems()
 
 # Calculate the energy of the same setup, but use only one region. In this
 # special case these energies should be same.

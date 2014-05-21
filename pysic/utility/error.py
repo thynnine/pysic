@@ -26,7 +26,7 @@ class Warning:
         severity of the warning (1-5, 1 being most severe)
     """
     
-    warning_level = 3 # 0-6, 0: no warnings, 5: all warnings, 6: also interrupt
+    warning_level = 5 # 0-6, 0: no warnings, 5: all warnings, 6: also interrupt
     headers = ['','WARNING','Warning','NOTE','Note','note']
     
     def __init__(self, message, level):
