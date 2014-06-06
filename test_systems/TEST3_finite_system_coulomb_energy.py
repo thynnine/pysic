@@ -5,9 +5,11 @@
 #
 #===============================================================================
 from ase import Atoms, Atom
-from pysic import Pysic, Potential, HybridSystem
+from pysic import Pysic, Potential, HybridCalculator, ProductPotential
 from pysic.interactions.coulomb import *
 from ase.visualize import view
+import numpy as np
+import copy
 
 #-------------------------------------------------------------------------------
 # Prepare the system
@@ -27,52 +29,43 @@ view(system)
 
 #-------------------------------------------------------------------------------
 # Setup a hybrid calculation environment
-hybrid_system = HybridSystem()
-hybrid_system.set_system(system)
+hc = HybridCalculator(system)
 
 # Define QM/MM regions
-hybrid_system.set_primary_system([0])
-hybrid_system.set_secondary_system(special_set='remaining')
+hc.set_primary_system([0])
+hc.set_secondary_system(special_set='remaining')
 
-# Initialize calculators
-pysic_calc1 = Pysic()
-pysic_calc2 = Pysic()
-ewald_param = estimate_ewald_parameters(1, 'high')
-ewald = CoulombSummation(parameters=ewald_param)
-pysic_calc1.set_coulomb_summation(ewald)
-pysic_calc2.set_coulomb_summation(ewald)
+# Initialize calculator
+calc = Pysic()
+epsilon = 0.0052635
+kc = 1.0/(4.0*np.pi*epsilon)
+coul1 = Potential('power', symbols=[['H', 'H']], parameters=[1, 1, 1], cutoff=20)
+coul2 = Potential('charge_pair', parameters=[kc, 1, 1])
+coulomb_potential = ProductPotential([coul1, coul2])
+calc.add_potential(coulomb_potential)
 
 # Add different calculators for the subsystems
-hybrid_system.set_primary_calculator(pysic_calc1)
-hybrid_system.set_secondary_calculator(pysic_calc2)
+hc.set_primary_calculator(copy.copy(calc))
+hc.set_secondary_calculator(copy.copy(calc))
 
 #-------------------------------------------------------------------------------
 # Define an embedding scheme between the subsystems
 # In this case the scheme is mechanical embedding with hydrogen links
-parameters = {
-    'links': ((0, 1),),
-    'CHL': 1,
-    'epsilon': ewald_param[3],
-}
-hybrid_system.set_embedding('MEHL', 'primary', 'secondary', parameters)
+parameters = {'links': ((0, 1),), 'CHL': 1}
+hc.set_embedding('MEHL', 'primary', 'secondary', parameters)
 
 #-------------------------------------------------------------------------------
 # Calculate the potential energy of the hybrid qm/mm system.
-hybrid_energy = hybrid_system.get_potential_energy()
-#hybrid_system.view_subsystems()
+hybrid_energy = hc.get_potential_energy()
 
 # Calculate the energy of the same setup, but use only one region. In this
 # special case these energies should be same.
-pysic_calc3 = Pysic()
-pysic_calc3.set_coulomb_summation(ewald)
-system.set_calculator(pysic_calc3)
-real_energy = system.get_potential_energy()
+real_system = system.copy()
+real_system.set_calculator(copy.copy(calc))
+real_energy = real_system.get_potential_energy()
 
-# These energies differ, although the electrostatic connection energy seems to
-# be correct. This means that the Either the Ewald sum really is't suitable for
-# finite systems or requires better parameter setup
 print "Energy with hybrid calculation: " + str(hybrid_energy)
 print "Energy with traditional calculation: " + str(real_energy)
 
-hybrid_system.view_subsystems()
-hybrid_system.print_potential_energies()
+hc.view_subsystems()
+hc.print_potential_energies()

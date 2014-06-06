@@ -294,8 +294,6 @@ class Pysic:
         return "Pysic(atoms={atoms},potentials={pots},full_initialization={init})".format(atoms=str(self.structure),
                                                                                           pots=str(self.potentials),
                                                                                           init=str(self.force_core_initialization))
-
-    
     def core_initialization_is_forced(self):
         """Returns true if the core is always fully initialized, false otherwise."""
 
