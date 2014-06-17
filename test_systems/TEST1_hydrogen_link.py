@@ -18,7 +18,7 @@ h2.set_pbc(True)
 
 # Use AtomEye to make sure the structure is correct:
 viewer = AtomEyeViewer(h2)
-#viewer.view()
+viewer.view()
 
 #-------------------------------------------------------------------------------
 # Setup a hybrid calculation environment

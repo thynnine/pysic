@@ -39,7 +39,6 @@ calc.set_coulomb_summation(ewald)
 hc.add_subsystem("primary", indices=0, calculator=calc)
 hc.add_subsystem("secondary", special_set="remaining", calculator=calc)
 
-#-------------------------------------------------------------------------------
 # Define an embedding scheme between the subsystems
 # In this case the scheme is mechanical embedding with hydrogen links
 binding = hc.add_binding("primary", "secondary")

@@ -65,18 +65,18 @@ class SubSystem(object):
         self.reverse_index_map = reverse_index_map
         self.potential_energy = None
         self.forces = None
-        self.embedding_correction = 0
+        self.link_interaction_correction = 0
+        self.density_grid = None
+        self.initial_charges = atoms.get_initial_charges()
 
-    def get_potential_energy(self):
+    def get_potential_energy_without_corrections(self):
         """@todo: Docstring for get_potential_energy.
         :returns: @todo
-
         """
         # Ask the energy from the modified atoms (which include possible link
         # atoms), and and possible corrections
         self.potential_energy = self.calculator.get_potential_energy(
-            self.atoms_for_subsystem) + self.embedding_correction
-
+            self.atoms_for_subsystem)
         return self.potential_energy
 
     def get_forces(self):

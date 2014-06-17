@@ -6,11 +6,12 @@ bindings between subsystems in a HybridCalculator."""
 from pysic.utility.error import *
 from ase import Atom, Atoms
 from ase.visualize import view
+import ase.data
 from pysic import Pysic, CoulombSummation, Potential, ProductPotential
 import numpy as np
 import copy
 
-#==============================================================================
+#===============================================================================
 class BindingInfo(object):
 
     """Used to store information about a binding between subsystems.
@@ -43,17 +44,19 @@ class BindingInfo(object):
         # Check that the given parameter dictionaries are ok
         if link_parameters is not None:
             if 'pairs' not in link_parameters:
-                warn("No pairs defined in link parameters", 5)
+                warn("'pairs' not defined in link parameters", 5)
             if 'CHL' not in link_parameters: 
-                warn("CHL not defined in link parameters", 5)
+                warn("'CHL' not defined in link parameters", 5)
+            if 'interaction_correction' not in link_parameters: 
+                warn("'interaction_correction' not defined in link parameters", 5)
             if type(link_parameters["pairs"]) is tuple:
                 link_parameters["pairs"] = [link_parameters["pairs"]]
-            
+
         if coulomb_parameters is not None:
             if 'epsilon' not in link_parameters:
                 warn("epsilon not specified in parameters, "
-                     "using default value of 0.0052635 (in units e^2/(eV Å))", 5)
-                coulomb_parameters['epsilon'] = 0.0052635
+                     "using default value of 0.00552635 (in units e^2/(eV Å))", 5)
+                coulomb_parameters['epsilon'] = 0.00552635
                 self.has_electrostatic_binding = True
         else:
             self.has_electrostatic_binding = False
@@ -62,7 +65,7 @@ class BindingInfo(object):
         self.electrostatic_parameters = coulomb_parameters
         self.potentials = potentials
 
-    def set_hydrogen_links(self, pairs, CHL):
+    def set_hydrogen_links(self, pairs, CHL, interaction_correction=False):
         """Defines hydrogen link positions in the system.
         
         Parameters:
@@ -76,14 +79,22 @@ class BindingInfo(object):
                 the link atom overlaps with the atom in the primary system, 0
                 means that the link atom overlaps with the atom in the
                 secondary system. The scale is linear.
+            interaction_correction: bool
+                Is the link self interaction energy corrected. The correction
+                may significantly increase computation time because the primary
+                calculator has to be used to calculate the correction.
         """
         if type(pairs) is tuple:
             pairs = [pairs]
-        self.link_parameters = {'pairs': pairs, 'CHL': CHL}
+        self.link_parameters = {
+                'pairs': pairs,
+                'CHL': CHL,
+                'interaction_correction': interaction_correction
+                }
 
     def set_electrostatic_binding(
             self,
-            epsilon=0.0052635,
+            epsilon=0.00552635,
             sigma=None,
             k_cutoff=None,
             real_cutoff=None
@@ -110,7 +121,7 @@ class BindingInfo(object):
         else:
             self.potentials.append(potential)
 
-#==============================================================================
+#===============================================================================
 class Binding(object):
 
     """Materialization of a BindingInfo object"""
@@ -130,12 +141,21 @@ class Binding(object):
         self.potential_calculator = None
         pbc = primary_system.atoms_for_binding.get_pbc()
         self.link_atoms = []
+        self.link_atom_indices = []
+
+         #Used when calculating charges on DFT systems with pseudo density
+        #self.primary_density_grid = None
+        #self.secondary_density_grid = None
+        #self.primary_projected_charges = None
+        #self.secondary_projected_charges = None
+
+        # The binding needs to know is PBC:s are on
         if pbc[0] or pbc[1] or pbc[2]:
             self.has_pbc = True
         else:
             self.has_pbc = False
 
-        # Initialize with info
+        # Initialize binding with BindingInfo
         if info.link_parameters is not None:
             self.set_hydrogen_links(info.link_parameters)
         if info.electrostatic_parameters is not None:
@@ -178,15 +198,15 @@ class Binding(object):
 
             # Create a hydrogen atom at the specified position.
             hydrogen = Atom('H', rh.tolist())
+            self.link_atom_indices.append(len(self.primary_system.atoms_for_subsystem))
             self.primary_system.atoms_for_subsystem.append(hydrogen)
             self.link_atoms.append(hydrogen)
-            #self.link_atom_indices.append(len(self.primary_system.atoms_for_subsystem))
             
     def update_hydrogen_link_positions(self):
         """Used to update the position of the hydrogen link atoms specified in
         this binding,
 
-        It is assumed that the position of the host atoms has been already
+        It is assumed that the position of the host atoms have already been
         updated.
         """
         pairs = self.info.link_parameters['pairs']
@@ -242,7 +262,7 @@ class Binding(object):
             coulomb_pairs = []
             for i, ai in enumerate(self.primary_system.atoms_for_binding):
                 for j, aj in enumerate(self.secondary_system.atoms_for_binding):
-                    if not np.allclose(ai.charge, 0):
+                    if not np.allclose(aj.charge, 0):
                         coulomb_pairs.append([i, j+n_primary_atoms])
 
             # There are no charges in the secondary system, and that can't
@@ -268,11 +288,115 @@ class Binding(object):
 
         self.has_electrostatic_binding = True
 
-    def update_charges(self):
-        """If DFT calculators are used, updates the atom charges according to
-        the pseudodensity.
+    def calculate_link_atom_correction(self):
+        """Calculates the error due to the interaction between link atoms.
+        
+        If there are multiple link atoms (notice also systems with one link
+        attom and pbc), they may start to interact with each other. This
+        interaction energy is already included in the secondary system. By
+        calling this function this energy is added to the correction term in
+        self.primary_system.
         """
-        pass
+        primary_atoms = self.primary_system.atoms_for_binding
+        primary_calc = self.primary_system.calculator
+
+        links = Atoms(pbc=primary_atoms.get_pbc(), cell=primary_atoms.get_cell())
+        for atom in self.link_atoms:
+            links.append(atom)
+        view(links)
+        view(self.primary_system.atoms_for_subsystem)
+        correction = primary_calc.get_potential_energy(links)
+        self.primary_system.link_interaction_correction = -correction
+
+    def create_density_grid(self, subsystem):
+        """Precalculates a grid 3D grid of 3D points for the charge pseudo
+        density calculation.
+        """
+        calc = subsystem.calculator
+        atoms = subsystem.atoms_for_binding
+
+        # We need to make one calculation to get the grid points, at least with
+        # GPAW
+        calc.get_potential_energy(atoms)
+        grid_dim = calc.get_number_of_grid_points()
+
+        dx = grid_dim[0]
+        dy = grid_dim[1]
+        dz = grid_dim[2]
+        cell = atoms.get_cell()
+        cx = cell[0]
+        cy = cell[1]
+        cz = cell[2]
+
+        cux = cx/float((grid_dim[0]-1))
+        cuy = cy/float((grid_dim[1]-1))
+        cuz = cz/float((grid_dim[2]-1))
+
+        # Create a 3D array of 3D points. Each point is a  xyz-coordinate to a
+        # position where the density has been calculated.
+        dt = np.dtype('float, float, float')
+        grid = np.empty((dx, dy, dz), dtype=dt)
+        for x in range(grid_dim[0]):
+            for y in range(grid_dim[1]):
+                for z in range(grid_dim[2]):
+                    r = x*cux+y*cuy+z*cuz
+                    grid[x, y, z] = r
+
+        subsystem.density_grid = grid
+
+    def update_charges(self, subsystem):
+        """If DFT calculators are used, updates the atomic charges according to
+        the electron pseudodensity.
+        """
+        # The pseudo-density is calculated from the atoms that contain the
+        # possible link atoms. This takes into account the effect of the bond
+        # on the electronic density.
+        atoms = subsystem.atoms_for_subsystem
+        calc = subsystem.calculator
+        density_grid = np.array(calc.get_pseudo_density(atoms))
+        grid = subsystem.density_grid
+
+        initial_charges = subsystem.initial_charges
+        atomic_numbers = atoms.get_atomic_numbers()
+        total_electron_charge = -np.sum(np.array(atoms.get_atomic_numbers()))
+
+        projected_charges = []
+
+        for atom in atoms:
+            atom_charge = 0
+            z = atom.number
+            # Use the Van der Vaals radius of the atom as a cutoff length. This
+            # might be more reasonable than a single cutoff radii for all
+            # elements.
+            R = ase.data.vdw.vdw_radii[z]
+            for x in range(grid.shape[0]):
+                for y in range(grid.shape[1]):
+                    for z in range(grid.shape[2]):
+                        d = density_grid[x, y, z]
+                        r_i = np.array(list(grid[x, y, z]))
+                        r_atom = np.array(atom.position)
+                        if np.linalg.norm(r_i - r_atom) <= R:
+                            atom_charge += -d
+            projected_charges.append(atom_charge)
+
+        # Normalize the projected charges according to the electronic charge in
+        # the whole system
+        total_charge = np.sum(np.array(projected_charges))
+        projected_charges = np.array(projected_charges)
+        projected_charges *= total_electron_charge/total_charge
+
+        # Add the nuclear charges and initial charges
+        projected_charges += atomic_numbers
+        projected_charges += initial_charges
+
+        # Delete the link atom charges
+        projected_charges = np.delete(projected_charges, self.link_atom_indices)
+
+        # Set the calculated charges to the atoms
+        subsystem.atoms_for_binding.set_initial_charges(projected_charges.tolist())
+
+        #print projected_charges
+        #print initial_charges
         
     def add_binding_potential(self, potential):
         """@todo: Docstring for add_binding_potential.
@@ -292,6 +416,18 @@ class Binding(object):
         :returns: @todo
 
         """
+        # Update the charges if necessary
+        if self.info.has_electrostatic_binding:
+            if hasattr(self.primary_system.calculator, "get_pseudo_density"):
+                if self.primary_system.density_grid is None:
+                    self.create_density_grid(self.primary_system)
+                self.update_charges(self.primary_system)
+
+            if hasattr(self.secondary_system.calculator, "get_pseudo_density"):
+                if self.secondary_system.density_grid is None:
+                    self.create_density_grid(self.secondary_system)
+                self.update_charges(self.secondary_system)
+
         # Form the combined system from the original atoms
         combined = self.primary_system.atoms_for_binding + self.secondary_system.atoms_for_binding
 
@@ -299,9 +435,6 @@ class Binding(object):
         ewald_energy = 0
 
         if self.ewald_calculator is not None:
-
-            # Update charges
-            self.update_charges()
 
             # Combined system Coulomb energy
             ewald_energy += self.ewald_calculator.get_potential_energy(combined)
@@ -326,10 +459,19 @@ class Binding(object):
         """
         # Update the charges if necessary
         if self.info.has_electrostatic_binding:
-            self.update_charges()
+            if hasattr(self.primary_system.calculator, "get_pseudo_density"):
+                if self.primary_system.density_grid is None:
+                    self.create_density_grid(self.primary_system)
+                self.update_charges(self.primary_system)
 
+            if hasattr(self.secondary_system.calculator, "get_pseudo_density"):
+                if self.secondary_system.density_grid is None:
+                    self.create_density_grid(self.secondary_system)
+                self.update_charges(self.secondary_system)
+
+        # Form the combined system from the original atoms
         combined_system = self.primary_system.atoms_for_binding + self.secondary_system.atoms_for_binding
-        forces = np.zeros(len(combined_system, 3))
+        forces = np.zeros((len(combined_system), 3))
 
         # Forces due to finite coulomb potential and other pysic potentials
         if self.potential_calculator is not None:

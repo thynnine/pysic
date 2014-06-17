@@ -5,11 +5,11 @@
 #
 #===============================================================================
 from ase import Atoms, Atom
-from pysic import Pysic, Potential, HybridCalculator, ProductPotential
-from pysic.interactions.coulomb import *
-from ase.visualize import view
+from pysic import *
+from pysic.utility import visualization
 import numpy as np
 import copy
+from ase.visualize import view
 
 #-------------------------------------------------------------------------------
 # Prepare the system
@@ -24,48 +24,44 @@ system.append(h3)
 system.append(h4)
 system.set_cell((2, 2, 2))
 
-# Use ASEs built in viewer to make sure the structure is correct:
+# Use AtomEye to view the structure:
+viewer = AtomEyeViewer(system)
+viewer.view()
 view(system)
 
 #-------------------------------------------------------------------------------
 # Setup a hybrid calculation environment
-hc = HybridCalculator(system)
+hc = HybridCalculator()
 
-# Define QM/MM regions
-hc.set_primary_system([0])
-hc.set_secondary_system(special_set='remaining')
-
-# Initialize calculator
+# Initialize calculator for subsystems
 calc = Pysic()
-epsilon = 0.0052635
+epsilon = 0.00552635
 kc = 1.0/(4.0*np.pi*epsilon)
 coul1 = Potential('power', symbols=[['H', 'H']], parameters=[1, 1, 1], cutoff=20)
 coul2 = Potential('charge_pair', parameters=[kc, 1, 1])
 coulomb_potential = ProductPotential([coul1, coul2])
 calc.add_potential(coulomb_potential)
 
-# Add different calculators for the subsystems
-hc.set_primary_calculator(copy.copy(calc))
-hc.set_secondary_calculator(copy.copy(calc))
+# Define subsystems
+hc.add_subsystem("primary", indices=0, calculator=calc)
+hc.add_subsystem("secondary", special_set="remaining", calculator=calc)
 
-#-------------------------------------------------------------------------------
 # Define an embedding scheme between the subsystems
 # In this case the scheme is mechanical embedding with hydrogen links
-parameters = {'links': ((0, 1),), 'CHL': 1}
-hc.set_embedding('MEHL', 'primary', 'secondary', parameters)
+binding = hc.add_binding("primary", "secondary")
+binding.set_hydrogen_links((0, 1), 1)
+binding.set_electrostatic_binding()
 
 #-------------------------------------------------------------------------------
 # Calculate the potential energy of the hybrid qm/mm system.
-hybrid_energy = hc.get_potential_energy()
+hybrid_energy = hc.get_potential_energy(system)
 
 # Calculate the energy of the same setup, but use only one region. In this
 # special case these energies should be same.
-real_system = system.copy()
-real_system.set_calculator(copy.copy(calc))
-real_energy = real_system.get_potential_energy()
+real_energy = calc.get_potential_energy(system)
 
 print "Energy with hybrid calculation: " + str(hybrid_energy)
 print "Energy with traditional calculation: " + str(real_energy)
 
-hc.view_subsystems()
-hc.print_potential_energies()
+#hc.view_subsystems()
+hc.print_energies()
