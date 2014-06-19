@@ -9,6 +9,7 @@ from pysic.interactions.bondorder import Coordinator, BondOrderParameters
 from pysic.interactions.coulomb import CoulombSummation
 from pysic.charges.relaxation import ChargeRelaxation
 from pysic.hybridcalculator import HybridCalculator 
+from pysic.subsystem import SubSystem
 from pysic.binding import Binding
 
 version = '0.5'

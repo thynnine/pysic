@@ -64,35 +64,37 @@ class HybridCalculator(object):
         """Return a copy of the full system."""
         return self.atoms.copy()
 
-    def add_subsystem(self, name, indices=None, tag=None, special_set=None, calculator=None):
+    def add_subsystem(self, subsystem):
         """Used to define subsystems
         
         You can define a subsystem with a oneliner, or then call setters on the
         SubSystemInfo object returned by this function.
 
         Parameters:
-            name: string
-                The name of the subsystem, used to identify the subsystem.
-            indices: tuple or list
-                The indices of the atoms to include in the subsystem.
-            tag: int
-                The tag of the atoms to include in the subsystem.
-            special_set: string
-                One of the following strings: "remaining" = All the not
-                subsystemized atoms.
-            calculator: An ASE compatible calculator
-                The calculator for the subsystem.
-
-        Returns:
-            Returns the SubSystemInfo object for further modification. This
-            object later used for initializing the subsystem.
+            subsystem: SubSystem object
         """
-        if name in self.subsystem_info:
+        if subsystem.name in self.subsystem_info:
             warn("Overriding an existing subsystem", 2)
 
-        subsystem = SubSystemInfo(name, indices, tag, special_set, calculator)
-        self.subsystem_info[name] = subsystem
-        return subsystem
+        self.subsystem_info[subsystem.name] = subsystem
+
+    def add_binding(self, binding):
+        """Used to add a binding between two subsystems.
+
+        Parameters:
+            binding: Binding
+                The Binding object containing the information.
+        """
+        primary = binding.primary
+        secondary = binding.secondary
+
+        # Check that the subsystems exist
+        if not self.subsystem_defined(primary):
+            return
+        if not self.subsystem_defined(secondary):
+            return
+
+        self.binding_info[(binding.primary, binding.secondary)] = binding
 
     def initialize_system(self):
         """ Initializes the subsystems and bindings.
@@ -103,9 +105,8 @@ class HybridCalculator(object):
         updated, update_system() is used.
         """
         # Can't do calculation without atoms
-        if self.atoms is None:
-            warn(("No Atoms object given to the calculator. "
-                  "Please provide atoms with set_atoms()"), 2)
+        if not self.atoms_set():
+            return
 
         # Initialize subsystems
         for subsystem_info in self.subsystem_info.itervalues():
@@ -123,19 +124,6 @@ class HybridCalculator(object):
 
         self.system_initialized = True
 
-    def add_binding(
-            self,
-            primary,
-            secondary,
-            link_parameters=None,
-            coulomb_parameters=None,
-            potentials=[]
-            ):
-        """Used to specify a binding between two subsystems."""
-        binding = BindingInfo(primary, secondary, link_parameters, coulomb_parameters, potentials)
-        self.binding_info[(primary, secondary)] = binding
-        return binding
-
     def initialize_binding(self, info):
         """@todo: Docstring for initialize_binding."""
 
@@ -143,13 +131,15 @@ class HybridCalculator(object):
         secondary = info.secondary
 
         # Check subsystem existence
-        if not self.check_subsystem_name_exists(primary):
+        if not self.subsystem_defined(primary):
             warn("The given subsystem "+primary+" does not exist.", 2)
             return
-        if not self.check_subsystem_name_exists(secondary):
+
+        if not self.subsystem_defined(secondary):
             warn("The given subsystem "+secondary+" does not exist.", 2)
             return
-        binding = Binding(
+
+        binding = BindingInternal(
                     self.subsystems[primary],
                     self.subsystems[secondary],
                     info
@@ -161,67 +151,27 @@ class HybridCalculator(object):
         self.subsystem_info
         """
         name = info.name
-        indices = info.indices
-        tag = info.tag
-        special_set = info.special_set
         calculator = info.calculator
+        real_indices = self.generate_subsystem_indices(name)
 
-        if calculator is None:
-            warn("Calculator is not defined for subsystem "+name, 2)
-            return
+        # Create a copy of the subsystem
+        temp_atoms = Atoms()
+        index_map = {}
+        reverse_index_map = {}
+        counter = 0
+        for index in real_indices:
+            atom = self.atoms[index]
+            temp_atoms.append(atom)
+            index_map[index] = counter
+            reverse_index_map[counter] = index
+            counter += 1
+        atoms = temp_atoms.copy()
+        atoms.set_pbc(self.atoms.get_pbc())
+        atoms.set_cell(self.atoms.get_cell())
 
-        # Determine how the atoms are apecified: indices, tag or special set
-        if (indices != None) and (tag == None) and (special_set == None):
-            real_indices = indices
-        elif (indices == None) and (tag != None) and (special_set == None):
-            real_indices = []
-            for i, t in enumerate(self.atoms.get_tags()):
-                if t == tag:
-                    real_indices.append(i)
-        elif (indices == None) and (tag == None) and (special_set != None):
-            if special_set == "remaining":
-                real_indices = self.get_unsubsystemized_atoms()
-            else:
-                warn("Invalid special set", 2)
-                return
-        else:
-            warn("Provide system as indices, tags or a special set", 2)
-            return
-        
-        # Check whether the subsystem contains any atoms:
-        if len(real_indices) is 0:
-            warn("The specified subsystem " + "\"name\" "+ " does not contain any atoms.", 2)
-            return
-
-        # Check subsystem existence and overlap
-        if self.check_subsystem_existence(real_indices):
-            if not self.check_if_overlaps(real_indices):
-
-                # Create a copy of the subsystem
-                temp_atoms = Atoms()
-                index_map = {}
-                reverse_index_map = {}
-                counter = 0
-                for index in real_indices:
-                    atom = self.atoms[index]
-                    temp_atoms.append(atom)
-                    index_map[index] = counter
-                    reverse_index_map[counter] = index
-                    counter += 1
-                atoms = temp_atoms.copy()
-                atoms.set_pbc(self.atoms.get_pbc())
-                atoms.set_cell(self.atoms.get_cell())
-
-                # Create the SubSystem
-                subsystem = SubSystem(atoms, calculator, index_map, reverse_index_map)
-                self.subsystems[name] = subsystem
-
-            else:
-                warn("The subsystem "+name+" overlaps with another system", 4)
-                return
-        else:
-            warn("The subsystem "+name+" contains nonexisting atoms", 2)
-            return
+        # Create the SubSystem
+        subsystem = SubSystemInternal(atoms, info, index_map, reverse_index_map)
+        self.subsystems[name] = subsystem
 
     def update_system(self, atoms):
         """Update the subsystem atoms.
@@ -242,21 +192,31 @@ class HybridCalculator(object):
             if binding.info.link_parameters is not None:
                 binding.update_hydrogen_link_positions()
 
-    def check_subsystem_existence(self, atom_indices):
+    def check_subsystem_existence(self, atom_indices, name):
         """Check that the defined subsystem exists"""
-        if self.atoms == None:
-            warn("The total system is not set", 5)
+        if not self.atoms_set():
             return False
+
         n_atoms = len(self.atoms)
         for index in atom_indices:
             if index > n_atoms or index < 0:
-                warn("Invalid index in the index list", 5)
+                warn("The subsystem \"" + name + "\" contains nonexisting atoms", 2)
                 return False
         return True
 
-    def check_subsystem_name_exists(self, name):
+    def subsystem_defined(self, name):
         """Checks that there is a subsystem with the given name."""
-        return name in self.subsystem_info
+        defined = name in self.subsystem_info
+        if not defined:
+            warn("The subsystem called \"" + name + "\" has not been defined", 2)
+        return defined
+
+    def atoms_set(self):
+        """Checks that there is a subsystem with the given name."""
+        is_set = self.atoms is not None
+        if not is_set:
+            warn("No Atoms object given to the calculator", 2)
+        return is_set
 
     def get_unsubsystemized_atoms(self):
         """Return a list of indices for the atoms not already in a subsystem."""
@@ -272,13 +232,70 @@ class HybridCalculator(object):
         return unsubsystemized_atoms
 
     def get_subsystem_indices(self, name):
-        """Return a list of atomic indices for the subsystem."""
-        if not self.check_subsystem_name_exists(name):
-            warn("No such subsystem", 5)
-            return
-        return self.subsystems[name].index_map.keys()
+        """Return the indices of the atoms in the subsystem in the full system.
 
-    def check_if_overlaps(self, atom_indices):
+        You can ask the indices even if the subsystems have not been
+        initialized, but the indices of different subsystems may overlap in
+        this case. If the subsystems have been initialized this function will
+        only return indices if they are valid.
+        """
+        # Check that the atoms have been set
+        if not self.atoms_set:
+            return
+
+        # Check that the subsystem has been defined
+        if not self.subsystem_defined(name):
+            return
+
+        indices = self.subsystem_info[name].real_indices
+        if indices is None:
+            return self.generate_subsystem_indices(name)
+
+    def generate_subsystem_indices(self, name):
+        """Generates the indices for the given subsystem.
+        """
+        # Check that the subsystem exists
+        if not self.subsystem_defined(name):
+            return
+
+        # Check that the atoms have been set
+        if not self.atoms_set():
+            return
+
+        info = self.subsystem_info[name]
+        indices = info.indices
+        tag = info.tag
+        special_set = info.special_set
+
+        # Determine how the atoms are specified: indices, tag or special set
+        if (indices != None) and (tag == None) and (special_set == None):
+            real_indices = indices
+        elif (indices == None) and (tag != None) and (special_set == None):
+            real_indices = []
+            for i, t in enumerate(self.atoms.get_tags()):
+                if t == tag:
+                    real_indices.append(i)
+        elif (indices == None) and (tag == None) and (special_set != None):
+            if special_set == "remaining":
+                real_indices = self.get_unsubsystemized_atoms()
+            else:
+                warn("Invalid special set", 2)
+                return
+        else:
+            warn("Provide system as indices, tags or a special set", 2)
+            return
+        
+        # Check whether the subsystem contains any atoms:
+        if len(real_indices) is 0:
+            warn("The specified subsystem " + "\""+name+"\""+ " does not contain any atoms.", 2)
+            return
+
+        # Check subsystem existence and overlap
+        if self.check_subsystem_existence(real_indices, name):
+            if not self.check_if_overlaps(real_indices, name):
+                return real_indices
+
+    def check_if_overlaps(self, atom_indices, name):
         """Check that the subsystems don't overlap"""
         if self.subsystems == None:
             return False
@@ -287,6 +304,7 @@ class HybridCalculator(object):
         for subsystem in self.subsystems.values():
             new_indices += subsystem.index_map.keys()
         if len(new_indices) > len(set(new_indices)):
+            warn("The subsystem "+name+" overlaps with another system", 4)
             return True
         return False
     
@@ -296,21 +314,25 @@ class HybridCalculator(object):
         This force includes the forces internal to the subsystems and the forces
         that bind the subsystems together.
         """
-        # Calculate the binding forces
-        forces = np.zeros((len(self.atoms), 3))
-        binding_forces = []
-        for binding in self.subsystem_bindings.values():
-            binding_forces += binding.get_binding_forces()
-        for pair in binding_forces:
-            index = pair[0]
-            force = pair[1]
-            forces[index,:] += force
 
-        # Calculate the forces internal to the subsystems
+        forces = np.zeros((len(self.atoms), 3))
+
+        # Calculate the forces internal to the subsystems. These need to be
+        # calculated first, so that the pseudo density and grid are available
+        # for Bindings
         internal_forces = []
         for subsystem in self.subsystems.values():
             internal_forces += subsystem.get_forces()
         for pair in internal_forces:
+            index = pair[0]
+            force = pair[1]
+            forces[index,:] += force
+
+        # Calculate the binding forces
+        binding_forces = []
+        for binding in self.subsystem_bindings.values():
+            binding_forces += binding.get_binding_forces()
+        for pair in binding_forces:
             index = pair[0]
             force = pair[1]
             forces[index,:] += force
@@ -551,7 +573,7 @@ class HybridCalculator(object):
             for system_index in index_map:
                 number = self.atoms[system_index].number
                 atom_color = np.array(ase.data.colors.cpk_colors[number])
-                colors[system_index, :] = 0.2*atom_color+0.80*ss_color
+                colors[system_index, :] = 0.1*atom_color+0.9*ss_color
 
         return colors.tolist()
 

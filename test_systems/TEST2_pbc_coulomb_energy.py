@@ -36,14 +36,15 @@ ewald = CoulombSummation(parameters=ewald_param)
 calc.set_coulomb_summation(ewald)
 
 # Define subsystems
-hc.add_subsystem("primary", indices=0, calculator=calc)
-hc.add_subsystem("secondary", special_set="remaining", calculator=calc)
+hc.add_subsystem(SubSystem("primary", indices=0, calculator=calc))
+hc.add_subsystem(SubSystem("secondary", special_set="remaining", calculator=calc))
 
 # Define an embedding scheme between the subsystems
 # In this case the scheme is mechanical embedding with hydrogen links
-binding = hc.add_binding("primary", "secondary")
+binding = Binding("primary", "secondary")
 binding.set_hydrogen_links((0, 1), 1)
-binding.set_electrostatic_binding(sigma=ewald_param[2], k_cutoff=ewald_param[1], real_cutoff=ewald_param[0])
+binding.enable_electrostatic_binding(sigma=ewald_param[2], k_cutoff=ewald_param[1], real_cutoff=ewald_param[0])
+hc.add_binding(binding)
 
 #-------------------------------------------------------------------------------
 # Calculate the potential energy of the hybrid qm/mm system.
@@ -56,5 +57,5 @@ real_energy = calc.get_potential_energy(system)
 print "Energy with hybrid calculation: " + str(hybrid_energy)
 print "Energy with traditional calculation: " + str(real_energy)
 
-#hc.view_subsystems()
+hc.view_subsystems()
 hc.print_energies()

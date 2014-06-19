@@ -27,7 +27,6 @@ system.set_cell((2, 2, 2))
 # Use AtomEye to view the structure:
 viewer = AtomEyeViewer(system)
 viewer.view()
-view(system)
 
 #-------------------------------------------------------------------------------
 # Setup a hybrid calculation environment
@@ -43,14 +42,14 @@ coulomb_potential = ProductPotential([coul1, coul2])
 calc.add_potential(coulomb_potential)
 
 # Define subsystems
-hc.add_subsystem("primary", indices=0, calculator=calc)
-hc.add_subsystem("secondary", special_set="remaining", calculator=calc)
+hc.add_subsystem(SubSystem("primary", indices=0, calculator=calc))
+hc.add_subsystem(SubSystem("secondary", special_set="remaining", calculator=calc))
 
 # Define an embedding scheme between the subsystems
 # In this case the scheme is mechanical embedding with hydrogen links
-binding = hc.add_binding("primary", "secondary")
+binding = Binding("primary", "secondary", coulomb_interaction=True)
 binding.set_hydrogen_links((0, 1), 1)
-binding.set_electrostatic_binding()
+hc.add_binding(binding)
 
 #-------------------------------------------------------------------------------
 # Calculate the potential energy of the hybrid qm/mm system.

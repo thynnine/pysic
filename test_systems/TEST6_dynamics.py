@@ -83,7 +83,7 @@ water.set_cell(cell.tolist())
 hc = HybridCalculator()
 
 # Setup the subsystem calculators
-gpaw_calc = GPAW(h=0.2, txt=None)
+gpaw_calc = GPAW(h=0.3, txt=None)
 pysic_calc = Pysic()
 
 hc.add_subsystem("primary", tag=0, calculator=gpaw_calc)

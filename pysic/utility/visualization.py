@@ -197,6 +197,10 @@ class AtomEyeViewer(object):
             self.warn("The first frame called 1.cfg does not exist")
             return
 
+        # Write the conf script
+        self.write_usr_file(self.subdir, "view.usr")
+        self.write_conf_script()
+
         # add the conf script to startup
         with open(self.startup_script, 'w') as myfile:
             myfile.write("load_script "+self.conf_script+"\n")
@@ -257,8 +261,8 @@ class AtomEyeViewer(object):
                 are specified in the interval 0.0-1.0. Example (0, 1, 0) =
                 Green.
         """
-        if len(self.atoms) is not len(colors):
-            warn("The color list length does not match the number of atoms")
+        if not (len(self.atoms) == len(colors)):
+            warn("The color list length does not match the number of atoms", 3)
             return
         self.colors = colors
         
@@ -269,8 +273,8 @@ class AtomEyeViewer(object):
             radii: list of floats
                 A list of atomic radius in units of Å
         """
-        if len(self.atoms) is not len(radii):
-            warn("The radii list length does not match the number of atoms")
+        if not (len(self.atoms) == len(radii)):
+            warn("The radii list length does not match the number of atoms", 3)
             return
         self.radii = radii
 

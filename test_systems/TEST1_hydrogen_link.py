@@ -31,20 +31,17 @@ calc.set_potentials(potential)
 
 # Define QM/MM regions. You can get the indices by e.g. examining the the
 # structure in ASEs viewer.
-# ONELINER: hc.add_subsystem("primary", indices=0, calculator=calc)
-ps = hc.add_subsystem("primary")
-ps.set_atoms(0)
-ps.set_calculator(calc)
+primary_subsystem = SubSystem("primary", indices=0, calculator=calc)
+hc.add_subsystem(primary_subsystem)
 
-ss = hc.add_subsystem("secondary")
-ss.set_atoms(special_set="remaining")
-ss.set_calculator(calc)
+secondary_subsystem = SubSystem("secondary", special_set="remaining", calculator=calc)
+hc.add_subsystem(secondary_subsystem)
 
 #-------------------------------------------------------------------------------
 # Define a binding between the subsystems
-# ONELINER: hc.add_binding("primary", "secondary", link_parameters={"pairs": (0, 1), "CHL": 1})
-binding = hc.add_binding("primary", "secondary")
-binding.set_hydrogen_links((0, 1), 1)
+binding = Binding("primary", "secondary")
+binding.set_hydrogen_links((0, 1), 1, interaction_correction=True)
+hc.add_binding(binding)
 
 #-------------------------------------------------------------------------------
 # Calculate the potential energy of the hybrid qm/mm system.
