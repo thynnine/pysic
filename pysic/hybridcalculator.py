@@ -3,11 +3,11 @@
 
 from pysic.utility.error import *
 from ase import Atoms
-from ase.visualize import view # ASEs internal viewer
 from pysic.subsystem import *
 from pysic.binding import *
 import colorsys
 import ase.data.colors
+
 
 #===============================================================================
 class HybridCalculator(object):
@@ -32,7 +32,8 @@ class HybridCalculator(object):
     #---------------------------------------------------------------------------
     # Hybrid methods
 
-    def __init__(self, atoms=None):
+    def __init__(self, atoms=None, record_time_usage=False):
+        self.record_time_usage = record_time_usage
         self.subsystem_energies = {}
         self.subsystems = {}
         self.subsystem_bindings = {}
@@ -66,7 +67,7 @@ class HybridCalculator(object):
 
     def add_subsystem(self, subsystem):
         """Used to define subsystems
-        
+
         You can define a subsystem with a oneliner, or then call setters on the
         SubSystemInfo object returned by this function.
 
@@ -98,7 +99,7 @@ class HybridCalculator(object):
 
     def initialize_system(self):
         """ Initializes the subsystems and bindings.
-        
+
         Called once during the lifetime of the calculator. Typically when
         calling set_atoms for the first time, or when calculating any
         quantity for the first time. If the atoms in the simulation need to be
@@ -140,10 +141,11 @@ class HybridCalculator(object):
             return
 
         binding = BindingInternal(
-                    self.subsystems[primary],
-                    self.subsystems[secondary],
-                    info
-                    )
+            self.atoms,
+            self.subsystems[primary],
+            self.subsystems[secondary],
+            info,
+            self.record_time_usage)
         self.subsystem_bindings[(primary, secondary)] = binding
 
     def initialize_subsystem(self, info):
@@ -151,7 +153,6 @@ class HybridCalculator(object):
         self.subsystem_info
         """
         name = info.name
-        calculator = info.calculator
         real_indices = self.generate_subsystem_indices(name)
 
         # Create a copy of the subsystem
@@ -170,7 +171,7 @@ class HybridCalculator(object):
         atoms.set_cell(self.atoms.get_cell())
 
         # Create the SubSystem
-        subsystem = SubSystemInternal(atoms, info, index_map, reverse_index_map)
+        subsystem = SubSystemInternal(atoms, info, index_map, reverse_index_map, self.record_time_usage)
         self.subsystems[name] = subsystem
 
     def update_system(self, atoms):
@@ -178,7 +179,7 @@ class HybridCalculator(object):
         """
         # Replace the old internal atoms
         self.atoms = atoms.copy()
-        
+
         # Update the positions in the subsystems. If link atoms are present,
         # they are also moved. The velocities and momenta are not updated.
         for subsystem in self.subsystems.values():
@@ -268,14 +269,14 @@ class HybridCalculator(object):
         special_set = info.special_set
 
         # Determine how the atoms are specified: indices, tag or special set
-        if (indices != None) and (tag == None) and (special_set == None):
+        if (indices is not None) and (tag is None) and (special_set is None):
             real_indices = indices
-        elif (indices == None) and (tag != None) and (special_set == None):
+        elif (indices is None) and (tag is not None) and (special_set is None):
             real_indices = []
             for i, t in enumerate(self.atoms.get_tags()):
                 if t == tag:
                     real_indices.append(i)
-        elif (indices == None) and (tag == None) and (special_set != None):
+        elif (indices is None) and (tag is None) and (special_set is not None):
             if special_set == "remaining":
                 real_indices = self.get_unsubsystemized_atoms()
             else:
@@ -284,10 +285,10 @@ class HybridCalculator(object):
         else:
             warn("Provide system as indices, tags or a special set", 2)
             return
-        
+
         # Check whether the subsystem contains any atoms:
         if len(real_indices) is 0:
-            warn("The specified subsystem " + "\""+name+"\""+ " does not contain any atoms.", 2)
+            warn("The specified subsystem " + "\""+name+"\"" + " does not contain any atoms.", 2)
             return
 
         # Check subsystem existence and overlap
@@ -297,7 +298,7 @@ class HybridCalculator(object):
 
     def check_if_overlaps(self, atom_indices, name):
         """Check that the subsystems don't overlap"""
-        if self.subsystems == None:
+        if self.subsystems is None:
             return False
         new_indices = []
         new_indices += atom_indices
@@ -307,14 +308,13 @@ class HybridCalculator(object):
             warn("The subsystem "+name+" overlaps with another system", 4)
             return True
         return False
-    
+
     def calculate_forces(self):
         """Calculates the forces in the current structure.
 
         This force includes the forces internal to the subsystems and the forces
         that bind the subsystems together.
         """
-
         forces = np.zeros((len(self.atoms), 3))
 
         # Calculate the forces internal to the subsystems. These need to be
@@ -323,19 +323,21 @@ class HybridCalculator(object):
         internal_forces = []
         for subsystem in self.subsystems.values():
             internal_forces += subsystem.get_forces()
+
         for pair in internal_forces:
             index = pair[0]
             force = pair[1]
-            forces[index,:] += force
+            forces[index, :] += force
 
         # Calculate the binding forces
         binding_forces = []
         for binding in self.subsystem_bindings.values():
             binding_forces += binding.get_binding_forces()
+
         for pair in binding_forces:
             index = pair[0]
             force = pair[1]
-            forces[index,:] += force
+            forces[index, :] += force
 
         self.forces = forces
 
@@ -348,19 +350,14 @@ class HybridCalculator(object):
         # (e.g. add a hydrogen link atom) so make sure that the connections are
         # initialized before using any calculators
         for name, subsystem in self.subsystems.iteritems():
-            subsystem_energy = subsystem.get_potential_energy_without_corrections()
+
+            subsystem_energy = subsystem.get_potential_energy()
             total_potential_energy += subsystem_energy
 
         # Calculate connection energies after the subsystem energies. This way
-        # the pseudo_density is already calculated for the primary system 
+        # the pseudo_density is already calculated for the primary system
         for binding in self.subsystem_bindings.values():
             total_potential_energy += binding.get_binding_energy()
-
-            #Calculate the link interaction correction if needed
-            if binding.info.link_parameters is not None:
-                if binding.info.link_parameters['interaction_correction']:
-                    binding.calculate_link_atom_correction()
-                    total_potential_energy += binding.primary_system.link_interaction_correction
 
         self.potential_energy = total_potential_energy
 
@@ -515,33 +512,133 @@ class HybridCalculator(object):
         for subsystem in self.subsystems.values():
             view(subsystem.atoms_for_subsystem)
 
-    def print_energies(self):
+    def get_subsystem_pseudo_density(self, name):
+        """Returns the electron pseudo density of the subsystem if available."""
+        if self.subsystem_defined(name):
+            return self.subsystems[name].get_pseudo_density()
+
+    def print_charge_summary(self):
+        message = []
+        message.append("==============================================================================")
+        message.append("")
+        message.append("  CHARGE SUMMARY:")
+        message.append("")
+
+        for name, subsystem in self.subsystems.iteritems():
+            if subsystem.calculated_charges is not None:
+                message.append("  Subsystem " + name + ":")
+
+                for i_atom, atom in enumerate(subsystem.atoms_for_binding):
+                    symbol = atom.symbol
+                    charge = subsystem.calculated_charges[0, i_atom]
+                    message.append("      Number: " + str(i_atom) + ", Symbol: " + symbol + ", Charge: " + str(charge))
+
+                message.append("")
+        message.append("==============================================================================")
+
+        str_message = self.style_message(message)
+        print str_message
+
+    def print_summary(self):
         """Print a detailed summary of the different energies in the system.
         This includes the energies in the subsystems, binding energies and
         possible energy corrections.
         """
-        print ("\n================================================================================\n"
-               "|\n"
-               "|  HYBRIDCALCULATOR ENERGY SUMMARY:\n"
-               "|\n"
-               "|  Total energy: "+str(self.potential_energy)+"\n"
-               "|"
-               )
+
+        total_time = 0
+        for binding in self.subsystem_bindings.values():
+            total_time += binding.timer.get_total_time()
+        for subsystem in self.subsystems.values():
+            total_time += subsystem.timer.get_total_time()
+
+        time_not_used = np.isclose(total_time, 0.0)
+
+        message = []
+        message.append("==============================================================================")
+        message.append("")
+        message.append("  HYBRIDCALCULATOR SUMMARY:")
+        message.append("")
+        message.append("  Total energy: "+str(self.potential_energy))
+        message.append("")
+
         for name, subsystem in self.subsystems.iteritems():
+
+            message.append("  Subsystem " + name + ":")
+            subsystem_time = subsystem.timer.get_total_time()
+
+            if self.record_time_usage:
+                if time_not_used:
+                    message.append("      Time usage: 0 %")
+                else:
+                    if np.isclose(subsystem_time, 0):
+                        message.append("      Time usage: 0 %")
+                    else:
+                        message.append("      Time usage: " + "{0:.1f}".format(subsystem_time/total_time*100.0) + " %")
+                        for name, time in subsystem.timer.sections.iteritems():
+                            message.append("          " + name + ": " + "{0:.1f}".format(time/total_time*100.0) + " %")
+
             if subsystem.potential_energy is None:
-                warn("Potential energy not calculated for subsystem \""+name+"\"", 3)
+                ss_energy = "Not calculated"
             else:
-                print "|  Subsystem " + name +":"
-                print "|      Potential energy: "+str(subsystem.potential_energy)
-                print "|      Link interaction correction energy: "+str(subsystem.link_interaction_correction)
-        print "|"
+                ss_energy = str(subsystem.potential_energy)
+            message.append("      Potential energy: " + ss_energy)
+            message.append("")
+
         for pair, binding in self.subsystem_bindings.iteritems():
+
+            message.append("  Binding between \""+pair[0]+"\" and \""+pair[1] + ":")
+            binding_time = binding.timer.get_total_time()
+
+            if self.record_time_usage:
+                if time_not_used:
+                    message.append("      Time usage: 0 %")
+                else:
+                    if np.isclose(binding_time, 0):
+                        message.append("      Time usage: 0 %")
+                    else:
+                        message.append("      Time usage: " + "{0:.1f}".format(binding_time/total_time*100.0) + " %")
+                        for name, time in binding.timer.sections.iteritems():
+                            message.append("          " + name + ": " + "{0:.1f}".format(time/total_time*100.0) + " %")
+
+            # Total binding energy
             if binding.binding_energy is None:
-                warn("Potential energy not calculated for connection between \""+pair[0]+"\" and \""+pair[1], 3)+"\""
+                b_energy = "Not calculated"
             else:
-                print "|  Binding energy between \""+pair[0]+"\" and \""+pair[1]+"\": "+str(binding.binding_energy)
-        print "|"
-        print "================================================================================\n"
+                b_energy = str(binding.binding_energy)
+            message.append("      Total interaction energy: "+b_energy)
+
+            # Link atom correction energy
+            if binding.link_atom_correction_energy is None:
+                link_atom_correction_energy = "Not calculated"
+            else:
+                link_atom_correction_energy = str(binding.link_atom_correction_energy)
+            message.append("          Link atom correction energy: "+link_atom_correction_energy)
+
+            # Uncorrected interaction energy
+            if binding.uncorrected_binding_energy is None:
+                uncorrected_binding_energy = "Not calculated"
+            else:
+                uncorrected_binding_energy = str(binding.uncorrected_binding_energy)
+            message.append("          Binding energy w/o link atom correction: "+uncorrected_binding_energy)
+
+        message.append("")
+        message.append("==============================================================================")
+
+        str_message = self.style_message(message)
+
+        print "\n" + str_message + "\n"
+
+    def style_message(self, message):
+        """Styles a message to be printed into console """
+        str_message = ""
+        for line in message:
+            line = "|" + line
+            length = len(line)
+            space = 80 - length
+            if space > 0:
+                line += str((space-1)*" ")+"|\n"
+            str_message += line
+        return str_message
 
     def get_colors(self):
         """Returns a color set for AtomEyeViewer with different colours for the
@@ -576,6 +673,3 @@ class HybridCalculator(object):
                 colors[system_index, :] = 0.1*atom_color+0.9*ss_color
 
         return colors.tolist()
-
-
-

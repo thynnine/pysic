@@ -6,7 +6,7 @@
 #===============================================================================
 from ase import Atoms, Atom
 from pysic import *
-from pysic.utility import visualization
+from pysic.utility.visualization import AtomEyeViewer
 from pysic.interactions.coulomb import *
 
 #-------------------------------------------------------------------------------
@@ -27,7 +27,7 @@ viewer.view()
 
 #-------------------------------------------------------------------------------
 # Setup a hybrid calculation environment
-hc = HybridCalculator()
+hc = HybridCalculator(record_time_usage=True)
 
 # Initialize calculator for subsystems
 calc = Pysic()
@@ -43,7 +43,7 @@ hc.add_subsystem(SubSystem("secondary", special_set="remaining", calculator=calc
 # In this case the scheme is mechanical embedding with hydrogen links
 binding = Binding("primary", "secondary")
 binding.set_hydrogen_links((0, 1), 1)
-binding.enable_electrostatic_binding(sigma=ewald_param[2], k_cutoff=ewald_param[1], real_cutoff=ewald_param[0])
+binding.set_coulomb_interaction(sigma=ewald_param[2], k_cutoff=ewald_param[1], real_cutoff=ewald_param[0])
 hc.add_binding(binding)
 
 #-------------------------------------------------------------------------------
@@ -58,4 +58,4 @@ print "Energy with hybrid calculation: " + str(hybrid_energy)
 print "Energy with traditional calculation: " + str(real_energy)
 
 hc.view_subsystems()
-hc.print_energies()
+hc.print_summary()

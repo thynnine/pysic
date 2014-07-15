@@ -5,7 +5,7 @@
 #
 #===============================================================================
 from ase import Atoms
-from ase.constraints import FixInternals, FixBondLengths
+from ase.constraints import FixInternals
 from ase.structure import molecule
 from pysic import *
 import numpy as np
@@ -16,10 +16,10 @@ from gpaw import GPAW
 
 #-------------------------------------------------------------------------------
 # Prepare the system
-n = 2 # Number of water molecules
-distance = 5 # distance between molecules
-padding = 2 # padding between molecules and cell wall
-dim = int(np.ceil(np.power(n, 1./3.))) # Ideal cubic cell dimension
+n = 2  # Number of water molecules
+distance = 5  # distance between molecules
+padding = 2  # padding between molecules and cell wall
+dim = int(np.ceil(np.power(n, 1./3.)))  # Ideal cubic cell dimension
 water = Atoms()
 constraints = []
 
@@ -34,14 +34,14 @@ for i in range(n):
     h2o.set_tags([i]*3)
 
     # Calculate the molecule position
-    z = int(i/dim/dim)%dim
-    y = int(i/dim)%dim
-    x = i%dim
-    if x>max_x:
+    z = int(i/dim/dim) % dim
+    y = int(i/dim) % dim
+    x = i % dim
+    if x > max_x:
         max_x = x
-    if y>max_y:
+    if y > max_y:
         max_y = y
-    if z>max_z:
+    if z > max_z:
         max_z = z
     position = np.array([x, y, z])*distance+padding
     center = np.array(h2o.get_center_of_mass())
@@ -86,13 +86,17 @@ hc = HybridCalculator()
 gpaw_calc = GPAW(h=0.3, txt=None)
 pysic_calc = Pysic()
 
-hc.add_subsystem("primary", tag=0, calculator=gpaw_calc)
-hc.add_subsystem("secondary", tag=1, calculator=pysic_calc)
+PS = SubSystem("primary", tag=0, calculator=gpaw_calc)
+hc.add_subsystem(PS)
+
+SS = SubSystem("secondary", tag=1, calculator=pysic_calc)
+hc.add_subsystem(SS)
 
 #-------------------------------------------------------------------------------
 # Define an embedding scheme between the subsystems
-binding = hc.add_binding("primary", "secondary")
-binding.set_electrostatic_binding()
+binding = Binding("primary", "secondary")
+binding.set_coulomb_interaction()
+hc.add_binding(binding)
 
 #-------------------------------------------------------------------------------
 # Set the calculator
@@ -112,6 +116,7 @@ water.set_calculator(hc)
 steps = 10
 interval = 1
 step = 0
+
 
 def print_progress():
     global step, interval, steps

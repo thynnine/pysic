@@ -8,26 +8,28 @@
 #===============================================================================
 from ase import Atoms
 from pysic import *
-from pysic.utility import visualization
+from pysic.utility.visualization import AtomEyeViewer
+import copy
 
 #-------------------------------------------------------------------------------
 # Prepare the system
 h2 = Atoms('H2', [(0, 0, 0), (1, 1, 1)])
 h2.set_cell((2, 2, 2))
-h2.set_pbc(True)
+h2.set_pbc(False)
 
 # Use AtomEye to make sure the structure is correct:
 viewer = AtomEyeViewer(h2)
-viewer.view()
+#viewer.view()
 
 #-------------------------------------------------------------------------------
 # Setup a hybrid calculation environment
-hc = HybridCalculator()
+hc = HybridCalculator(record_time_usage=True)
 
 # Define calculator for the subsystems
 calc = Pysic()
 potential = Potential('LJ', cutoff=4.0, symbols=['H', 'H'], parameters=[0.1, 2.5])
 calc.set_potentials(potential)
+calc2 = copy.deepcopy(calc)
 
 # Define QM/MM regions. You can get the indices by e.g. examining the the
 # structure in ASEs viewer.
@@ -40,7 +42,9 @@ hc.add_subsystem(secondary_subsystem)
 #-------------------------------------------------------------------------------
 # Define a binding between the subsystems
 binding = Binding("primary", "secondary")
-binding.set_hydrogen_links((0, 1), 1, interaction_correction=True)
+binding.set_hydrogen_links((0, 1), 1)
+binding.set_potentials(potential)
+binding.set_link_atom_correction(True)
 hc.add_binding(binding)
 
 #-------------------------------------------------------------------------------
@@ -49,12 +53,11 @@ hybrid_energy = hc.get_potential_energy(h2)
 
 # Calculate the energy of the same setup, but use only one region. In this
 # special case these energies should be the same.
-real_energy = calc.get_potential_energy(h2)
+real_energy = calc2.get_potential_energy(h2)
 
 # When periodic boundary conditions are on, the link atoms in the primary
 # system will interact with each other. This energy is already included in the
 # secondary system and should be corrected somehow.
 print "Energy with hybrid calculation: " + str(hybrid_energy)
 print "Energy with traditional calculation: " + str(real_energy)
-hc.print_energies()
-
+hc.print_summary()
