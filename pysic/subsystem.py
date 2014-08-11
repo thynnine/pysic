@@ -1,114 +1,164 @@
 #! /usr/bin/env python
 """Defines classes used for creating and storing information about subsystems
-in a HybridCalculator."""
-
+in a Pysic QM/MM hybrid calculation created with the HybridCalculator-class.
+"""
 import numpy as np
-from pysic.utility.error import warn
+from pysic.utility.error import warn, error
 import ase.data
 from pysic.utility.timer import Timer
 from ase import Atom, Atoms
+from ase.units import Bohr
 from ase.visualize import view
-from ase.io import write
+from ase.io import write, bader
+from ase.parallel import rank, barrier
+import os
 import copy
+from distutils import spawn
+import subprocess
+import shutil
 
 
 #===============================================================================
 class SubSystem(object):
 
-    """Used to store information about a subsystem.
+    """Used to create and store information about a subsystem.
 
     The end user can create and manipulate these objects when defining
     subsystems. The subsystems are added to the calculation by calling
     :meth:`~pysic.hybridcalculator.HybridCalculator.add_subsystem` which adds a
-    SubSystemInfo object to the calculation and returns a reference to this
-    object for further manipulation.
+    SubSystem-object to the calculation.
 
-    When the HybridCalculator starts the actual calculations, or when atoms are
-    set, the subsystems are materialized by converting the stored
-    SubSystemInfos to SubSystems.
+    When the HybridCalculator sees fit, the subsystems are materialized by
+    converting the stored SubSystems into SubSystemInternals.
     """
 
     def __init__(self,
                  name,
                  indices=None,
                  tag=None,
-                 special_set=None,
                  calculator=None
                  ):
-        """@todo: to be defined1. """
+        """
+        Parameters:
+            name: string
+                A unique identifier for this substring.
+            indices: list of integers or string
+                A list of atom indices or a special string "remaining", which
+                assigns all the yet unassigned atoms to this subsystem.
+            tag: int
+                The atoms with this tag belong to this subsystem.
+            calculator: ASE compatible calculator
+                The calculator that is used for this subsystem.
+        """
         self.name = name
         self.calculator = calculator
-        self.cell_size_optimization = False
-        self.dft_padding = None
-        self.set_atoms(indices, tag, special_set)
-        self.is_valid()
+        self.cell_size_optimization_enabled = False
+        self.cell_padding = None
+        self.charge_calculation_enabled = False
+        self.source = None
+        self.division = None
+        self.gridrefinement = None
+        self.set_atoms(indices, tag)
+
+    def is_valid(self, indices, tag):
+        """Checks that the given atom specifiers are correctly given. Does not
+        yet check that they exist or don't overlap with other subssystems.
+        """
+        # Determine how the atoms are specified: indices, tag or special set
+        if isinstance(indices, str):
+            if indices != "remaining":
+                error("Use \"remaining\" if you want to assign the yet unassigned atoms to a subsystem")
+        elif (indices is None) and (tag is None):
+            error("Provide system as indices or tag",)
 
     def set_calculator(self, calculator):
         """Set the calculator for the subsystem.
 
         Parameters:
-            calculator: ASE Calculator
+            calculator: ASE compatible calculator
         """
-        self.calculator = copy.deepcopy(calculator)
+        self.calculator = copy.copy(calculator)
 
-    def set_atoms(self, indices=None, tag=None, special_set=None):
+    def set_atoms(self, indices=None, tag=None):
         """Set the atoms that belong to this subsystem. Give only one of the
-        specifiers: indices, tag or special_set.
+        specifiers: indices or tag.
 
         Parameters:
-            indices: list of ints
-                A list of atom indices in the full system.
+            indices: list of integers or string
+                A list of atom indices or a special string "remaining", which
+                assigns all the yet unassigned atoms to this subsystem.
             tag: int
-                The tag that is used to identify the subsystem.
-            special_set: string
-                A special string indicator. One of the following:
-                    "remaining": All the the atoms that have not yet been
-                    linked to a subsystem.
+                The atoms with this tag belong to this subsystem.
         """
+        self.is_valid(indices, tag)
         if indices is not None and type(indices) is int:
                 self.indices = (indices,)
         else:
             self.indices = indices
         self.tag = tag
-        self.special_set = special_set
 
-    def is_valid(self):
-        """Checks that the given atom specifiers are correctly given. Does not
-        yet check that they exist or don't overlap with othe subssytems
-        """
-        indices = self.indices
-        tag = self.tag
-        special_set = self.special_set
-
-        # Determine how the atoms are specified: indices, tag or special set
-        if (indices is not None) and (tag is None) and (special_set is None):
-            return True
-        elif (indices is None) and (tag is not None) and (special_set is None):
-            return True
-        elif (indices is None) and (tag is None) and (special_set is not None):
-            if special_set == "remaining":
-                return True
-            else:
-                warn("Invalid special set", 2)
-                return False
-        else:
-            warn("Provide system as indices, tags or a special set", 2)
-            return False
-
-    def enable_cell_size_optimization(self, padding):
+    def enable_cell_optimization(self, padding):
         """Enable cell size optimization.
 
-        The optimization is off by default. If there are no periodic boundary
-        conditions, the cell size of a DFT subsystem can be minimized. This
-        speeds up the calculations in systems where the DFT specific subsystem
-        covers only a small portion of the entire system.
+        A subsystem might spatially reside in only a small portion of the
+        entire system. DFT calculators will then waste time doing calculations
+        in empty space, where almost none of electron density reaches.
 
-        The padding indicates the minimum distance between the cell boundaries
-        and the subsystem atoms. If this value is too low, the DFT-calculator
-        might not work properly!
+        This optimization minimizes the cell size, so that the atoms in the
+        subsystem fit the cell with the given padding. If the padding is too
+        small, the DFT-calculator might not work properly!
+
+        The optimization is off by default. It cannot be turned on in systems
+        with periodic boundary conditions. The new optimized cell is always
+        ortorhombic, regardless of the shape of the original, unoptimized cell.
+
+        Parameters:
+            padding: float
+                The minimum distance between the subsystem atoms and the cell
+                walls.
         """
-        self.cell_size_optimization = True
-        self.dft_padding = padding
+        self.cell_size_optimization_enabled = True
+        self.cell_padding = padding
+
+    def enable_charge_calculation(self, division="Bader", source="all-electron", gridrefinement=4):
+        """Enable the dynamic calculation of atom-centered charges with the
+        specified algorithm and from the specified electron density. These
+        charges are only used for the interaction between other subsystems.
+
+        Parameters:
+            division: string
+                Indicates the division algorithm that is used. Available options are:
+                    "Bader": Bader algorithm
+                    "van Der Waals": Spheres with van Der Waals radius
+            source: string
+                Indicates what type of electron density is used. Available
+                options are:
+                    "pseudo": Use the pseudo electron density provided by all
+                    ASE DFT calculators
+                    "all-electron": Use the all-electron density provided by at
+                    least GPAW
+            gridrefinement: int
+                Indicates the subdivision that is used for the all-electron
+                density.  Can be other than unity only for Bader algorithm with
+                all-electron density.
+        """
+        divisions = ["Bader", "van Der Waals"]
+        sources = ["pseudo", "all-electron"]
+
+        if division not in divisions:
+            error("Invalid division algorithm: " + division)
+
+        if source not in sources:
+            error("Invalid source for electron density: " + source)
+
+        if gridrefinement != 1:
+            if (division != "Bader") or (division == "Bader" and source != "all-electron"):
+                warn("The gridrefinement is available only for the Bader algorithm with all-electron density, it is ignored.", 3)
+
+        self.charge_calculation_enabled = True
+        self.division = division
+        self.source = source
+        self.gridrefinement = gridrefinement
 
 
 #===============================================================================
@@ -118,14 +168,8 @@ class SubSystemInternal(object):
 
     This class is materialised from a SubSystem, and should not be
     accessible to the end user.
-
-    Attributes:
-        self.info
-        self.atoms_for_binding
-        self.atoms_for_subsystem
-        ...
     """
-    def __init__(self, atoms, info, index_map, reverse_index_map, record_time_usage):
+    def __init__(self, atoms, info, index_map, reverse_index_map, record_time_usage, n_atoms):
         """
         Parameters:
             atoms: ASE Atoms
@@ -133,26 +177,42 @@ class SubSystemInternal(object):
             info: SubSystem object
                 Contains all the information about the subsystem
             index_map: dictionary of int to int
-                The keys are the atom indices in the full system, values are indices in the subssystem.
+                The keys are the atom indices in the full system, values are
+                indices in the subssystem.
             reverse_index_map: dicitonary of int to int
-                The keys are the atom indices in the subsystem, values are the keys in the full system.
+                The keys are the atom indices in the subsystem, values are the
+                keys in the full system.
+            record_time_usage: bool
+            n_atoms: int
+                Number of atoms in the full system.
         """
-        self.info = info
-        self.calculator = info.calculator
-        self.atoms_for_binding = atoms.copy()
+        # Extract data from info
+        self.name = info.name
+        self.calculator = copy.copy(info.calculator)
+        self.interaction_calculator = copy.copy(info.calculator)
+        self.cell_size_optimization_enabled = info.cell_size_optimization_enabled
+        self.cell_padding = info.cell_padding
+        self.charge_calculation_enabled = info.charge_calculation_enabled
+        self.source = info.source
+        self.division = info.division
+        self.gridrefinement = info.gridrefinement
+
+        self.n_atoms = n_atoms
+        self.atoms_for_interaction = atoms.copy()
         self.atoms_for_subsystem = atoms.copy()
         self.index_map = index_map
         self.reverse_index_map = reverse_index_map
         self.potential_energy = None
         self.forces = None
         self.density_grid = None
-        self.calculated_charges = None
         self.pseudo_density = None
         self.link_atom_indices = []
         self.timer = Timer(record_time_usage,
                            {
-                               "Charge update": 0,
-                               "Calculator": 0,
+                               "Bader charge calculation": 0,
+                               "van Der Waals charge calculation": 0,
+                               "Energy": 0,
+                               "Forces": 0,
                                "Density grid update": 0,
                                "Cell minimization": 0
                            })
@@ -164,26 +224,29 @@ class SubSystemInternal(object):
             charges = np.array(atoms.get_charges())
         self.initial_charges = charges
 
+        ## Can't enable charge calculation on non-DFT calculator
         self.dft_system = hasattr(self.calculator, "get_pseudo_density")
+        if self.charge_calculation_enabled is True and not self.dft_system:
+            error("Can't enable charge calculation on non-DFT calculator!")
 
         # If the cell size minimization flag has been enabled, then try to reduce the
         # cell size
-        if info.cell_size_optimization:
+        if self.cell_size_optimization_enabled:
             pbc = atoms.get_pbc()
             if pbc[0] or pbc[1] or pbc[2]:
                 warn(("Cannot optimize cell size when periodic boundary"
-                      "condition have been enabled, disabling optimization."), 3)
-                self.info.cell_size_optimization = False
+                      "condition have been enabled, disabling optimization."), 2)
+                self.cell_size_optimization_enabled = False
             else:
-                self.minimize_cell()
+                self.optimize_cell()
 
-    def minimize_cell(self):
-        """Creates a new cell for the subsystem. This cell is made
-        :returns: @todo
-
+    def optimize_cell(self):
+        """Tries to optimize the cell of the subsystem so only the atoms in
+        this subsystem fit in it with the defined padding to the edges. The new
+        cell is always ortorhombic.
         """
         self.timer.start("Cell minimization")
-        padding = self.info.dft_padding
+        padding = self.cell_padding
         x_min, y_min, z_min = self.atoms_for_subsystem[0].position
         x_max, y_max, z_max = self.atoms_for_subsystem[0].position
 
@@ -213,8 +276,8 @@ class SubSystemInternal(object):
         self.timer.end()
 
     def update_density_grid(self):
-        """Precalculates a grid 3D grid of 3D points for the charge pseudo
-        density calculation.
+        """Precalculates a grid of 3D points for the charge calculation with
+        van Der Waals radius.
         """
         self.timer.start("Density grid update")
         calc = self.calculator
@@ -248,36 +311,142 @@ class SubSystemInternal(object):
         self.timer.end()
 
     def update_charges(self):
-        """If DFT calculators are used, updates the atomic charges according to
-        the electron pseudodensity.
+        """Updates the charges in the system.
+        """
+        if self.charge_calculation_enabled:
+            if self.division == "van Der Waals":
+                self.update_charges_van_der_waals()
+            if self.division == "Bader":
+                self.update_charges_bader()
+
+    def update_charges_bader(self):
+        """Updates the charges in the atoms used for interaction with the Bader
+        algorithm.
+
+        This function uses an external Bader charge calculator from
+        http://theory.cm.utexas.edu/henkelman/code/bader/. This tool is
+        provided also in pysic/tools. Before using this function the bader
+        executable directory has to be added to PATH.
+        """
+        # First check that the bader executable is in PATH
+        if spawn.find_executable("bader") is None:
+            error((
+                "Cannot find the \"bader\" executable in PATH. The bader "
+                "executable is provided in the pysic/tools folder, or it can be "
+                "downloaded from http://theory.cm.utexas.edu/henkelman/code/bader/. "
+                "Ensure that the executable is named \"bader\", place it in any "
+                "directory you want and then add that directory to your system"
+                "PATH."))
+
+        self.timer.start("Bader charge calculation")
+        calc = self.calculator
+        atoms_with_links = self.atoms_for_subsystem.copy()
+        calc = self.calculator
+
+        # The electron density is calculated from the system with link atoms.
+        # This way the link atoms can modify the charge distribution
+        calc.set_atoms(atoms_with_links)
+
+        if self.source == "pseudo":
+            try:
+                density = np.array(calc.get_pseudo_density())
+            except AttributeError:
+                error("The calculator on subsystem \"" + self.name + "\" doesn't provide pseudo density.")
+
+        if self.source == "all-electron":
+            try:
+                density = np.array(calc.get_all_electron_density(gridrefinement=self.gridrefinement))
+            except AttributeError:
+                error("The calculator on subsystem \"" + self.name + "\" doesn't provide all electron density.")
+
+        wrk_dir = os.getcwd()+"/.BADERTEMP"
+        dir_created = False
+
+        # Write the density in bader supported units and format
+        if rank == 0:
+
+            # Create temporary folder for calculations
+            if not os.path.exists(wrk_dir):
+                os.makedirs(wrk_dir)
+                dir_created = True
+            else:
+                error("Tried to create a temporary folder in " + wrk_dir + ", but the folder already existed. Please remove it manually first.")
+
+            rho = density * Bohr**3
+            write(wrk_dir + '/electron_density.cube', atoms_with_links, data=rho)
+
+            # Run the bader executable in terminal. The bader executable included
+            # int pysic/tools has to be in the PATH/PYTHONPATH
+            command = "cd " + wrk_dir + "; bader electron_density.cube"
+            subprocess.check_output(command, shell=True)
+            #os.system("gnome-terminal --disable-factory -e '"+command+"'")
+
+        # Wait for the main process to write the file
+        barrier()
+
+        # Attach the charges to the atoms (safe because using a copy)
+        bader.attach_charges(atoms_with_links, wrk_dir + "/ACF.dat")
+
+        # Ignore the link atoms, and normalize the charge so that the initial
+        # charge is preserved
+        n_atoms = len(self.atoms_for_interaction)
+        atoms_without_links = atoms_with_links[0:n_atoms]
+
+        # The call for charges was changed between ASE 3.6 and 3.7
+        try:
+            bader_charges = np.array(atoms_without_links.get_initial_charges())
+        except:
+            bader_charges = np.array(atoms_without_links.get_charges())
+
+        # Set the calculated charges to the interaction atoms. The call for charges was
+        # changed between ASE 3.6 and 3.7
+        try:
+            self.atoms_for_interaction.set_initial_charges(bader_charges.tolist())
+        except:
+            self.atoms_for_interaction.set_charges(bader_charges.tolist())
+
+        # Remove the temporary files
+        if rank == 0:
+            if dir_created:
+                shutil.rmtree(wrk_dir)
+
+        self.timer.end()
+
+    def update_charges_van_der_waals(self):
+        """Updates the atomic charges by using the electron density within a
+        sphere of van Der Waals radius.
 
         The charge for each atom in the system is integrated from the electron
         density inside the van Der Waals radius of the atom in hand. The link
-        atoms will affect the distribution of the electron density, but through
-        normalization it is ensured that link atoms will not change the total
-        charge in the system
+        atoms will affect the distribution of the electron density.
         """
-        self.timer.start("Charge update")
+        self.timer.start("van Der Waals charge calculation")
 
         # Turn debugging on or off here
         debugging = False
 
-        atoms_without_links = self.atoms_for_binding
         atoms_with_links = self.atoms_for_subsystem
         calc = self.calculator
 
         # The electron density is calculated from the system with link atoms.
         # This way the link atoms can modify the charge distribution
         calc.set_atoms(atoms_with_links)
-        density = np.array(calc.get_pseudo_density())
+
+        if self.source == "pseudo":
+            try:
+                density = np.array(calc.get_pseudo_density())
+            except AttributeError:
+                error("The DFT calculator on subsystem \"" + self.name + "\" doesn't provide pseudo density.")
+
+        if self.source == "all-electron":
+            try:
+                density = np.array(calc.get_all_electron_density(gridrefinement=1))
+            except AttributeError:
+                error("The DFT calculator on subsystem \"" + self.name + "\" doesn't provide all electron density.")
 
         # Write the charge density as .cube file for VMD
         if debugging:
             write('nacl.cube', atoms_with_links, data=density)
-
-        initial_charges = self.initial_charges
-        atomic_numbers = np.array(atoms_without_links.get_atomic_numbers())
-        total_electron_charge = -np.sum(atomic_numbers)
 
         grid = self.density_grid
 
@@ -285,11 +454,10 @@ class SubSystemInternal(object):
             debug_list = []
 
         # The link atoms are at the end of the list
-        n_atoms = len(atoms_without_links)
+        n_atoms = len(atoms_with_links)
         projected_charges = np.zeros((1, n_atoms))
 
-        for i_atom in range(n_atoms):
-            atom = atoms_with_links[i_atom]
+        for i_atom, atom in enumerate(atoms_with_links):
             r_atom = atom.position
             z = atom.number
 
@@ -301,7 +469,10 @@ class SubSystemInternal(object):
             r_atom_array = np.tile(r_atom, (grid.shape[0], grid.shape[1], grid.shape[2], 1))
 
             diff = grid - r_atom_array
-            diff = np.linalg.norm(diff, axis=3)
+
+            # Numpy < 1.8 doesn't recoxnize axis argument on norm. This is a
+            # workaround for diff = np.linalg.norm(diff, axis=3)
+            diff = np.apply_along_axis(np.linalg.norm, 3, diff)
             indices = np.where(diff <= R)
             densities = density[indices]
             atom_charge = np.sum(densities)
@@ -334,75 +505,89 @@ class SubSystemInternal(object):
 
         # Normalize the projected charges according to the electronic charge in
         # the whole system excluding the link atom to preserve charge neutrality
+        atomic_numbers = np.array(atoms_with_links.get_atomic_numbers())
+        total_electron_charge = -np.sum(atomic_numbers)
         total_charge = np.sum(np.array(projected_charges))
         projected_charges *= total_electron_charge/total_charge
 
         # Add the nuclear charges and initial charges
         projected_charges += atomic_numbers
-        projected_charges += initial_charges
 
-        # Set the calculated charges to the atoms
-        self.atoms_for_binding.set_initial_charges(projected_charges[0, :].tolist())
-        self.calculated_charges = projected_charges
+        # Set the calculated charges to the atoms.  The call for charges was
+        # changed between ASE 3.6 and 3.7
+        try:
+            self.atoms_for_interaction.set_initial_charges(projected_charges[0, :].tolist())
+        except:
+            self.atoms_for_interaction.set_charges(projected_charges[0, :].tolist())
+
         self.pseudo_density = density
         self.timer.end()
 
     def get_potential_energy(self):
-        """@todo: Docstring for get_potential_energy.
-        :returns: @todo
+        """Returns the potential energy contained in this subsystem.
         """
         # Update the cell size if minimization is on
-        if self.info.cell_size_optimization:
-            self.minimize_cell()
+        if self.cell_size_optimization_enabled:
+            self.optimize_cell()
 
         # Ask the energy from the modified atoms (which include possible link
-        # atoms), and and possible corrections
-        self.timer.start("Calculator")
+        # atoms)
+        self.timer.start("Energy")
         self.potential_energy = self.calculator.get_potential_energy(
             self.atoms_for_subsystem)
         self.timer.end()
 
-        # Update the calculation grid on dft systems, so that it is available
-        # for charge updating
-        if self.dft_system:
-            self.update_density_grid()
+        # Update the calculation grid if charge calculation with van Der Waals
+        # division is enabled:
+        if self.charge_calculation_enabled:
+                if self.division == "van Der Waals":
+                    self.update_density_grid()
 
-        return self.potential_energy
+        return copy.copy(self.potential_energy)
 
     def get_forces(self):
-        """@todo: Docstring for get_potential_energy.
-        :returns: @todo
+        """Returns a 3D numpy array that contains forces for this subsystem.
+
+        The returned array contains a row for each atom in the full system, but
+        there is only an entry for the atoms in this subsystem. This makes it
+        easier to calculate the total forces later on.
         """
-
         # Update the cell size if minimization is on
-        if self.info.cell_size_optimization:
-            self.minimize_cell()
+        if self.cell_size_optimization_enabled:
+            self.optimize_cell()
 
-        # Calculate the forces, ignore forces on link atoms
-        self.timer.start("Calculator")
+        # Calculate the forces
+        self.timer.start("Forces")
         forces = self.calculator.get_forces(self.atoms_for_subsystem)
         self.timer.end()
 
-        force_map = []
-        for full_index, sub_index in self.index_map.iteritems():
+        # Ignore forces on link atoms, link atoms are at the end of the list
+        forces = forces[0:len(self.atoms_for_interaction), :]
+
+        # Store the forces in a suitable numpy array that can be added to the forces of
+        # the whole system
+        full_forces = np.zeros((self.n_atoms, 3))
+        for sub_index in range(len(self.atoms_for_interaction)):
+            full_index = self.reverse_index_map[sub_index]
             force = forces[sub_index, :]
-            index_force_pair = (full_index, force)
-            force_map.append(index_force_pair)
+            full_forces[full_index, :] = force
 
-        # Update the calculation grid on dft systems, so that it is available
-        # for charge updating
-        if self.dft_system:
-            self.update_density_grid()
+        # Update the calculation grid if charge calculation with van Der Waals
+        # division is enabled:
+        if self.charge_calculation_enabled:
+                if self.division == "van Der Waals":
+                    self.update_density_grid()
 
-        self.forces = force_map
-        return self.forces
+        self.forces = full_forces
+        return copy.copy(self.forces)
 
     def get_pseudo_density(self):
-        """Returns the electron pseudo density if available."""
+        """Returns the electron pseudo density if available.
+        """
         if self.pseudo_density is not None:
-            return self.pseudo_density
+            return copy.copy(self.pseudo_density)
         else:
             if hasattr(self.calculator, "get_pseudo_density"):
-                return self.calculator.get_pseudo_density(self.atoms_for_subsystem)
+                return copy.copy(self.calculator.get_pseudo_density(self.atoms_for_subsystem))
             else:
-                warn("The pseudo density for subsystem \"" + self.info.name + "\" is not available.", 2)
+                warn("The pseudo density for subsystem \"" + self.name + "\" is not available.", 2)

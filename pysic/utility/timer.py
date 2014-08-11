@@ -1,8 +1,18 @@
+#! /usr/bin/env python
+"""A module for tracking time usage."""
+
 import time
 import numpy as np
 from ase.parallel import rank
 
+
+#===============================================================================
 class Timer(object):
+    """Keeps track of time usage for different sections.
+
+    Usage: Define the section names in the constructor dictionary, control time
+    tracking with start() and stop().
+    """
 
     def __init__(self, record_time_usage, sections):
         self.start_time = 0
@@ -22,7 +32,6 @@ class Timer(object):
             elapsed = self.end_time - self.start_time
             self.sections[self.current_section] += elapsed
             self.current_section = None
-    
+
     def get_total_time(self):
         return np.sum(self.sections.values())
-

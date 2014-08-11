@@ -1,9 +1,10 @@
 #! /usr/bin/env python
-#
-# Used to make an ASE Atoms solution system from the given solvent and solute. 
-#
-#===============================================================================
+"""Used to make an ASE Atoms solution system from the given solvent and
+solute.
+"""
+
 import numpy as np
+
 
 def make_solution(solute, solvent, grid, lattice_constants, safe_distance, padding=5):
     """Surrounds the given solute with solvent.
@@ -44,12 +45,11 @@ def make_solution(solute, solvent, grid, lattice_constants, safe_distance, paddi
 
     solution = solute_copy.copy()
 
-    n_sites = grid[0]*grid[1]*grid[2]
     n_solvents = 0
     for x in range(grid[0]):
         for y in range(grid[1]):
             for z in range(grid[2]):
-                position = np.array((x*a+padding, y*b+padding, z*c+padding), dtype=float) 
+                position = np.array((x*a+padding, y*b+padding, z*c+padding), dtype=float)
                 i_solvent = solvent.copy()
                 cm = i_solvent.get_center_of_mass()
                 translation = position-cm
@@ -70,6 +70,3 @@ def make_solution(solute, solvent, grid, lattice_constants, safe_distance, paddi
                     n_solvents += 1
 
     return (solution, n_solvents)
-
-
-    

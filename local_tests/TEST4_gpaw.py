@@ -18,28 +18,34 @@ h2.center()
 
 #-------------------------------------------------------------------------------
 # Setup a hybrid calculation environment
-hc = HybridCalculator(record_time_usage=True)
+hc = HybridCalculator()
 
 # Initialize calculator for subsystems
 pysic_calc = Pysic()
-potential = Potential('LJ', cutoff=4.0, symbols=['H', 'H'], parameters=[0.1, 2.5])
-pysic_calc.add_potential(potential)
+potential1 = Potential('LJ', cutoff=4.0, symbols=['He', 'He'], parameters=[0.1, 2.5])
+potential2 = Potential('LJ', cutoff=4.0, symbols=['He', 'H'], parameters=[0.1, 2.5])
+pysic_calc.set_potentials([potential1, potential2])
 gpaw_calc = GPAW(h=0.4, txt=None)
 
 # Define subsystems
-hc.add_subsystem(SubSystem("primary", indices=[0, 1], calculator=gpaw_calc))
-hc.add_subsystem(SubSystem("secondary", special_set="remaining", calculator=pysic_calc))
+PS = SubSystem("primary", indices=[0, 1], calculator=gpaw_calc)
+PS.enable_charge_calculation(division="Bader", source="all-electron", gridrefinement=4)
+hc.add_subsystem(PS)
+hc.add_subsystem(SubSystem("secondary", indices="remaining", calculator=pysic_calc))
 
-# Define an embedding scheme between the subsystems
-# In this case the scheme is mechanical embedding with hydrogen links
-binding = Binding("primary", "secondary")
-binding.set_coulomb_interaction()
-binding.set_hydrogen_links((1, 2), 1)
-hc.add_binding(binding)
+# Define Interaction
+interaction = Interaction("primary", "secondary")
+interaction.enable_coulomb_potential()
+interaction.add_hydrogen_links((1, 2), 0.5)
+interaction.set_link_atom_correction(True)
+interaction.set_potentials(potential1)
+hc.add_interaction(interaction)
 
 #-------------------------------------------------------------------------------
 # Calculate the potential energy of the hybrid qm/mm system.
 hc.get_potential_energy(h2)
-hc.print_summary()
-hc.print_charge_summary()
+hc.get_forces()
+hc.print_interaction_charge_summary()
+hc.print_energy_summary()
+hc.print_force_summary()
 hc.view_subsystems()
