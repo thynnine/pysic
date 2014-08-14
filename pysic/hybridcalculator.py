@@ -558,13 +558,17 @@ class HybridCalculator(object):
 
     def calculate_subsystem_interaction_charges(self, name):
         """Returns the calculated interaction charges for the given subsystem.
+
+        Before the charges can be calulated, one energy calculation has to be
+        made so that the electron density is available
         """
         if self.subsystem_defined(name):
 
             # Initialize the subsystems and interactions if necessary
-            if self.system_initialized is False:
+            if not self.system_initialized:
                 self.initialize_system()
 
+            self.subsystems[name].get_potential_energy()
             self.subsystems[name].update_charges()
 
     def print_interaction_charge_summary(self):
@@ -630,46 +634,47 @@ class HybridCalculator(object):
     def print_time_summary(self):
         """Print a detailed summary of the time usage.
         """
-        self.total_timer.stop()
-        total_time = self.total_timer.get_total_time()
-        known_time = 0
+        if rank == 0:
+            self.total_timer.stop()
+            total_time = self.total_timer.get_total_time()
+            known_time = 0
 
-        for interaction in self.subsystem_interactions.values():
-            known_time += interaction.timer.get_total_time()
-        for subsystem in self.subsystems.values():
-            known_time += subsystem.timer.get_total_time()
+            for interaction in self.subsystem_interactions.values():
+                known_time += interaction.timer.get_total_time()
+            for subsystem in self.subsystems.values():
+                known_time += subsystem.timer.get_total_time()
 
-        unknown_time = total_time - known_time
-        message = []
+            unknown_time = total_time - known_time
+            message = []
 
-        for name, subsystem in self.subsystems.iteritems():
+            for name, subsystem in self.subsystems.iteritems():
 
-            message.append("Subsystem \"" + name + "\":")
-            subsystem_time = subsystem.timer.get_total_time()
+                message.append("Subsystem \"" + name + "\":")
+                subsystem_time = subsystem.timer.get_total_time()
 
-            if np.isclose(subsystem_time, 0):
-                message.append("    Time usage: 0 %")
-            else:
-                message.append("    Time usage: " + "{0:.1f}".format(subsystem_time/total_time*100.0) + " %")
-                for name, time in subsystem.timer.sections.iteritems():
-                    message.append("        " + name + ": " + "{0:.1f}".format(time/total_time*100.0) + " %")
+                if np.isclose(subsystem_time, 0):
+                    message.append("    Time usage: 0 %")
+                else:
+                    message.append("    Time usage: " + "{0:.1f}".format(subsystem_time/total_time*100.0) + " %")
+                    for name, time in subsystem.timer.sections.iteritems():
+                        message.append("        " + name + ": " + "{0:.1f}".format(time/total_time*100.0) + " %")
 
-        for pair, interaction in self.subsystem_interactions.iteritems():
+            for pair, interaction in self.subsystem_interactions.iteritems():
 
-            message.append("Interaction between \""+pair[0]+"\" and \""+pair[1] + ":")
-            interaction_time = interaction.timer.get_total_time()
+                message.append("Interaction between \""+pair[0]+"\" and \""+pair[1] + ":")
+                interaction_time = interaction.timer.get_total_time()
 
-            if np.isclose(interaction_time, 0):
-                message.append("    Time usage: 0 %")
-            else:
-                message.append("    Time usage: " + "{0:.1f}".format(interaction_time/total_time*100.0) + " %")
-                for name, time in interaction.timer.sections.iteritems():
-                    message.append("        " + name + ": " + "{0:.1f}".format(time/total_time*100.0) + " %")
+                if np.isclose(interaction_time, 0):
+                    message.append("    Time usage: 0 %")
+                else:
+                    message.append("    Time usage: " + "{0:.1f}".format(interaction_time/total_time*100.0) + " %")
+                    for name, time in interaction.timer.sections.iteritems():
+                        message.append("        " + name + ": " + "{0:.1f}".format(time/total_time*100.0) + " %")
 
-        message.append("Other tasks: " + "{0:.1f}".format(unknown_time/total_time*100.0) + " %")
+            message.append("Other tasks: " + "{0:.1f}".format(unknown_time/total_time*100.0) + " %")
 
-        str_message = style_message("HYBRIDCALCULATOR TIME SUMMARY", message)
-        parprint(str_message)
+            str_message = style_message("HYBRIDCALCULATOR TIME SUMMARY", message)
+            print(str_message)
 
     def print_force_summary(self):
         """Print a detailed summary of forces in the system.

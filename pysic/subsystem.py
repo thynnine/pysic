@@ -4,6 +4,7 @@ in a Pysic QM/MM hybrid calculation created with the HybridCalculator-class.
 """
 import numpy as np
 from pysic.utility.error import warn, error
+from pysic.utility.bader_charges import get_bader_charges
 import ase.data
 from pysic.utility.timer import Timer
 from ase import Atom, Atoms
@@ -375,87 +376,24 @@ class SubSystemInternal(object):
         provided also in pysic/tools. Before using this function the bader
         executable directory has to be added to PATH.
         """
-        # First check that the bader executable is in PATH
-        if spawn.find_executable("bader") is None:
-            error((
-                "Cannot find the \"bader\" executable in PATH. The bader "
-                "executable is provided in the pysic/tools folder, or it can be "
-                "downloaded from http://theory.cm.utexas.edu/henkelman/code/bader/. "
-                "Ensure that the executable is named \"bader\", place it in any "
-                "directory you want and then add that directory to your system"
-                "PATH."))
-
         self.timer.start("Bader charge calculation")
-        calc = self.calculator
-        atoms_with_links = self.atoms_for_subsystem.copy()
-        calc = self.calculator
 
-        # The electron density is calculated from the system with link atoms.
-        # This way the link atoms can modify the charge distribution
-        calc.set_atoms(atoms_with_links)
+        # The charges are calculated from the system that includes the link atoms
+        bader_charges = get_bader_charges(
+            self.atoms_for_subsystem,
+            self.calculator,
+            self.charge_source,
+            self.gridrefinement)
 
-        if self.charge_source == "pseudo":
-            try:
-                density = np.array(calc.get_pseudo_density())
-            except AttributeError:
-                error("The calculator on subsystem \"" + self.name + "\" doesn't provide pseudo density.")
+        # Set the calculated charges to the interaction atoms. The call for
+        # charges was changed between ASE 3.6 and 3.7. Ignore the link atoms
+        # from the list of Bader charges
+        n_limit = len(self.atoms_for_interaction)
 
-        if self.charge_source == "all-electron":
-            try:
-                density = np.array(calc.get_all_electron_density(gridrefinement=self.gridrefinement))
-            except AttributeError:
-                error("The calculator on subsystem \"" + self.name + "\" doesn't provide all electron density.")
-
-        wrk_dir = os.getcwd()+"/.BADERTEMP"
-        dir_created = False
-
-        # Write the density in bader supported units and format
-        if rank == 0:
-
-            # Create temporary folder for calculations
-            if not os.path.exists(wrk_dir):
-                os.makedirs(wrk_dir)
-                dir_created = True
-            else:
-                error("Tried to create a temporary folder in " + wrk_dir + ", but the folder already existed. Please remove it manually first.")
-
-            rho = density * Bohr**3
-            write(wrk_dir + '/electron_density.cube', atoms_with_links, data=rho)
-
-            # Run the bader executable in terminal. The bader executable included
-            # int pysic/tools has to be in the PATH/PYTHONPATH
-            command = "cd " + wrk_dir + "; bader electron_density.cube"
-            subprocess.check_output(command, shell=True)
-            #os.system("gnome-terminal --disable-factory -e '"+command+"'")
-
-        # Wait for the main process to write the file
-        barrier()
-
-        # Attach the charges to the atoms (safe because using a copy)
-        bader.attach_charges(atoms_with_links, wrk_dir + "/ACF.dat")
-
-        # Ignore the link atoms, and normalize the charge so that the initial
-        # charge is preserved
-        n_atoms = len(self.atoms_for_interaction)
-        atoms_without_links = atoms_with_links[0:n_atoms]
-
-        # The call for charges was changed between ASE 3.6 and 3.7
         try:
-            bader_charges = np.array(atoms_without_links.get_initial_charges())
+            self.atoms_for_interaction.set_initial_charges(bader_charges[0:n_limit])
         except:
-            bader_charges = np.array(atoms_without_links.get_charges())
-
-        # Set the calculated charges to the interaction atoms. The call for charges was
-        # changed between ASE 3.6 and 3.7
-        try:
-            self.atoms_for_interaction.set_initial_charges(bader_charges.tolist())
-        except:
-            self.atoms_for_interaction.set_charges(bader_charges.tolist())
-
-        # Remove the temporary files
-        if rank == 0:
-            if dir_created:
-                shutil.rmtree(wrk_dir)
+            self.atoms_for_interaction.set_charges(bader_charges[0:n_limit])
 
         self.timer.stop()
 
