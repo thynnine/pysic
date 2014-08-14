@@ -6,6 +6,7 @@ from ase import Atoms
 from pysic.subsystem import *
 from pysic.interaction import *
 from ase.parallel import parprint
+from pysic.utility.timer import Timer
 import colorsys
 import ase.data.colors
 import copy
@@ -22,21 +23,42 @@ class HybridCalculator(object):
     You can also define hydrogen link atoms in the interfaces of these
     subsystems or define any Pysic Potentials through which the subsystems
     interact with each other.
+
+    Attributes:
+            Whether the calculator keeps track of the time usage.
+        total_timer: :class:'~pysic.utility.timer.Timer'
+            Keeps track of the total time spent in the calculations.
+        subsystem_energies: dictionary
+            Name to energy.
+        subsystems: dictionary
+            Name to SubSystemInternal.
+        subsystem_interactions: dictionary
+            Pair of names to InteractionInternal.
+        subsystem_info: dictionary
+            Name to SubSystem.
+        interaction_info: dictionary
+            Pair of names to Interaction.
+        forces: numpy array
+        stress: None
+        potential_energy: float
+        system_initialized: bool
+            Indicates whether the SubSystemInternals and InteractionInternals
+            have been constructed.
+        self.atoms: ASE Atoms
+            The full system.
     """
     #---------------------------------------------------------------------------
     # Hybrid methods
 
-    def __init__(self, atoms=None, record_time_usage=True):
+    def __init__(self, atoms=None):
         """
         Parameters:
             atoms: ASE Atoms
                 The full system. You can later on define it with set_atoms, or
                 provide it directly in get_potential_energy()/get_forces().
-            record_time_usage: bool
-                Whether the time usage in different parts of the code is
-                tracked.
         """
-        self.record_time_usage = record_time_usage
+        self.total_timer = Timer(["total"])
+        self.total_timer.start("total")
         self.subsystem_energies = {}
         self.subsystems = {}
         self.subsystem_interactions = {}
@@ -156,8 +178,7 @@ class HybridCalculator(object):
             self.atoms,
             self.subsystems[primary],
             self.subsystems[secondary],
-            info,
-            self.record_time_usage)
+            info)
         self.subsystem_interactions[(primary, secondary)] = interaction
 
     def initialize_subsystem(self, info):
@@ -190,7 +211,6 @@ class HybridCalculator(object):
             info,
             index_map,
             reverse_index_map,
-            self.record_time_usage,
             len(self.atoms))
         self.subsystems[name] = subsystem
 
@@ -512,89 +532,10 @@ class HybridCalculator(object):
         return np.copy(self.forces)
 
     def get_stress(self, atoms=None, skip_charge_relaxation=False):
-        """Returns the stress tensor in the format
-        :math:`[\sigma_{xx},\sigma_{yy},\sigma_{zz},\sigma_{yz},\sigma_{xz},\sigma_{xy}]`
-
-        If the atoms parameter is given, it will be used for updating the
-        structure assigned to the calculator prior to calculating the stress.
-        Otherwise the structure already associated with the calculator is used.
-
-        The calculator checks if the stress has been calculated already via
-        :meth:`~pysic.calculator.Pysic.calculation_required`. If the structure
-        has changed, the stress is calculated using
-        :meth:`~pysic.calculator.Pysic.calculate_stress`
-
-        Stress (potential part) and force are evaluated in tandem.  Therefore,
-        invoking the evaluation of one automatically leads to the evaluation of
-        the other. Thus, if you have just evaluated the forces, the stress will
-        already be known.
-
-        This is because the
-        stress tensor is formally defined as
-
-        .. math::
-
-            \\sigma_{AB} = -\\frac{1}{V} \\sum_i \\left[ m_i (v_i)_A (v_i)_B + (r_i)_A (f_i)_B \\right],
-
-        where :math:`m`, :math:`v`, :math:`r`, and :math:`f` are mass,
-        velocity, position and force of atom :math:`i`, and :math:`A`,
-        :math:`B` denote the cartesian coordinates :math:`x,y,z`.  (The minus
-        sign is there just to be consistent with the NPT routines in `ASE`_.)
-        However, if periodic boundaries are used, the absolute coordinates
-        cannot be used (there would be discontinuities at the boundaries of the
-        simulation cell). Instead, the potential energy terms :math:`(r_i)_A
-        (f_i)_B` must be evaluated locally for pair, triplet, and many body
-        forces using the relative coordinates of the particles involved in the
-        local interactions. These coordinates are only available during the
-        actual force evaluation when the local interactions are looped over.
-        Thus, calculating the stress requires doing the full force evaluation
-        cycle. On the other hand, calculating the stress is not a great effort
-        compared to the force evaluation, so it is convenient to evaluate the
-        stress always when the forces are evaluated.
-
-        Parameters:
-
-        atoms: `ASE atoms`_ object
-            the structure for which the stress is determined
+        """This function has not been implemented.
         """
         warn("Stress has no been implemented yet.", 2)
-        return false
-
-        ## Can't do calculation without atoms
-        #if self.atoms is None and atoms is None:
-            #warn(("No Atoms object given to the calculator. "
-                  #"Please provide atoms as an argument, or use set_atoms()"), 2)
-
-        ## See if calculation is required
-        #if self.calculation_required(atoms, 'stress'):
-
-            ## Update the system if necessary
-            #if atoms is not None:
-                #if not self.identical_atoms(atoms):
-                    #self.update_system(atoms)
-
-            ## Initialize the subsystems and interactions if necessary
-            #if self.system_initialized is False:
-                #self.initialize_system()
-
-        ## self.stress contains the potential contribution to the stress tensor
-        ## but we add the kinetic contribution on the fly
-        #momenta = self.structure.get_momenta()
-        #masses = self.structure.get_masses()
-        #velocities = np.divide(momenta, np.array([masses, masses, masses]).transpose())
-
-        #kinetic_stress = np.array([0.0]*6)
-
-        ## s_xx, s_yy, s_zz, s_yz, s_xz, s_xy
-        #kinetic_stress[0] = np.dot(momenta[:, 0], velocities[:, 0])
-        #kinetic_stress[1] = np.dot(momenta[:, 1], velocities[:, 1])
-        #kinetic_stress[2] = np.dot(momenta[:, 2], velocities[:, 2])
-        #kinetic_stress[3] = np.dot(momenta[:, 1], velocities[:, 2])
-        #kinetic_stress[4] = np.dot(momenta[:, 0], velocities[:, 2])
-        #kinetic_stress[5] = np.dot(momenta[:, 0], velocities[:, 1])
-
-        ## ASE NPT simulator wants the pressure with an inversed sign
-        #return np.copy(-(kinetic_stress + self.stress) / self.structure.get_volume())
+        return None
 
     #---------------------------------------------------------------------------
     # Miscellanous utility functions
@@ -683,26 +624,22 @@ class HybridCalculator(object):
                 link_atom_correction_energy = str(interaction.link_atom_correction_energy)
             message.append("        Link atom correction energy: "+link_atom_correction_energy)
 
-            ## Uncorrected interaction energy
-            #if interaction.uncorrected_interaction_energy is None:
-                #uncorrected_interaction_energy = "Not calculated"
-            #else:
-                #uncorrected_interaction_energy = str(interaction.uncorrected_interaction_energy)
-            #message.append("        Interaction energy w/o link atom correction: "+uncorrected_interaction_energy)
-
         str_message = style_message("HYBRIDCALCULATOR ENERGY SUMMARY", message)
         parprint(str_message)
 
     def print_time_summary(self):
         """Print a detailed summary of the time usage.
         """
-        total_time = 0
-        for interaction in self.subsystem_interactions.values():
-            total_time += interaction.timer.get_total_time()
-        for subsystem in self.subsystems.values():
-            total_time += subsystem.timer.get_total_time()
+        self.total_timer.stop()
+        total_time = self.total_timer.get_total_time()
+        known_time = 0
 
-        time_not_used = np.isclose(total_time, 0.0)
+        for interaction in self.subsystem_interactions.values():
+            known_time += interaction.timer.get_total_time()
+        for subsystem in self.subsystems.values():
+            known_time += subsystem.timer.get_total_time()
+
+        unknown_time = total_time - known_time
         message = []
 
         for name, subsystem in self.subsystems.iteritems():
@@ -710,32 +647,26 @@ class HybridCalculator(object):
             message.append("Subsystem \"" + name + "\":")
             subsystem_time = subsystem.timer.get_total_time()
 
-            if self.record_time_usage:
-                if time_not_used:
-                    message.append("    Time usage: 0 %")
-                else:
-                    if np.isclose(subsystem_time, 0):
-                        message.append("    Time usage: 0 %")
-                    else:
-                        message.append("    Time usage: " + "{0:.1f}".format(subsystem_time/total_time*100.0) + " %")
-                        for name, time in subsystem.timer.sections.iteritems():
-                            message.append("        " + name + ": " + "{0:.1f}".format(time/total_time*100.0) + " %")
+            if np.isclose(subsystem_time, 0):
+                message.append("    Time usage: 0 %")
+            else:
+                message.append("    Time usage: " + "{0:.1f}".format(subsystem_time/total_time*100.0) + " %")
+                for name, time in subsystem.timer.sections.iteritems():
+                    message.append("        " + name + ": " + "{0:.1f}".format(time/total_time*100.0) + " %")
 
         for pair, interaction in self.subsystem_interactions.iteritems():
 
             message.append("Interaction between \""+pair[0]+"\" and \""+pair[1] + ":")
             interaction_time = interaction.timer.get_total_time()
 
-            if self.record_time_usage:
-                if time_not_used:
-                    message.append("    Time usage: 0 %")
-                else:
-                    if np.isclose(interaction_time, 0):
-                        message.append("    Time usage: 0 %")
-                    else:
-                        message.append("    Time usage: " + "{0:.1f}".format(interaction_time/total_time*100.0) + " %")
-                        for name, time in interaction.timer.sections.iteritems():
-                            message.append("        " + name + ": " + "{0:.1f}".format(time/total_time*100.0) + " %")
+            if np.isclose(interaction_time, 0):
+                message.append("    Time usage: 0 %")
+            else:
+                message.append("    Time usage: " + "{0:.1f}".format(interaction_time/total_time*100.0) + " %")
+                for name, time in interaction.timer.sections.iteritems():
+                    message.append("        " + name + ": " + "{0:.1f}".format(time/total_time*100.0) + " %")
+
+        message.append("Other tasks: " + "{0:.1f}".format(unknown_time/total_time*100.0) + " %")
 
         str_message = style_message("HYBRIDCALCULATOR TIME SUMMARY", message)
         parprint(str_message)
@@ -787,15 +718,6 @@ class HybridCalculator(object):
                 for i, force in enumerate(interaction.link_atom_correction_forces):
                     message.append("    " + str(i) + ": " + str(force))
             message.append("")
-
-            ## Total link atom correction
-            #message.append("  Without link atom correction:")
-            #if interaction.uncorrected_interaction_forces is None:
-                #message.append("      Not calculated")
-            #else:
-                #for i, force in enumerate(interaction.uncorrected_interaction_forces):
-                    #message.append("    " + str(i) + ": " + str(force))
-            #message.append("")
 
         str_message = style_message("HYBRIDCALCULATOR FORCE SUMMARY", message)
         parprint(str_message)

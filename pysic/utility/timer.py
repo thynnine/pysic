@@ -14,11 +14,12 @@ class Timer(object):
     tracking with start() and stop().
     """
 
-    def __init__(self, record_time_usage, sections):
+    def __init__(self, section_names):
         self.start_time = 0
         self.end_time = 0
-        self.record_time_usage = False
-        self.sections = sections
+        self.sections = {}
+        for name in section_names:
+            self.sections[name] = 0
         self.current_section = None
 
     def start(self, section_name):
@@ -26,7 +27,7 @@ class Timer(object):
             self.current_section = section_name
             self.start_time = time.time()
 
-    def end(self):
+    def stop(self):
         if rank == 0:
             self.end_time = time.time()
             elapsed = self.end_time - self.start_time

@@ -22,8 +22,8 @@ hc = HybridCalculator()
 
 # Initialize calculator for subsystems
 pysic_calc = Pysic()
-potential1 = Potential('LJ', cutoff=4.0, symbols=['He', 'He'], parameters=[0.1, 2.5])
-potential2 = Potential('LJ', cutoff=4.0, symbols=['He', 'H'], parameters=[0.1, 2.5])
+potential1 = Potential('LJ', cutoff=4.0, symbols=['He', 'He'], parameters=[0.1, 1])
+potential2 = Potential('LJ', cutoff=4.0, symbols=['He', 'H'], parameters=[0.1, 1])
 pysic_calc.set_potentials([potential1, potential2])
 gpaw_calc = GPAW(h=0.4, txt=None)
 
@@ -48,4 +48,5 @@ hc.get_forces()
 hc.print_interaction_charge_summary()
 hc.print_energy_summary()
 hc.print_force_summary()
+hc.print_time_summary()
 hc.view_subsystems()

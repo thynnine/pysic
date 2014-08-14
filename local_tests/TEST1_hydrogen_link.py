@@ -64,5 +64,5 @@ print "Forces with traditional calculation: " + str(real_forces)
 
 #hc.print_energy_summary()
 #hc.print_force_summary()
-#hc.print_time_summary()
+hc.print_time_summary()
 #hc.view_subsystems()

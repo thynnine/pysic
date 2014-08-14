@@ -26,6 +26,22 @@ class Interaction(object):
 
     When the HybridCalculator sees fit, the subsystem bindings are materialized
     by converting the stored Interactions to InteractionInternals.
+
+    Attributes:
+        primary: string
+            Name of the primary subsystem.
+        secondary: string
+            Name of the secondary subsystem.
+        links: list of tuples
+            Contains a list of different link types. Each list item is a tuple
+            with two items: the first is a list of link pairs, the second one
+            is the CHL parameter for these links.
+        electrostatic_parameters: dictionary
+            Contains all the parameters used for creating a Coulomb potential.
+        coulomb_potential_enabled: bool
+        comb_potential_enabled: bool
+        link_atom_correction_enabled: bool
+        potentials: list of :class:`~pysic.interactions.local.Potential`
     """
     def __init__(self,
                  primary,
@@ -59,6 +75,14 @@ class Interaction(object):
             self.potentials = potentials
         else:
             self.potentials = [potentials]
+
+    def add_potential(self, potential):
+        """Used to add a Pysic potential between the subsystems.
+
+        Parameters:
+            potential: :class:`~pysic.interactions.local.Potential`
+        """
+        self.potentials.append(potential)
 
     def enable_coulomb_potential(
             self,
@@ -139,6 +163,44 @@ class InteractionInternal(object):
 
     This class is meant only for internal use, and should not be accessed by
     the end-user.
+
+    Attributes:
+        info: :class:'~Pysic.interaction.Interaction'
+        full_system: ASE Atoms
+        primary_subsystem: :class:`~pysic.subsystem.SubSystem`
+        secondary_subsystem: :class:`~pysic.subsystem.SubSystem`
+        uncorrected_interaction_energy: float
+            The interaction energy without the link atom correction.
+        uncorrected_interaction_forces: numpy array
+            The interaction forces without the link atom correction.
+        link_atom_correction_energy: float
+        link_atom_correction_forces: numpy array
+        interaction_energy: float
+            The total interaction energy = uncorrected_interaction_energy +
+            link_atom_correction_energy
+        interaction_forces: numpy array
+            The total interaction forces = uncorrected_interaction_forces +
+            link_atom_correction_forces
+        has_interaction_potentials: bool
+            True if any potentials are defined.
+        calculator: :class:'~pysic.calculator.Pysic'
+            The pysic calculator used for non-pbc systems.
+        pbc_calculator: :class:'~pysic.calculator.Pysic'
+            The pysic calculator used for pbc systems.
+        timer: :class:'~pysic.utility.timer.Timer'
+            Used for tracking time usage.
+        has_pbc: bool
+        link_atoms: ASE Atoms
+            Contains all the hydrogen link atoms. Needed when calculating link
+            atom correction.
+        n_primary: int
+            Number of atoms in primary subsystem.
+        n_secondary: int
+            Number of atoms in secondary subsystem.
+        n_full: int
+            Number of atoms in full system.
+        n_links: int
+            Number of link atoms.
     """
 
     def __init__(
@@ -146,15 +208,13 @@ class InteractionInternal(object):
             full_system,
             primary_subsystem,
             secondary_subsystem,
-            info,
-            record_time_usage):
+            info):
         """
         Parameters:
             full_system: ASE Atoms
             primary_subsystem: :class:`~pysic.subsystem.SubSystem`
             secondary_subsystem: :class:`~pysic.subsystem.SubSystem`
             info: :class:`~pysic.interaction.Interaction`
-            record_time_usage: bool
         """
         self.info = info
         self.full_system = full_system
@@ -177,19 +237,16 @@ class InteractionInternal(object):
         if len(self.info.potentials) != 0:
             self.has_interaction_potentials = True
 
-        self.finite_calculator = Pysic()
+        self.calculator = Pysic()
         self.pbc_calculator = Pysic()
 
-        self.timer = Timer(
-            record_time_usage,
-            {
-                "Interaction": 0,
-                "Interaction (PBC)": 0,
-                "Forces": 0,
-                "Forces (PBC)": 0,
-                "Link atom correction energy": 0,
-                "Link atom correction forces": 0
-            })
+        self.timer = Timer([
+            "Interaction",
+            "Interaction (PBC)",
+            "Forces",
+            "Forces (PBC)",
+            "Link atom correction energy",
+            "Link atom correction forces"])
 
         # The interaction needs to know if PBC:s are on
         pbc = primary_subsystem.atoms_for_interaction.get_pbc()
@@ -200,7 +257,7 @@ class InteractionInternal(object):
 
         # Initialize hydrogen links
         self.link_atoms = None
-        self.set_hydrogen_links(info.links)
+        self.setup_hydrogen_links(info.links)
 
         # Store the number of atoms in different systems
         self.n_primary = len(primary_subsystem.atoms_for_interaction)
@@ -211,25 +268,23 @@ class InteractionInternal(object):
         else:
             self.n_links = 0
 
-        self.n_primary_and_links = len(self.primary_subsystem.atoms_for_subsystem)
-
         # Initialize the COMB potential first (set_potentials(COMB) is used,
         # because it isn' the same as add_potential(COMB))
         if info.comb_potential_enabled:
-            self.enable_comb_potential()
+            self.setup_comb_potential()
 
         # Initialize the coulomb interaction
         if info.electrostatic_parameters is not None:
-            self.enable_coulomb_potential(info.electrostatic_parameters)
+            self.setup_coulomb_potential()
 
         # Add the other potentials
-        self.set_potentials()
+        self.setup_potentials()
 
         # Can't enable link atom correction on system without link atoms
         if len(info.links) == 0:
             self.info.link_atom_correction_enabled = False
 
-    def set_hydrogen_links(self, links):
+    def setup_hydrogen_links(self, links):
         """Setup the hydrogen link atoms to the primary system.
 
         Parameters:
@@ -338,16 +393,14 @@ class InteractionInternal(object):
             # Add the number of links in this bond type to the counter
             counter += len(pairs)
 
-    def enable_coulomb_potential(self, parameters):
+    def setup_coulomb_potential(self):
         """Setups a Coulomb potential between the subsystems.
 
         Ewald calculation is automatically used for pbc-systems. Non-pbc
         systems use the ProductPotential to reproduce the Coulomb potential.
-
-        Parameters:
-            parameters: dictionary
-                Contains the Coulomb parameters from the Interaction-object.
         """
+        parameters = self.info.electrostatic_parameters
+
         # Check that that should Ewald summation be used and if so, that all the
         # needed parameters are given
         if self.has_pbc:
@@ -391,11 +444,11 @@ class InteractionInternal(object):
             coul2 = Potential('charge_pair', parameters=[kc, 1, 1])
             coulomb_potential = ProductPotential([coul1, coul2])
 
-            self.finite_calculator.add_potential(coulomb_potential)
+            self.calculator.add_potential(coulomb_potential)
 
         self.has_coulomb_interaction = True
 
-    def enable_comb_potential(self):
+    def setup_comb_potential(self):
         """Setups a COMB-potential between the subsystems.
         """
         COMB = CombPotential(excludes=[])
@@ -405,7 +458,7 @@ class InteractionInternal(object):
         # constructor.
         self.pbc_calculator.set_potentials(COMB)
 
-    def set_potentials(self):
+    def setup_potentials(self):
         """Setups the additional Pysic potentials given in the
         Interaction-object.
         """
@@ -432,7 +485,7 @@ class InteractionInternal(object):
                 trimmed_potential = copy(potential)
                 trimmed_potential.set_symbols(None)
                 trimmed_potential.set_indices(pairs)
-                self.finite_calculator.add_potential(trimmed_potential)
+                self.calculator.add_potential(trimmed_potential)
 
         # If pbcs are on, the interactions need to be calculated with pbc
         # calculator
@@ -451,12 +504,12 @@ class InteractionInternal(object):
         primary_atoms = self.primary_subsystem.atoms_for_interaction
         link_atoms = self.link_atoms
         primary_and_link_atoms = primary_atoms + link_atoms
-        secondary_calculator = self.secondary_subsystem.interaction_calculator
+        secondary_calculator = self.secondary_subsystem.calculator
 
         # The Pysic calculators in one simulation all share one CoreMirror
         # object that contains the data about the Atoms. This object should be
         # automatically updated if the number of atoms changes. This is however
-        # not happening for some reason, so we force the updation here. TODO:
+        # not happening for some reason, so we temporarily force the updation here. TODO:
         # Find out why this is the case
         secondary_calculator.force_core_initialization = True
 
@@ -464,10 +517,12 @@ class InteractionInternal(object):
         E2 = secondary_calculator.get_potential_energy(primary_and_link_atoms)
         E3 = secondary_calculator.get_potential_energy(primary_atoms)
 
+        secondary_calculator.force_core_initialization = False
+
         link_atom_correction_energy = -E1 - (E2 - E1 - E3)
 
         self.link_atom_correction_energy = link_atom_correction_energy
-        self.timer.end()
+        self.timer.stop()
 
         return copy(self.link_atom_correction_energy)
 
@@ -482,12 +537,12 @@ class InteractionInternal(object):
         primary_atoms = self.primary_subsystem.atoms_for_interaction
         link_atoms = self.link_atoms
         primary_and_link_atoms = primary_atoms + link_atoms
-        secondary_calculator = self.secondary_subsystem.interaction_calculator
+        secondary_calculator = self.secondary_subsystem.calculator
 
         # The Pysic calculators in one simulation all share one CoreMirror
         # object that contains the data about the Atoms. This object should be
         # automatically updated if the number of atoms changes. This is however
-        # not happening for some reason, so we force the updation here. TODO:
+        # not happening for some reason, so we temporarily force the updation here. TODO:
         # Find out why this is the case
         secondary_calculator.force_core_initialization = True
 
@@ -503,6 +558,8 @@ class InteractionInternal(object):
         F1 = secondary_calculator.get_forces(link_atoms)
         F2 = secondary_calculator.get_forces(primary_and_link_atoms)
         F3 = secondary_calculator.get_forces(primary_atoms)
+
+        secondary_calculator.force_core_initialization = False
 
         forces += F2
         forces -= np.concatenate((F3, primary_postfix), axis=0)
@@ -521,7 +578,7 @@ class InteractionInternal(object):
             link_atom_correction_forces[full_index, :] = force
 
         self.link_atom_correction_forces = link_atom_correction_forces
-        self.timer.end()
+        self.timer.stop()
 
         return copy(link_atom_correction_forces)
 
@@ -535,9 +592,9 @@ class InteractionInternal(object):
         secondary = self.secondary_subsystem.atoms_for_interaction
         combined = primary + secondary
 
-        finite_energy = self.finite_calculator.get_potential_energy(combined)
+        finite_energy = self.calculator.get_potential_energy(combined)
         self.uncorrected_interaction_energy = finite_energy
-        self.timer.end()
+        self.timer.stop()
 
         return copy(finite_energy)
 
@@ -556,7 +613,7 @@ class InteractionInternal(object):
         pbc_energy -= self.pbc_calculator.get_potential_energy(secondary)
 
         self.uncorrected_interaction_energy = pbc_energy
-        self.timer.end()
+        self.timer.stop()
 
         return copy(pbc_energy)
 
@@ -570,11 +627,9 @@ class InteractionInternal(object):
         combined_system = primary + secondary
 
         ## Forces due to finite coulomb potential and other pysic potentials
-        #pysic_calc = Pysic()
-        #forces = np.array(pysic_calc.get_forces(combined_system))
-        forces = np.array(self.finite_calculator.get_forces(combined_system))
+        forces = np.array(self.calculator.get_forces(combined_system))
         self.uncorrected_interaction_forces = forces
-        self.timer.end()
+        self.timer.stop()
 
         return copy(forces)
 
@@ -596,7 +651,7 @@ class InteractionInternal(object):
         forces -= np.concatenate((self.pbc_calculator.get_forces(primary), primary_postfix), axis=0)
         forces -= np.concatenate((secondary_prefix, self.pbc_calculator.get_forces(secondary)), axis=0)
         self.uncorrected_interaction_forces = forces
-        self.timer.end()
+        self.timer.stop()
 
         return copy(forces)
 

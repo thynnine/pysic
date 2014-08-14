@@ -30,6 +30,25 @@ class SubSystem(object):
 
     When the HybridCalculator sees fit, the subsystems are materialized by
     converting the stored SubSystems into SubSystemInternals.
+
+    Attributes:
+        name: string
+        calculator: ASE Calculator
+        cell_size_optimization_enabled: bool
+        cell_padding: float
+            The padding used when optimizing the cell size.
+        charge_calculation_enabled: bool
+        charge_source: string
+            Indicates the electron density that is used in charge calculation.
+            Can be "pseudo" or "all-electron".
+        division: string
+            Indicates the division algorithm used in charge caluclation. Can be
+            "Bader" or "van Der Waals".
+        gridrefinement: int
+            The factor by which the calculation grid is densified in charge
+            calculation.
+        indices: list of ints
+        tag: int
     """
 
     def __init__(self,
@@ -55,9 +74,10 @@ class SubSystem(object):
         self.cell_size_optimization_enabled = False
         self.cell_padding = None
         self.charge_calculation_enabled = False
-        self.source = None
+        self.charge_source = None
         self.division = None
         self.gridrefinement = None
+
         self.set_atoms(indices, tag)
 
     def is_valid(self, indices, tag):
@@ -143,12 +163,12 @@ class SubSystem(object):
                 all-electron density.
         """
         divisions = ["Bader", "van Der Waals"]
-        sources = ["pseudo", "all-electron"]
+        charge_sources = ["pseudo", "all-electron"]
 
         if division not in divisions:
             error("Invalid division algorithm: " + division)
 
-        if source not in sources:
+        if source not in charge_sources:
             error("Invalid source for electron density: " + source)
 
         if gridrefinement != 1:
@@ -157,7 +177,7 @@ class SubSystem(object):
 
         self.charge_calculation_enabled = True
         self.division = division
-        self.source = source
+        self.charge_source = source
         self.gridrefinement = gridrefinement
 
 
@@ -168,8 +188,39 @@ class SubSystemInternal(object):
 
     This class is materialised from a SubSystem, and should not be
     accessible to the end user.
+
+    Attributes:
+        name: string
+        calculator: ASE Calculator
+        cell_size_optimization_enabled: bool
+        cell_padding: float
+        charge_calculation_enabled: bool
+        charge_source: string
+        division: string
+        gridrefinement: int
+        n_atoms: int
+            Number of atoms in the full system.
+        atoms_for_interaction: ASE Atoms
+            The copy of subsystems atoms used in interaction calculations.
+        atoms_for_subsystem: ASE Atoms
+            The copy of subsystems atoms used in calculating subsystem energies
+            etc.
+        index_map: dictionary of int to int
+            The keys are the atom indices in the full system, values are
+            indices in the subssystem.
+        reverse_index_map: dicitonary of int to int
+            The keys are the atom indices in the subsystem, values are the
+            keys in the full system.
+        potential_energy: float
+        forces: numpy array
+        density_grid: numpy array
+            Stored if spherical division is used in charge calculation.
+        pseudo_density: numpy array
+        link_atom_indices: list
+        timer: :class:'~pysic.utility.timer.Timer'
+            Used to keep track of time usage.
     """
-    def __init__(self, atoms, info, index_map, reverse_index_map, record_time_usage, n_atoms):
+    def __init__(self, atoms, info, index_map, reverse_index_map, n_atoms):
         """
         Parameters:
             atoms: ASE Atoms
@@ -182,18 +233,16 @@ class SubSystemInternal(object):
             reverse_index_map: dicitonary of int to int
                 The keys are the atom indices in the subsystem, values are the
                 keys in the full system.
-            record_time_usage: bool
             n_atoms: int
                 Number of atoms in the full system.
         """
         # Extract data from info
         self.name = info.name
         self.calculator = copy.copy(info.calculator)
-        self.interaction_calculator = copy.copy(info.calculator)
         self.cell_size_optimization_enabled = info.cell_size_optimization_enabled
         self.cell_padding = info.cell_padding
         self.charge_calculation_enabled = info.charge_calculation_enabled
-        self.source = info.source
+        self.charge_source = info.charge_source
         self.division = info.division
         self.gridrefinement = info.gridrefinement
 
@@ -207,15 +256,13 @@ class SubSystemInternal(object):
         self.density_grid = None
         self.pseudo_density = None
         self.link_atom_indices = []
-        self.timer = Timer(record_time_usage,
-                           {
-                               "Bader charge calculation": 0,
-                               "van Der Waals charge calculation": 0,
-                               "Energy": 0,
-                               "Forces": 0,
-                               "Density grid update": 0,
-                               "Cell minimization": 0
-                           })
+        self.timer = Timer([
+            "Bader charge calculation",
+            "van Der Waals charge calculation",
+            "Energy",
+            "Forces",
+            "Density grid update",
+            "Cell minimization"])
 
         # The older ASE versions do not support get_initial_charges()
         try:
@@ -273,7 +320,7 @@ class SubSystemInternal(object):
         optimized_cell = np.array([2*padding + x_max - x_min, 2*padding + y_max - y_min, 2*padding + z_max - z_min])
         self.atoms_for_subsystem.set_cell(optimized_cell)
         self.atoms_for_subsystem.center()
-        self.timer.end()
+        self.timer.stop()
 
     def update_density_grid(self):
         """Precalculates a grid of 3D points for the charge calculation with
@@ -308,7 +355,7 @@ class SubSystemInternal(object):
                     density_grid[x, y, z, :] = r
 
         self.density_grid = density_grid
-        self.timer.end()
+        self.timer.stop()
 
     def update_charges(self):
         """Updates the charges in the system.
@@ -347,13 +394,13 @@ class SubSystemInternal(object):
         # This way the link atoms can modify the charge distribution
         calc.set_atoms(atoms_with_links)
 
-        if self.source == "pseudo":
+        if self.charge_source == "pseudo":
             try:
                 density = np.array(calc.get_pseudo_density())
             except AttributeError:
                 error("The calculator on subsystem \"" + self.name + "\" doesn't provide pseudo density.")
 
-        if self.source == "all-electron":
+        if self.charge_source == "all-electron":
             try:
                 density = np.array(calc.get_all_electron_density(gridrefinement=self.gridrefinement))
             except AttributeError:
@@ -410,7 +457,7 @@ class SubSystemInternal(object):
             if dir_created:
                 shutil.rmtree(wrk_dir)
 
-        self.timer.end()
+        self.timer.stop()
 
     def update_charges_van_der_waals(self):
         """Updates the atomic charges by using the electron density within a
@@ -432,13 +479,13 @@ class SubSystemInternal(object):
         # This way the link atoms can modify the charge distribution
         calc.set_atoms(atoms_with_links)
 
-        if self.source == "pseudo":
+        if self.charge_source == "pseudo":
             try:
                 density = np.array(calc.get_pseudo_density())
             except AttributeError:
                 error("The DFT calculator on subsystem \"" + self.name + "\" doesn't provide pseudo density.")
 
-        if self.source == "all-electron":
+        if self.charge_source == "all-electron":
             try:
                 density = np.array(calc.get_all_electron_density(gridrefinement=1))
             except AttributeError:
@@ -521,7 +568,7 @@ class SubSystemInternal(object):
             self.atoms_for_interaction.set_charges(projected_charges[0, :].tolist())
 
         self.pseudo_density = density
-        self.timer.end()
+        self.timer.stop()
 
     def get_potential_energy(self):
         """Returns the potential energy contained in this subsystem.
@@ -535,7 +582,7 @@ class SubSystemInternal(object):
         self.timer.start("Energy")
         self.potential_energy = self.calculator.get_potential_energy(
             self.atoms_for_subsystem)
-        self.timer.end()
+        self.timer.stop()
 
         # Update the calculation grid if charge calculation with van Der Waals
         # division is enabled:
@@ -559,7 +606,7 @@ class SubSystemInternal(object):
         # Calculate the forces
         self.timer.start("Forces")
         forces = self.calculator.get_forces(self.atoms_for_subsystem)
-        self.timer.end()
+        self.timer.stop()
 
         # Ignore forces on link atoms, link atoms are at the end of the list
         forces = forces[0:len(self.atoms_for_interaction), :]
