@@ -25,7 +25,6 @@ class HybridCalculator(object):
     interact with each other.
 
     Attributes:
-            Whether the calculator keeps track of the time usage.
         total_timer: :class:'~pysic.utility.timer.Timer'
             Keeps track of the total time spent in the calculations.
         subsystem_energies: dictionary
@@ -39,8 +38,11 @@ class HybridCalculator(object):
         interaction_info: dictionary
             Pair of names to Interaction.
         forces: numpy array
+
         stress: None
+
         potential_energy: float
+
         system_initialized: bool
             Indicates whether the SubSystemInternals and InteractionInternals
             have been constructed.
@@ -506,7 +508,7 @@ class HybridCalculator(object):
         :meth:`~pysic.hybridcalculator.HybridCalculator.calculate_forces`
 
         Parameters:
-            atoms: `ASE atoms`_ object
+            atoms: ASE Atoms object
                 The structure to calculate the forces on.
         """
         # Can't do calculation without atoms

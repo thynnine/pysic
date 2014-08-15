@@ -8,20 +8,13 @@ from pysic.utility.bader_charges import get_bader_charges
 import ase.data
 from pysic.utility.timer import Timer
 from ase import Atom, Atoms
-from ase.units import Bohr
 from ase.visualize import view
-from ase.io import write, bader
-from ase.parallel import rank, barrier
-import os
+from ase.io import write
 import copy
-from distutils import spawn
-import subprocess
-import shutil
 
 
 #===============================================================================
 class SubSystem(object):
-
     """Used to create and store information about a subsystem.
 
     The end user can create and manipulate these objects when defining
@@ -34,11 +27,15 @@ class SubSystem(object):
 
     Attributes:
         name: string
+            The unique name for this subsystem.
         calculator: ASE Calculator
+            The calculator used.
         cell_size_optimization_enabled: bool
+
         cell_padding: float
             The padding used when optimizing the cell size.
         charge_calculation_enabled: bool
+
         charge_source: string
             Indicates the electron density that is used in charge calculation.
             Can be "pseudo" or "all-electron".
@@ -49,6 +46,7 @@ class SubSystem(object):
             The factor by which the calculation grid is densified in charge
             calculation.
         indices: list of ints
+
         tag: int
     """
 
@@ -184,7 +182,6 @@ class SubSystem(object):
 
 #===============================================================================
 class SubSystemInternal(object):
-
     """A materialization of a SubSystem object.
 
     This class is materialised from a SubSystem, and should not be
@@ -192,13 +189,21 @@ class SubSystemInternal(object):
 
     Attributes:
         name: string
+            The unique name for this subsystem.
         calculator: ASE Calculator
+            The calculator used.
         cell_size_optimization_enabled: bool
+
         cell_padding: float
+
         charge_calculation_enabled: bool
+
         charge_source: string
+
         division: string
+
         gridrefinement: int
+
         n_atoms: int
             Number of atoms in the full system.
         atoms_for_interaction: ASE Atoms
@@ -213,11 +218,15 @@ class SubSystemInternal(object):
             The keys are the atom indices in the subsystem, values are the
             keys in the full system.
         potential_energy: float
+
         forces: numpy array
+
         density_grid: numpy array
             Stored if spherical division is used in charge calculation.
         pseudo_density: numpy array
+
         link_atom_indices: list
+
         timer: :class:'~pysic.utility.timer.Timer'
             Used to keep track of time usage.
     """
@@ -359,7 +368,10 @@ class SubSystemInternal(object):
         self.timer.stop()
 
     def update_charges(self):
-        """Updates the charges in the system.
+        """Updates the charges in the system. Depending on the value of
+        self.division, calls either
+        :meth:`~pysic.subsystem.SubSystemInternal.update_charges_bader`, or
+        :meth:`~pysic.subsystem.SubSystemInternal.update_charges_van_der_waals`
         """
         if self.charge_calculation_enabled:
             if self.division == "van Der Waals":
