@@ -16,6 +16,12 @@ The version number is available in Pysic as the variable::
   pysic.version
 
 
+Version 0.6
+---------------
+
+- Added support for dividing the system to subsystems and allowing the use of different calculators on the subsystems. This allows hybrid QM/MM calculations. See :class:`~pysic.hybridcalculator.HybridCalculator`, :class:`~pysic.subsystem.SubSystem`, :class:`~pysic.interaction.Interaction`.
+
+
 Version 0.5
 ---------------
 
@@ -27,9 +33,9 @@ Version 0.4.8
 ----------------
 
 - Fixed compatibility with syntax changes in ASE 3.7.0.
-- Added piping of :class:`~pysic.charge.relaxation.ChargeRelaxation` objects.
-- Added a potentiostat as a :class:`~pysic.charge.relaxation.ChargeRelaxation` type.
-- Added a constrained optimization as a :class:`~pysic.charge.relaxation.ChargeRelaxation` type.
+- Added piping of :class:`~pysic.charges.relaxation.ChargeRelaxation` objects.
+- Added a potentiostat as a :class:`~pysic.charges.relaxation.ChargeRelaxation` type.
+- Added a constrained optimization as a :class:`~pysic.charges.relaxation.ChargeRelaxation` type.
 - Added utility functions such as :meth:`~pysic.calculator.FastNeighborList.get_neighbor_distances`, :func:`~pysic.utility.convenience.expand_symbols_string`
 
 

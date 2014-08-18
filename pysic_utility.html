@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Pysic Utility modules &mdash; Pysic 0.5 documentation</title>
+    <title>Pysic Utility modules &mdash; Pysic 0.6 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.5',
+        VERSION:     '0.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.5 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.6 documentation" href="index.html" />
     <link rel="next" title="Pysic Fortran module" href="pysic_fortran.html" />
     <link rel="prev" title="CoreMirror class" href="coremirror class.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="coremirror class.html" title="CoreMirror class"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -940,6 +940,17 @@ strict warnings are in use (warning_level = 6).</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="pysic.utility.error.error">
+<tt class="descclassname">pysic.utility.error.</tt><tt class="descname">error</tt><big>(</big><em>message</em><big>)</big><a class="headerlink" href="#pysic.utility.error.error" title="Permalink to this definition">¶</a></dt>
+<dd><p>Raises an error and displays the reason. Independent of the warning level.</p>
+<p>Parameters:</p>
+<dl class="docutils">
+<dt>message: string</dt>
+<dd>information describing the cause for the warning</dd>
+</dl>
+</dd></dl>
+
+<dl class="function">
 <dt id="pysic.utility.error.set_warning_level">
 <tt class="descclassname">pysic.utility.error.</tt><tt class="descname">set_warning_level</tt><big>(</big><em>level</em><big>)</big><a class="headerlink" href="#pysic.utility.error.set_warning_level" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set the warning level.</p>
@@ -948,6 +959,15 @@ strict warnings are in use (warning_level = 6).</p>
 <dt>level: int</dt>
 <dd>The level of warnings displayed. Should be an integer between 0 (no warnings) and 6 (warnings are treated as errors).</dd>
 </dl>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.error.style_message">
+<tt class="descclassname">pysic.utility.error.</tt><tt class="descname">style_message</tt><big>(</big><em>header</em>, <em>message</em>, <em>width=80</em>, <em>x_pad=2</em>, <em>y_pad=1</em><big>)</big><a class="headerlink" href="#pysic.utility.error.style_message" title="Permalink to this definition">¶</a></dt>
+<dd><p>Styles a message to be printed into console.</p>
+<p>The message can be a list of string, where each list item corresponds to a
+row.  If a single string is provided, it is converted to a list. Rows are
+cut into pieces so that they will fit into the defined width.</p>
 </dd></dl>
 
 <dl class="function">
@@ -1022,7 +1042,7 @@ will be added to the end.</p>
         <li class="right" >
           <a href="coremirror class.html" title="CoreMirror class"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

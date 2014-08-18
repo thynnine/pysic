@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Physics of Pysic &mdash; Pysic 0.5 documentation</title>
+    <title>Physics of Pysic &mdash; Pysic 0.6 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.5',
+        VERSION:     '0.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.5 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.6 documentation" href="index.html" />
     <link rel="next" title="Getting Pysic" href="setup.html" />
     <link rel="prev" title="Pysic (Pythonic simulation code)" href="index.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="index.html" title="Pysic (Pythonic simulation code)"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -57,6 +57,7 @@
 <li><a class="reference internal" href="#applications-and-goals">Applications and goals</a></li>
 <li><a class="reference internal" href="#atomistic-interactions">Atomistic interactions</a></li>
 <li><a class="reference internal" href="#dynamic-charges">Dynamic charges</a></li>
+<li><a class="reference internal" href="#hybrid-qm-mm-calculations-in-pysic">Hybrid QM/MM calculations in Pysic</a></li>
 <li><a class="reference internal" href="#pysic-approach">Pysic approach</a></li>
 </ul>
 
@@ -125,6 +126,10 @@ As the total energy of the system, <span class="math">\(E\)</span>, is determine
 <p>Although electrons do not specifically belong to any atom making <span class="math">\(\eta_i\)</span> ambiguous, this approach allows the inclusion of long ranged charge distribution in the model with reasonable computational cost.</p>
 <p>In addition, having the local charge as a parameter of the energy function allows for the optimization of the energy with respect to the local charges, allowing one to search for an equilibrium charge distribution. This is analogous to finding equilibrium structures by optimizing the energy with respect to the atomic coordinates <span class="math">\(\mathbf{R}_i\)</span>.</p>
 </div>
+<div class="section" id="hybrid-qm-mm-calculations-in-pysic">
+<span id="hybrid-calculations"></span><h1>Hybrid QM/MM calculations in Pysic<a class="headerlink" href="#hybrid-qm-mm-calculations-in-pysic" title="Permalink to this headline">¶</a></h1>
+<p>Pysic provides a framework for creating and running hybrid QM/MM simulations. Within this framework it is possible to calculate the potential energy and forces in an atomistic configuration which has multiple subsystems and interactions between them. Any external calculator with an ASE interface can be assigned to a subsystem or the classical potentials provided by Pysic can be used. The QM/MM implementation in Pysic uses the mechanical embedding scheme with hydrogen link atoms. It is possible to enable any Pysic-supported interaction potentials between the subsystems, with special functions provided for the easy use of Coulomb and COMB interactions.</p>
+</div>
 <div class="section" id="pysic-approach">
 <span id="id4"></span><h1>Pysic approach<a class="headerlink" href="#pysic-approach" title="Permalink to this headline">¶</a></h1>
 <p>The immediate aim in the development of Pysic is to implement atomistic potentials with variable local atomic charges and apply them in the study of semiconductor interfaces, e.g., silicon-hafnia. In the long term, Pysic will include a full library of different atomistic potentials.</p>
@@ -189,7 +194,7 @@ As the total energy of the system, <span class="math">\(E\)</span>, is determine
         <li class="right" >
           <a href="index.html" title="Pysic (Pythonic simulation code)"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -1,0 +1,828 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.interaction &mdash; Pysic 0.6 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.6 documentation" href="../../index.html" />
+    <link rel="up" title="pysic" href="../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Pysic 0.6 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.interaction</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+<span class="c"># -*- coding: utf-8 -*-</span>
+<span class="sd">&quot;&quot;&quot;Defines classes used for creating and storing information about energetical</span>
+<span class="sd">interactions between subsystems in a QM/MM hybrid calculation created with the</span>
+<span class="sd">HybridCalculator-class.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">pysic.utility.error</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">Atom</span><span class="p">,</span> <span class="n">Atoms</span>
+<span class="kn">from</span> <span class="nn">pysic</span> <span class="kn">import</span> <span class="n">Pysic</span><span class="p">,</span> <span class="n">CoulombSummation</span><span class="p">,</span> <span class="n">Potential</span><span class="p">,</span> <span class="n">ProductPotential</span>
+<span class="kn">from</span> <span class="nn">pysic.interactions.comb</span> <span class="kn">import</span> <span class="n">CombPotential</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pysic.utility.timer</span> <span class="kn">import</span> <span class="n">Timer</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">copy</span>
+
+
+<span class="c">#===============================================================================</span>
+<div class="viewcode-block" id="Interaction"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.Interaction">[docs]</a><span class="k">class</span> <span class="nc">Interaction</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Used to store information about a interaction between subsystems.</span>
+
+<span class="sd">    The end user can create and manipulate these objects when defining</span>
+<span class="sd">    interactions between subsystems. The interactions between subsystems are</span>
+<span class="sd">    added to the calculation by calling</span>
+<span class="sd">    :meth:`~pysic.hybridcalculator.HybridCalculator.add_interaction` which adds</span>
+<span class="sd">    a Interaction object to the calculation.</span>
+
+<span class="sd">    When the HybridCalculator sees fit, the subsystem bindings are materialized</span>
+<span class="sd">    by converting the stored Interactions to InteractionInternals.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        primary: string</span>
+<span class="sd">            Name of the primary subsystem.</span>
+<span class="sd">        secondary: string</span>
+<span class="sd">            Name of the secondary subsystem.</span>
+<span class="sd">        links: list of tuples</span>
+<span class="sd">            Contains a list of different link types. Each list item is a tuple</span>
+<span class="sd">            with two items: the first is a list of link pairs, the second one</span>
+<span class="sd">            is the CHL parameter for these links.</span>
+<span class="sd">        electrostatic_parameters: dictionary</span>
+<span class="sd">            Contains all the parameters used for creating a Coulomb potential.</span>
+<span class="sd">        coulomb_potential_enabled: bool</span>
+
+<span class="sd">        comb_potential_enabled: bool</span>
+
+<span class="sd">        link_atom_correction_enabled: bool</span>
+
+<span class="sd">        potentials: list of :class:`~pysic.interactions.local.Potential`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">primary</span><span class="p">,</span>
+                 <span class="n">secondary</span><span class="p">,</span>
+                 <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            primary: string</span>
+<span class="sd">                Name of the primary system.</span>
+<span class="sd">            secondary: string</span>
+<span class="sd">                Name of the secondary system.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">primary</span> <span class="o">=</span> <span class="n">primary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">secondary</span> <span class="o">=</span> <span class="n">secondary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">electrostatic_parameters</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coulomb_potential_enabled</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comb_potential_enabled</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link_atom_correction_enabled</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">=</span> <span class="p">[]</span>
+
+<div class="viewcode-block" id="Interaction.set_potentials"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.Interaction.set_potentials">[docs]</a>    <span class="k">def</span> <span class="nf">set_potentials</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">potentials</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Used to set a list of additional Pysic potentials between the</span>
+<span class="sd">        subsystems.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            potentials: list of or single</span>
+<span class="sd">            :class:`~pysic.interactions.local.Potential`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">potentials</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">=</span> <span class="n">potentials</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span> <span class="o">=</span> <span class="p">[</span><span class="n">potentials</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Interaction.add_potential"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.Interaction.add_potential">[docs]</a>    <span class="k">def</span> <span class="nf">add_potential</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">potential</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Used to add a Pysic potential between the subsystems.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            potential: :class:`~pysic.interactions.local.Potential`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potentials</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">potential</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Interaction.enable_coulomb_potential"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.Interaction.enable_coulomb_potential">[docs]</a>    <span class="k">def</span> <span class="nf">enable_coulomb_potential</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">epsilon</span><span class="o">=</span><span class="mf">0.00552635</span><span class="p">,</span>
+            <span class="n">real_cutoff</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">k_cutoff</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+            <span class="n">sigma</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enables the electrical Coulomb interaction between the subsystems.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            epsilon: float</span>
+<span class="sd">                The vacumm permittivity. Has a default value from the</span>
+<span class="sd">                literature, in Atomic units.</span>
+<span class="sd">            r_cutoff: float</span>
+<span class="sd">                Real space cutoff radius. Provide if system has periodic</span>
+<span class="sd">                boundary conditions.</span>
+<span class="sd">            k_cutoff: float</span>
+<span class="sd">                Reciprocal space cutoff radius. Provide if system has periodic</span>
+<span class="sd">                boundary conditions.</span>
+<span class="sd">             sigma: float</span>
+<span class="sd">                Ewald summation split parameter. Provide if system has periodic</span>
+<span class="sd">                boundary conditions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">coulomb_potential_enabled</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;epsilon&#39;</span><span class="p">:</span> <span class="n">epsilon</span><span class="p">}</span>
+        <span class="k">if</span> <span class="n">sigma</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s">&#39;sigma&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">sigma</span>
+        <span class="k">if</span> <span class="n">k_cutoff</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s">&#39;k_cutoff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_cutoff</span>
+        <span class="k">if</span> <span class="n">real_cutoff</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">parameters</span><span class="p">[</span><span class="s">&#39;real_cutoff&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">real_cutoff</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">electrostatic_parameters</span> <span class="o">=</span> <span class="n">parameters</span>
+</div>
+<div class="viewcode-block" id="Interaction.enable_comb_potential"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.Interaction.enable_comb_potential">[docs]</a>    <span class="k">def</span> <span class="nf">enable_comb_potential</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enable the COMB potential between the subsystems. Valid for Si-Si</span>
+<span class="sd">        and Si-O interactions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">comb_potential_enabled</span> <span class="o">=</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="Interaction.add_hydrogen_links"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.Interaction.add_hydrogen_links">[docs]</a>    <span class="k">def</span> <span class="nf">add_hydrogen_links</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pairs</span><span class="p">,</span> <span class="n">CHL</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Defines hydrogen links in the system.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            pairs: tuple or list of tuples</span>
+<span class="sd">                A set of tuples containing two indices, the first index in the</span>
+<span class="sd">                tuple should point to the subsystem in which the hydrogen link</span>
+<span class="sd">                atom is actually added to (=primary system).</span>
+<span class="sd">            CHL: float</span>
+<span class="sd">                Indicates the position of the hydrogen atom on the line defined</span>
+<span class="sd">                by the atom pairs. Values should be between 0-1. 0 means that</span>
+<span class="sd">                the link atom overlaps with the atom in the primary system, 1</span>
+<span class="sd">                means that the link atom overlaps with the atom in the</span>
+<span class="sd">                secondary system. The scale is linear.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">pairs</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">tuple</span><span class="p">:</span>
+            <span class="n">pairs</span> <span class="o">=</span> <span class="p">[</span><span class="n">pairs</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">pairs</span><span class="p">,</span> <span class="n">CHL</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Interaction.set_link_atom_correction"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.Interaction.set_link_atom_correction">[docs]</a>    <span class="k">def</span> <span class="nf">set_link_atom_correction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets whether the link interaction correction energy is calculated or</span>
+<span class="sd">        not.</span>
+
+<span class="sd">        By default the correction is enabled, but you have to provide a</span>
+<span class="sd">        secondary calculator that can calculate the interaction energies</span>
+<span class="sd">        between the link atoms themselves and between link atoms and the</span>
+<span class="sd">        primary system.</span>
+
+<span class="sd">        The link atom correction is defined as:</span>
+<span class="sd">        .. math::</span>
+
+<span class="sd">            E^\text{link} &amp;= - E^\text{int}_\text{MM}\text{(PS, HL)} - E^\text{tot}_\text{MM}\text{(HL)}</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link_atom_correction_enabled</span> <span class="o">=</span> <span class="n">value</span>
+
+
+<span class="c">#===============================================================================</span></div></div>
+<div class="viewcode-block" id="InteractionInternal"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal">[docs]</a><span class="k">class</span> <span class="nc">InteractionInternal</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The internal version of the Interaction-class.</span>
+
+<span class="sd">    This class is meant only for internal use, and should not be accessed by</span>
+<span class="sd">    the end-user.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        info: :class:&#39;~Pysic.interaction.Interaction&#39;</span>
+<span class="sd">            Contains all the info about the interaction given by the user.</span>
+<span class="sd">        full_system: ASE Atoms</span>
+
+<span class="sd">        primary_subsystem: :class:`~pysic.subsystem.SubSystem`</span>
+
+<span class="sd">        secondary_subsystem: :class:`~pysic.subsystem.SubSystem`</span>
+
+<span class="sd">        uncorrected_interaction_energy: float</span>
+<span class="sd">            The interaction energy without the link atom correction.</span>
+<span class="sd">        uncorrected_interaction_forces: numpy array</span>
+<span class="sd">            The interaction forces without the link atom correction.</span>
+<span class="sd">        link_atom_correction_energy: float</span>
+
+<span class="sd">        link_atom_correction_forces: numpy array</span>
+
+<span class="sd">        interaction_energy: float</span>
+<span class="sd">            The total interaction energy = uncorrected_interaction_energy +</span>
+<span class="sd">            link_atom_correction_energy</span>
+<span class="sd">        interaction_forces: numpy array</span>
+<span class="sd">            The total interaction forces = uncorrected_interaction_forces +</span>
+<span class="sd">            link_atom_correction_forces</span>
+<span class="sd">        has_interaction_potentials: bool</span>
+<span class="sd">            True if any potentials are defined.</span>
+<span class="sd">        calculator: :class:&#39;~pysic.calculator.Pysic&#39;</span>
+<span class="sd">            The pysic calculator used for non-pbc systems.</span>
+<span class="sd">        pbc_calculator: :class:&#39;~pysic.calculator.Pysic&#39;</span>
+<span class="sd">            The pysic calculator used for pbc systems.</span>
+<span class="sd">        timer: :class:&#39;~pysic.utility.timer.Timer&#39;</span>
+<span class="sd">            Used for tracking time usage.</span>
+<span class="sd">        has_pbc: bool</span>
+
+<span class="sd">        link_atoms: ASE Atoms</span>
+<span class="sd">            Contains all the hydrogen link atoms. Needed when calculating link</span>
+<span class="sd">            atom correction.</span>
+<span class="sd">        n_primary: int</span>
+<span class="sd">            Number of atoms in primary subsystem.</span>
+<span class="sd">        n_secondary: int</span>
+<span class="sd">            Number of atoms in secondary subsystem.</span>
+<span class="sd">        n_full: int</span>
+<span class="sd">            Number of atoms in full system.</span>
+<span class="sd">        n_links: int</span>
+<span class="sd">            Number of link atoms.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span>
+            <span class="n">full_system</span><span class="p">,</span>
+            <span class="n">primary_subsystem</span><span class="p">,</span>
+            <span class="n">secondary_subsystem</span><span class="p">,</span>
+            <span class="n">info</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            full_system: ASE Atoms</span>
+<span class="sd">            primary_subsystem: :class:`~pysic.subsystem.SubSystem`</span>
+<span class="sd">            secondary_subsystem: :class:`~pysic.subsystem.SubSystem`</span>
+<span class="sd">            info: :class:`~pysic.interaction.Interaction`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">info</span> <span class="o">=</span> <span class="n">info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">full_system</span> <span class="o">=</span> <span class="n">full_system</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span> <span class="o">=</span> <span class="n">primary_subsystem</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">secondary_subsystem</span> <span class="o">=</span> <span class="n">secondary_subsystem</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">uncorrected_interaction_energy</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uncorrected_interaction_forces</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link_atom_correction_energy</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link_atom_correction_forces</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interaction_energy</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">interaction_forces</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="c"># Determine if any potentials have been set</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_interaction_potentials</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">comb_potential_enabled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_interaction_potentials</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">coulomb_potential_enabled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_interaction_potentials</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">potentials</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_interaction_potentials</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span> <span class="o">=</span> <span class="n">Pysic</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pbc_calculator</span> <span class="o">=</span> <span class="n">Pysic</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">([</span>
+            <span class="s">&quot;Interaction&quot;</span><span class="p">,</span>
+            <span class="s">&quot;Interaction (PBC)&quot;</span><span class="p">,</span>
+            <span class="s">&quot;Forces&quot;</span><span class="p">,</span>
+            <span class="s">&quot;Forces (PBC)&quot;</span><span class="p">,</span>
+            <span class="s">&quot;Link atom correction energy&quot;</span><span class="p">,</span>
+            <span class="s">&quot;Link atom correction forces&quot;</span><span class="p">])</span>
+
+        <span class="c"># The interaction needs to know if PBC:s are on</span>
+        <span class="n">pbc</span> <span class="o">=</span> <span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="o">.</span><span class="n">get_pbc</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">pbc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">pbc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="n">pbc</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_pbc</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">has_pbc</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># Initialize hydrogen links</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link_atoms</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_hydrogen_links</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">links</span><span class="p">)</span>
+
+        <span class="c"># Store the number of atoms in different systems</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_primary</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_secondary</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">secondary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_full</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_primary</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_secondary</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">link_atoms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_links</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">link_atoms</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">n_links</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c"># Initialize the COMB potential first (set_potentials(COMB) is used,</span>
+        <span class="c"># because it isn&#39; the same as add_potential(COMB))</span>
+        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">comb_potential_enabled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setup_comb_potential</span><span class="p">()</span>
+
+        <span class="c"># Initialize the coulomb interaction</span>
+        <span class="k">if</span> <span class="n">info</span><span class="o">.</span><span class="n">electrostatic_parameters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">setup_coulomb_potential</span><span class="p">()</span>
+
+        <span class="c"># Add the other potentials</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">setup_potentials</span><span class="p">()</span>
+
+        <span class="c"># Can&#39;t enable link atom correction on system without link atoms</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">links</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">link_atom_correction_enabled</span> <span class="o">=</span> <span class="bp">False</span>
+
+<div class="viewcode-block" id="InteractionInternal.setup_hydrogen_links"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.setup_hydrogen_links">[docs]</a>    <span class="k">def</span> <span class="nf">setup_hydrogen_links</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">links</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setup the hydrogen link atoms to the primary system.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            link_parameters: list of tuples</span>
+<span class="sd">                Contains the link atom parameters from the Interaction-object.</span>
+<span class="sd">                Each tuple in the list is a link atom specification for a</span>
+<span class="sd">                covalent bond of different type. The first item in the tuple is</span>
+<span class="sd">                a list of tuples containing atom index pairs. The second item</span>
+<span class="sd">                in the tuple is the CHL parameter for these links.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link_atoms</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">(</span><span class="n">pbc</span><span class="o">=</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">full_system</span><span class="o">.</span><span class="n">get_pbc</span><span class="p">()),</span>
+                                <span class="n">cell</span><span class="o">=</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">full_system</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()))</span>
+        <span class="k">for</span> <span class="n">bond</span> <span class="ow">in</span> <span class="n">links</span><span class="p">:</span>
+
+            <span class="n">pairs</span> <span class="o">=</span> <span class="n">bond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">CHL</span> <span class="o">=</span> <span class="n">bond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">link</span> <span class="ow">in</span> <span class="n">pairs</span><span class="p">:</span>
+
+                <span class="c"># Extract the position of the boundary atoms</span>
+                <span class="n">q1_index</span> <span class="o">=</span> <span class="n">link</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">m1_index</span> <span class="o">=</span> <span class="n">link</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">iq1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">index_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">q1_index</span><span class="p">)</span>
+                <span class="n">im1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">secondary_subsystem</span><span class="o">.</span><span class="n">index_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">m1_index</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">iq1</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">error</span><span class="p">((</span><span class="s">&quot;Invalid link: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">q1_index</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;-&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m1_index</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;:</span><span class="se">\n</span><span class="s">&quot;</span>
+                          <span class="s">&quot;The first index does not point to an atom in the primary system.&quot;</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">im1</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">error</span><span class="p">((</span><span class="s">&quot;Invalid link: &quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">q1_index</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;-&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">m1_index</span><span class="p">)</span><span class="o">+</span><span class="s">&quot;:</span><span class="se">\n</span><span class="s">&quot;</span>
+                          <span class="s">&quot;The second index does not point to an atom in the secondary system.&quot;</span><span class="p">))</span>
+
+                <span class="n">q1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="p">[</span><span class="n">iq1</span><span class="p">]</span>
+                <span class="n">rq1</span> <span class="o">=</span> <span class="n">q1</span><span class="o">.</span><span class="n">position</span>
+
+                <span class="c"># Calculate the separation between the host atoms from the full</span>
+                <span class="c"># system. We need to do this in the full system because the</span>
+                <span class="c"># subsystems may not have the same coordinate systems due to cell</span>
+                <span class="c"># size minimization.</span>
+                <span class="n">frq1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_system</span><span class="p">[</span><span class="n">q1_index</span><span class="p">]</span><span class="o">.</span><span class="n">position</span>
+                <span class="n">frm1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_system</span><span class="p">[</span><span class="n">m1_index</span><span class="p">]</span><span class="o">.</span><span class="n">position</span>
+                <span class="n">distance</span> <span class="o">=</span> <span class="n">CHL</span><span class="o">*</span><span class="p">(</span><span class="n">frm1</span> <span class="o">-</span> <span class="n">frq1</span><span class="p">)</span>
+
+                <span class="c"># Calculate position for the hydrogen atom in both the primary</span>
+                <span class="c"># subsystem and in the system containing only link atoms. The link</span>
+                <span class="c"># atom system is used when calculating link atom corrections.</span>
+                <span class="n">r_primary</span> <span class="o">=</span> <span class="n">rq1</span> <span class="o">+</span> <span class="n">distance</span>
+                <span class="n">r_link</span> <span class="o">=</span> <span class="n">frq1</span> <span class="o">+</span> <span class="n">distance</span>
+
+                <span class="c"># Create a hydrogen atom in the primary subsystem and in the</span>
+                <span class="c"># full subsystem</span>
+                <span class="n">hydrogen_primary</span> <span class="o">=</span> <span class="n">Atom</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">r_primary</span><span class="p">)</span>
+                <span class="n">hydrogen_link</span> <span class="o">=</span> <span class="n">Atom</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="p">,</span> <span class="n">position</span><span class="o">=</span><span class="n">r_link</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hydrogen_primary</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">link_atoms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hydrogen_link</span><span class="p">)</span>
+
+        <span class="c"># Update the cell size after adding link atoms</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">cell_size_optimization_enabled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">optimize_cell</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.update_hydrogen_link_positions"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.update_hydrogen_link_positions">[docs]</a>    <span class="k">def</span> <span class="nf">update_hydrogen_link_positions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Used to update the position of the hydrogen link atoms specified in</span>
+<span class="sd">        this interaction</span>
+
+<span class="sd">        It is assumed that the position of the host atoms have already been</span>
+<span class="sd">        updated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">print</span> <span class="s">&quot;UPDATE&quot;</span>
+        <span class="n">counter</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">bond</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">links</span><span class="p">:</span>
+
+            <span class="n">pairs</span> <span class="o">=</span> <span class="n">bond</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">CHL</span> <span class="o">=</span> <span class="n">bond</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">link</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pairs</span><span class="p">):</span>
+
+                <span class="c"># Extract the position of the boundary atoms</span>
+                <span class="n">q1_index</span> <span class="o">=</span> <span class="n">link</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">m1_index</span> <span class="o">=</span> <span class="n">link</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">iq1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">index_map</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">q1_index</span><span class="p">)</span>
+                <span class="n">q1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="p">[</span><span class="n">iq1</span><span class="p">]</span>
+                <span class="n">rq1</span> <span class="o">=</span> <span class="n">q1</span><span class="o">.</span><span class="n">position</span>
+
+                <span class="c"># Calculate the separation between the host atoms from the full</span>
+                <span class="c"># system. We need to do this in the full system because the</span>
+                <span class="c"># subsystems may not have the same coordinate systems due to</span>
+                <span class="c"># cell size minimization.</span>
+                <span class="n">frq1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_system</span><span class="p">[</span><span class="n">q1_index</span><span class="p">]</span><span class="o">.</span><span class="n">position</span>
+                <span class="n">frm1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">full_system</span><span class="p">[</span><span class="n">m1_index</span><span class="p">]</span><span class="o">.</span><span class="n">position</span>
+                <span class="k">print</span> <span class="n">frq1</span>
+                <span class="k">print</span> <span class="n">frm1</span>
+                <span class="n">distance</span> <span class="o">=</span> <span class="n">CHL</span><span class="o">*</span><span class="p">(</span><span class="n">frm1</span> <span class="o">-</span> <span class="n">frq1</span><span class="p">)</span>
+
+                <span class="c"># Calculate position for the hydrogen atom in both the primary</span>
+                <span class="c"># subsystem and in the system containing only link atoms. The</span>
+                <span class="c"># link atom system is used when calculating link atom</span>
+                <span class="c"># corrections.</span>
+                <span class="n">r_primary</span> <span class="o">=</span> <span class="n">rq1</span> <span class="o">+</span> <span class="n">distance</span>
+                <span class="n">r_link</span> <span class="o">=</span> <span class="n">frq1</span> <span class="o">+</span> <span class="n">distance</span>
+
+                <span class="c"># Update hydrogen atom positions</span>
+                <span class="n">j</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="n">counter</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">link_atoms</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">r_link</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_primary</span><span class="o">+</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">r_primary</span>
+
+            <span class="c"># Add the number of links in this bond type to the counter</span>
+            <span class="n">counter</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pairs</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.setup_coulomb_potential"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.setup_coulomb_potential">[docs]</a>    <span class="k">def</span> <span class="nf">setup_coulomb_potential</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setups a Coulomb potential between the subsystems.</span>
+
+<span class="sd">        Ewald calculation is automatically used for pbc-systems. Non-pbc</span>
+<span class="sd">        systems use the ProductPotential to reproduce the Coulomb potential.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">electrostatic_parameters</span>
+
+        <span class="c"># Check that that should Ewald summation be used and if so, that all the</span>
+        <span class="c"># needed parameters are given</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_pbc</span><span class="p">:</span>
+            <span class="n">needed</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;k_cutoff&quot;</span><span class="p">,</span> <span class="s">&quot;real_cutoff&quot;</span><span class="p">,</span> <span class="s">&quot;sigma&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">needed</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">param</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+                    <span class="n">error</span><span class="p">(</span><span class="n">param</span> <span class="o">+</span> <span class="s">&quot; not specified in Interaction.enable_coulomb_potential(). It is needed in order to calculate electrostatic interaction energy with Ewald summation in systems with periodic boundary conditions.&quot;</span><span class="p">)</span>
+                    <span class="k">return</span>
+
+            <span class="n">ewald</span> <span class="o">=</span> <span class="n">CoulombSummation</span><span class="p">()</span>
+            <span class="n">ewald</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;epsilon&#39;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">[</span><span class="s">&#39;epsilon&#39;</span><span class="p">])</span>
+            <span class="n">ewald</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;k_cutoff&#39;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">[</span><span class="s">&#39;k_cutoff&#39;</span><span class="p">])</span>
+            <span class="n">ewald</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;real_cutoff&#39;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">[</span><span class="s">&#39;real_cutoff&#39;</span><span class="p">])</span>
+            <span class="n">ewald</span><span class="o">.</span><span class="n">set_parameter_value</span><span class="p">(</span><span class="s">&#39;sigma&#39;</span><span class="p">,</span> <span class="n">parameters</span><span class="p">[</span><span class="s">&#39;sigma&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pbc_calculator</span><span class="o">.</span><span class="n">set_coulomb_summation</span><span class="p">(</span><span class="n">ewald</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Add coulomb force between all charged particles in secondary</span>
+            <span class="c"># system, and all atoms in primary system. It is assumed that the</span>
+            <span class="c"># combined system will be made so that the primary system comes</span>
+            <span class="c"># before the secondary in indexing.</span>
+            <span class="n">coulomb_pairs</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">ai</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">aj</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">secondary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">aj</span><span class="o">.</span><span class="n">charge</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+                        <span class="n">coulomb_pairs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="o">+</span><span class="bp">self</span><span class="o">.</span><span class="n">n_primary</span><span class="p">])</span>
+
+            <span class="c"># There are no charges in the secondary system, and that can&#39;t</span>
+            <span class="c"># change unlike the charges in primary system</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">coulomb_pairs</span><span class="p">)</span> <span class="ow">is</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">warn</span><span class="p">(</span><span class="s">&quot;There cannot be electrostatic interaction between the &quot;</span>
+                     <span class="s">&quot;subsystems, because the secondary system does not have &quot;</span>
+                     <span class="s">&quot;any initial charges&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="c"># The first potential given to the productpotential defines the</span>
+            <span class="c"># targets and cutoff</span>
+            <span class="n">kc</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="p">(</span><span class="mf">4.0</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="o">*</span><span class="n">parameters</span><span class="p">[</span><span class="s">&#39;epsilon&#39;</span><span class="p">])</span>
+            <span class="n">max_cutoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()))</span>
+            <span class="n">coul1</span> <span class="o">=</span> <span class="n">Potential</span><span class="p">(</span><span class="s">&#39;power&#39;</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="n">coulomb_pairs</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">cutoff</span><span class="o">=</span><span class="n">max_cutoff</span><span class="p">)</span>
+            <span class="n">coul2</span> <span class="o">=</span> <span class="n">Potential</span><span class="p">(</span><span class="s">&#39;charge_pair&#39;</span><span class="p">,</span> <span class="n">parameters</span><span class="o">=</span><span class="p">[</span><span class="n">kc</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">coulomb_potential</span> <span class="o">=</span> <span class="n">ProductPotential</span><span class="p">([</span><span class="n">coul1</span><span class="p">,</span> <span class="n">coul2</span><span class="p">])</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">coulomb_potential</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">has_coulomb_interaction</span> <span class="o">=</span> <span class="bp">True</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.setup_comb_potential"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.setup_comb_potential">[docs]</a>    <span class="k">def</span> <span class="nf">setup_comb_potential</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setups a COMB-potential between the subsystems.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">COMB</span> <span class="o">=</span> <span class="n">CombPotential</span><span class="p">(</span><span class="n">excludes</span><span class="o">=</span><span class="p">[])</span>
+        <span class="n">COMB</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pbc_calculator</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="c"># Notice that set_potentials is used here instead of add_potential.</span>
+        <span class="c"># This means that enable_comb_potential has to be called first in the</span>
+        <span class="c"># constructor.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pbc_calculator</span><span class="o">.</span><span class="n">set_potentials</span><span class="p">(</span><span class="n">COMB</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.setup_potentials"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.setup_potentials">[docs]</a>    <span class="k">def</span> <span class="nf">setup_potentials</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Setups the additional Pysic potentials given in the</span>
+<span class="sd">        Interaction-object.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># If pbcs are not on, the targets of the potential are modified and the</span>
+        <span class="c"># calculator for finite systems is used</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_pbc</span><span class="p">:</span>
+
+            <span class="n">primary_atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span>
+            <span class="n">secondary_atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">secondary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span>
+
+            <span class="c"># Make the interaction potentials</span>
+            <span class="k">for</span> <span class="n">potential</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">potentials</span><span class="p">:</span>
+                <span class="n">symbols</span> <span class="o">=</span> <span class="n">potential</span><span class="o">.</span><span class="n">get_symbols</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">symbols</span><span class="p">:</span>
+                    <span class="n">element1</span> <span class="o">=</span> <span class="n">pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">element2</span> <span class="o">=</span> <span class="n">pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+                    <span class="n">pairs</span> <span class="o">=</span> <span class="p">[]</span>
+
+                    <span class="k">for</span> <span class="n">i_a</span><span class="p">,</span> <span class="n">a</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">primary_atoms</span><span class="p">):</span>
+                        <span class="k">for</span> <span class="n">i_b</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">secondary_atoms</span><span class="p">):</span>
+                            <span class="k">if</span> <span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">element1</span> <span class="ow">and</span> <span class="n">b</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">element2</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">element2</span> <span class="ow">and</span> <span class="n">b</span><span class="o">.</span><span class="n">symbol</span> <span class="o">==</span> <span class="n">element2</span><span class="p">):</span>
+                                <span class="n">pairs</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">i_a</span><span class="p">,</span> <span class="n">i_b</span><span class="p">])</span>
+                <span class="n">trimmed_potential</span> <span class="o">=</span> <span class="n">copy</span><span class="p">(</span><span class="n">potential</span><span class="p">)</span>
+                <span class="n">trimmed_potential</span><span class="o">.</span><span class="n">set_symbols</span><span class="p">(</span><span class="bp">None</span><span class="p">)</span>
+                <span class="n">trimmed_potential</span><span class="o">.</span><span class="n">set_indices</span><span class="p">(</span><span class="n">pairs</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">trimmed_potential</span><span class="p">)</span>
+
+        <span class="c"># If pbcs are on, the interactions need to be calculated with pbc</span>
+        <span class="c"># calculator</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">potential</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">potentials</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pbc_calculator</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">potential</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.calculate_link_atom_correction_energy"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.calculate_link_atom_correction_energy">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_link_atom_correction_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the link atom interaction energy defined as</span>
+<span class="sd">        .. math::</span>
+
+<span class="sd">            E^\text{link} = -E^\text{tot}_\text{MM}(\text{HL})-E^\text{int}_\text{MM}(\text{PS, HL})</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s">&quot;Link atom correction energy&quot;</span><span class="p">)</span>
+
+        <span class="n">primary_atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span>
+        <span class="n">link_atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">link_atoms</span>
+        <span class="n">primary_and_link_atoms</span> <span class="o">=</span> <span class="n">primary_atoms</span> <span class="o">+</span> <span class="n">link_atoms</span>
+        <span class="n">secondary_calculator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">secondary_subsystem</span><span class="o">.</span><span class="n">calculator</span>
+
+        <span class="c"># The Pysic calculators in one simulation all share one CoreMirror</span>
+        <span class="c"># object that contains the data about the Atoms. This object should be</span>
+        <span class="c"># automatically updated if the number of atoms changes. This is however</span>
+        <span class="c"># not happening for some reason, so we temporarily force the updation here. TODO:</span>
+        <span class="c"># Find out why this is the case</span>
+        <span class="n">secondary_calculator</span><span class="o">.</span><span class="n">force_core_initialization</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="n">E1</span> <span class="o">=</span> <span class="n">secondary_calculator</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">(</span><span class="n">link_atoms</span><span class="p">)</span>
+        <span class="n">E2</span> <span class="o">=</span> <span class="n">secondary_calculator</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">(</span><span class="n">primary_and_link_atoms</span><span class="p">)</span>
+        <span class="n">E3</span> <span class="o">=</span> <span class="n">secondary_calculator</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">(</span><span class="n">primary_atoms</span><span class="p">)</span>
+
+        <span class="n">secondary_calculator</span><span class="o">.</span><span class="n">force_core_initialization</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="n">link_atom_correction_energy</span> <span class="o">=</span> <span class="o">-</span><span class="n">E1</span> <span class="o">-</span> <span class="p">(</span><span class="n">E2</span> <span class="o">-</span> <span class="n">E1</span> <span class="o">-</span> <span class="n">E3</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">link_atom_correction_energy</span> <span class="o">=</span> <span class="n">link_atom_correction_energy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">link_atom_correction_energy</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.calculate_link_atom_correction_forces"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.calculate_link_atom_correction_forces">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_link_atom_correction_forces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the link atom correction forces defined as</span>
+<span class="sd">        .. math::</span>
+
+<span class="sd">            F^\text{link} = -\nabla(-E^\text{tot}_\text{MM}(\text{HL})-E^\text{int}_\text{MM}(\text{PS, HL}))</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s">&quot;Link atom correction forces&quot;</span><span class="p">)</span>
+
+        <span class="n">primary_atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span>
+        <span class="n">link_atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">link_atoms</span>
+        <span class="n">primary_and_link_atoms</span> <span class="o">=</span> <span class="n">primary_atoms</span> <span class="o">+</span> <span class="n">link_atoms</span>
+        <span class="n">secondary_calculator</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">secondary_subsystem</span><span class="o">.</span><span class="n">calculator</span>
+
+        <span class="c"># The Pysic calculators in one simulation all share one CoreMirror</span>
+        <span class="c"># object that contains the data about the Atoms. This object should be</span>
+        <span class="c"># automatically updated if the number of atoms changes. This is however</span>
+        <span class="c"># not happening for some reason, so we temporarily force the updation here. TODO:</span>
+        <span class="c"># Find out why this is the case</span>
+        <span class="n">secondary_calculator</span><span class="o">.</span><span class="n">force_core_initialization</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="c"># The force arrays from the individual subsystems need to be extended</span>
+        <span class="c"># to the size of the combined system</span>
+        <span class="n">forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">primary_and_link_atoms</span><span class="p">),</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">primary_postfix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">link_atoms</span><span class="p">),</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">link_prefix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">primary_atoms</span><span class="p">),</span> <span class="mi">3</span><span class="p">))</span>
+
+        <span class="c"># Calculate the force that binds the link atoms and primary atoms. We</span>
+        <span class="c"># don&#39;t need to calculate the force between the link atoms, although</span>
+        <span class="c"># the associated energy had to be calculated.</span>
+        <span class="n">F1</span> <span class="o">=</span> <span class="n">secondary_calculator</span><span class="o">.</span><span class="n">get_forces</span><span class="p">(</span><span class="n">link_atoms</span><span class="p">)</span>
+        <span class="n">F2</span> <span class="o">=</span> <span class="n">secondary_calculator</span><span class="o">.</span><span class="n">get_forces</span><span class="p">(</span><span class="n">primary_and_link_atoms</span><span class="p">)</span>
+        <span class="n">F3</span> <span class="o">=</span> <span class="n">secondary_calculator</span><span class="o">.</span><span class="n">get_forces</span><span class="p">(</span><span class="n">primary_atoms</span><span class="p">)</span>
+
+        <span class="n">secondary_calculator</span><span class="o">.</span><span class="n">force_core_initialization</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="n">forces</span> <span class="o">+=</span> <span class="n">F2</span>
+        <span class="n">forces</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">F3</span><span class="p">,</span> <span class="n">primary_postfix</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">forces</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">link_prefix</span><span class="p">,</span> <span class="n">F1</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c"># Ignore the forces acting on link atoms, and negate the force</span>
+        <span class="c"># direction. The energy can&#39;t be ignored, force can</span>
+        <span class="n">forces</span> <span class="o">=</span> <span class="o">-</span><span class="n">forces</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_primary</span><span class="p">,</span> <span class="p">:]</span>
+
+        <span class="c"># Store the forces in a suitable numpy array that can be added to the</span>
+        <span class="c"># forces of the whole system</span>
+        <span class="n">link_atom_correction_forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_full</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">sub_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_primary</span><span class="p">):</span>
+            <span class="n">full_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">reverse_index_map</span><span class="p">[</span><span class="n">sub_index</span><span class="p">]</span>
+            <span class="n">force</span> <span class="o">=</span> <span class="n">forces</span><span class="p">[</span><span class="n">sub_index</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">link_atom_correction_forces</span><span class="p">[</span><span class="n">full_index</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">force</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">link_atom_correction_forces</span> <span class="o">=</span> <span class="n">link_atom_correction_forces</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">copy</span><span class="p">(</span><span class="n">link_atom_correction_forces</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.calculate_uncorrected_interaction_energy"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_energy">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_uncorrected_interaction_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the interaction energy of a non-pbc system without the</span>
+<span class="sd">        link atom correction.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s">&quot;Interaction&quot;</span><span class="p">)</span>
+        <span class="n">finite_energy</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">primary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span>
+        <span class="n">secondary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">secondary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span>
+        <span class="n">combined</span> <span class="o">=</span> <span class="n">primary</span> <span class="o">+</span> <span class="n">secondary</span>
+
+        <span class="n">finite_energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">(</span><span class="n">combined</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uncorrected_interaction_energy</span> <span class="o">=</span> <span class="n">finite_energy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">copy</span><span class="p">(</span><span class="n">finite_energy</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.calculate_uncorrected_interaction_energy_pbc"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_energy_pbc">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_uncorrected_interaction_energy_pbc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the interaction energy of a pbc system without the link</span>
+<span class="sd">        atom correction.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s">&quot;Interaction (PBC)&quot;</span><span class="p">)</span>
+        <span class="n">pbc_energy</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">primary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span>
+        <span class="n">secondary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">secondary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span>
+        <span class="n">combined</span> <span class="o">=</span> <span class="n">primary</span> <span class="o">+</span> <span class="n">secondary</span>
+
+        <span class="n">pbc_energy</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc_calculator</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">(</span><span class="n">combined</span><span class="p">)</span>
+        <span class="n">pbc_energy</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc_calculator</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">(</span><span class="n">primary</span><span class="p">)</span>
+        <span class="n">pbc_energy</span> <span class="o">-=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc_calculator</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">(</span><span class="n">secondary</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">uncorrected_interaction_energy</span> <span class="o">=</span> <span class="n">pbc_energy</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">copy</span><span class="p">(</span><span class="n">pbc_energy</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.calculate_uncorrected_interaction_forces"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_forces">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_uncorrected_interaction_forces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the interaction forces of a non-pbc system without the</span>
+<span class="sd">        link atom correction.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s">&quot;Forces&quot;</span><span class="p">)</span>
+        <span class="n">primary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">secondary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">secondary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="n">combined_system</span> <span class="o">=</span> <span class="n">primary</span> <span class="o">+</span> <span class="n">secondary</span>
+
+        <span class="c">## Forces due to finite coulomb potential and other pysic potentials</span>
+        <span class="n">forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">get_forces</span><span class="p">(</span><span class="n">combined_system</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uncorrected_interaction_forces</span> <span class="o">=</span> <span class="n">forces</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">copy</span><span class="p">(</span><span class="n">forces</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.calculate_uncorrected_interaction_forces_pbc"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_forces_pbc">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_uncorrected_interaction_forces_pbc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Calculates the interaction forces of a pbc system without the link</span>
+<span class="sd">        atom correction.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s">&quot;Forces (PBC)&quot;</span><span class="p">)</span>
+        <span class="n">primary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span>
+        <span class="n">secondary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">secondary_subsystem</span><span class="o">.</span><span class="n">atoms_for_interaction</span>
+        <span class="n">combined</span> <span class="o">=</span> <span class="n">primary</span> <span class="o">+</span> <span class="n">secondary</span>
+
+        <span class="n">primary_postfix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_secondary</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="n">secondary_prefix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_primary</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+        <span class="c"># The force arrays from the individual subsystems need to be extended</span>
+        <span class="c"># to the size of the combined system</span>
+        <span class="n">forces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc_calculator</span><span class="o">.</span><span class="n">get_forces</span><span class="p">(</span><span class="n">combined</span><span class="p">)</span>
+        <span class="n">forces</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">pbc_calculator</span><span class="o">.</span><span class="n">get_forces</span><span class="p">(</span><span class="n">primary</span><span class="p">),</span> <span class="n">primary_postfix</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">forces</span> <span class="o">-=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">secondary_prefix</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pbc_calculator</span><span class="o">.</span><span class="n">get_forces</span><span class="p">(</span><span class="n">secondary</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">uncorrected_interaction_forces</span> <span class="o">=</span> <span class="n">forces</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">copy</span><span class="p">(</span><span class="n">forces</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.update_subsystem_charges"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.update_subsystem_charges">[docs]</a>    <span class="k">def</span> <span class="nf">update_subsystem_charges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the charges in the subsystems involved in the interaction (if</span>
+<span class="sd">        charge update is enabled in them).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">coulomb_potential_enabled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">primary_subsystem</span><span class="o">.</span><span class="n">update_charges</span><span class="p">()</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">secondary_subsystem</span><span class="o">.</span><span class="n">update_charges</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.get_interaction_energy"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.get_interaction_energy">[docs]</a>    <span class="k">def</span> <span class="nf">get_interaction_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the total interaction energy which consists of the</span>
+<span class="sd">        uncorrected energies and possible the link atom correction.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            float: the interaction energy</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Try to update the charges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_subsystem_charges</span><span class="p">()</span>
+
+        <span class="n">interaction_energy</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c"># Calculate the interaction energies</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_interaction_potentials</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_pbc</span><span class="p">:</span>
+                <span class="n">interaction_energy</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_uncorrected_interaction_energy_pbc</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">interaction_energy</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_uncorrected_interaction_energy</span><span class="p">()</span>
+
+        <span class="c"># Calculate the link atom correction energy if needed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">link_atom_correction_enabled</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">interaction_energy</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_link_atom_correction_energy</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">interaction_energy</span> <span class="o">=</span> <span class="n">interaction_energy</span>
+
+        <span class="k">return</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_energy</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="InteractionInternal.get_interaction_forces"><a class="viewcode-back" href="../../interaction class.html#pysic.interaction.InteractionInternal.get_interaction_forces">[docs]</a>    <span class="k">def</span> <span class="nf">get_interaction_forces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a numpy array of total 3D forces for each atom in the whole</span>
+<span class="sd">        system.</span>
+
+<span class="sd">        The forces consists of the uncorrected forces and possibly the link</span>
+<span class="sd">        atom correction forces. The row index refers to the atom index in the</span>
+<span class="sd">        original structure.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            numpy array: the forces for each atom in the full system</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Try to update the charges</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_subsystem_charges</span><span class="p">()</span>
+
+        <span class="n">interaction_forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_full</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+
+        <span class="c"># Calculate the uncorrected interaction forces</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_interaction_potentials</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_pbc</span><span class="p">:</span>
+                <span class="n">interaction_forces</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_uncorrected_interaction_forces_pbc</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">interaction_forces</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_uncorrected_interaction_forces</span><span class="p">()</span>
+
+        <span class="c"># Calculate the link atom correction forces if needed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">info</span><span class="o">.</span><span class="n">link_atom_correction_enabled</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">interaction_forces</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculate_link_atom_correction_forces</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">interaction_forces</span> <span class="o">=</span> <span class="n">interaction_forces</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">interaction_forces</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Pysic 0.6 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2013, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

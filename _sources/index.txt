@@ -10,12 +10,14 @@ Pysic (Pythonic simulation code)
 
 |logo|
 
-`Teemu Hynninen <http://physics.aalto.fi/~tjh>`_ (2011-2013)
+`Teemu Hynninen <http://users.utu.fi/tejohy/>`_ (2011-2014)  
+Lauri Himanen (2014)  
 
-`Tampere University of Technology <http://www.tut.fi>`_ 
-`Aalto University, Helsinki <http://www.aalto.fi>`_
+`Tampere University of Technology <http://www.tut.fi>`_  
+`Aalto University, Helsinki <http://www.aalto.fi>`_  
+`University of Turku <http://www.utu.fi>`_  
 
-Contact: `@Pysic_code <https://twitter.com/#!/Pysic_code>`_, teemu.hynninen aalto.fi, `@thynnine <https://twitter.com/#!/thynnine>`_
+Contact: `@Pysic_code <https://twitter.com/#!/Pysic_code>`_, teemu.hynninen utu.fi, `@thynnine <https://twitter.com/#!/thynnine>`_
 
 Pysic is a calculator incorporating various empirical pair and many-body
 potentials in an object-based Python environment and user interface while

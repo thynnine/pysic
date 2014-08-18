@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Pysic (Pythonic simulation code) &mdash; Pysic 0.5 documentation</title>
+    <title>Pysic (Pythonic simulation code) &mdash; Pysic 0.6 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.5',
+        VERSION:     '0.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.5 documentation" href="#" />
+    <link rel="top" title="Pysic 0.6 documentation" href="#" />
     <link rel="next" title="Physics of Pysic" href="physics.html" /> 
   </head>
   <body>
@@ -42,7 +42,7 @@
         <li class="right" >
           <a href="physics.html" title="Physics of Pysic"
              accesskey="N">next</a> |</li>
-        <li><a href="#">Pysic 0.5 documentation</a> &raquo;</li> 
+        <li><a href="#">Pysic 0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -101,10 +101,12 @@
   <div class="section" id="pysic-pythonic-simulation-code">
 <span id="index"></span><h1>Pysic (Pythonic simulation code)<a class="headerlink" href="#pysic-pythonic-simulation-code" title="Permalink to this headline">¶</a></h1>
 <p><img alt="" src="_images/pysic_logo.png" style="height: 320px;" /></p>
-<p><a class="reference external" href="http://physics.aalto.fi/~tjh">Teemu Hynninen</a> (2011-2013)</p>
+<p><a class="reference external" href="http://users.utu.fi/tejohy/">Teemu Hynninen</a> (2011-2014)
+Lauri Himanen (2014)</p>
 <p><a class="reference external" href="http://www.tut.fi">Tampere University of Technology</a>
-<a class="reference external" href="http://www.aalto.fi">Aalto University, Helsinki</a></p>
-<p>Contact: <a class="reference external" href="https://twitter.com/#!/Pysic_code">&#64;Pysic_code</a>, teemu.hynninen aalto.fi, <a class="reference external" href="https://twitter.com/#!/thynnine">&#64;thynnine</a></p>
+<a class="reference external" href="http://www.aalto.fi">Aalto University, Helsinki</a>
+<a class="reference external" href="http://www.utu.fi">University of Turku</a></p>
+<p>Contact: <a class="reference external" href="https://twitter.com/#!/Pysic_code">&#64;Pysic_code</a>, teemu.hynninen utu.fi, <a class="reference external" href="https://twitter.com/#!/thynnine">&#64;thynnine</a></p>
 <p>Pysic is a calculator incorporating various empirical pair and many-body
 potentials in an object-based Python environment and user interface while
 implementing an efficient numeric core written in Fortran. The immediate aim
@@ -124,6 +126,7 @@ Similarly, also this documentation is being constantly updated.</p>
 <li class="toctree-l1"><a class="reference internal" href="physics.html#applications-and-goals">Applications and goals</a></li>
 <li class="toctree-l1"><a class="reference internal" href="physics.html#atomistic-interactions">Atomistic interactions</a></li>
 <li class="toctree-l1"><a class="reference internal" href="physics.html#dynamic-charges">Dynamic charges</a></li>
+<li class="toctree-l1"><a class="reference internal" href="physics.html#hybrid-qm-mm-calculations-in-pysic">Hybrid QM/MM calculations in Pysic</a></li>
 <li class="toctree-l1"><a class="reference internal" href="physics.html#pysic-approach">Pysic approach</a></li>
 </ul>
 </div>
@@ -159,6 +162,7 @@ Similarly, also this documentation is being constantly updated.</p>
 <li class="toctree-l2"><a class="reference internal" href="run examples.html#importing-pysic-to-python">Importing Pysic to Python</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run examples.html#minimal-example-of-running-pysic">Minimal example of running Pysic</a></li>
 <li class="toctree-l2"><a class="reference internal" href="run examples.html#running-molecular-dynamics">Running molecular dynamics</a></li>
+<li class="toctree-l2"><a class="reference internal" href="run examples.html#a-hybrid-calculation">A hybrid calculation</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="run examples.html#screencasts">Screencasts</a><ul>
@@ -184,6 +188,9 @@ Similarly, also this documentation is being constantly updated.</p>
 <li class="toctree-l3"><a class="reference internal" href="bondorderparameters class.html">BondOrderParameters class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="compoundpotential class.html">CompoundPotential class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="chargerelaxation class.html">ChargeRelaxation class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hybridcalculator class.html">HybridCalculator class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="subsystem class.html">Subsystem class</a></li>
+<li class="toctree-l3"><a class="reference internal" href="interaction class.html">Interaction class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="fastneighborlist class.html">FastNeighborList class</a></li>
 <li class="toctree-l3"><a class="reference internal" href="coremirror class.html">CoreMirror class</a></li>
 </ul>
@@ -230,6 +237,7 @@ Similarly, also this documentation is being constantly updated.</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="version.html">Version history</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="version.html#version-0-6">Version 0.6</a></li>
 <li class="toctree-l2"><a class="reference internal" href="version.html#version-0-5">Version 0.5</a></li>
 <li class="toctree-l2"><a class="reference internal" href="version.html#version-0-4-8">Version 0.4.8</a></li>
 <li class="toctree-l2"><a class="reference internal" href="version.html#version-0-4-7">Version 0.4.7</a></li>
@@ -269,7 +277,7 @@ Similarly, also this documentation is being constantly updated.</p>
         <li class="right" >
           <a href="physics.html" title="Physics of Pysic"
              >next</a> |</li>
-        <li><a href="#">Pysic 0.5 documentation</a> &raquo;</li> 
+        <li><a href="#">Pysic 0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

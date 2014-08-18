@@ -1,0 +1,1187 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Documentation &mdash; Pysic 0.5 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.5',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.5 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Documentation</a><ul>
+<li><a class="reference internal" href="#hybrid-qm-mm-calculations-in-pysic">Hybrid QM/MM calculations in Pysic</a><ul>
+<li><a class="reference internal" href="#mechanical-embedding">Mechanical Embedding</a></li>
+<li><a class="reference internal" href="#hydrogen-links-in-pysic">Hydrogen links in Pysic</a></li>
+<li><a class="reference internal" href="#example">Example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#hybridcalculator-class">HybridCalculator class</a><ul>
+<li><a class="reference internal" href="#full-documentation-of-the-hybridcalculator-class">Full documentation of the HybridCalculator class</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#subsystem-class">Subsystem class</a><ul>
+<li><a class="reference internal" href="#full-documentation-of-the-subsystem-class">Full documentation of the Subsystem class</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#subsysteminternal-class">SubSystemInternal class</a><ul>
+<li><a class="reference internal" href="#full-documentation-of-the-subsysteminternal-class">Full documentation of the SubSystemInternal class</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#interaction-class">Interaction class</a><ul>
+<li><a class="reference internal" href="#full-documentation-of-the-interaction-class">Full documentation of the Interaction class</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#interactioninternal-class">InteractionInternal class</a><ul>
+<li><a class="reference internal" href="#full-documentation-of-the-interactioninternal-class">Full documentation of the InteractionInternal class</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/hybrid.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="documentation">
+<h1>Documentation<a class="headerlink" href="#documentation" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="hybrid-qm-mm-calculations-in-pysic">
+<h2>Hybrid QM/MM calculations in Pysic<a class="headerlink" href="#hybrid-qm-mm-calculations-in-pysic" title="Permalink to this headline">¶</a></h2>
+<p>Pysic provides a framework for creating and running hybrid QM/MM simulations. Within this framework it is possible to calculate the potential energy and forces in an atomistic configuration which has multiple subsystems and interactions between them. Any external calculator with an ASE interface can be assigned to a subsystem or the classical potentials provided by Pysic can be used. The QM/MM implementation in Pysic uses the mechanical embedding scheme with hydrogen link atoms. It is possible to enable any Pysic-supported interaction potentials between the subsystems, with special functions provided for the easy use of Coulomb and COMB interactions.</p>
+<p>The following figure demonstrates the simplified workflow comparison of a regular ASE calculation vs. Pysic&#8217;s hybrid QM/MM calculation.</p>
+<a class="reference internal image-reference" href="workflow.png"><img alt="workflow.png" class="align-center" src="workflow.png" /></a>
+<div class="section" id="mechanical-embedding">
+<h3>Mechanical Embedding<a class="headerlink" href="#mechanical-embedding" title="Permalink to this headline">¶</a></h3>
+<p>The electrostatic interaction between subsystems is treated with the mechanical embedding scheme. The Coulomb interaction is thus calculated in the MM level by assigning point charges for the atoms in the  primary and secondary system. The charges in the secondary system are static and can be obtained from experimental data or theoretical calculations. Rather than also parametrizing the charges in the primary system, in Pysic they can be dynamically calculated by using the electron density provided by the DFT calculator. The positive charge of the nuclei can be accurately modeled as an atom-centered point charge. The effect of the negative electron charge density is approximated also as a single atom-centered point charge. The value of this point charge is calculated by integrating the electron charge density inside a certain volume. Primarily Pysic uses the Bader partitioning scheme to determine these volumes, but a spherical partitioning scheme is also available.</p>
+</div>
+<div class="section" id="hydrogen-links-in-pysic">
+<h3>Hydrogen links in Pysic<a class="headerlink" href="#hydrogen-links-in-pysic" title="Permalink to this headline">¶</a></h3>
+<p>The covalent bonds between subsystems are treated with the link atom approach, i.e. hydrogen atoms are used to cap the bonds in the primary QM system. The hydrogen link atoms are placed on the line connecting the two atoms that form the bond. The exact position of the link atoms in this line can be controlled with the CHL parameter, given when defining the links in <tt class="xref py py-meth docutils literal"><span class="pre">add_hydrogen_links()</span></tt>. The link atoms automatically keep their correct position when running dynamics or geometry optimization.</p>
+</div>
+<div class="section" id="example">
+<h3>Example<a class="headerlink" href="#example" title="Permalink to this headline">¶</a></h3>
+<p>The following python script demonstrates the Python interface for creating a simple hybrid QM/MM simulation with Pysic. The potentials and calculator parameters used in this example are not physically justified and serve only to illustrate the usage:</p>
+<div class="highlight-python"><pre>#! /usr/bin/env python
+from ase.structure import molecule
+from pysic import *
+from gpaw import GPAW
+
+# Create the atomic system as an ASE Atoms object
+ethane = molecule(’C2H6’, cell=(6, 6, 6))
+ethane.center()
+
+# Create the hybrid calculator
+hybrid_calc = HybridCalculator()
+
+# Setup the primary system
+gpaw_calc = GPAW(h=0.25, txt=None)
+PS = SubSystem("primary", indices=(0, 2, 3, 4), calculator=gpaw_calc)
+hybrid_calc.add_subsystem(PS)
+
+# Setup the secondary system
+1pysic_calc = Pysic()
+pysic_calc.add_potential(Potential(’LJ’, symbols=[[’H’, ’C’]], parameters=[0.05, 2.5], cutoff=5))
+SS = SubSystem("secondary", indices="remaining", calculator=pysic_calc)
+hybrid_calc.add_subsystem(SS)
+
+# Setup the interaction between the subsystems
+interaction = Interaction("primary", "secondary")
+interaction.set_potentials(Potential(’LJ’, symbols=[[’C’, ’C’]], parameters=[0.05, 3], cutoff=5))
+interaction.add_hydrogen_links((0, 1), CHL=0.5)
+hybrid_calc.add_interaction(interaction)
+
+# Do some calculations
+ethane.set_calculator(hybrid_calc)
+ethane.get_potential_energy()
+ethane.get_forces()
+
+# Output results
+hybrid_calc.print_energy_summary()
+hybrid_calc.print_force_summary()
+hybrid_calc.print_time_summary()</pre>
+</div>
+<p>The code is now split into sections that are further elaborated:</p>
+<ul>
+<li><p class="first">First we define the entire structure that we want to analyze. It is a regular ASE Atoms object:</p>
+<div class="highlight-python"><pre>ethane = molecule(’C2H6’, cell=(6, 6, 6))
+ethane.center()</pre>
+</div>
+</li>
+<li><p class="first">A HybridCalculator object is then created. It is the core class in Pysic’s hybrid calculations. The end-user may treat is like any other ASE compatible calculator:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">hybrid_calc</span> <span class="o">=</span> <span class="n">HybridCalculator</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">A SubSystem object is created for each desired subsystem. A subsystem is defined by giving it a unique name, the indices of the atoms in the subsystem and the calculator which is to be used for it. The newly created SubSystem object is then passed to the HybridCalculator:</p>
+<div class="highlight-python"><pre># Setup the primary system
+gpaw_calc = GPAW(h=0.25, txt=None)
+PS = SubSystem("primary", indices=(0, 2, 3, 4), calculator=gpaw_calc)
+hybrid_calc.add_subsystem(PS)
+
+# Setup the secondary system
+pysic_calc = Pysic()
+pysic_calc.add_potential(Potential(’LJ’, symbols=[[’H’, ’C’]], parameters=[0.05, 2.5], cutoff=5))
+SS = SubSystem("secondary", indices="remaining", calculator=pysic_calc)
+hybrid_calc.add_subsystem(SS)</pre>
+</div>
+</li>
+<li><p class="first">Interaction potentials and hydrogen link atoms between any two subsystems are set up by creating an Interaction object. The names of the interacting subsystems are given in the constructor, the first being the primary system, and the latter being the secondary system. Potentials and link atoms are created through simple function calls. Finally the Interaction object is passed to the HybridCalculator:</p>
+<div class="highlight-python"><pre>interaction = Interaction("primary", "secondary")
+interaction.set_potentials(Potential(’LJ’, symbols=[[’C’, ’C’]], parameters=[0.05, 3], cutoff=5))
+interaction.add_hydrogen_links((0, 1), CHL=0.5)
+hybrid_calc.add_interaction(interaction)</pre>
+</div>
+</li>
+<li><p class="first">When the subsystems and interactions are successfully configured, the HybridCalculator can be used like any regular ASE calculator to calculate the potential energy and forces in the system:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">ethane</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">hybrid_calc</span><span class="p">)</span>
+<span class="n">ethane</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+<span class="n">ethane</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">The HybridCalculator provides useful tools for inspecting the energies, calculation times and forces related to the different subsystems and interactions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">hybrid_calc</span><span class="o">.</span><span class="n">print_energy_summary</span><span class="p">()</span>
+<span class="n">hybrid_calc</span><span class="o">.</span><span class="n">print_force_summary</span><span class="p">()</span>
+<span class="n">hybrid_calc</span><span class="o">.</span><span class="n">print_time_summary</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="hybridcalculator-class">
+<h2>HybridCalculator class<a class="headerlink" href="#hybridcalculator-class" title="Permalink to this headline">¶</a></h2>
+<p>The HybridCalculator provides a regular ASE calculator interface, but internally combines results from multiple different calculators and interactions between them. Currently you can use it for potential energy and force calculations (stress calculations not yet implemented). Like with any ASE calculator, you can also run molecular dynamics and local geometry optimizations with it, but global energy optimization schemes that require a stress implementation will naturally not work due to missing stress implementation.</p>
+<p>The following methods form the basis for creating and performing hybrid simulations with HybridCalculator:</p>
+<blockquote>
+<div><ul class="simple">
+<li><a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.add_subsystem" title="pysic.hybridcalculator.HybridCalculator.add_subsystem"><tt class="xref py py-meth docutils literal"><span class="pre">add_subsystem()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.add_interaction" title="pysic.hybridcalculator.HybridCalculator.add_interaction"><tt class="xref py py-meth docutils literal"><span class="pre">add_interaction()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.get_potential_energy" title="pysic.hybridcalculator.HybridCalculator.get_potential_energy"><tt class="xref py py-meth docutils literal"><span class="pre">get_potential_energy()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.get_forces" title="pysic.hybridcalculator.HybridCalculator.get_forces"><tt class="xref py py-meth docutils literal"><span class="pre">get_forces()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.print_energy_summary" title="pysic.hybridcalculator.HybridCalculator.print_energy_summary"><tt class="xref py py-meth docutils literal"><span class="pre">print_energy_summary()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.print_force_summary" title="pysic.hybridcalculator.HybridCalculator.print_force_summary"><tt class="xref py py-meth docutils literal"><span class="pre">print_force_summary()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.print_time_summary" title="pysic.hybridcalculator.HybridCalculator.print_time_summary"><tt class="xref py py-meth docutils literal"><span class="pre">print_time_summary()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.print_interaction_charge_summary" title="pysic.hybridcalculator.HybridCalculator.print_interaction_charge_summary"><tt class="xref py py-meth docutils literal"><span class="pre">print_interaction_charge_summary()</span></tt></a></li>
+<li><a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.view_subsystems" title="pysic.hybridcalculator.HybridCalculator.view_subsystems"><tt class="xref py py-meth docutils literal"><span class="pre">view_subsystems()</span></tt></a></li>
+</ul>
+</div></blockquote>
+<div class="section" id="full-documentation-of-the-hybridcalculator-class">
+<h3>Full documentation of the HybridCalculator class<a class="headerlink" href="#full-documentation-of-the-hybridcalculator-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="pysic.hybridcalculator.HybridCalculator">
+<em class="property">class </em><tt class="descclassname">pysic.hybridcalculator.</tt><tt class="descname">HybridCalculator</tt><big>(</big><em>atoms=None</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to create and perform hybrid calculations.</p>
+<p>This class is a fully compatible ASE calculator that provides the
+possibility of dividing the Atoms object into subsystems with different ASE
+calculators attached to them.</p>
+<p>You can also define hydrogen link atoms in the interfaces of these
+subsystems or define any Pysic Potentials through which the subsystems
+interact with each other.</p>
+<dl class="docutils">
+<dt>Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>total_timer: :class:&#8217;~pysic.utility.timer.Timer&#8217;</dt>
+<dd>Keeps track of the total time spent in the calculations.</dd>
+<dt>subsystem_energies: dictionary</dt>
+<dd>Name to energy.</dd>
+<dt>subsystems: dictionary</dt>
+<dd>Name to SubSystemInternal.</dd>
+<dt>subsystem_interactions: dictionary</dt>
+<dd>Pair of names to InteractionInternal.</dd>
+<dt>subsystem_info: dictionary</dt>
+<dd>Name to SubSystem.</dd>
+<dt>interaction_info: dictionary</dt>
+<dd>Pair of names to Interaction.</dd>
+<dt>forces: numpy array</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>stress: None</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>potential_energy: float</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>system_initialized: bool</dt>
+<dd>Indicates whether the SubSystemInternals and InteractionInternals
+have been constructed.</dd>
+<dt>self.atoms: ASE Atoms</dt>
+<dd>The full system.</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.add_interaction">
+<tt class="descname">add_interaction</tt><big>(</big><em>interaction</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.add_interaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.add_interaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to add a interaction between two subsystems.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>interaction: Interaction</dt>
+<dd>The Interaction object containing the information.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.add_subsystem">
+<tt class="descname">add_subsystem</tt><big>(</big><em>subsystem</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.add_subsystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.add_subsystem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to define subsystems</p>
+<p>You can define a subsystem with a oneliner, or then call setters on the
+SubSystemInfo object returned by this function.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>subsystem: SubSystem object</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.calculate_forces">
+<tt class="descname">calculate_forces</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.calculate_forces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.calculate_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the forces in the current structure.</p>
+<p>This force includes the forces internal to the subsystems and the forces
+that bind the subsystems together.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.calculate_potential_energy">
+<tt class="descname">calculate_potential_energy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.calculate_potential_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.calculate_potential_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the potential energy in the current structure.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.calculate_subsystem_interaction_charges">
+<tt class="descname">calculate_subsystem_interaction_charges</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.calculate_subsystem_interaction_charges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.calculate_subsystem_interaction_charges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the calculated interaction charges for the given subsystem.</p>
+<p>Before the charges can be calulated, one energy calculation has to be
+made so that the electron density is available</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.calculation_required">
+<tt class="descname">calculation_required</tt><big>(</big><em>atoms, quantities=['forces', 'energy', 'stress']</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.calculation_required"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.calculation_required" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if a calculation is required for any of the the given
+properties.</p>
+<p>Check if the quantities in the quantities list have already been
+calculated for the atomic configuration atoms. The quantities can be
+one or more of: &#8216;energy&#8217;, &#8216;forces&#8217;, &#8216;stress&#8217;.  This method is used to
+check if a quantity is available without further calculations. For this
+reason, calculators should react to unknown/unsupported quantities by
+returning True, indicating that the quantity is not available.</p>
+<p>Two sets of atoms are considered identical if they have the same
+positions, atomic numbers, unit cell and periodic boundary conditions.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>atoms: ASE Atoms</dt>
+<dd>This structure is compared to the currently stored.</dd>
+<dt>quantities: list of strings</dt>
+<dd>list of keywords &#8216;energy&#8217;, &#8216;forces&#8217;, &#8216;stress&#8217;</dd>
+</dl>
+</dd>
+<dt>Returns:</dt>
+<dd>bool: True if the quantities need to be calculated, false otherwise.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.check_subsystem_indices">
+<tt class="descname">check_subsystem_indices</tt><big>(</big><em>atom_indices</em>, <em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.check_subsystem_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.check_subsystem_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that the atomic indices of the subsystem are present.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.check_subsystem_overlap">
+<tt class="descname">check_subsystem_overlap</tt><big>(</big><em>atom_indices</em>, <em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.check_subsystem_overlap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.check_subsystem_overlap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check that the subsystem doesn&#8217;t overlap with another one.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.full_system_set">
+<tt class="descname">full_system_set</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.full_system_set"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.full_system_set" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks whether the full system has been defined.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.generate_subsystem_indices">
+<tt class="descname">generate_subsystem_indices</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.generate_subsystem_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.generate_subsystem_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generates the indices for the given subsystem.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.get_atoms">
+<tt class="descname">get_atoms</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.get_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.get_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a copy of the full system.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.get_colors">
+<tt class="descname">get_colors</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.get_colors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.get_colors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a color set for AtomEyeViewer with different colours for the
+different subsystems.</p>
+<p>When the subsystems have been defined with add_subsystem() and the
+atoms have been set, this function will return a list of colors for
+each atom. The different subsystems have different colours for easy
+identification. You can provide this list of colors to an AtomEyeViewer
+object for visualization.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.get_forces">
+<tt class="descname">get_forces</tt><big>(</big><em>atoms=None</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.get_forces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.get_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the forces acting on the atoms.</p>
+<p>If the atoms parameter is given, it will be used for updating the
+structure assigned to the calculator prior to calculating the forces.
+Otherwise the structure already associated with the calculator is used.</p>
+<p>The calculator checks if the forces have been calculated already via
+<a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.calculation_required" title="pysic.hybridcalculator.HybridCalculator.calculation_required"><tt class="xref py py-meth docutils literal"><span class="pre">calculation_required()</span></tt></a>.
+If the structure has changed, the forces are calculated using
+<a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.calculate_forces" title="pysic.hybridcalculator.HybridCalculator.calculate_forces"><tt class="xref py py-meth docutils literal"><span class="pre">calculate_forces()</span></tt></a></p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>atoms: ASE Atoms object</dt>
+<dd>The structure to calculate the forces on.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.get_potential_energy">
+<tt class="descname">get_potential_energy</tt><big>(</big><em>atoms=None</em>, <em>force_consistent=False</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.get_potential_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.get_potential_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the potential energy of the hybrid system.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.get_stress">
+<tt class="descname">get_stress</tt><big>(</big><em>atoms=None</em>, <em>skip_charge_relaxation=False</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.get_stress"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.get_stress" title="Permalink to this definition">¶</a></dt>
+<dd><p>This function has not been implemented.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.get_subsystem">
+<tt class="descname">get_subsystem</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.get_subsystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.get_subsystem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a copy of the ASE Atoms object for a certain subsystem.</p>
+<p>The returned subsystem can be used for e.g. visualization or debugging.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.get_subsystem_indices">
+<tt class="descname">get_subsystem_indices</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.get_subsystem_indices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.get_subsystem_indices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the indices of the atoms in the subsystem in the full system.</p>
+<p>You can ask the indices even if the subsystems have not been
+initialized, but the indices of different subsystems may overlap in
+this case. If the subsystems have been initialized this function will
+only return indices if they are valid.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.get_subsystem_pseudo_density">
+<tt class="descname">get_subsystem_pseudo_density</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.get_subsystem_pseudo_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.get_subsystem_pseudo_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the electron pseudo density for the given subsystem.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.get_unsubsystemized_atoms">
+<tt class="descname">get_unsubsystemized_atoms</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.get_unsubsystemized_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.get_unsubsystemized_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of indices for the atoms not already in a subsystem.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.identical_atoms">
+<tt class="descname">identical_atoms</tt><big>(</big><em>atoms</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.identical_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.identical_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compares the given atoms to the stored atoms object. The Atoms are
+identical if the positions, atomic numbers, periodic boundary
+conditions and cell are the same.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.initialize_interaction">
+<tt class="descname">initialize_interaction</tt><big>(</big><em>info</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.initialize_interaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.initialize_interaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes a InteractionInternal from the given Interaction.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>info: Interaction</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.initialize_subsystem">
+<tt class="descname">initialize_subsystem</tt><big>(</big><em>info</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.initialize_subsystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.initialize_subsystem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes a SubsystemInternal from the given Subsystem.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>info: SubSystem</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.initialize_system">
+<tt class="descname">initialize_system</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.initialize_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.initialize_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initializes the subsystems and interactions.</p>
+<p>Called once during the lifetime of the calculator. Typically when
+calling set_atoms for the first time, or when calculating any
+quantity for the first time. If the atoms in the simulation need to be
+updated, update_system() is used.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.print_energy_summary">
+<tt class="descname">print_energy_summary</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.print_energy_summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.print_energy_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print a detailed summary of the different energies in the system.
+This includes the energies in the subsystems, interaction energies and
+possible energy corrections.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.print_force_summary">
+<tt class="descname">print_force_summary</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.print_force_summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.print_force_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print a detailed summary of forces in the system.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.print_interaction_charge_summary">
+<tt class="descname">print_interaction_charge_summary</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.print_interaction_charge_summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.print_interaction_charge_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print a summary of the atomic charges that are used in the
+electrostatic interaction between subsystems.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.print_time_summary">
+<tt class="descname">print_time_summary</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.print_time_summary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.print_time_summary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Print a detailed summary of the time usage.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.set_atoms">
+<tt class="descname">set_atoms</tt><big>(</big><em>atoms</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.set_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.set_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the full system for hybrid calculations.</p>
+<p>Use <tt class="xref py py-meth docutils literal"><span class="pre">add_subsystem()</span></tt> for setting up the
+subsystems.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>atoms: ASE Atoms</dt>
+<dd>The full system.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.subsystem_defined">
+<tt class="descname">subsystem_defined</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.subsystem_defined"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.subsystem_defined" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that there is a subsystem with the given name.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.update_system">
+<tt class="descname">update_system</tt><big>(</big><em>atoms</em><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.update_system"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.update_system" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the subsystem atoms.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.hybridcalculator.HybridCalculator.view_subsystems">
+<tt class="descname">view_subsystems</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/hybridcalculator.html#HybridCalculator.view_subsystems"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.hybridcalculator.HybridCalculator.view_subsystems" title="Permalink to this definition">¶</a></dt>
+<dd><p>Views the subsystems with ASE:s built in viewer.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="subsystem-class">
+<h2>Subsystem class<a class="headerlink" href="#subsystem-class" title="Permalink to this headline">¶</a></h2>
+<p>The SubSystem class works as an interface for defining subsystems in hybrid simulations. Through it you can define the atoms that belong to the subsystem and the calculator that is used for it. SubSystem objects also provides special options for QM subsystems: you can setup dynamical charge calculation with <a class="reference internal" href="#pysic.subsystem.SubSystem.enable_charge_calculation" title="pysic.subsystem.SubSystem.enable_charge_calculation"><tt class="xref py py-meth docutils literal"><span class="pre">enable_charge_calculation()</span></tt></a> and cell optimization with <a class="reference internal" href="#pysic.subsystem.SubSystem.enable_cell_optimization" title="pysic.subsystem.SubSystem.enable_cell_optimization"><tt class="xref py py-meth docutils literal"><span class="pre">enable_cell_optimization()</span></tt></a>.</p>
+<p>You can define the atoms in the subsystem as a list of indices, with a tag or with a special string: &#8220;remaining&#8221;, which means all the atoms that are not yet assigned to a subsystem.</p>
+<div class="section" id="full-documentation-of-the-subsystem-class">
+<h3>Full documentation of the Subsystem class<a class="headerlink" href="#full-documentation-of-the-subsystem-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="pysic.subsystem.SubSystem">
+<em class="property">class </em><tt class="descclassname">pysic.subsystem.</tt><tt class="descname">SubSystem</tt><big>(</big><em>name</em>, <em>indices=None</em>, <em>tag=None</em>, <em>calculator=None</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to create and store information about a subsystem.</p>
+<p>The end user can create and manipulate these objects when defining
+subsystems. The subsystems are added to the calculation by calling
+<a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.add_subsystem" title="pysic.hybridcalculator.HybridCalculator.add_subsystem"><tt class="xref py py-meth docutils literal"><span class="pre">add_subsystem()</span></tt></a> which adds a
+SubSystem-object to the calculation.</p>
+<p>When the HybridCalculator sees fit, the subsystems are materialized by
+converting the stored SubSystems into SubSystemInternals.</p>
+<dl class="docutils">
+<dt>Attributes:</dt>
+<dd><dl class="first docutils">
+<dt>name: string</dt>
+<dd>The unique name for this subsystem.</dd>
+<dt>calculator: ASE Calculator</dt>
+<dd>The calculator used.</dd>
+</dl>
+<p>cell_size_optimization_enabled: bool</p>
+<dl class="docutils">
+<dt>cell_padding: float</dt>
+<dd>The padding used when optimizing the cell size.</dd>
+</dl>
+<p>charge_calculation_enabled: bool</p>
+<dl class="docutils">
+<dt>charge_source: string</dt>
+<dd>Indicates the electron density that is used in charge calculation.
+Can be &#8220;pseudo&#8221; or &#8220;all-electron&#8221;.</dd>
+<dt>division: string</dt>
+<dd>Indicates the division algorithm used in charge caluclation. Can be
+&#8220;Bader&#8221; or &#8220;van Der Waals&#8221;.</dd>
+<dt>gridrefinement: int</dt>
+<dd>The factor by which the calculation grid is densified in charge
+calculation.</dd>
+</dl>
+<p>indices: list of ints</p>
+<p class="last">tag: int</p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.subsystem.SubSystem.enable_cell_optimization">
+<tt class="descname">enable_cell_optimization</tt><big>(</big><em>padding</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystem.enable_cell_optimization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystem.enable_cell_optimization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable cell size optimization.</p>
+<p>A subsystem might spatially reside in only a small portion of the
+entire system. DFT calculators will then waste time doing calculations
+in empty space, where almost none of electron density reaches.</p>
+<p>This optimization minimizes the cell size, so that the atoms in the
+subsystem fit the cell with the given padding. If the padding is too
+small, the DFT-calculator might not work properly!</p>
+<p>The optimization is off by default. It cannot be turned on in systems
+with periodic boundary conditions. The new optimized cell is always
+ortorhombic, regardless of the shape of the original, unoptimized cell.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>padding: float</dt>
+<dd>The minimum distance between the subsystem atoms and the cell
+walls.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystem.enable_charge_calculation">
+<tt class="descname">enable_charge_calculation</tt><big>(</big><em>division='Bader'</em>, <em>source='all-electron'</em>, <em>gridrefinement=4</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystem.enable_charge_calculation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystem.enable_charge_calculation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable the dynamic calculation of atom-centered charges with the
+specified algorithm and from the specified electron density. These
+charges are only used for the interaction between other subsystems.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>division: string</dt>
+<dd><dl class="first last docutils">
+<dt>Indicates the division algorithm that is used. Available options are:</dt>
+<dd>&#8220;Bader&#8221;: Bader algorithm
+&#8220;van Der Waals&#8221;: Spheres with van Der Waals radius</dd>
+</dl>
+</dd>
+<dt>source: string</dt>
+<dd><p class="first">Indicates what type of electron density is used. Available
+options are:</p>
+<blockquote class="last">
+<div>&#8220;pseudo&#8221;: Use the pseudo electron density provided by all
+ASE DFT calculators
+&#8220;all-electron&#8221;: Use the all-electron density provided by at
+least GPAW</div></blockquote>
+</dd>
+<dt>gridrefinement: int</dt>
+<dd>Indicates the subdivision that is used for the all-electron
+density.  Can be other than unity only for Bader algorithm with
+all-electron density.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystem.is_valid">
+<tt class="descname">is_valid</tt><big>(</big><em>indices</em>, <em>tag</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystem.is_valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystem.is_valid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the given atom specifiers are correctly given. Does not
+yet check that they exist or don&#8217;t overlap with other subssystems.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystem.set_atoms">
+<tt class="descname">set_atoms</tt><big>(</big><em>indices=None</em>, <em>tag=None</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystem.set_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystem.set_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the atoms that belong to this subsystem. Give only one of the
+specifiers: indices or tag.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>indices: list of integers or string</dt>
+<dd>A list of atom indices or a special string &#8220;remaining&#8221;, which
+assigns all the yet unassigned atoms to this subsystem.</dd>
+<dt>tag: int</dt>
+<dd>The atoms with this tag belong to this subsystem.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystem.set_calculator">
+<tt class="descname">set_calculator</tt><big>(</big><em>calculator</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystem.set_calculator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystem.set_calculator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the calculator for the subsystem.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>calculator: ASE compatible calculator</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="subsysteminternal-class">
+<h2>SubSystemInternal class<a class="headerlink" href="#subsysteminternal-class" title="Permalink to this headline">¶</a></h2>
+<p>This class is meant for internal use only.</p>
+<div class="section" id="full-documentation-of-the-subsysteminternal-class">
+<h3>Full documentation of the SubSystemInternal class<a class="headerlink" href="#full-documentation-of-the-subsysteminternal-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="pysic.subsystem.SubSystemInternal">
+<em class="property">class </em><tt class="descclassname">pysic.subsystem.</tt><tt class="descname">SubSystemInternal</tt><big>(</big><em>atoms</em>, <em>info</em>, <em>index_map</em>, <em>reverse_index_map</em>, <em>n_atoms</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal" title="Permalink to this definition">¶</a></dt>
+<dd><p>A materialization of a SubSystem object.</p>
+<p>This class is materialised from a SubSystem, and should not be
+accessible to the end user.</p>
+<dl class="docutils">
+<dt>Attributes:</dt>
+<dd><dl class="first docutils">
+<dt>name: string</dt>
+<dd>The unique name for this subsystem.</dd>
+<dt>calculator: ASE Calculator</dt>
+<dd>The calculator used.</dd>
+</dl>
+<p>cell_size_optimization_enabled: bool</p>
+<p>cell_padding: float</p>
+<p>charge_calculation_enabled: bool</p>
+<p>charge_source: string</p>
+<p>division: string</p>
+<p>gridrefinement: int</p>
+<dl class="docutils">
+<dt>n_atoms: int</dt>
+<dd>Number of atoms in the full system.</dd>
+<dt>atoms_for_interaction: ASE Atoms</dt>
+<dd>The copy of subsystems atoms used in interaction calculations.</dd>
+<dt>atoms_for_subsystem: ASE Atoms</dt>
+<dd>The copy of subsystems atoms used in calculating subsystem energies
+etc.</dd>
+<dt>index_map: dictionary of int to int</dt>
+<dd>The keys are the atom indices in the full system, values are
+indices in the subssystem.</dd>
+<dt>reverse_index_map: dicitonary of int to int</dt>
+<dd>The keys are the atom indices in the subsystem, values are the
+keys in the full system.</dd>
+</dl>
+<p>potential_energy: float</p>
+<p>forces: numpy array</p>
+<dl class="docutils">
+<dt>density_grid: numpy array</dt>
+<dd>Stored if spherical division is used in charge calculation.</dd>
+</dl>
+<p>pseudo_density: numpy array</p>
+<p>link_atom_indices: list</p>
+<dl class="last docutils">
+<dt>timer: :class:&#8217;~pysic.utility.timer.Timer&#8217;</dt>
+<dd>Used to keep track of time usage.</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.get_forces">
+<tt class="descname">get_forces</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.get_forces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.get_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a 3D numpy array that contains forces for this subsystem.</p>
+<p>The returned array contains a row for each atom in the full system, but
+there is only an entry for the atoms in this subsystem. This makes it
+easier to calculate the total forces later on.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.get_potential_energy">
+<tt class="descname">get_potential_energy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.get_potential_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.get_potential_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the potential energy contained in this subsystem.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.get_pseudo_density">
+<tt class="descname">get_pseudo_density</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.get_pseudo_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.get_pseudo_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the electron pseudo density if available.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.optimize_cell">
+<tt class="descname">optimize_cell</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.optimize_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.optimize_cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tries to optimize the cell of the subsystem so only the atoms in
+this subsystem fit in it with the defined padding to the edges. The new
+cell is always ortorhombic.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.update_charges">
+<tt class="descname">update_charges</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.update_charges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.update_charges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the charges in the system. Depending on the value of
+self.division, calls either
+<a class="reference internal" href="#pysic.subsystem.SubSystemInternal.update_charges_bader" title="pysic.subsystem.SubSystemInternal.update_charges_bader"><tt class="xref py py-meth docutils literal"><span class="pre">update_charges_bader()</span></tt></a>, or
+<a class="reference internal" href="#pysic.subsystem.SubSystemInternal.update_charges_van_der_waals" title="pysic.subsystem.SubSystemInternal.update_charges_van_der_waals"><tt class="xref py py-meth docutils literal"><span class="pre">update_charges_van_der_waals()</span></tt></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.update_charges_bader">
+<tt class="descname">update_charges_bader</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.update_charges_bader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.update_charges_bader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the charges in the atoms used for interaction with the Bader
+algorithm.</p>
+<p>This function uses an external Bader charge calculator from
+<a class="reference external" href="http://theory.cm.utexas.edu/henkelman/code/bader/">http://theory.cm.utexas.edu/henkelman/code/bader/</a>. This tool is
+provided also in pysic/tools. Before using this function the bader
+executable directory has to be added to PATH.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.update_charges_van_der_waals">
+<tt class="descname">update_charges_van_der_waals</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.update_charges_van_der_waals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.update_charges_van_der_waals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the atomic charges by using the electron density within a
+sphere of van Der Waals radius.</p>
+<p>The charge for each atom in the system is integrated from the electron
+density inside the van Der Waals radius of the atom in hand. The link
+atoms will affect the distribution of the electron density.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.update_density_grid">
+<tt class="descname">update_density_grid</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.update_density_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.update_density_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Precalculates a grid of 3D points for the charge calculation with
+van Der Waals radius.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="interaction-class">
+<h2>Interaction class<a class="headerlink" href="#interaction-class" title="Permalink to this headline">¶</a></h2>
+<p>The Interaction class works as an interface for defining interactions and link atoms between subsystems in hybrid calulations. With the methods <a class="reference internal" href="#pysic.interaction.Interaction.add_potential" title="pysic.interaction.Interaction.add_potential"><tt class="xref py py-meth docutils literal"><span class="pre">add_potential()</span></tt></a>, <a class="reference internal" href="#pysic.interaction.Interaction.set_potentials" title="pysic.interaction.Interaction.set_potentials"><tt class="xref py py-meth docutils literal"><span class="pre">set_potentials()</span></tt></a>, <a class="reference internal" href="#pysic.interaction.Interaction.enable_coulomb_potential" title="pysic.interaction.Interaction.enable_coulomb_potential"><tt class="xref py py-meth docutils literal"><span class="pre">enable_coulomb_potential()</span></tt></a> and <a class="reference internal" href="#pysic.interaction.Interaction.enable_comb_potential" title="pysic.interaction.Interaction.enable_comb_potential"><tt class="xref py py-meth docutils literal"><span class="pre">enable_comb_potential()</span></tt></a> you can define the Pysic Potentials that are present between the subsystems. With <a class="reference internal" href="#pysic.interaction.Interaction.add_hydrogen_links" title="pysic.interaction.Interaction.add_hydrogen_links"><tt class="xref py py-meth docutils literal"><span class="pre">add_hydrogen_links()</span></tt></a> you can setup the hydrogen link atoms.</p>
+<div class="section" id="full-documentation-of-the-interaction-class">
+<h3>Full documentation of the Interaction class<a class="headerlink" href="#full-documentation-of-the-interaction-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="pysic.interaction.Interaction">
+<em class="property">class </em><tt class="descclassname">pysic.interaction.</tt><tt class="descname">Interaction</tt><big>(</big><em>primary</em>, <em>secondary</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to store information about a interaction between subsystems.</p>
+<p>The end user can create and manipulate these objects when defining
+interactions between subsystems. The interactions between subsystems are
+added to the calculation by calling
+<a class="reference internal" href="#pysic.hybridcalculator.HybridCalculator.add_interaction" title="pysic.hybridcalculator.HybridCalculator.add_interaction"><tt class="xref py py-meth docutils literal"><span class="pre">add_interaction()</span></tt></a> which adds
+a Interaction object to the calculation.</p>
+<p>When the HybridCalculator sees fit, the subsystem bindings are materialized
+by converting the stored Interactions to InteractionInternals.</p>
+<dl class="docutils">
+<dt>Attributes:</dt>
+<dd><dl class="first docutils">
+<dt>primary: string</dt>
+<dd>Name of the primary subsystem.</dd>
+<dt>secondary: string</dt>
+<dd>Name of the secondary subsystem.</dd>
+<dt>links: list of tuples</dt>
+<dd>Contains a list of different link types. Each list item is a tuple
+with two items: the first is a list of link pairs, the second one
+is the CHL parameter for these links.</dd>
+<dt>electrostatic_parameters: dictionary</dt>
+<dd>Contains all the parameters used for creating a Coulomb potential.</dd>
+<dt>coulomb_potential_enabled: bool</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>comb_potential_enabled: bool</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>link_atom_correction_enabled: bool</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+</dl>
+<p class="last">potentials: list of <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a></p>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.interaction.Interaction.add_hydrogen_links">
+<tt class="descname">add_hydrogen_links</tt><big>(</big><em>pairs</em>, <em>CHL</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction.add_hydrogen_links"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction.add_hydrogen_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines hydrogen links in the system.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>pairs: tuple or list of tuples</dt>
+<dd>A set of tuples containing two indices, the first index in the
+tuple should point to the subsystem in which the hydrogen link
+atom is actually added to (=primary system).</dd>
+<dt>CHL: float</dt>
+<dd>Indicates the position of the hydrogen atom on the line defined
+by the atom pairs. Values should be between 0-1. 0 means that
+the link atom overlaps with the atom in the primary system, 1
+means that the link atom overlaps with the atom in the
+secondary system. The scale is linear.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.Interaction.add_potential">
+<tt class="descname">add_potential</tt><big>(</big><em>potential</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction.add_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction.add_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to add a Pysic potential between the subsystems.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>potential: <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a></dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.Interaction.enable_comb_potential">
+<tt class="descname">enable_comb_potential</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction.enable_comb_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction.enable_comb_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable the COMB potential between the subsystems. Valid for Si-Si
+and Si-O interactions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.Interaction.enable_coulomb_potential">
+<tt class="descname">enable_coulomb_potential</tt><big>(</big><em>epsilon=0.00552635</em>, <em>real_cutoff=None</em>, <em>k_cutoff=None</em>, <em>sigma=None</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction.enable_coulomb_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction.enable_coulomb_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables the electrical Coulomb interaction between the subsystems.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>epsilon: float</dt>
+<dd>The vacumm permittivity. Has a default value from the
+literature, in Atomic units.</dd>
+<dt>r_cutoff: float</dt>
+<dd>Real space cutoff radius. Provide if system has periodic
+boundary conditions.</dd>
+<dt>k_cutoff: float</dt>
+<dd><blockquote class="first">
+<div>Reciprocal space cutoff radius. Provide if system has periodic
+boundary conditions.</div></blockquote>
+<dl class="last docutils">
+<dt>sigma: float</dt>
+<dd>Ewald summation split parameter. Provide if system has periodic
+boundary conditions.</dd>
+</dl>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.Interaction.set_link_atom_correction">
+<tt class="descname">set_link_atom_correction</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction.set_link_atom_correction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction.set_link_atom_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets whether the link interaction correction energy is calculated or
+not.</p>
+<p>By default the correction is enabled, but you have to provide a
+secondary calculator that can calculate the interaction energies
+between the link atoms themselves and between link atoms and the
+primary system.</p>
+<p>The link atom correction is defined as:
+.. math:</p>
+<div class="highlight-python"><pre>E^  ext{link} &amp;= - E^       ext{int}_       ext{MM} ext{(PS, HL)} - E^      ext{tot}_       ext{MM} ext{(HL)}</pre>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.Interaction.set_potentials">
+<tt class="descname">set_potentials</tt><big>(</big><em>potentials</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction.set_potentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction.set_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to set a list of additional Pysic potentials between the
+subsystems.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>potentials: list of or single
+<a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a></dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+<div class="section" id="interactioninternal-class">
+<h2>InteractionInternal class<a class="headerlink" href="#interactioninternal-class" title="Permalink to this headline">¶</a></h2>
+<p>This class is meant for internal use only.</p>
+<div class="section" id="full-documentation-of-the-interactioninternal-class">
+<h3>Full documentation of the InteractionInternal class<a class="headerlink" href="#full-documentation-of-the-interactioninternal-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="pysic.interaction.InteractionInternal">
+<em class="property">class </em><tt class="descclassname">pysic.interaction.</tt><tt class="descname">InteractionInternal</tt><big>(</big><em>full_system</em>, <em>primary_subsystem</em>, <em>secondary_subsystem</em>, <em>info</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal" title="Permalink to this definition">¶</a></dt>
+<dd><p>The internal version of the Interaction-class.</p>
+<p>This class is meant only for internal use, and should not be accessed by
+the end-user.</p>
+<dl class="docutils">
+<dt>Attributes:</dt>
+<dd><dl class="first docutils">
+<dt>info: :class:&#8217;~Pysic.interaction.Interaction&#8217;</dt>
+<dd>Contains all the info about the interaction given by the user.</dd>
+</dl>
+<p>full_system: ASE Atoms</p>
+<p>primary_subsystem: <a class="reference internal" href="#pysic.subsystem.SubSystem" title="pysic.subsystem.SubSystem"><tt class="xref py py-class docutils literal"><span class="pre">SubSystem</span></tt></a></p>
+<p>secondary_subsystem: <a class="reference internal" href="#pysic.subsystem.SubSystem" title="pysic.subsystem.SubSystem"><tt class="xref py py-class docutils literal"><span class="pre">SubSystem</span></tt></a></p>
+<dl class="docutils">
+<dt>uncorrected_interaction_energy: float</dt>
+<dd>The interaction energy without the link atom correction.</dd>
+<dt>uncorrected_interaction_forces: numpy array</dt>
+<dd>The interaction forces without the link atom correction.</dd>
+</dl>
+<p>link_atom_correction_energy: float</p>
+<p>link_atom_correction_forces: numpy array</p>
+<dl class="docutils">
+<dt>interaction_energy: float</dt>
+<dd>The total interaction energy = uncorrected_interaction_energy +
+link_atom_correction_energy</dd>
+<dt>interaction_forces: numpy array</dt>
+<dd>The total interaction forces = uncorrected_interaction_forces +
+link_atom_correction_forces</dd>
+<dt>has_interaction_potentials: bool</dt>
+<dd>True if any potentials are defined.</dd>
+<dt>calculator: :class:&#8217;~pysic.calculator.Pysic&#8217;</dt>
+<dd>The pysic calculator used for non-pbc systems.</dd>
+<dt>pbc_calculator: :class:&#8217;~pysic.calculator.Pysic&#8217;</dt>
+<dd>The pysic calculator used for pbc systems.</dd>
+<dt>timer: :class:&#8217;~pysic.utility.timer.Timer&#8217;</dt>
+<dd>Used for tracking time usage.</dd>
+</dl>
+<p>has_pbc: bool</p>
+<dl class="last docutils">
+<dt>link_atoms: ASE Atoms</dt>
+<dd>Contains all the hydrogen link atoms. Needed when calculating link
+atom correction.</dd>
+<dt>n_primary: int</dt>
+<dd>Number of atoms in primary subsystem.</dd>
+<dt>n_secondary: int</dt>
+<dd>Number of atoms in secondary subsystem.</dd>
+<dt>n_full: int</dt>
+<dd>Number of atoms in full system.</dd>
+<dt>n_links: int</dt>
+<dd>Number of link atoms.</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.calculate_link_atom_correction_energy">
+<tt class="descname">calculate_link_atom_correction_energy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.calculate_link_atom_correction_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.calculate_link_atom_correction_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the link atom interaction energy defined as
+.. math:</p>
+<p>E^  ext{link} = -E^ ext{tot}_       ext{MM}(        ext{HL})-E^     ext{int}_       ext{MM}(        ext{PS, HL})</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.calculate_link_atom_correction_forces">
+<tt class="descname">calculate_link_atom_correction_forces</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.calculate_link_atom_correction_forces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.calculate_link_atom_correction_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the link atom correction forces defined as
+.. math:</p>
+<div class="highlight-python"><pre>F^  ext{link} = -</pre>
+</div>
+<p>abla(-E^        ext{tot}_       ext{MM}(        ext{HL})-E^     ext{int}_       ext{MM}(        ext{PS, HL}))</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_energy">
+<tt class="descname">calculate_uncorrected_interaction_energy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.calculate_uncorrected_interaction_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the interaction energy of a non-pbc system without the
+link atom correction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_energy_pbc">
+<tt class="descname">calculate_uncorrected_interaction_energy_pbc</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.calculate_uncorrected_interaction_energy_pbc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_energy_pbc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the interaction energy of a pbc system without the link
+atom correction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_forces">
+<tt class="descname">calculate_uncorrected_interaction_forces</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.calculate_uncorrected_interaction_forces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the interaction forces of a non-pbc system without the
+link atom correction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_forces_pbc">
+<tt class="descname">calculate_uncorrected_interaction_forces_pbc</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.calculate_uncorrected_interaction_forces_pbc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_forces_pbc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the interaction forces of a pbc system without the link
+atom correction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.get_interaction_energy">
+<tt class="descname">get_interaction_energy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.get_interaction_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.get_interaction_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the total interaction energy which consists of the
+uncorrected energies and possible the link atom correction.</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>float: the interaction energy</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.get_interaction_forces">
+<tt class="descname">get_interaction_forces</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.get_interaction_forces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.get_interaction_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a numpy array of total 3D forces for each atom in the whole
+system.</p>
+<p>The forces consists of the uncorrected forces and possibly the link
+atom correction forces. The row index refers to the atom index in the
+original structure.</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>numpy array: the forces for each atom in the full system</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.setup_comb_potential">
+<tt class="descname">setup_comb_potential</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.setup_comb_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.setup_comb_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setups a COMB-potential between the subsystems.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.setup_coulomb_potential">
+<tt class="descname">setup_coulomb_potential</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.setup_coulomb_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.setup_coulomb_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setups a Coulomb potential between the subsystems.</p>
+<p>Ewald calculation is automatically used for pbc-systems. Non-pbc
+systems use the ProductPotential to reproduce the Coulomb potential.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.setup_hydrogen_links">
+<tt class="descname">setup_hydrogen_links</tt><big>(</big><em>links</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.setup_hydrogen_links"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.setup_hydrogen_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup the hydrogen link atoms to the primary system.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>link_parameters: list of tuples</dt>
+<dd>Contains the link atom parameters from the Interaction-object.
+Each tuple in the list is a link atom specification for a
+covalent bond of different type. The first item in the tuple is
+a list of tuples containing atom index pairs. The second item
+in the tuple is the CHL parameter for these links.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.setup_potentials">
+<tt class="descname">setup_potentials</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.setup_potentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.setup_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setups the additional Pysic potentials given in the
+Interaction-object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.update_hydrogen_link_positions">
+<tt class="descname">update_hydrogen_link_positions</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.update_hydrogen_link_positions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.update_hydrogen_link_positions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to update the position of the hydrogen link atoms specified in
+this interaction</p>
+<p>It is assumed that the position of the host atoms have already been
+updated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.update_subsystem_charges">
+<tt class="descname">update_subsystem_charges</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.update_subsystem_charges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.update_subsystem_charges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the charges in the subsystems involved in the interaction (if
+charge update is enabled in them).</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2013, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

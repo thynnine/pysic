@@ -303,6 +303,102 @@ Finally, we run the dynamics::
 
 
 
+.. file:hybrid calculation
+
+.. _hybrid calculation:
+
+
+
+A hybrid calculation
+__________________________
+
+
+The following python script demonstrates the Python interface for creating a simple hybrid QM/MM simulation with Pysic. The potentials and calculator parameters used in this example are not physically justified and serve only to illustrate the usage::
+
+	#! /usr/bin/env python
+	from ase.structure import molecule
+	from pysic import *
+	from gpaw import GPAW
+
+	# Create the atomic system as an ASE Atoms object
+	ethane = molecule(’C2H6’, cell=(6, 6, 6))
+	ethane.center()
+
+	# Create the hybrid calculator
+	hybrid_calc = HybridCalculator()
+
+	# Setup the primary system
+	gpaw_calc = GPAW(h=0.25, txt=None)
+	PS = SubSystem("primary", indices=(0, 2, 3, 4), calculator=gpaw_calc)
+	hybrid_calc.add_subsystem(PS)
+
+	# Setup the secondary system
+	1pysic_calc = Pysic()
+	pysic_calc.add_potential(Potential(’LJ’, symbols=[[’H’, ’C’]], parameters=[0.05, 2.5], cutoff=5))
+	SS = SubSystem("secondary", indices="remaining", calculator=pysic_calc)
+	hybrid_calc.add_subsystem(SS)
+	
+	# Setup the interaction between the subsystems
+	interaction = Interaction("primary", "secondary")
+	interaction.set_potentials(Potential(’LJ’, symbols=[[’C’, ’C’]], parameters=[0.05, 3], cutoff=5))
+	interaction.add_hydrogen_links((0, 1), CHL=0.5)
+	hybrid_calc.add_interaction(interaction)
+
+	# Do some calculations
+	ethane.set_calculator(hybrid_calc)
+	ethane.get_potential_energy()
+	ethane.get_forces()
+	
+	# Output results
+	hybrid_calc.print_energy_summary()
+	hybrid_calc.print_force_summary()
+	hybrid_calc.print_time_summary()
+
+The code is now split into sections that are further elaborated:
+
+* First we define the entire structure that we want to analyze. It is a regular ASE Atoms object::
+
+	ethane = molecule(’C2H6’, cell=(6, 6, 6))
+	ethane.center()
+
+* A HybridCalculator object is then created. It is the core class in Pysic’s hybrid calculations. The end-user may treat is like any other ASE compatible calculator::
+
+	hybrid_calc = HybridCalculator()
+
+* A SubSystem object is created for each desired subsystem. A subsystem is defined by giving it a unique name, the indices of the atoms in the subsystem and the calculator which is to be used for it. The newly created SubSystem object is then passed to the HybridCalculator::
+
+	# Setup the primary system
+	gpaw_calc = GPAW(h=0.25, txt=None)
+	PS = SubSystem("primary", indices=(0, 2, 3, 4), calculator=gpaw_calc)
+	hybrid_calc.add_subsystem(PS)
+
+	# Setup the secondary system
+	pysic_calc = Pysic()
+	pysic_calc.add_potential(Potential(’LJ’, symbols=[[’H’, ’C’]], parameters=[0.05, 2.5], cutoff=5))
+	SS = SubSystem("secondary", indices="remaining", calculator=pysic_calc)
+	hybrid_calc.add_subsystem(SS)
+
+* Interaction potentials and hydrogen link atoms between any two subsystems are set up by creating an Interaction object. The names of the interacting subsystems are given in the constructor, the first being the primary system, and the latter being the secondary system. Potentials and link atoms are created through simple function calls. Finally the Interaction object is passed to the HybridCalculator::
+
+	interaction = Interaction("primary", "secondary")
+	interaction.set_potentials(Potential(’LJ’, symbols=[[’C’, ’C’]], parameters=[0.05, 3], cutoff=5))
+	interaction.add_hydrogen_links((0, 1), CHL=0.5)
+	hybrid_calc.add_interaction(interaction)
+
+* When the subsystems and interactions are successfully configured, the HybridCalculator can be used like any regular ASE calculator to calculate the potential energy and forces in the system::
+
+	ethane.set_calculator(hybrid_calc)
+	ethane.get_potential_energy()
+	ethane.get_forces()
+
+* The HybridCalculator provides useful tools for inspecting the energies, calculation times and forces related to the different subsystems and interactions::
+
+	hybrid_calc.print_energy_summary()
+	hybrid_calc.print_force_summary()
+	hybrid_calc.print_time_summary()
+
+
+
 .. file:screencasts
 
 .. _screencasts:

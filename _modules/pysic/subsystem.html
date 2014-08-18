@@ -1,0 +1,687 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.subsystem &mdash; Pysic 0.6 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.6 documentation" href="../../index.html" />
+    <link rel="up" title="pysic" href="../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Pysic 0.6 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.subsystem</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+<span class="sd">&quot;&quot;&quot;Defines classes used for creating and storing information about subsystems</span>
+<span class="sd">in a Pysic QM/MM hybrid calculation created with the HybridCalculator-class.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pysic.utility.error</span> <span class="kn">import</span> <span class="n">warn</span><span class="p">,</span> <span class="n">error</span>
+<span class="kn">from</span> <span class="nn">pysic.utility.bader_charges</span> <span class="kn">import</span> <span class="n">get_bader_charges</span>
+<span class="kn">import</span> <span class="nn">ase.data</span>
+<span class="kn">from</span> <span class="nn">pysic.utility.timer</span> <span class="kn">import</span> <span class="n">Timer</span>
+<span class="kn">from</span> <span class="nn">ase</span> <span class="kn">import</span> <span class="n">Atom</span><span class="p">,</span> <span class="n">Atoms</span>
+<span class="kn">from</span> <span class="nn">ase.visualize</span> <span class="kn">import</span> <span class="n">view</span>
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="kn">import</span> <span class="n">write</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+
+
+<span class="c">#===============================================================================</span>
+<div class="viewcode-block" id="SubSystem"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystem">[docs]</a><span class="k">class</span> <span class="nc">SubSystem</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Used to create and store information about a subsystem.</span>
+
+<span class="sd">    The end user can create and manipulate these objects when defining</span>
+<span class="sd">    subsystems. The subsystems are added to the calculation by calling</span>
+<span class="sd">    :meth:`~pysic.hybridcalculator.HybridCalculator.add_subsystem` which adds a</span>
+<span class="sd">    SubSystem-object to the calculation.</span>
+
+<span class="sd">    When the HybridCalculator sees fit, the subsystems are materialized by</span>
+<span class="sd">    converting the stored SubSystems into SubSystemInternals.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        name: string</span>
+<span class="sd">            The unique name for this subsystem.</span>
+<span class="sd">        calculator: ASE Calculator</span>
+<span class="sd">            The calculator used.</span>
+<span class="sd">        cell_size_optimization_enabled: bool</span>
+
+<span class="sd">        cell_padding: float</span>
+<span class="sd">            The padding used when optimizing the cell size.</span>
+<span class="sd">        charge_calculation_enabled: bool</span>
+
+<span class="sd">        charge_source: string</span>
+<span class="sd">            Indicates the electron density that is used in charge calculation.</span>
+<span class="sd">            Can be &quot;pseudo&quot; or &quot;all-electron&quot;.</span>
+<span class="sd">        division: string</span>
+<span class="sd">            Indicates the division algorithm used in charge caluclation. Can be</span>
+<span class="sd">            &quot;Bader&quot; or &quot;van Der Waals&quot;.</span>
+<span class="sd">        gridrefinement: int</span>
+<span class="sd">            The factor by which the calculation grid is densified in charge</span>
+<span class="sd">            calculation.</span>
+<span class="sd">        indices: list of ints</span>
+
+<span class="sd">        tag: int</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">name</span><span class="p">,</span>
+                 <span class="n">indices</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">tag</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                 <span class="n">calculator</span><span class="o">=</span><span class="bp">None</span>
+                 <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            name: string</span>
+<span class="sd">                A unique identifier for this substring.</span>
+<span class="sd">            indices: list of integers or string</span>
+<span class="sd">                A list of atom indices or a special string &quot;remaining&quot;, which</span>
+<span class="sd">                assigns all the yet unassigned atoms to this subsystem.</span>
+<span class="sd">            tag: int</span>
+<span class="sd">                The atoms with this tag belong to this subsystem.</span>
+<span class="sd">            calculator: ASE compatible calculator</span>
+<span class="sd">                The calculator that is used for this subsystem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span> <span class="o">=</span> <span class="n">calculator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_size_optimization_enabled</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_padding</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_calculation_enabled</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_source</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">division</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gridrefinement</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+
+<div class="viewcode-block" id="SubSystem.is_valid"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystem.is_valid">[docs]</a>    <span class="k">def</span> <span class="nf">is_valid</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">tag</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Checks that the given atom specifiers are correctly given. Does not</span>
+<span class="sd">        yet check that they exist or don&#39;t overlap with other subssystems.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Determine how the atoms are specified: indices, tag or special set</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">indices</span> <span class="o">!=</span> <span class="s">&quot;remaining&quot;</span><span class="p">:</span>
+                <span class="n">error</span><span class="p">(</span><span class="s">&quot;Use </span><span class="se">\&quot;</span><span class="s">remaining</span><span class="se">\&quot;</span><span class="s"> if you want to assign the yet unassigned atoms to a subsystem&quot;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">indices</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="n">tag</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">):</span>
+            <span class="n">error</span><span class="p">(</span><span class="s">&quot;Provide system as indices or tag&quot;</span><span class="p">,)</span>
+</div>
+<div class="viewcode-block" id="SubSystem.set_calculator"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystem.set_calculator">[docs]</a>    <span class="k">def</span> <span class="nf">set_calculator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">calculator</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the calculator for the subsystem.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            calculator: ASE compatible calculator</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">calculator</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="SubSystem.set_atoms"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystem.set_atoms">[docs]</a>    <span class="k">def</span> <span class="nf">set_atoms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">tag</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the atoms that belong to this subsystem. Give only one of the</span>
+<span class="sd">        specifiers: indices or tag.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            indices: list of integers or string</span>
+<span class="sd">                A list of atom indices or a special string &quot;remaining&quot;, which</span>
+<span class="sd">                assigns all the yet unassigned atoms to this subsystem.</span>
+<span class="sd">            tag: int</span>
+<span class="sd">                The atoms with this tag belong to this subsystem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_valid</span><span class="p">(</span><span class="n">indices</span><span class="p">,</span> <span class="n">tag</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">indices</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">indices</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">int</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">=</span> <span class="p">(</span><span class="n">indices</span><span class="p">,)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">indices</span> <span class="o">=</span> <span class="n">indices</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tag</span> <span class="o">=</span> <span class="n">tag</span>
+</div>
+<div class="viewcode-block" id="SubSystem.enable_cell_optimization"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystem.enable_cell_optimization">[docs]</a>    <span class="k">def</span> <span class="nf">enable_cell_optimization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">padding</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enable cell size optimization.</span>
+
+<span class="sd">        A subsystem might spatially reside in only a small portion of the</span>
+<span class="sd">        entire system. DFT calculators will then waste time doing calculations</span>
+<span class="sd">        in empty space, where almost none of electron density reaches.</span>
+
+<span class="sd">        This optimization minimizes the cell size, so that the atoms in the</span>
+<span class="sd">        subsystem fit the cell with the given padding. If the padding is too</span>
+<span class="sd">        small, the DFT-calculator might not work properly!</span>
+
+<span class="sd">        The optimization is off by default. It cannot be turned on in systems</span>
+<span class="sd">        with periodic boundary conditions. The new optimized cell is always</span>
+<span class="sd">        ortorhombic, regardless of the shape of the original, unoptimized cell.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            padding: float</span>
+<span class="sd">                The minimum distance between the subsystem atoms and the cell</span>
+<span class="sd">                walls.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_size_optimization_enabled</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_padding</span> <span class="o">=</span> <span class="n">padding</span>
+</div>
+<div class="viewcode-block" id="SubSystem.enable_charge_calculation"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystem.enable_charge_calculation">[docs]</a>    <span class="k">def</span> <span class="nf">enable_charge_calculation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">division</span><span class="o">=</span><span class="s">&quot;Bader&quot;</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="s">&quot;all-electron&quot;</span><span class="p">,</span> <span class="n">gridrefinement</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Enable the dynamic calculation of atom-centered charges with the</span>
+<span class="sd">        specified algorithm and from the specified electron density. These</span>
+<span class="sd">        charges are only used for the interaction between other subsystems.</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">            division: string</span>
+<span class="sd">                Indicates the division algorithm that is used. Available options are:</span>
+<span class="sd">                    &quot;Bader&quot;: Bader algorithm</span>
+<span class="sd">                    &quot;van Der Waals&quot;: Spheres with van Der Waals radius</span>
+<span class="sd">            source: string</span>
+<span class="sd">                Indicates what type of electron density is used. Available</span>
+<span class="sd">                options are:</span>
+<span class="sd">                    &quot;pseudo&quot;: Use the pseudo electron density provided by all</span>
+<span class="sd">                    ASE DFT calculators</span>
+<span class="sd">                    &quot;all-electron&quot;: Use the all-electron density provided by at</span>
+<span class="sd">                    least GPAW</span>
+<span class="sd">            gridrefinement: int</span>
+<span class="sd">                Indicates the subdivision that is used for the all-electron</span>
+<span class="sd">                density.  Can be other than unity only for Bader algorithm with</span>
+<span class="sd">                all-electron density.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">divisions</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;Bader&quot;</span><span class="p">,</span> <span class="s">&quot;van Der Waals&quot;</span><span class="p">]</span>
+        <span class="n">charge_sources</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;pseudo&quot;</span><span class="p">,</span> <span class="s">&quot;all-electron&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">division</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">divisions</span><span class="p">:</span>
+            <span class="n">error</span><span class="p">(</span><span class="s">&quot;Invalid division algorithm: &quot;</span> <span class="o">+</span> <span class="n">division</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">source</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">charge_sources</span><span class="p">:</span>
+            <span class="n">error</span><span class="p">(</span><span class="s">&quot;Invalid source for electron density: &quot;</span> <span class="o">+</span> <span class="n">source</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">gridrefinement</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">division</span> <span class="o">!=</span> <span class="s">&quot;Bader&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">division</span> <span class="o">==</span> <span class="s">&quot;Bader&quot;</span> <span class="ow">and</span> <span class="n">source</span> <span class="o">!=</span> <span class="s">&quot;all-electron&quot;</span><span class="p">):</span>
+                <span class="n">warn</span><span class="p">(</span><span class="s">&quot;The gridrefinement is available only for the Bader algorithm with all-electron density, it is ignored.&quot;</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_calculation_enabled</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">division</span> <span class="o">=</span> <span class="n">division</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_source</span> <span class="o">=</span> <span class="n">source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gridrefinement</span> <span class="o">=</span> <span class="n">gridrefinement</span>
+
+
+<span class="c">#===============================================================================</span></div></div>
+<div class="viewcode-block" id="SubSystemInternal"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystemInternal">[docs]</a><span class="k">class</span> <span class="nc">SubSystemInternal</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A materialization of a SubSystem object.</span>
+
+<span class="sd">    This class is materialised from a SubSystem, and should not be</span>
+<span class="sd">    accessible to the end user.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        name: string</span>
+<span class="sd">            The unique name for this subsystem.</span>
+<span class="sd">        calculator: ASE Calculator</span>
+<span class="sd">            The calculator used.</span>
+<span class="sd">        cell_size_optimization_enabled: bool</span>
+
+<span class="sd">        cell_padding: float</span>
+
+<span class="sd">        charge_calculation_enabled: bool</span>
+
+<span class="sd">        charge_source: string</span>
+
+<span class="sd">        division: string</span>
+
+<span class="sd">        gridrefinement: int</span>
+
+<span class="sd">        n_atoms: int</span>
+<span class="sd">            Number of atoms in the full system.</span>
+<span class="sd">        atoms_for_interaction: ASE Atoms</span>
+<span class="sd">            The copy of subsystems atoms used in interaction calculations.</span>
+<span class="sd">        atoms_for_subsystem: ASE Atoms</span>
+<span class="sd">            The copy of subsystems atoms used in calculating subsystem energies</span>
+<span class="sd">            etc.</span>
+<span class="sd">        index_map: dictionary of int to int</span>
+<span class="sd">            The keys are the atom indices in the full system, values are</span>
+<span class="sd">            indices in the subssystem.</span>
+<span class="sd">        reverse_index_map: dicitonary of int to int</span>
+<span class="sd">            The keys are the atom indices in the subsystem, values are the</span>
+<span class="sd">            keys in the full system.</span>
+<span class="sd">        potential_energy: float</span>
+
+<span class="sd">        forces: numpy array</span>
+
+<span class="sd">        density_grid: numpy array</span>
+<span class="sd">            Stored if spherical division is used in charge calculation.</span>
+<span class="sd">        pseudo_density: numpy array</span>
+
+<span class="sd">        link_atom_indices: list</span>
+
+<span class="sd">        timer: :class:&#39;~pysic.utility.timer.Timer&#39;</span>
+<span class="sd">            Used to keep track of time usage.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">info</span><span class="p">,</span> <span class="n">index_map</span><span class="p">,</span> <span class="n">reverse_index_map</span><span class="p">,</span> <span class="n">n_atoms</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters:</span>
+<span class="sd">            atoms: ASE Atoms</span>
+<span class="sd">                The subsystem atoms.</span>
+<span class="sd">            info: SubSystem object</span>
+<span class="sd">                Contains all the information about the subsystem</span>
+<span class="sd">            index_map: dictionary of int to int</span>
+<span class="sd">                The keys are the atom indices in the full system, values are</span>
+<span class="sd">                indices in the subssystem.</span>
+<span class="sd">            reverse_index_map: dicitonary of int to int</span>
+<span class="sd">                The keys are the atom indices in the subsystem, values are the</span>
+<span class="sd">                keys in the full system.</span>
+<span class="sd">            n_atoms: int</span>
+<span class="sd">                Number of atoms in the full system.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Extract data from info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">calculator</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_size_optimization_enabled</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">cell_size_optimization_enabled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cell_padding</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">cell_padding</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_calculation_enabled</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">charge_calculation_enabled</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">charge_source</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">charge_source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">division</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">division</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gridrefinement</span> <span class="o">=</span> <span class="n">info</span><span class="o">.</span><span class="n">gridrefinement</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_atoms</span> <span class="o">=</span> <span class="n">n_atoms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_interaction</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_subsystem</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">index_map</span> <span class="o">=</span> <span class="n">index_map</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reverse_index_map</span> <span class="o">=</span> <span class="n">reverse_index_map</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potential_energy</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">forces</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">density_grid</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pseudo_density</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">link_atom_indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="n">Timer</span><span class="p">([</span>
+            <span class="s">&quot;Bader charge calculation&quot;</span><span class="p">,</span>
+            <span class="s">&quot;van Der Waals charge calculation&quot;</span><span class="p">,</span>
+            <span class="s">&quot;Energy&quot;</span><span class="p">,</span>
+            <span class="s">&quot;Forces&quot;</span><span class="p">,</span>
+            <span class="s">&quot;Density grid update&quot;</span><span class="p">,</span>
+            <span class="s">&quot;Cell minimization&quot;</span><span class="p">])</span>
+
+        <span class="c"># The older ASE versions do not support get_initial_charges()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">charges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_initial_charges</span><span class="p">())</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">charges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">atoms</span><span class="o">.</span><span class="n">get_charges</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_charges</span> <span class="o">=</span> <span class="n">charges</span>
+
+        <span class="c">## Can&#39;t enable charge calculation on non-DFT calculator</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dft_system</span> <span class="o">=</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="p">,</span> <span class="s">&quot;get_pseudo_density&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_calculation_enabled</span> <span class="ow">is</span> <span class="bp">True</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dft_system</span><span class="p">:</span>
+            <span class="n">error</span><span class="p">(</span><span class="s">&quot;Can&#39;t enable charge calculation on non-DFT calculator!&quot;</span><span class="p">)</span>
+
+        <span class="c"># If the cell size minimization flag has been enabled, then try to reduce the</span>
+        <span class="c"># cell size</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell_size_optimization_enabled</span><span class="p">:</span>
+            <span class="n">pbc</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_pbc</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">pbc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">pbc</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">or</span> <span class="n">pbc</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
+                <span class="n">warn</span><span class="p">((</span><span class="s">&quot;Cannot optimize cell size when periodic boundary&quot;</span>
+                      <span class="s">&quot;condition have been enabled, disabling optimization.&quot;</span><span class="p">),</span> <span class="mi">2</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cell_size_optimization_enabled</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">optimize_cell</span><span class="p">()</span>
+
+<div class="viewcode-block" id="SubSystemInternal.optimize_cell"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystemInternal.optimize_cell">[docs]</a>    <span class="k">def</span> <span class="nf">optimize_cell</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Tries to optimize the cell of the subsystem so only the atoms in</span>
+<span class="sd">        this subsystem fit in it with the defined padding to the edges. The new</span>
+<span class="sd">        cell is always ortorhombic.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s">&quot;Cell minimization&quot;</span><span class="p">)</span>
+        <span class="n">padding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell_padding</span>
+        <span class="n">x_min</span><span class="p">,</span> <span class="n">y_min</span><span class="p">,</span> <span class="n">z_min</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">position</span>
+        <span class="n">x_max</span><span class="p">,</span> <span class="n">y_max</span><span class="p">,</span> <span class="n">z_max</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">position</span>
+
+        <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="p">:</span>
+            <span class="n">r</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">position</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">r</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">x_max</span><span class="p">:</span>
+                <span class="n">x_max</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="k">if</span> <span class="n">y</span> <span class="o">&gt;</span> <span class="n">y_max</span><span class="p">:</span>
+                <span class="n">y_max</span> <span class="o">=</span> <span class="n">y</span>
+            <span class="k">if</span> <span class="n">z</span> <span class="o">&gt;</span> <span class="n">z_max</span><span class="p">:</span>
+                <span class="n">z_max</span> <span class="o">=</span> <span class="n">z</span>
+
+            <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">x_min</span><span class="p">:</span>
+                <span class="n">x_min</span> <span class="o">=</span> <span class="n">x</span>
+            <span class="k">if</span> <span class="n">y</span> <span class="o">&lt;</span> <span class="n">y_min</span><span class="p">:</span>
+                <span class="n">y_min</span> <span class="o">=</span> <span class="n">y</span>
+            <span class="k">if</span> <span class="n">z</span> <span class="o">&lt;</span> <span class="n">z_min</span><span class="p">:</span>
+                <span class="n">z_min</span> <span class="o">=</span> <span class="n">z</span>
+
+        <span class="n">optimized_cell</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">2</span><span class="o">*</span><span class="n">padding</span> <span class="o">+</span> <span class="n">x_max</span> <span class="o">-</span> <span class="n">x_min</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">padding</span> <span class="o">+</span> <span class="n">y_max</span> <span class="o">-</span> <span class="n">y_min</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">padding</span> <span class="o">+</span> <span class="n">z_max</span> <span class="o">-</span> <span class="n">z_min</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="o">.</span><span class="n">set_cell</span><span class="p">(</span><span class="n">optimized_cell</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="o">.</span><span class="n">center</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="SubSystemInternal.update_density_grid"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystemInternal.update_density_grid">[docs]</a>    <span class="k">def</span> <span class="nf">update_density_grid</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Precalculates a grid of 3D points for the charge calculation with</span>
+<span class="sd">        van Der Waals radius.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s">&quot;Density grid update&quot;</span><span class="p">)</span>
+        <span class="n">calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span>
+        <span class="n">atoms</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_subsystem</span>
+
+        <span class="c"># One calculation has to be made before the grid points can be asked</span>
+        <span class="n">grid_dim</span> <span class="o">=</span> <span class="n">calc</span><span class="o">.</span><span class="n">get_number_of_grid_points</span><span class="p">()</span>
+
+        <span class="n">nx</span> <span class="o">=</span> <span class="n">grid_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">ny</span> <span class="o">=</span> <span class="n">grid_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">nz</span> <span class="o">=</span> <span class="n">grid_dim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">cell</span> <span class="o">=</span> <span class="n">atoms</span><span class="o">.</span><span class="n">get_cell</span><span class="p">()</span>
+        <span class="n">cx</span> <span class="o">=</span> <span class="n">cell</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">cy</span> <span class="o">=</span> <span class="n">cell</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">cz</span> <span class="o">=</span> <span class="n">cell</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+
+        <span class="n">cux</span> <span class="o">=</span> <span class="n">cx</span> <span class="o">/</span> <span class="nb">float</span><span class="p">((</span><span class="n">grid_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">cuy</span> <span class="o">=</span> <span class="n">cy</span> <span class="o">/</span> <span class="nb">float</span><span class="p">((</span><span class="n">grid_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="n">cuz</span> <span class="o">=</span> <span class="n">cz</span> <span class="o">/</span> <span class="nb">float</span><span class="p">((</span><span class="n">grid_dim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="c"># Create a 3D array of 3D points. Each point is a  xyz-coordinate to a</span>
+        <span class="c"># position where the density has been calculated.</span>
+        <span class="n">density_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">nx</span><span class="p">,</span> <span class="n">ny</span><span class="p">,</span> <span class="n">nz</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">grid_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">grid_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="k">for</span> <span class="n">z</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">grid_dim</span><span class="p">[</span><span class="mi">2</span><span class="p">]):</span>
+                    <span class="n">r</span> <span class="o">=</span> <span class="n">x</span> <span class="o">*</span> <span class="n">cux</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">cuy</span> <span class="o">+</span> <span class="n">z</span> <span class="o">*</span> <span class="n">cuz</span>
+                    <span class="n">density_grid</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">r</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">density_grid</span> <span class="o">=</span> <span class="n">density_grid</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="SubSystemInternal.update_charges"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystemInternal.update_charges">[docs]</a>    <span class="k">def</span> <span class="nf">update_charges</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the charges in the system. Depending on the value of</span>
+<span class="sd">        self.division, calls either</span>
+<span class="sd">        :meth:`~pysic.subsystem.SubSystemInternal.update_charges_bader`, or</span>
+<span class="sd">        :meth:`~pysic.subsystem.SubSystemInternal.update_charges_van_der_waals`</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_calculation_enabled</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">division</span> <span class="o">==</span> <span class="s">&quot;van Der Waals&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_charges_van_der_waals</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">division</span> <span class="o">==</span> <span class="s">&quot;Bader&quot;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">update_charges_bader</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="SubSystemInternal.update_charges_bader"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystemInternal.update_charges_bader">[docs]</a>    <span class="k">def</span> <span class="nf">update_charges_bader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the charges in the atoms used for interaction with the Bader</span>
+<span class="sd">        algorithm.</span>
+
+<span class="sd">        This function uses an external Bader charge calculator from</span>
+<span class="sd">        http://theory.cm.utexas.edu/henkelman/code/bader/. This tool is</span>
+<span class="sd">        provided also in pysic/tools. Before using this function the bader</span>
+<span class="sd">        executable directory has to be added to PATH.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s">&quot;Bader charge calculation&quot;</span><span class="p">)</span>
+
+        <span class="c"># The charges are calculated from the system that includes the link atoms</span>
+        <span class="n">bader_charges</span> <span class="o">=</span> <span class="n">get_bader_charges</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">charge_source</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">gridrefinement</span><span class="p">)</span>
+
+        <span class="c"># Set the calculated charges to the interaction atoms. The call for</span>
+        <span class="c"># charges was changed between ASE 3.6 and 3.7. Ignore the link atoms</span>
+        <span class="c"># from the list of Bader charges</span>
+        <span class="n">n_limit</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="p">)</span>
+
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="o">.</span><span class="n">set_initial_charges</span><span class="p">(</span><span class="n">bader_charges</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n_limit</span><span class="p">])</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="o">.</span><span class="n">set_charges</span><span class="p">(</span><span class="n">bader_charges</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n_limit</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="SubSystemInternal.update_charges_van_der_waals"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystemInternal.update_charges_van_der_waals">[docs]</a>    <span class="k">def</span> <span class="nf">update_charges_van_der_waals</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Updates the atomic charges by using the electron density within a</span>
+<span class="sd">        sphere of van Der Waals radius.</span>
+
+<span class="sd">        The charge for each atom in the system is integrated from the electron</span>
+<span class="sd">        density inside the van Der Waals radius of the atom in hand. The link</span>
+<span class="sd">        atoms will affect the distribution of the electron density.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s">&quot;van Der Waals charge calculation&quot;</span><span class="p">)</span>
+
+        <span class="c"># Turn debugging on or off here</span>
+        <span class="n">debugging</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="n">atoms_with_links</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_subsystem</span>
+        <span class="n">calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span>
+
+        <span class="c"># The electron density is calculated from the system with link atoms.</span>
+        <span class="c"># This way the link atoms can modify the charge distribution</span>
+        <span class="n">calc</span><span class="o">.</span><span class="n">set_atoms</span><span class="p">(</span><span class="n">atoms_with_links</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_source</span> <span class="o">==</span> <span class="s">&quot;pseudo&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">calc</span><span class="o">.</span><span class="n">get_pseudo_density</span><span class="p">())</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">error</span><span class="p">(</span><span class="s">&quot;The DFT calculator on subsystem </span><span class="se">\&quot;</span><span class="s">&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\&quot;</span><span class="s"> doesn&#39;t provide pseudo density.&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_source</span> <span class="o">==</span> <span class="s">&quot;all-electron&quot;</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">density</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">calc</span><span class="o">.</span><span class="n">get_all_electron_density</span><span class="p">(</span><span class="n">gridrefinement</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+            <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
+                <span class="n">error</span><span class="p">(</span><span class="s">&quot;The DFT calculator on subsystem </span><span class="se">\&quot;</span><span class="s">&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\&quot;</span><span class="s"> doesn&#39;t provide all electron density.&quot;</span><span class="p">)</span>
+
+        <span class="c"># Write the charge density as .cube file for VMD</span>
+        <span class="k">if</span> <span class="n">debugging</span><span class="p">:</span>
+            <span class="n">write</span><span class="p">(</span><span class="s">&#39;nacl.cube&#39;</span><span class="p">,</span> <span class="n">atoms_with_links</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">density</span><span class="p">)</span>
+
+        <span class="n">grid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">density_grid</span>
+
+        <span class="k">if</span> <span class="n">debugging</span><span class="p">:</span>
+            <span class="n">debug_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c"># The link atoms are at the end of the list</span>
+        <span class="n">n_atoms</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">atoms_with_links</span><span class="p">)</span>
+        <span class="n">projected_charges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_atoms</span><span class="p">))</span>
+
+        <span class="k">for</span> <span class="n">i_atom</span><span class="p">,</span> <span class="n">atom</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">atoms_with_links</span><span class="p">):</span>
+            <span class="n">r_atom</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">position</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">number</span>
+
+            <span class="c"># Get the van Der Waals radius</span>
+            <span class="n">R</span> <span class="o">=</span> <span class="n">ase</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">vdw</span><span class="o">.</span><span class="n">vdw_radii</span><span class="p">[</span><span class="n">z</span><span class="p">]</span>
+
+            <span class="c"># Create a 3 x 3 x 3 x 3 array that can be used for vectorized</span>
+            <span class="c"># operations with the density grid</span>
+            <span class="n">r_atom_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">r_atom</span><span class="p">,</span> <span class="p">(</span><span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">grid</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span>
+
+            <span class="n">diff</span> <span class="o">=</span> <span class="n">grid</span> <span class="o">-</span> <span class="n">r_atom_array</span>
+
+            <span class="c"># Numpy &lt; 1.8 doesn&#39;t recoxnize axis argument on norm. This is a</span>
+            <span class="c"># workaround for diff = np.linalg.norm(diff, axis=3)</span>
+            <span class="n">diff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">apply_along_axis</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">diff</span><span class="p">)</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">diff</span> <span class="o">&lt;=</span> <span class="n">R</span><span class="p">)</span>
+            <span class="n">densities</span> <span class="o">=</span> <span class="n">density</span><span class="p">[</span><span class="n">indices</span><span class="p">]</span>
+            <span class="n">atom_charge</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">densities</span><span class="p">)</span>
+            <span class="n">projected_charges</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i_atom</span><span class="p">]</span> <span class="o">=</span> <span class="n">atom_charge</span>
+
+            <span class="k">if</span> <span class="n">debugging</span><span class="p">:</span>
+                <span class="n">debug_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">atom</span><span class="p">,</span> <span class="n">indices</span><span class="p">,</span> <span class="n">densities</span><span class="p">))</span>
+
+        <span class="c">#DEBUG: Visualize the grid and contributing grid points as atoms</span>
+        <span class="k">if</span> <span class="n">debugging</span><span class="p">:</span>
+            <span class="n">d</span> <span class="o">=</span> <span class="n">Atoms</span><span class="p">()</span>
+            <span class="n">d</span><span class="o">.</span><span class="n">set_cell</span><span class="p">(</span><span class="n">atoms_with_links</span><span class="o">.</span><span class="n">get_cell</span><span class="p">())</span>
+
+            <span class="c"># Visualize the integration spheres with atoms</span>
+            <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">debug_list</span><span class="p">:</span>
+                <span class="n">atom</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">indices</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">densities</span> <span class="o">=</span> <span class="n">point</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">atom</span><span class="p">)</span>
+                <span class="k">print</span> <span class="s">&quot;Atom: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">symbol</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;, Density sum: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">densities</span><span class="p">))</span>
+                <span class="k">print</span> <span class="s">&quot;Density points included: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">densities</span><span class="p">))</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+                    <span class="n">x</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">y</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">z</span> <span class="o">=</span> <span class="n">indices</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="n">a</span> <span class="o">=</span> <span class="n">Atom</span><span class="p">(</span><span class="s">&#39;H&#39;</span><span class="p">)</span>
+                    <span class="n">a</span><span class="o">.</span><span class="n">position</span> <span class="o">=</span> <span class="n">grid</span><span class="p">[</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="p">:]</span>
+                    <span class="n">d</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+            <span class="n">view</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+
+        <span class="c"># Normalize the projected charges according to the electronic charge in</span>
+        <span class="c"># the whole system excluding the link atom to preserve charge neutrality</span>
+        <span class="n">atomic_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">atoms_with_links</span><span class="o">.</span><span class="n">get_atomic_numbers</span><span class="p">())</span>
+        <span class="n">total_electron_charge</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">atomic_numbers</span><span class="p">)</span>
+        <span class="n">total_charge</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">projected_charges</span><span class="p">))</span>
+        <span class="n">projected_charges</span> <span class="o">*=</span> <span class="n">total_electron_charge</span><span class="o">/</span><span class="n">total_charge</span>
+
+        <span class="c"># Add the nuclear charges and initial charges</span>
+        <span class="n">projected_charges</span> <span class="o">+=</span> <span class="n">atomic_numbers</span>
+
+        <span class="c"># Set the calculated charges to the atoms.  The call for charges was</span>
+        <span class="c"># changed between ASE 3.6 and 3.7</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="o">.</span><span class="n">set_initial_charges</span><span class="p">(</span><span class="n">projected_charges</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="o">.</span><span class="n">set_charges</span><span class="p">(</span><span class="n">projected_charges</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">pseudo_density</span> <span class="o">=</span> <span class="n">density</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="SubSystemInternal.get_potential_energy"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystemInternal.get_potential_energy">[docs]</a>    <span class="k">def</span> <span class="nf">get_potential_energy</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the potential energy contained in this subsystem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Update the cell size if minimization is on</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell_size_optimization_enabled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">optimize_cell</span><span class="p">()</span>
+
+        <span class="c"># Ask the energy from the modified atoms (which include possible link</span>
+        <span class="c"># atoms)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s">&quot;Energy&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">potential_energy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+        <span class="c"># Update the calculation grid if charge calculation with van Der Waals</span>
+        <span class="c"># division is enabled:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_calculation_enabled</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">division</span> <span class="o">==</span> <span class="s">&quot;van Der Waals&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">update_density_grid</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">potential_energy</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="SubSystemInternal.get_forces"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystemInternal.get_forces">[docs]</a>    <span class="k">def</span> <span class="nf">get_forces</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a 3D numpy array that contains forces for this subsystem.</span>
+
+<span class="sd">        The returned array contains a row for each atom in the full system, but</span>
+<span class="sd">        there is only an entry for the atoms in this subsystem. This makes it</span>
+<span class="sd">        easier to calculate the total forces later on.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Update the cell size if minimization is on</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cell_size_optimization_enabled</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">optimize_cell</span><span class="p">()</span>
+
+        <span class="c"># Calculate the forces</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">start</span><span class="p">(</span><span class="s">&quot;Forces&quot;</span><span class="p">)</span>
+        <span class="n">forces</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">get_forces</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+        <span class="c"># Ignore forces on link atoms, link atoms are at the end of the list</span>
+        <span class="n">forces</span> <span class="o">=</span> <span class="n">forces</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="p">),</span> <span class="p">:]</span>
+
+        <span class="c"># Store the forces in a suitable numpy array that can be added to the forces of</span>
+        <span class="c"># the whole system</span>
+        <span class="n">full_forces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">n_atoms</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">sub_index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_interaction</span><span class="p">)):</span>
+            <span class="n">full_index</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reverse_index_map</span><span class="p">[</span><span class="n">sub_index</span><span class="p">]</span>
+            <span class="n">force</span> <span class="o">=</span> <span class="n">forces</span><span class="p">[</span><span class="n">sub_index</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">full_forces</span><span class="p">[</span><span class="n">full_index</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">force</span>
+
+        <span class="c"># Update the calculation grid if charge calculation with van Der Waals</span>
+        <span class="c"># division is enabled:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">charge_calculation_enabled</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">division</span> <span class="o">==</span> <span class="s">&quot;van Der Waals&quot;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">update_density_grid</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">forces</span> <span class="o">=</span> <span class="n">full_forces</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forces</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="SubSystemInternal.get_pseudo_density"><a class="viewcode-back" href="../../subsystem class.html#pysic.subsystem.SubSystemInternal.get_pseudo_density">[docs]</a>    <span class="k">def</span> <span class="nf">get_pseudo_density</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the electron pseudo density if available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">pseudo_density</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pseudo_density</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="p">,</span> <span class="s">&quot;get_pseudo_density&quot;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">get_pseudo_density</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">atoms_for_subsystem</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">warn</span><span class="p">(</span><span class="s">&quot;The pseudo density for subsystem </span><span class="se">\&quot;</span><span class="s">&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">+</span> <span class="s">&quot;</span><span class="se">\&quot;</span><span class="s"> is not available.&quot;</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Pysic 0.6 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2013, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

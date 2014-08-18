@@ -1,0 +1,446 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Subsystem class &mdash; Pysic 0.6 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.6 documentation" href="index.html" />
+    <link rel="up" title="Pysic module" href="pysic.html" />
+    <link rel="next" title="Interaction class" href="interaction class.html" />
+    <link rel="prev" title="HybridCalculator class" href="hybridcalculator class.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="interaction class.html" title="Interaction class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="hybridcalculator class.html" title="HybridCalculator class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.6 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Subsystem class</a><ul>
+<li><a class="reference internal" href="#full-documentation-of-the-subsystem-class">Full documentation of the Subsystem class</a><ul>
+<li><a class="reference internal" href="#subsysteminternal-class">SubSystemInternal class</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#full-documentation-of-the-subsysteminternal-class">Full documentation of the SubSystemInternal class</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="hybridcalculator class.html"
+                        title="previous chapter">HybridCalculator class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="interaction class.html"
+                        title="next chapter">Interaction class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/subsystem class.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="subsystem-class"></span><div class="section" id="subsystem-class-description">
+<span id="id1"></span><h1>Subsystem class<a class="headerlink" href="#subsystem-class-description" title="Permalink to this headline">¶</a></h1>
+<p>The SubSystem class works as an interface for defining subsystems in hybrid simulations. Through it you can define the atoms that belong to the subsystem and the calculator that is used for it. SubSystem objects also provides special options for QM subsystems: you can setup dynamical charge calculation with <a class="reference internal" href="#pysic.subsystem.SubSystem.enable_charge_calculation" title="pysic.subsystem.SubSystem.enable_charge_calculation"><tt class="xref py py-meth docutils literal"><span class="pre">enable_charge_calculation()</span></tt></a> and cell optimization with <a class="reference internal" href="#pysic.subsystem.SubSystem.enable_cell_optimization" title="pysic.subsystem.SubSystem.enable_cell_optimization"><tt class="xref py py-meth docutils literal"><span class="pre">enable_cell_optimization()</span></tt></a>.</p>
+<p>You can define the atoms in the subsystem as a list of indices, with a tag or with a special string: &#8220;remaining&#8221;, which means all the atoms that are not yet assigned to a subsystem.</p>
+<div class="section" id="full-documentation-of-the-subsystem-class">
+<span id="subsystem-class-autogenerated"></span><h2>Full documentation of the Subsystem class<a class="headerlink" href="#full-documentation-of-the-subsystem-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pysic.subsystem.SubSystem">
+<em class="property">class </em><tt class="descclassname">pysic.subsystem.</tt><tt class="descname">SubSystem</tt><big>(</big><em>name</em>, <em>indices=None</em>, <em>tag=None</em>, <em>calculator=None</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystem"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to create and store information about a subsystem.</p>
+<p>The end user can create and manipulate these objects when defining
+subsystems. The subsystems are added to the calculation by calling
+<a class="reference internal" href="hybridcalculator class.html#pysic.hybridcalculator.HybridCalculator.add_subsystem" title="pysic.hybridcalculator.HybridCalculator.add_subsystem"><tt class="xref py py-meth docutils literal"><span class="pre">add_subsystem()</span></tt></a> which adds a
+SubSystem-object to the calculation.</p>
+<p>When the HybridCalculator sees fit, the subsystems are materialized by
+converting the stored SubSystems into SubSystemInternals.</p>
+<dl class="docutils">
+<dt>Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>name: string</dt>
+<dd>The unique name for this subsystem.</dd>
+<dt>calculator: ASE Calculator</dt>
+<dd>The calculator used.</dd>
+<dt>cell_size_optimization_enabled: bool</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>cell_padding: float</dt>
+<dd>The padding used when optimizing the cell size.</dd>
+<dt>charge_calculation_enabled: bool</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>charge_source: string</dt>
+<dd>Indicates the electron density that is used in charge calculation.
+Can be &#8220;pseudo&#8221; or &#8220;all-electron&#8221;.</dd>
+<dt>division: string</dt>
+<dd>Indicates the division algorithm used in charge caluclation. Can be
+&#8220;Bader&#8221; or &#8220;van Der Waals&#8221;.</dd>
+<dt>gridrefinement: int</dt>
+<dd>The factor by which the calculation grid is densified in charge
+calculation.</dd>
+<dt>indices: list of ints</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>tag: int</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.subsystem.SubSystem.enable_cell_optimization">
+<tt class="descname">enable_cell_optimization</tt><big>(</big><em>padding</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystem.enable_cell_optimization"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystem.enable_cell_optimization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable cell size optimization.</p>
+<p>A subsystem might spatially reside in only a small portion of the
+entire system. DFT calculators will then waste time doing calculations
+in empty space, where almost none of electron density reaches.</p>
+<p>This optimization minimizes the cell size, so that the atoms in the
+subsystem fit the cell with the given padding. If the padding is too
+small, the DFT-calculator might not work properly!</p>
+<p>The optimization is off by default. It cannot be turned on in systems
+with periodic boundary conditions. The new optimized cell is always
+ortorhombic, regardless of the shape of the original, unoptimized cell.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>padding: float</dt>
+<dd>The minimum distance between the subsystem atoms and the cell
+walls.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystem.enable_charge_calculation">
+<tt class="descname">enable_charge_calculation</tt><big>(</big><em>division='Bader'</em>, <em>source='all-electron'</em>, <em>gridrefinement=4</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystem.enable_charge_calculation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystem.enable_charge_calculation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable the dynamic calculation of atom-centered charges with the
+specified algorithm and from the specified electron density. These
+charges are only used for the interaction between other subsystems.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>division: string</dt>
+<dd><p class="first">Indicates the division algorithm that is used. Available options are:</p>
+<blockquote class="last">
+<div><ul class="simple">
+<li>&#8220;Bader&#8221;: Bader algorithm</li>
+<li>&#8220;van Der Waals&#8221;: Spheres with van Der Waals radius</li>
+</ul>
+</div></blockquote>
+</dd>
+<dt>source: string</dt>
+<dd><p class="first">Indicates what type of electron density is used. Available
+options are:</p>
+<blockquote class="last">
+<div><ul class="simple">
+<li>&#8220;pseudo&#8221;: Use the pseudo electron density provided by all ASE DFT calculators</li>
+<li>&#8220;all-electron&#8221;: Use the all-electron density provided by at least GPAW</li>
+</ul>
+</div></blockquote>
+</dd>
+<dt>gridrefinement: int</dt>
+<dd>Indicates the subdivision that is used for the all-electron
+density.  Can be other than unity only for Bader algorithm with
+all-electron density.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystem.is_valid">
+<tt class="descname">is_valid</tt><big>(</big><em>indices</em>, <em>tag</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystem.is_valid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystem.is_valid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Checks that the given atom specifiers are correctly given. Does not
+yet check that they exist or don&#8217;t overlap with other subssystems.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystem.set_atoms">
+<tt class="descname">set_atoms</tt><big>(</big><em>indices=None</em>, <em>tag=None</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystem.set_atoms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystem.set_atoms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the atoms that belong to this subsystem. Give only one of the
+specifiers: indices or tag.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>indices: list of integers or string</dt>
+<dd>A list of atom indices or a special string &#8220;remaining&#8221;, which
+assigns all the yet unassigned atoms to this subsystem.</dd>
+<dt>tag: int</dt>
+<dd>The atoms with this tag belong to this subsystem.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystem.set_calculator">
+<tt class="descname">set_calculator</tt><big>(</big><em>calculator</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystem.set_calculator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystem.set_calculator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the calculator for the subsystem.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>calculator: ASE compatible calculator</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="subsysteminternal-class">
+<span id="id2"></span><h3>SubSystemInternal class<a class="headerlink" href="#subsysteminternal-class" title="Permalink to this headline">¶</a></h3>
+<p>This class is meant for internal use only.</p>
+</div>
+</div>
+<div class="section" id="full-documentation-of-the-subsysteminternal-class">
+<h2>Full documentation of the SubSystemInternal class<a class="headerlink" href="#full-documentation-of-the-subsysteminternal-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pysic.subsystem.SubSystemInternal">
+<em class="property">class </em><tt class="descclassname">pysic.subsystem.</tt><tt class="descname">SubSystemInternal</tt><big>(</big><em>atoms</em>, <em>info</em>, <em>index_map</em>, <em>reverse_index_map</em>, <em>n_atoms</em><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal" title="Permalink to this definition">¶</a></dt>
+<dd><p>A materialization of a SubSystem object.</p>
+<p>This class is materialised from a SubSystem, and should not be
+accessible to the end user.</p>
+<dl class="docutils">
+<dt>Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>name: string</dt>
+<dd>The unique name for this subsystem.</dd>
+<dt>calculator: ASE Calculator</dt>
+<dd>The calculator used.</dd>
+<dt>cell_size_optimization_enabled: bool</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>cell_padding: float</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>charge_calculation_enabled: bool</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>charge_source: string</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>division: string</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>gridrefinement: int</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>n_atoms: int</dt>
+<dd>Number of atoms in the full system.</dd>
+<dt>atoms_for_interaction: ASE Atoms</dt>
+<dd>The copy of subsystems atoms used in interaction calculations.</dd>
+<dt>atoms_for_subsystem: ASE Atoms</dt>
+<dd>The copy of subsystems atoms used in calculating subsystem energies
+etc.</dd>
+<dt>index_map: dictionary of int to int</dt>
+<dd>The keys are the atom indices in the full system, values are
+indices in the subssystem.</dd>
+<dt>reverse_index_map: dicitonary of int to int</dt>
+<dd>The keys are the atom indices in the subsystem, values are the
+keys in the full system.</dd>
+<dt>potential_energy: float</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>forces: numpy array</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>density_grid: numpy array</dt>
+<dd>Stored if spherical division is used in charge calculation.</dd>
+<dt>pseudo_density: numpy array</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>link_atom_indices: list</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>timer: :class:&#8217;~pysic.utility.timer.Timer&#8217;</dt>
+<dd>Used to keep track of time usage.</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.get_forces">
+<tt class="descname">get_forces</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.get_forces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.get_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a 3D numpy array that contains forces for this subsystem.</p>
+<p>The returned array contains a row for each atom in the full system, but
+there is only an entry for the atoms in this subsystem. This makes it
+easier to calculate the total forces later on.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.get_potential_energy">
+<tt class="descname">get_potential_energy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.get_potential_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.get_potential_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the potential energy contained in this subsystem.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.get_pseudo_density">
+<tt class="descname">get_pseudo_density</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.get_pseudo_density"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.get_pseudo_density" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the electron pseudo density if available.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.optimize_cell">
+<tt class="descname">optimize_cell</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.optimize_cell"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.optimize_cell" title="Permalink to this definition">¶</a></dt>
+<dd><p>Tries to optimize the cell of the subsystem so only the atoms in
+this subsystem fit in it with the defined padding to the edges. The new
+cell is always ortorhombic.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.update_charges">
+<tt class="descname">update_charges</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.update_charges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.update_charges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the charges in the system. Depending on the value of
+self.division, calls either
+<a class="reference internal" href="#pysic.subsystem.SubSystemInternal.update_charges_bader" title="pysic.subsystem.SubSystemInternal.update_charges_bader"><tt class="xref py py-meth docutils literal"><span class="pre">update_charges_bader()</span></tt></a>, or
+<a class="reference internal" href="#pysic.subsystem.SubSystemInternal.update_charges_van_der_waals" title="pysic.subsystem.SubSystemInternal.update_charges_van_der_waals"><tt class="xref py py-meth docutils literal"><span class="pre">update_charges_van_der_waals()</span></tt></a></p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.update_charges_bader">
+<tt class="descname">update_charges_bader</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.update_charges_bader"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.update_charges_bader" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the charges in the atoms used for interaction with the Bader
+algorithm.</p>
+<p>This function uses an external Bader charge calculator from
+<a class="reference external" href="http://theory.cm.utexas.edu/henkelman/code/bader/">http://theory.cm.utexas.edu/henkelman/code/bader/</a>. This tool is
+provided also in pysic/tools. Before using this function the bader
+executable directory has to be added to PATH.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.update_charges_van_der_waals">
+<tt class="descname">update_charges_van_der_waals</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.update_charges_van_der_waals"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.update_charges_van_der_waals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the atomic charges by using the electron density within a
+sphere of van Der Waals radius.</p>
+<p>The charge for each atom in the system is integrated from the electron
+density inside the van Der Waals radius of the atom in hand. The link
+atoms will affect the distribution of the electron density.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.subsystem.SubSystemInternal.update_density_grid">
+<tt class="descname">update_density_grid</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/subsystem.html#SubSystemInternal.update_density_grid"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.subsystem.SubSystemInternal.update_density_grid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Precalculates a grid of 3D points for the charge calculation with
+van Der Waals radius.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="interaction class.html" title="Interaction class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="hybridcalculator class.html" title="HybridCalculator class"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.6 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2013, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

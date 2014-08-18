@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Examples &mdash; Pysic 0.5 documentation</title>
+    <title>Examples &mdash; Pysic 0.6 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.5',
+        VERSION:     '0.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.5 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.6 documentation" href="index.html" />
     <link rel="next" title="Structure and syntax of Pysic" href="syntax.html" />
     <link rel="prev" title="Running Pysic" href="running.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="running.html" title="Running Pysic"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -58,6 +58,7 @@
 <li><a class="reference internal" href="#importing-pysic-to-python">Importing Pysic to Python</a></li>
 <li><a class="reference internal" href="#minimal-example-of-running-pysic">Minimal example of running Pysic</a></li>
 <li><a class="reference internal" href="#running-molecular-dynamics">Running molecular dynamics</a></li>
+<li><a class="reference internal" href="#a-hybrid-calculation">A hybrid calculation</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#screencasts">Screencasts</a><ul>
@@ -300,6 +301,96 @@ In a similar fashion we can collect whatever information we need:</p>
 </pre></div>
 </div>
 <span class="target" id="scripting-collect-data"></span><span class="target" id="potential-targeting"></span><span class="target" id="using-bond-order-potentials"></span><span class="target" id="running-mpi"></span><span class="target" id="plotting-utilities"></span></div>
+<div class="section" id="a-hybrid-calculation">
+<span id="hybrid-calculation"></span><h2>A hybrid calculation<a class="headerlink" href="#a-hybrid-calculation" title="Permalink to this headline">¶</a></h2>
+<p>The following python script demonstrates the Python interface for creating a simple hybrid QM/MM simulation with Pysic. The potentials and calculator parameters used in this example are not physically justified and serve only to illustrate the usage:</p>
+<div class="highlight-python"><pre>#! /usr/bin/env python
+from ase.structure import molecule
+from pysic import *
+from gpaw import GPAW
+
+# Create the atomic system as an ASE Atoms object
+ethane = molecule(’C2H6’, cell=(6, 6, 6))
+ethane.center()
+
+# Create the hybrid calculator
+hybrid_calc = HybridCalculator()
+
+# Setup the primary system
+gpaw_calc = GPAW(h=0.25, txt=None)
+PS = SubSystem("primary", indices=(0, 2, 3, 4), calculator=gpaw_calc)
+hybrid_calc.add_subsystem(PS)
+
+# Setup the secondary system
+1pysic_calc = Pysic()
+pysic_calc.add_potential(Potential(’LJ’, symbols=[[’H’, ’C’]], parameters=[0.05, 2.5], cutoff=5))
+SS = SubSystem("secondary", indices="remaining", calculator=pysic_calc)
+hybrid_calc.add_subsystem(SS)
+
+# Setup the interaction between the subsystems
+interaction = Interaction("primary", "secondary")
+interaction.set_potentials(Potential(’LJ’, symbols=[[’C’, ’C’]], parameters=[0.05, 3], cutoff=5))
+interaction.add_hydrogen_links((0, 1), CHL=0.5)
+hybrid_calc.add_interaction(interaction)
+
+# Do some calculations
+ethane.set_calculator(hybrid_calc)
+ethane.get_potential_energy()
+ethane.get_forces()
+
+# Output results
+hybrid_calc.print_energy_summary()
+hybrid_calc.print_force_summary()
+hybrid_calc.print_time_summary()</pre>
+</div>
+<p>The code is now split into sections that are further elaborated:</p>
+<ul>
+<li><p class="first">First we define the entire structure that we want to analyze. It is a regular ASE Atoms object:</p>
+<div class="highlight-python"><pre>ethane = molecule(’C2H6’, cell=(6, 6, 6))
+ethane.center()</pre>
+</div>
+</li>
+<li><p class="first">A HybridCalculator object is then created. It is the core class in Pysic’s hybrid calculations. The end-user may treat is like any other ASE compatible calculator:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">hybrid_calc</span> <span class="o">=</span> <span class="n">HybridCalculator</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">A SubSystem object is created for each desired subsystem. A subsystem is defined by giving it a unique name, the indices of the atoms in the subsystem and the calculator which is to be used for it. The newly created SubSystem object is then passed to the HybridCalculator:</p>
+<div class="highlight-python"><pre># Setup the primary system
+gpaw_calc = GPAW(h=0.25, txt=None)
+PS = SubSystem("primary", indices=(0, 2, 3, 4), calculator=gpaw_calc)
+hybrid_calc.add_subsystem(PS)
+
+# Setup the secondary system
+pysic_calc = Pysic()
+pysic_calc.add_potential(Potential(’LJ’, symbols=[[’H’, ’C’]], parameters=[0.05, 2.5], cutoff=5))
+SS = SubSystem("secondary", indices="remaining", calculator=pysic_calc)
+hybrid_calc.add_subsystem(SS)</pre>
+</div>
+</li>
+<li><p class="first">Interaction potentials and hydrogen link atoms between any two subsystems are set up by creating an Interaction object. The names of the interacting subsystems are given in the constructor, the first being the primary system, and the latter being the secondary system. Potentials and link atoms are created through simple function calls. Finally the Interaction object is passed to the HybridCalculator:</p>
+<div class="highlight-python"><pre>interaction = Interaction("primary", "secondary")
+interaction.set_potentials(Potential(’LJ’, symbols=[[’C’, ’C’]], parameters=[0.05, 3], cutoff=5))
+interaction.add_hydrogen_links((0, 1), CHL=0.5)
+hybrid_calc.add_interaction(interaction)</pre>
+</div>
+</li>
+<li><p class="first">When the subsystems and interactions are successfully configured, the HybridCalculator can be used like any regular ASE calculator to calculate the potential energy and forces in the system:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">ethane</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">hybrid_calc</span><span class="p">)</span>
+<span class="n">ethane</span><span class="o">.</span><span class="n">get_potential_energy</span><span class="p">()</span>
+<span class="n">ethane</span><span class="o">.</span><span class="n">get_forces</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">The HybridCalculator provides useful tools for inspecting the energies, calculation times and forces related to the different subsystems and interactions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">hybrid_calc</span><span class="o">.</span><span class="n">print_energy_summary</span><span class="p">()</span>
+<span class="n">hybrid_calc</span><span class="o">.</span><span class="n">print_force_summary</span><span class="p">()</span>
+<span class="n">hybrid_calc</span><span class="o">.</span><span class="n">print_time_summary</span><span class="p">()</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</div>
 </div>
 <div class="section" id="screencasts">
 <span id="id2"></span><h1>Screencasts<a class="headerlink" href="#screencasts" title="Permalink to this headline">¶</a></h1>
@@ -337,7 +428,7 @@ In a similar fashion we can collect whatever information we need:</p>
         <li class="right" >
           <a href="running.html" title="Running Pysic"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

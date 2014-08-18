@@ -1,0 +1,483 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Interaction class &mdash; Pysic 0.6 documentation</title>
+    
+    <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '',
+        VERSION:     '0.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.6 documentation" href="index.html" />
+    <link rel="up" title="Pysic module" href="pysic.html" />
+    <link rel="next" title="FastNeighborList class" href="fastneighborlist class.html" />
+    <link rel="prev" title="Subsystem class" href="subsystem class.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="fastneighborlist class.html" title="FastNeighborList class"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="subsystem class.html" title="Subsystem class"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">Pysic 0.6 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" accesskey="U">Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Interaction class</a><ul>
+<li><a class="reference internal" href="#full-documentation-of-the-interaction-class">Full documentation of the Interaction class</a><ul>
+<li><a class="reference internal" href="#interactioninternal-class">InteractionInternal class</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#full-documentation-of-the-interactioninternal-class">Full documentation of the InteractionInternal class</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="subsystem class.html"
+                        title="previous chapter">Subsystem class</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="fastneighborlist class.html"
+                        title="next chapter">FastNeighborList class</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/interaction class.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <span class="target" id="interaction-class"></span><div class="section" id="interaction-class-description">
+<span id="id1"></span><h1>Interaction class<a class="headerlink" href="#interaction-class-description" title="Permalink to this headline">¶</a></h1>
+<p>The Interaction class works as an interface for defining interactions and link atoms between subsystems in hybrid calulations. With the methods <a class="reference internal" href="#pysic.interaction.Interaction.add_potential" title="pysic.interaction.Interaction.add_potential"><tt class="xref py py-meth docutils literal"><span class="pre">add_potential()</span></tt></a>, <a class="reference internal" href="#pysic.interaction.Interaction.set_potentials" title="pysic.interaction.Interaction.set_potentials"><tt class="xref py py-meth docutils literal"><span class="pre">set_potentials()</span></tt></a>, <a class="reference internal" href="#pysic.interaction.Interaction.enable_coulomb_potential" title="pysic.interaction.Interaction.enable_coulomb_potential"><tt class="xref py py-meth docutils literal"><span class="pre">enable_coulomb_potential()</span></tt></a> and <a class="reference internal" href="#pysic.interaction.Interaction.enable_comb_potential" title="pysic.interaction.Interaction.enable_comb_potential"><tt class="xref py py-meth docutils literal"><span class="pre">enable_comb_potential()</span></tt></a> you can define the Pysic Potentials that are present between the subsystems. With <a class="reference internal" href="#pysic.interaction.Interaction.add_hydrogen_links" title="pysic.interaction.Interaction.add_hydrogen_links"><tt class="xref py py-meth docutils literal"><span class="pre">add_hydrogen_links()</span></tt></a> you can setup the hydrogen link atoms.</p>
+<div class="section" id="full-documentation-of-the-interaction-class">
+<span id="interaction-class-autogenerated"></span><h2>Full documentation of the Interaction class<a class="headerlink" href="#full-documentation-of-the-interaction-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pysic.interaction.Interaction">
+<em class="property">class </em><tt class="descclassname">pysic.interaction.</tt><tt class="descname">Interaction</tt><big>(</big><em>primary</em>, <em>secondary</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to store information about a interaction between subsystems.</p>
+<p>The end user can create and manipulate these objects when defining
+interactions between subsystems. The interactions between subsystems are
+added to the calculation by calling
+<a class="reference internal" href="hybridcalculator class.html#pysic.hybridcalculator.HybridCalculator.add_interaction" title="pysic.hybridcalculator.HybridCalculator.add_interaction"><tt class="xref py py-meth docutils literal"><span class="pre">add_interaction()</span></tt></a> which adds
+a Interaction object to the calculation.</p>
+<p>When the HybridCalculator sees fit, the subsystem bindings are materialized
+by converting the stored Interactions to InteractionInternals.</p>
+<dl class="docutils">
+<dt>Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>primary: string</dt>
+<dd>Name of the primary subsystem.</dd>
+<dt>secondary: string</dt>
+<dd>Name of the secondary subsystem.</dd>
+<dt>links: list of tuples</dt>
+<dd>Contains a list of different link types. Each list item is a tuple
+with two items: the first is a list of link pairs, the second one
+is the CHL parameter for these links.</dd>
+<dt>electrostatic_parameters: dictionary</dt>
+<dd>Contains all the parameters used for creating a Coulomb potential.</dd>
+<dt>coulomb_potential_enabled: bool</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>comb_potential_enabled: bool</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>link_atom_correction_enabled: bool</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>potentials: list of <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a></dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.interaction.Interaction.add_hydrogen_links">
+<tt class="descname">add_hydrogen_links</tt><big>(</big><em>pairs</em>, <em>CHL</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction.add_hydrogen_links"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction.add_hydrogen_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>Defines hydrogen links in the system.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>pairs: tuple or list of tuples</dt>
+<dd>A set of tuples containing two indices, the first index in the
+tuple should point to the subsystem in which the hydrogen link
+atom is actually added to (=primary system).</dd>
+<dt>CHL: float</dt>
+<dd>Indicates the position of the hydrogen atom on the line defined
+by the atom pairs. Values should be between 0-1. 0 means that
+the link atom overlaps with the atom in the primary system, 1
+means that the link atom overlaps with the atom in the
+secondary system. The scale is linear.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.Interaction.add_potential">
+<tt class="descname">add_potential</tt><big>(</big><em>potential</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction.add_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction.add_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to add a Pysic potential between the subsystems.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>potential: <a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a></dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.Interaction.enable_comb_potential">
+<tt class="descname">enable_comb_potential</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction.enable_comb_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction.enable_comb_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enable the COMB potential between the subsystems. Valid for Si-Si
+and Si-O interactions.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.Interaction.enable_coulomb_potential">
+<tt class="descname">enable_coulomb_potential</tt><big>(</big><em>epsilon=0.00552635</em>, <em>real_cutoff=None</em>, <em>k_cutoff=None</em>, <em>sigma=None</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction.enable_coulomb_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction.enable_coulomb_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Enables the electrical Coulomb interaction between the subsystems.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>epsilon: float</dt>
+<dd>The vacumm permittivity. Has a default value from the
+literature, in Atomic units.</dd>
+<dt>r_cutoff: float</dt>
+<dd>Real space cutoff radius. Provide if system has periodic
+boundary conditions.</dd>
+<dt>k_cutoff: float</dt>
+<dd>Reciprocal space cutoff radius. Provide if system has periodic
+boundary conditions.</dd>
+<dt>sigma: float</dt>
+<dd>Ewald summation split parameter. Provide if system has periodic
+boundary conditions.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.Interaction.set_link_atom_correction">
+<tt class="descname">set_link_atom_correction</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction.set_link_atom_correction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction.set_link_atom_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets whether the link interaction correction energy is calculated or
+not.</p>
+<p>By default the correction is enabled, but you have to provide a
+secondary calculator that can calculate the interaction energies
+between the link atoms themselves and between link atoms and the
+primary system.</p>
+<p>The link atom correction is defined as:
+.. math:</p>
+<div class="highlight-python"><pre>E^  ext{link} &amp;= - E^       ext{int}_       ext{MM} ext{(PS, HL)} - E^      ext{tot}_       ext{MM} ext{(HL)}</pre>
+</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.Interaction.set_potentials">
+<tt class="descname">set_potentials</tt><big>(</big><em>potentials</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#Interaction.set_potentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.Interaction.set_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to set a list of additional Pysic potentials between the
+subsystems.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd>potentials: list of or single
+<a class="reference internal" href="potential class.html#pysic.interactions.local.Potential" title="pysic.interactions.local.Potential"><tt class="xref py py-class docutils literal"><span class="pre">Potential</span></tt></a></dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+<div class="section" id="interactioninternal-class">
+<span id="id2"></span><h3>InteractionInternal class<a class="headerlink" href="#interactioninternal-class" title="Permalink to this headline">¶</a></h3>
+<p>This class is meant for internal use only.</p>
+</div>
+</div>
+<div class="section" id="full-documentation-of-the-interactioninternal-class">
+<h2>Full documentation of the InteractionInternal class<a class="headerlink" href="#full-documentation-of-the-interactioninternal-class" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pysic.interaction.InteractionInternal">
+<em class="property">class </em><tt class="descclassname">pysic.interaction.</tt><tt class="descname">InteractionInternal</tt><big>(</big><em>full_system</em>, <em>primary_subsystem</em>, <em>secondary_subsystem</em>, <em>info</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal" title="Permalink to this definition">¶</a></dt>
+<dd><p>The internal version of the Interaction-class.</p>
+<p>This class is meant only for internal use, and should not be accessed by
+the end-user.</p>
+<dl class="docutils">
+<dt>Attributes:</dt>
+<dd><dl class="first last docutils">
+<dt>info: :class:&#8217;~Pysic.interaction.Interaction&#8217;</dt>
+<dd>Contains all the info about the interaction given by the user.</dd>
+<dt>full_system: ASE Atoms</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>primary_subsystem: <a class="reference internal" href="subsystem class.html#pysic.subsystem.SubSystem" title="pysic.subsystem.SubSystem"><tt class="xref py py-class docutils literal"><span class="pre">SubSystem</span></tt></a></dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>secondary_subsystem: <a class="reference internal" href="subsystem class.html#pysic.subsystem.SubSystem" title="pysic.subsystem.SubSystem"><tt class="xref py py-class docutils literal"><span class="pre">SubSystem</span></tt></a></dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>uncorrected_interaction_energy: float</dt>
+<dd>The interaction energy without the link atom correction.</dd>
+<dt>uncorrected_interaction_forces: numpy array</dt>
+<dd>The interaction forces without the link atom correction.</dd>
+<dt>link_atom_correction_energy: float</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>link_atom_correction_forces: numpy array</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>interaction_energy: float</dt>
+<dd>The total interaction energy = uncorrected_interaction_energy +
+link_atom_correction_energy</dd>
+<dt>interaction_forces: numpy array</dt>
+<dd>The total interaction forces = uncorrected_interaction_forces +
+link_atom_correction_forces</dd>
+<dt>has_interaction_potentials: bool</dt>
+<dd>True if any potentials are defined.</dd>
+<dt>calculator: :class:&#8217;~pysic.calculator.Pysic&#8217;</dt>
+<dd>The pysic calculator used for non-pbc systems.</dd>
+<dt>pbc_calculator: :class:&#8217;~pysic.calculator.Pysic&#8217;</dt>
+<dd>The pysic calculator used for pbc systems.</dd>
+<dt>timer: :class:&#8217;~pysic.utility.timer.Timer&#8217;</dt>
+<dd>Used for tracking time usage.</dd>
+<dt>has_pbc: bool</dt>
+<dd><ul class="first last simple">
+<li></li>
+</ul>
+</dd>
+<dt>link_atoms: ASE Atoms</dt>
+<dd>Contains all the hydrogen link atoms. Needed when calculating link
+atom correction.</dd>
+<dt>n_primary: int</dt>
+<dd>Number of atoms in primary subsystem.</dd>
+<dt>n_secondary: int</dt>
+<dd>Number of atoms in secondary subsystem.</dd>
+<dt>n_full: int</dt>
+<dd>Number of atoms in full system.</dd>
+<dt>n_links: int</dt>
+<dd>Number of link atoms.</dd>
+</dl>
+</dd>
+</dl>
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.calculate_link_atom_correction_energy">
+<tt class="descname">calculate_link_atom_correction_energy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.calculate_link_atom_correction_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.calculate_link_atom_correction_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the link atom interaction energy defined as</p>
+<div class="math">
+\[E^\text{link} = -E^\text{tot}_\text{MM}(\text{HL})-E^\text{int}_\text{MM}(\text{PS, HL})\]</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.calculate_link_atom_correction_forces">
+<tt class="descname">calculate_link_atom_correction_forces</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.calculate_link_atom_correction_forces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.calculate_link_atom_correction_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the link atom correction forces defined as</p>
+<div class="math">
+\[F^\text{link} = -\nabla(-E^\text{tot}_\text{MM}(\text{HL})-E^\text{int}_\text{MM}(\text{PS, HL}))\]</div>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_energy">
+<tt class="descname">calculate_uncorrected_interaction_energy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.calculate_uncorrected_interaction_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the interaction energy of a non-pbc system without the
+link atom correction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_energy_pbc">
+<tt class="descname">calculate_uncorrected_interaction_energy_pbc</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.calculate_uncorrected_interaction_energy_pbc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_energy_pbc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the interaction energy of a pbc system without the link
+atom correction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_forces">
+<tt class="descname">calculate_uncorrected_interaction_forces</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.calculate_uncorrected_interaction_forces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the interaction forces of a non-pbc system without the
+link atom correction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_forces_pbc">
+<tt class="descname">calculate_uncorrected_interaction_forces_pbc</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.calculate_uncorrected_interaction_forces_pbc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.calculate_uncorrected_interaction_forces_pbc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculates the interaction forces of a pbc system without the link
+atom correction.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.get_interaction_energy">
+<tt class="descname">get_interaction_energy</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.get_interaction_energy"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.get_interaction_energy" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the total interaction energy which consists of the
+uncorrected energies and possible the link atom correction.</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>float: the interaction energy</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.get_interaction_forces">
+<tt class="descname">get_interaction_forces</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.get_interaction_forces"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.get_interaction_forces" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a numpy array of total 3D forces for each atom in the whole
+system.</p>
+<p>The forces consists of the uncorrected forces and possibly the link
+atom correction forces. The row index refers to the atom index in the
+original structure.</p>
+<dl class="docutils">
+<dt>Returns:</dt>
+<dd>numpy array: the forces for each atom in the full system</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.setup_comb_potential">
+<tt class="descname">setup_comb_potential</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.setup_comb_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.setup_comb_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setups a COMB-potential between the subsystems.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.setup_coulomb_potential">
+<tt class="descname">setup_coulomb_potential</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.setup_coulomb_potential"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.setup_coulomb_potential" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setups a Coulomb potential between the subsystems.</p>
+<p>Ewald calculation is automatically used for pbc-systems. Non-pbc
+systems use the ProductPotential to reproduce the Coulomb potential.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.setup_hydrogen_links">
+<tt class="descname">setup_hydrogen_links</tt><big>(</big><em>links</em><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.setup_hydrogen_links"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.setup_hydrogen_links" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup the hydrogen link atoms to the primary system.</p>
+<dl class="docutils">
+<dt>Parameters:</dt>
+<dd><dl class="first last docutils">
+<dt>link_parameters: list of tuples</dt>
+<dd>Contains the link atom parameters from the Interaction-object.
+Each tuple in the list is a link atom specification for a
+covalent bond of different type. The first item in the tuple is
+a list of tuples containing atom index pairs. The second item
+in the tuple is the CHL parameter for these links.</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.setup_potentials">
+<tt class="descname">setup_potentials</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.setup_potentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.setup_potentials" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setups the additional Pysic potentials given in the
+Interaction-object.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.update_hydrogen_link_positions">
+<tt class="descname">update_hydrogen_link_positions</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.update_hydrogen_link_positions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.update_hydrogen_link_positions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Used to update the position of the hydrogen link atoms specified in
+this interaction</p>
+<p>It is assumed that the position of the host atoms have already been
+updated.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.interaction.InteractionInternal.update_subsystem_charges">
+<tt class="descname">update_subsystem_charges</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/interaction.html#InteractionInternal.update_subsystem_charges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.interaction.InteractionInternal.update_subsystem_charges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Updates the charges in the subsystems involved in the interaction (if
+charge update is enabled in them).</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="fastneighborlist class.html" title="FastNeighborList class"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="subsystem class.html" title="Subsystem class"
+             >previous</a> |</li>
+        <li><a href="index.html">Pysic 0.6 documentation</a> &raquo;</li>
+          <li><a href="pysic.html" >Pysic module</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2013, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

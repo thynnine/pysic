@@ -8,7 +8,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Version history &mdash; Pysic 0.5 documentation</title>
+    <title>Version history &mdash; Pysic 0.6 documentation</title>
     
     <link rel="stylesheet" href="_static/sphinxdoc.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -16,7 +16,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '',
-        VERSION:     '0.5',
+        VERSION:     '0.6',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="top" title="Pysic 0.5 documentation" href="index.html" />
+    <link rel="top" title="Pysic 0.6 documentation" href="index.html" />
     <link rel="next" title="Development" href="issues.html" />
     <link rel="prev" title="mt95 (Mersenne.f90)" href="Mersenne_f90.html" /> 
   </head>
@@ -46,7 +46,7 @@
         <li class="right" >
           <a href="Mersenne_f90.html" title="mt95 (Mersenne.f90)"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
       <div class="sphinxsidebar">
@@ -54,6 +54,7 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Version history</a><ul>
+<li><a class="reference internal" href="#version-0-6">Version 0.6</a></li>
 <li><a class="reference internal" href="#version-0-5">Version 0.5</a></li>
 <li><a class="reference internal" href="#version-0-4-8">Version 0.4.8</a></li>
 <li><a class="reference internal" href="#version-0-4-7">Version 0.4.7</a></li>
@@ -112,6 +113,12 @@ Descriptions of all incremental changes can be found in the <a class="reference 
 <div class="highlight-python"><div class="highlight"><pre><span class="n">pysic</span><span class="o">.</span><span class="n">version</span>
 </pre></div>
 </div>
+<div class="section" id="version-0-6">
+<h2>Version 0.6<a class="headerlink" href="#version-0-6" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Added support for dividing the system to subsystems and allowing the use of different calculators on the subsystems. This allows hybrid QM/MM calculations. See <a class="reference internal" href="hybridcalculator class.html#pysic.hybridcalculator.HybridCalculator" title="pysic.hybridcalculator.HybridCalculator"><tt class="xref py py-class docutils literal"><span class="pre">HybridCalculator</span></tt></a>, <a class="reference internal" href="subsystem class.html#pysic.subsystem.SubSystem" title="pysic.subsystem.SubSystem"><tt class="xref py py-class docutils literal"><span class="pre">SubSystem</span></tt></a>, <a class="reference internal" href="interaction class.html#pysic.interaction.Interaction" title="pysic.interaction.Interaction"><tt class="xref py py-class docutils literal"><span class="pre">Interaction</span></tt></a>.</li>
+</ul>
+</div>
 <div class="section" id="version-0-5">
 <h2>Version 0.5<a class="headerlink" href="#version-0-5" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -123,9 +130,9 @@ Descriptions of all incremental changes can be found in the <a class="reference 
 <h2>Version 0.4.8<a class="headerlink" href="#version-0-4-8" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Fixed compatibility with syntax changes in ASE 3.7.0.</li>
-<li>Added piping of <tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt> objects.</li>
-<li>Added a potentiostat as a <tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt> type.</li>
-<li>Added a constrained optimization as a <tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt> type.</li>
+<li>Added piping of <a class="reference internal" href="chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> objects.</li>
+<li>Added a potentiostat as a <a class="reference internal" href="chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> type.</li>
+<li>Added a constrained optimization as a <a class="reference internal" href="chargerelaxation class.html#pysic.charges.relaxation.ChargeRelaxation" title="pysic.charges.relaxation.ChargeRelaxation"><tt class="xref py py-class docutils literal"><span class="pre">ChargeRelaxation</span></tt></a> type.</li>
 <li>Added utility functions such as <a class="reference internal" href="fastneighborlist class.html#pysic.calculator.FastNeighborList.get_neighbor_distances" title="pysic.calculator.FastNeighborList.get_neighbor_distances"><tt class="xref py py-meth docutils literal"><span class="pre">get_neighbor_distances()</span></tt></a>, <a class="reference internal" href="pysic_utility.html#pysic.utility.convenience.expand_symbols_string" title="pysic.utility.convenience.expand_symbols_string"><tt class="xref py py-func docutils literal"><span class="pre">expand_symbols_string()</span></tt></a></li>
 </ul>
 </div>
@@ -265,7 +272,7 @@ Descriptions of all incremental changes can be found in the <a class="reference 
         <li class="right" >
           <a href="Mersenne_f90.html" title="mt95 (Mersenne.f90)"
              >previous</a> |</li>
-        <li><a href="index.html">Pysic 0.5 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Pysic 0.6 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
