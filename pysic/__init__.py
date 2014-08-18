@@ -12,6 +12,6 @@ from pysic.hybridcalculator import HybridCalculator
 from pysic.subsystem import SubSystem
 from pysic.interaction import Interaction
 
-version = '0.5'
+version = '0.6'
 """program version"""
 

@@ -38,11 +38,11 @@ class HybridCalculator(object):
         interaction_info: dictionary
             Pair of names to Interaction.
         forces: numpy array
-
+            -
         stress: None
-
+            -
         potential_energy: float
-
+            -
         system_initialized: bool
             Indicates whether the SubSystemInternals and InteractionInternals
             have been constructed.

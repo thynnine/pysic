@@ -31,11 +31,11 @@ class SubSystem(object):
         calculator: ASE Calculator
             The calculator used.
         cell_size_optimization_enabled: bool
-
+            -
         cell_padding: float
             The padding used when optimizing the cell size.
         charge_calculation_enabled: bool
-
+            -
         charge_source: string
             Indicates the electron density that is used in charge calculation.
             Can be "pseudo" or "all-electron".
@@ -46,8 +46,9 @@ class SubSystem(object):
             The factor by which the calculation grid is densified in charge
             calculation.
         indices: list of ints
-
+            -
         tag: int
+            -
     """
 
     def __init__(self,
@@ -147,15 +148,17 @@ class SubSystem(object):
         Parameters:
             division: string
                 Indicates the division algorithm that is used. Available options are:
-                    "Bader": Bader algorithm
-                    "van Der Waals": Spheres with van Der Waals radius
+                    
+                    - "Bader": Bader algorithm
+                    - "van Der Waals": Spheres with van Der Waals radius
+
             source: string
                 Indicates what type of electron density is used. Available
                 options are:
-                    "pseudo": Use the pseudo electron density provided by all
-                    ASE DFT calculators
-                    "all-electron": Use the all-electron density provided by at
-                    least GPAW
+                
+                    - "pseudo": Use the pseudo electron density provided by all ASE DFT calculators
+                    - "all-electron": Use the all-electron density provided by at least GPAW
+
             gridrefinement: int
                 Indicates the subdivision that is used for the all-electron
                 density.  Can be other than unity only for Bader algorithm with
@@ -193,17 +196,17 @@ class SubSystemInternal(object):
         calculator: ASE Calculator
             The calculator used.
         cell_size_optimization_enabled: bool
-
+            -
         cell_padding: float
-
+            -
         charge_calculation_enabled: bool
-
+            -
         charge_source: string
-
+            -
         division: string
-
+            -
         gridrefinement: int
-
+            -
         n_atoms: int
             Number of atoms in the full system.
         atoms_for_interaction: ASE Atoms
@@ -218,15 +221,15 @@ class SubSystemInternal(object):
             The keys are the atom indices in the subsystem, values are the
             keys in the full system.
         potential_energy: float
-
+            -
         forces: numpy array
-
+            -
         density_grid: numpy array
             Stored if spherical division is used in charge calculation.
         pseudo_density: numpy array
-
+            -
         link_atom_indices: list
-
+            -
         timer: :class:'~pysic.utility.timer.Timer'
             Used to keep track of time usage.
     """

@@ -38,12 +38,13 @@ class Interaction(object):
         electrostatic_parameters: dictionary
             Contains all the parameters used for creating a Coulomb potential.
         coulomb_potential_enabled: bool
-
+            -
         comb_potential_enabled: bool
-
+            -
         link_atom_correction_enabled: bool
-
+            -
         potentials: list of :class:`~pysic.interactions.local.Potential`
+            -
     """
     def __init__(self,
                  primary,
@@ -104,7 +105,7 @@ class Interaction(object):
             k_cutoff: float
                 Reciprocal space cutoff radius. Provide if system has periodic
                 boundary conditions.
-             sigma: float
+            sigma: float
                 Ewald summation split parameter. Provide if system has periodic
                 boundary conditions.
         """
@@ -172,19 +173,19 @@ class InteractionInternal(object):
         info: :class:'~Pysic.interaction.Interaction'
             Contains all the info about the interaction given by the user.
         full_system: ASE Atoms
-
+            -
         primary_subsystem: :class:`~pysic.subsystem.SubSystem`
-
+            -
         secondary_subsystem: :class:`~pysic.subsystem.SubSystem`
-
+            -
         uncorrected_interaction_energy: float
             The interaction energy without the link atom correction.
         uncorrected_interaction_forces: numpy array
             The interaction forces without the link atom correction.
         link_atom_correction_energy: float
-
+            -
         link_atom_correction_forces: numpy array
-
+            -
         interaction_energy: float
             The total interaction energy = uncorrected_interaction_energy +
             link_atom_correction_energy
@@ -200,7 +201,7 @@ class InteractionInternal(object):
         timer: :class:'~pysic.utility.timer.Timer'
             Used for tracking time usage.
         has_pbc: bool
-
+            -
         link_atoms: ASE Atoms
             Contains all the hydrogen link atoms. Needed when calculating link
             atom correction.
@@ -505,9 +506,11 @@ class InteractionInternal(object):
 
     def calculate_link_atom_correction_energy(self):
         """Calculates the link atom interaction energy defined as
+
         .. math::
 
-            E^\text{link} = -E^\text{tot}_\text{MM}(\text{HL})-E^\text{int}_\text{MM}(\text{PS, HL})
+            E^\\text{link} = -E^\\text{tot}_\\text{MM}(\\text{HL})-E^\\text{int}_\\text{MM}(\\text{PS, HL})
+
         """
         self.timer.start("Link atom correction energy")
 
@@ -538,9 +541,11 @@ class InteractionInternal(object):
 
     def calculate_link_atom_correction_forces(self):
         """Calculates the link atom correction forces defined as
+        
         .. math::
 
-            F^\text{link} = -\nabla(-E^\text{tot}_\text{MM}(\text{HL})-E^\text{int}_\text{MM}(\text{PS, HL}))
+            F^\\text{link} = -\\nabla(-E^\\text{tot}_\\text{MM}(\\text{HL})-E^\\text{int}_\\text{MM}(\\text{PS, HL}))
+
         """
         self.timer.start("Link atom correction forces")
 
