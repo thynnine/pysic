@@ -26,7 +26,6 @@ import math
 import pysic.utility.debug as d
 
 
-
 class FastNeighborList(nbl.NeighborList):
     """ASE has a neighbor list class built in, `ASE NeighborList`_, but its implementation is
         currently inefficient, and building of the list is an :math:`O(n^2)`
@@ -55,7 +54,7 @@ class FastNeighborList(nbl.NeighborList):
             skin = FastNeighborList.neighbor_marginal
         nbl.NeighborList.__init__(self,
                               cutoffs=cutoffs, 
-                              skin=skin, 
+                              skin=skin,
                               sorted=False, 
                               self_interaction=False,
                               bothways=True)    
@@ -242,7 +241,7 @@ class Pysic:
         self.charge_relaxation = None
         self.coulomb = None
         self.charges = None
-        
+
         self.set_atoms(atoms)
         self.set_potentials(potentials)
         self.set_charge_relaxation(charge_relaxation)
@@ -295,8 +294,6 @@ class Pysic:
         return "Pysic(atoms={atoms},potentials={pots},full_initialization={init})".format(atoms=str(self.structure),
                                                                                           pots=str(self.potentials),
                                                                                           init=str(self.force_core_initialization))
-
-
     def core_initialization_is_forced(self):
         """Returns true if the core is always fully initialized, false otherwise."""
 
@@ -1782,7 +1779,6 @@ class Pysic:
 
 
 
-    
     def get_numerical_electronegativity(self, atom_index, shift=0.001, atoms=None):
         """Numerically calculates the derivative of energy with respect to charging a single particle.
             
@@ -1834,9 +1830,3 @@ class Pysic:
         self.set_core()
         
         return (energy_m-energy_p)/(2.0*shift)
-
-
-
-
-
-

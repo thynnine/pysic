@@ -43,6 +43,9 @@ Classes of the pysic module
    bondorderparameters class
    compoundpotential class
    chargerelaxation class
+   hybridcalculator class
+   subsystem class
+   interaction class
    fastneighborlist class
    coremirror class
 

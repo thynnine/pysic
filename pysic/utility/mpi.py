@@ -3,7 +3,20 @@
     """
 import pysic.pysic_fortran as pf
 import os
+import time
+from ase.parallel import rank
 
+_start = 0
+_end = 0
+
+def start():
+    if rank == 0:
+        _start = time.time()
+
+def end():
+    if rank == 0:
+        _end = time.time()
+        return _end - _start
 
 def finish_mpi():
     """Terminates the MPI framework.
