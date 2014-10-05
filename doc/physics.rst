@@ -88,6 +88,17 @@ In addition, having the local charge as a parameter of the energy function allow
 
 
 
+.. file:hybrid calculations
+
+.. _hybrid calculations:
+
+
+
+Hybrid QM/MM calculations in Pysic
+------------------------------------
+
+Pysic provides a framework for creating and running hybrid QM/MM simulations. Within this framework it is possible to calculate the potential energy and forces in an atomistic configuration which has multiple subsystems and interactions between them. Any external calculator with an ASE interface can be assigned to a subsystem or the classical potentials provided by Pysic can be used. The QM/MM implementation in Pysic uses the mechanical embedding scheme with hydrogen link atoms. It is possible to enable any Pysic-supported interaction potentials between the subsystems, with special functions provided for the easy use of Coulomb and COMB interactions.
+
 .. file:pysic approach
 
 .. _pysic approach:
