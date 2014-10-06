@@ -10,8 +10,9 @@ Pysic (Pythonic simulation code)
 
 |logo|
 
-`Teemu Hynninen <http://users.utu.fi/tejohy/>`_ (2011-2014)  
-Lauri Himanen (2014)  
+`Teemu Hynninen <http://users.utu.fi/tejohy/>`_ (2011-2014),  
+Lauri Himanen (2014),  
+Ville Parkkinen (2014)
 
 `Tampere University of Technology <http://www.tut.fi>`_  
 `Aalto University, Helsinki <http://www.aalto.fi>`_  
