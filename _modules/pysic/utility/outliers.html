@@ -1,0 +1,432 @@
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pysic.utility.outliers &mdash; Pysic 0.6 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/sphinxdoc.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.6',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Pysic 0.6 documentation" href="../../../index.html" />
+    <link rel="up" title="pysic" href="../../pysic.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" accesskey="U">pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pysic.utility.outliers</h1><div class="highlight"><pre>
+<span class="c">#! /usr/bin/env python</span>
+<span class="c"># coding=utf-8</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Detection of irregular atomic neighborhoods by bond distance and angle analysis.</span>
+
+<span class="sd">Ville Parkkinen, Teemu Hynninen</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">math</span>     <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">scipy</span>    <span class="kn">import</span> <span class="n">spatial</span>
+<span class="kn">from</span> <span class="nn">warnings</span> <span class="kn">import</span> <span class="n">catch_warnings</span><span class="p">,</span> <span class="n">simplefilter</span>
+<span class="kn">import</span> <span class="nn">ase</span>
+<span class="kn">import</span> <span class="nn">pysic</span>
+
+
+<span class="k">class</span> <span class="nc">Angle</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;center_index&#39;</span><span class="p">,</span> <span class="s">&#39;type1&#39;</span><span class="p">,</span> <span class="s">&#39;type2&#39;</span><span class="p">,</span> <span class="s">&#39;type3&#39;</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">center_index</span><span class="p">,</span> <span class="n">type1</span><span class="p">,</span> <span class="n">type2</span><span class="p">,</span> <span class="n">type3</span><span class="p">,</span> <span class="n">angle</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">center_index</span>                  <span class="o">=</span> <span class="n">center_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type2</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">([</span><span class="n">type1</span><span class="p">,</span> <span class="n">type2</span><span class="p">,</span> <span class="n">type3</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span>                         <span class="o">=</span> <span class="n">angle</span>
+
+
+
+<span class="k">class</span> <span class="nc">Distance</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">__slots__</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;primary_index&#39;</span><span class="p">,</span> <span class="s">&#39;type1&#39;</span><span class="p">,</span> <span class="s">&#39;type2&#39;</span><span class="p">,</span> <span class="s">&#39;value&#39;</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">primary_index</span><span class="p">,</span> <span class="n">type1</span><span class="p">,</span> <span class="n">type2</span><span class="p">,</span> <span class="n">distance</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">primary_index</span>     <span class="o">=</span> <span class="n">primary_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">type1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">type2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">([</span><span class="n">type1</span><span class="p">,</span> <span class="n">type2</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">value</span>             <span class="o">=</span> <span class="n">distance</span>
+
+
+
+<span class="k">class</span> <span class="nc">Distribution</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+<span class="k">class</span> <span class="nc">BondType</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">elements</span> <span class="o">=</span> <span class="n">elements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cutoff</span> <span class="o">=</span> <span class="n">cutoff</span>
+
+
+
+<div class="viewcode-block" id="angle"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.outliers.angle">[docs]</a><span class="k">def</span> <span class="nf">angle</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">O</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the angle between vectors OA and OB</span>
+
+<span class="sd">        Parameters O, A, B: coordinates in 3d-space</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">OA</span>  <span class="o">=</span> <span class="n">A</span> <span class="o">-</span> <span class="n">O</span>
+        <span class="n">OB</span>  <span class="o">=</span> <span class="n">B</span> <span class="o">-</span> <span class="n">O</span>
+
+        <span class="n">div</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">OA</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">*</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">OB</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">div</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span>       <span class="p">:</span> <span class="n">s</span> <span class="o">=</span> <span class="p">(</span><span class="n">OA</span> <span class="o">*</span> <span class="n">OB</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">div</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="o">&gt;</span>  <span class="mi">1</span>  <span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>   <span class="c"># due to floating-point arithmetic</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1</span>  <span class="p">:</span> <span class="k">return</span> <span class="n">pi</span>  <span class="c"># due to floating-point arithmetic</span>
+
+        <span class="k">return</span> <span class="n">acos</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> 
+    </div>
+<div class="viewcode-block" id="vec_angle"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.outliers.vec_angle">[docs]</a><span class="k">def</span> <span class="nf">vec_angle</span><span class="p">(</span><span class="n">A</span><span class="p">,</span> <span class="n">B</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the angle between vectors A and B</span>
+
+<span class="sd">        Parameters A, B: coordinates in 3d-space</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">OA</span>  <span class="o">=</span> <span class="n">A</span>
+        <span class="n">OB</span>  <span class="o">=</span> <span class="n">B</span>
+
+        <span class="n">div</span> <span class="o">=</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">OA</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span> <span class="o">*</span> <span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="n">OB</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">div</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span> <span class="k">return</span> <span class="bp">None</span>
+        <span class="k">else</span>       <span class="p">:</span> <span class="n">s</span> <span class="o">=</span> <span class="p">(</span><span class="n">OA</span> <span class="o">*</span> <span class="n">OB</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">div</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="o">&gt;</span>  <span class="mi">1</span>  <span class="p">:</span> <span class="k">return</span> <span class="mi">0</span>   <span class="c"># due to floating-point arithmetic</span>
+        <span class="k">if</span> <span class="n">s</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mi">1</span>  <span class="p">:</span> <span class="k">return</span> <span class="n">pi</span>  <span class="c"># due to floating-point arithmetic</span>
+
+        <span class="k">return</span> <span class="n">acos</span><span class="p">(</span><span class="n">s</span><span class="p">)</span> 
+</div>
+<span class="k">class</span> <span class="nc">Structure</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">atoms</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system</span> <span class="o">=</span> <span class="n">atoms</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nbl</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_list</span> <span class="o">=</span> <span class="p">[]</span>
+
+
+    
+    <span class="k">def</span> <span class="nf">add_bond</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Adds a bond between atoms of the given elements, up to the cutoff separation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bond_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">BondType</span><span class="p">(</span><span class="n">elements</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">))</span>
+        
+    <span class="k">def</span> <span class="nf">get_bond_length</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the stored bond length for the given pair of elements.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">rev</span> <span class="o">=</span> <span class="n">elements</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_list</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">b</span><span class="o">.</span><span class="n">elements</span> <span class="o">==</span> <span class="n">elements</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="n">cutoff</span>
+            <span class="k">elif</span> <span class="n">b</span><span class="o">.</span><span class="n">elements</span> <span class="o">==</span> <span class="n">rev</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">b</span><span class="o">.</span><span class="n">cutoff</span>
+    
+    <span class="k">def</span> <span class="nf">create_neighbor_lists</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Creates neighbor lists for the structure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">skin</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">calculator</span><span class="o">.</span><span class="n">FastNeighborList</span><span class="o">.</span><span class="n">neighbor_marginal</span><span class="p">;</span>
+
+        <span class="c"># create a dummy calculator</span>
+        <span class="n">dummy</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Pysic</span><span class="p">()</span>
+        <span class="n">old_calc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">get_calculator</span><span class="p">()</span>
+        
+        <span class="c"># Note that the list finds all neighbors within the maximum interaction</span>
+        <span class="c"># radius of the particular atom.</span>
+        <span class="k">for</span> <span class="n">bond</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">bond_list</span><span class="p">:</span>
+            <span class="n">pot</span> <span class="o">=</span> <span class="n">pysic</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s">&#39;LJ&#39;</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="n">bond</span><span class="o">.</span><span class="n">cutoff</span><span class="o">-</span><span class="n">skin</span><span class="p">,</span> <span class="n">symbols</span><span class="o">=</span><span class="n">bond</span><span class="o">.</span><span class="n">elements</span><span class="p">)</span>
+            <span class="n">dummy</span><span class="o">.</span><span class="n">add_potential</span><span class="p">(</span><span class="n">pot</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">dummy</span><span class="p">)</span>
+        
+        <span class="c"># It is important to manually initialize the core since no actual calculations are carried out.</span>
+        <span class="n">dummy</span><span class="o">.</span><span class="n">set_core</span><span class="p">()</span>
+
+        <span class="c"># get the list and access its contents</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nbl</span> <span class="o">=</span> <span class="n">dummy</span><span class="o">.</span><span class="n">get_neighbor_list</span><span class="p">()</span>
+        
+        <span class="c"># restore the original calculator, if there was one</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">set_calculator</span><span class="p">(</span><span class="n">old_calc</span><span class="p">)</span>
+        
+    
+    <span class="k">def</span> <span class="nf">get_neighbors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the indices of neighboring atoms for the given atom. (Sorted according to distance.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">neighbors</span><span class="p">,</span> <span class="n">offsets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbl</span><span class="o">.</span><span class="n">get_neighbors</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">neighbors</span>
+    
+    <span class="k">def</span> <span class="nf">get_separations</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the separation vectors from a given atom to its neighbors. (Sorted according to distance.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbl</span><span class="o">.</span><span class="n">get_neighbor_separations</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">get_distances</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns the distances between a given atom and its neighbors. (Sorted.)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nbl</span><span class="o">.</span><span class="n">get_neighbor_distances</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="p">,</span> <span class="bp">True</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">get_all_angles</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of all 3-atom angles as Angle objects.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">angles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">symbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">get_chemical_symbols</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="p">:</span>
+            <span class="n">nbors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_neighbors</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="n">vecs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_separations</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="n">ds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_distances</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="n">centre</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">symbol</span>
+                
+            <span class="k">for</span> <span class="n">n1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nbors</span><span class="p">)):</span>
+                <span class="k">for</span> <span class="n">n2</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nbors</span><span class="p">)):</span>
+                    <span class="k">if</span><span class="p">(</span><span class="n">n1</span> <span class="o">&gt;</span> <span class="n">n2</span><span class="p">):</span>
+                        
+                        <span class="n">type1</span> <span class="o">=</span> <span class="n">symbs</span><span class="p">[</span><span class="n">nbors</span><span class="p">[</span><span class="n">n1</span><span class="p">]]</span>
+                        <span class="n">type2</span> <span class="o">=</span> <span class="n">symbs</span><span class="p">[</span><span class="n">nbors</span><span class="p">[</span><span class="n">n2</span><span class="p">]]</span>
+                        
+                        <span class="k">if</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">n1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_bond_length</span><span class="p">([</span><span class="n">centre</span><span class="p">,</span><span class="n">type1</span><span class="p">])</span> <span class="ow">and</span>
+                            <span class="n">ds</span><span class="p">[</span><span class="n">n2</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_bond_length</span><span class="p">([</span><span class="n">centre</span><span class="p">,</span><span class="n">type2</span><span class="p">])):</span>
+                        
+                            <span class="n">new_angle</span> <span class="o">=</span> <span class="n">vec_angle</span><span class="p">(</span><span class="n">vecs</span><span class="p">[</span><span class="n">n1</span><span class="p">],</span><span class="n">vecs</span><span class="p">[</span><span class="n">n2</span><span class="p">])</span>
+                            <span class="n">angles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Angle</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                                                <span class="n">atom</span><span class="o">.</span><span class="n">symbol</span><span class="p">,</span>
+                                                <span class="n">type1</span><span class="p">,</span>
+                                                <span class="n">type2</span><span class="p">,</span>
+                                                <span class="n">new_angle</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">angles</span>
+                
+                
+    <span class="k">def</span> <span class="nf">get_all_distances</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of all 2-atom distances.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        
+        <span class="n">dists</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">symbs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="o">.</span><span class="n">get_chemical_symbols</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">atom</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">system</span><span class="p">:</span>
+            
+            <span class="n">nbors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_neighbors</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="n">ds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_distances</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+            <span class="n">type1</span> <span class="o">=</span> <span class="n">atom</span><span class="o">.</span><span class="n">symbol</span>
+            
+            <span class="k">for</span> <span class="n">n1</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">nbors</span><span class="p">)):</span>
+                <span class="n">type2</span> <span class="o">=</span> <span class="n">symbs</span><span class="p">[</span><span class="n">nbors</span><span class="p">[</span><span class="n">n1</span><span class="p">]]</span>
+                        
+                <span class="k">if</span><span class="p">(</span><span class="n">ds</span><span class="p">[</span><span class="n">n1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_bond_length</span><span class="p">([</span><span class="n">type1</span><span class="p">,</span><span class="n">type2</span><span class="p">])):</span>
+                    <span class="n">dists</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Distance</span><span class="p">(</span><span class="n">atom</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+                                          <span class="n">type1</span><span class="p">,</span>
+                                          <span class="n">type2</span><span class="p">,</span>
+                                          <span class="n">ds</span><span class="p">[</span><span class="n">n1</span><span class="p">]))</span>
+                                      
+        <span class="k">return</span> <span class="n">dists</span>
+    
+    
+<div class="viewcode-block" id="get_distributions"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.outliers.get_distributions">[docs]</a><span class="k">def</span> <span class="nf">get_distributions</span><span class="p">(</span><span class="n">angles</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">radii</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Return observed log-distributions of angles and distances</span>
+
+<span class="sd">    Distributions are obtained for all combinations of observed atom types.</span>
+<span class="sd">    They are histogram-based, using the breakpoints specified by parameters</span>
+<span class="sd">    &#39;angle.grid&#39; and &#39;dist.grid&#39;. The distributions are represented by</span>
+<span class="sd">    vectors giving the log-probability of each &quot;bin&quot;. These are not normalized</span>
+<span class="sd">    by the &quot;bin&quot; widths. This is not a problem as these would cancel out later.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">angle_distribs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">dist_distribs</span>  <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="n">min_angle</span><span class="p">,</span> <span class="n">max_angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">angle</span> <span class="ow">in</span> <span class="n">angles</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">angle</span><span class="o">.</span><span class="n">value</span> <span class="o">&lt;</span> <span class="n">min_angle</span><span class="p">:</span> <span class="n">min_angle</span> <span class="o">=</span> <span class="n">angle</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">if</span> <span class="n">angle</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="n">max_angle</span><span class="p">:</span> <span class="n">max_angle</span> <span class="o">=</span> <span class="n">angle</span><span class="o">.</span><span class="n">value</span>
+    
+    <span class="k">for</span> <span class="n">angle</span> <span class="ow">in</span> <span class="n">angles</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">angle</span><span class="o">.</span><span class="n">type1</span> <span class="o">+</span> <span class="s">&#39;-&#39;</span> <span class="o">+</span> <span class="n">angle</span><span class="o">.</span><span class="n">type2</span> <span class="o">+</span> <span class="s">&#39;-&#39;</span> <span class="o">+</span> <span class="n">angle</span><span class="o">.</span><span class="n">type3</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">angle_distribs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">angle_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">Distribution</span><span class="p">()</span>
+        <span class="n">angle_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">angle</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">angle_distribs</span><span class="p">:</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">angle_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">,</span>
+                            <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="mf">0.99</span><span class="o">*</span><span class="n">min_angle</span><span class="p">,</span> <span class="mf">1.01</span><span class="o">*</span><span class="n">max_angle</span><span class="p">])</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+        <span class="n">angle_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">b</span>
+        <span class="k">with</span> <span class="n">catch_warnings</span><span class="p">():</span> <span class="c"># ignore divbyzero-whining</span>
+            <span class="n">simplefilter</span><span class="p">(</span><span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+            <span class="n">angle_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">distribution</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">a</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+        <span class="k">del</span><span class="p">(</span><span class="n">angle_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">)</span>
+
+
+
+    <span class="n">min_dist</span> <span class="p">,</span> <span class="n">max_dist</span>  <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="n">distances</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">dist</span><span class="o">.</span><span class="n">value</span> <span class="o">&lt;</span> <span class="n">min_dist</span><span class="p">:</span> <span class="n">min_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">value</span>
+        <span class="k">if</span> <span class="n">dist</span><span class="o">.</span><span class="n">value</span> <span class="o">&gt;</span> <span class="n">max_dist</span><span class="p">:</span> <span class="n">max_dist</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">value</span>
+
+    <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="n">distances</span><span class="p">:</span>
+        <span class="n">label</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">type1</span> <span class="o">+</span> <span class="s">&#39;-&#39;</span> <span class="o">+</span> <span class="n">dist</span><span class="o">.</span><span class="n">type2</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">dist_distribs</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">dist_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">Distribution</span><span class="p">()</span>
+        <span class="n">dist_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">dist_distribs</span><span class="p">:</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">dist_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">,</span>
+                            <span class="n">bins</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="p">[</span><span class="mf">0.99</span><span class="o">*</span><span class="n">min_dist</span><span class="p">,</span> <span class="mf">1.01</span><span class="o">*</span><span class="n">max_dist</span><span class="p">])</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">a</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+        <span class="n">dist_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span> <span class="o">=</span> <span class="n">b</span>
+        <span class="k">with</span> <span class="n">catch_warnings</span><span class="p">():</span> <span class="c"># ignore divbyzero-whining</span>
+            <span class="n">simplefilter</span><span class="p">(</span><span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+            <span class="n">dist_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">distribution</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">a</span> <span class="o">/</span> <span class="nb">sum</span><span class="p">(</span><span class="n">a</span><span class="p">))</span>
+        <span class="k">del</span><span class="p">(</span><span class="n">dist_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">angle_distribs</span><span class="p">,</span> <span class="n">dist_distribs</span>
+
+
+</div>
+<div class="viewcode-block" id="get_log_likelihoods"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.outliers.get_log_likelihoods">[docs]</a><span class="k">def</span> <span class="nf">get_log_likelihoods</span><span class="p">(</span><span class="n">angles</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span><span class="n">angle_distribs</span><span class="p">,</span><span class="n">dist_distribs</span><span class="p">,</span><span class="n">n_atoms</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Calculate log-likelihoods of each atom</span>
+
+<span class="sd">    All observed angles and distances are considered independent.</span>
+<span class="sd">    Parameters &#39;angles&#39; and .distances&#39; supplie the observations,</span>
+<span class="sd">    &#39;angle_distribs&#39; and &#39;dist_distribs&#39;&#39; the histogram-based distributions</span>
+<span class="sd">    and &#39;angle.grid&#39; &amp; &#39;dist.grid&#39; the breakpoints of these histograms.</span>
+<span class="sd">    Parameter &#39;n_atoms&#39; gives the number of atoms in the original data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">angles</span>    <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">angles</span><span class="p">)</span>
+    <span class="n">distances</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span>
+
+    <span class="n">a_logls</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">n_atoms</span><span class="p">)</span>
+    <span class="n">d_logls</span>   <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">n_atoms</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_atoms</span><span class="p">):</span> 
+        <span class="c"># All angles/distances originating from atom i</span>
+        <span class="n">angleset</span> <span class="o">=</span> <span class="n">angles</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">center_index</span><span class="p">,</span> <span class="n">angles</span><span class="p">))</span> <span class="o">==</span> <span class="n">i</span><span class="p">]</span>
+        <span class="n">distset</span>  <span class="o">=</span> <span class="n">distances</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                               <span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">primary_index</span><span class="p">,</span> <span class="n">distances</span><span class="p">))</span> <span class="o">==</span> <span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">angleset</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">a_logls</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">angle</span> <span class="ow">in</span> <span class="n">angleset</span><span class="p">:</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="n">angle</span><span class="o">.</span><span class="n">type1</span> <span class="o">+</span> <span class="s">&#39;-&#39;</span> <span class="o">+</span> <span class="n">angle</span><span class="o">.</span><span class="n">type2</span> <span class="o">+</span> <span class="s">&#39;-&#39;</span> <span class="o">+</span> <span class="n">angle</span><span class="o">.</span><span class="n">type3</span>
+                <span class="n">slots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">angle</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                                     <span class="n">bins</span><span class="o">=</span><span class="n">angle_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">with</span> <span class="n">catch_warnings</span><span class="p">():</span> <span class="c"># ignore nan-whining</span>
+                    <span class="n">simplefilter</span><span class="p">(</span><span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+                    <span class="n">a_logls</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">angle_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">distribution</span> <span class="o">*</span>
+                                            <span class="n">slots</span><span class="p">)</span>
+            <span class="n">a_logls</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">a_logls</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">angleset</span><span class="p">)</span>
+
+            <span class="n">d_logls</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">dist</span> <span class="ow">in</span> <span class="n">distset</span><span class="p">:</span>
+                <span class="n">label</span> <span class="o">=</span> <span class="n">dist</span><span class="o">.</span><span class="n">type1</span> <span class="o">+</span> <span class="s">&#39;-&#39;</span> <span class="o">+</span> <span class="n">dist</span><span class="o">.</span><span class="n">type2</span>
+                <span class="n">slots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">value</span><span class="p">,</span>
+                                     <span class="n">bins</span><span class="o">=</span><span class="n">dist_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">grid</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">with</span> <span class="n">catch_warnings</span><span class="p">():</span> <span class="c"># ignore nan-whining</span>
+                    <span class="n">simplefilter</span><span class="p">(</span><span class="s">&#39;ignore&#39;</span><span class="p">)</span>
+                    <span class="n">d_logls</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">dist_distribs</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">distribution</span> <span class="o">*</span>
+                                            <span class="n">slots</span><span class="p">)</span>
+            <span class="n">d_logls</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">d_logls</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="n">distset</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">a_logls</span><span class="p">,</span> <span class="n">d_logls</span>
+
+
+</div>
+<div class="viewcode-block" id="write_to_file"><a class="viewcode-back" href="../../../pysic_utility.html#pysic.utility.outliers.write_to_file">[docs]</a><span class="k">def</span> <span class="nf">write_to_file</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">boxsize</span><span class="p">,</span> <span class="n">atoms</span><span class="p">,</span> <span class="n">coordinates</span><span class="p">,</span> <span class="n">a_logls</span><span class="p">,</span> <span class="n">d_logls</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Write original data + results into a file</span>
+
+<span class="sd">    Creates/overwrites an xyz-like file with two additional columns. These</span>
+<span class="sd">    additional columns will contain the log-likelihood contributions from</span>
+<span class="sd">    (1) angles and (2) distances.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;     {}</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">atoms</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;{} {} {}</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">boxsize</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">boxsize</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">boxsize</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="mi">10</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">atoms</span><span class="p">)[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39; {0:6}{1:14}{2:14}{3:14}{4:14}{5:10}</span><span class="se">\n</span><span class="s">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                  <span class="n">atoms</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                  <span class="nb">str</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">])[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">],</span>
+                  <span class="nb">str</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">])[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">],</span>
+                  <span class="nb">str</span><span class="p">(</span><span class="n">coordinates</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="p">])[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">],</span>
+                  <span class="nb">str</span><span class="p">(</span><span class="n">a_logls</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">],</span>
+                  <span class="nb">str</span><span class="p">(</span><span class="n">d_logls</span><span class="p">[</span><span class="n">i</span><span class="p">])[</span><span class="mi">0</span><span class="p">:</span><span class="n">n</span><span class="p">]))</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            
+</pre></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Pysic 0.6 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li>
+          <li><a href="../../pysic.html" >pysic</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2011-2013, Teemu Hynninen.
+      Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.1.2.
+    </div>
+  </body>
+</html>

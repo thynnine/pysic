@@ -55,6 +55,13 @@
   <ul>
 <li><a class="reference internal" href="#">Pysic Utility modules</a><ul>
 <li><a class="reference internal" href="#plot">Plot</a></li>
+<li><a class="reference internal" href="#outliers">Outliers</a><ul>
+<li><a class="reference internal" href="#structure-class">Structure class</a></li>
+<li><a class="reference internal" href="#distance-class">Distance class</a></li>
+<li><a class="reference internal" href="#angle-class">Angle class</a></li>
+<li><a class="reference internal" href="#module-pysic.utility.outliers">Outliers module</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#mpi">MPI</a></li>
 <li><a class="reference internal" href="#archive">Archive</a></li>
 <li><a class="reference internal" href="#convenience">Convenience</a></li>
@@ -305,6 +312,187 @@ the distances traveled on the plane and the recorded forces is returned.</p>
 </dl>
 </dd></dl>
 
+</div>
+<div class="section" id="outliers">
+<span id="outliers-utility"></span><h2>Outliers<a class="headerlink" href="#outliers" title="Permalink to this headline">¶</a></h2>
+<p>This module contains tools for statistical analysis of atomic structures. It can be used for calculating the bond length and angle distributions in a given structure according to bond rules given by the user. Log-likelihood distributions are generated based on these distributions, which can be further grouped or used to create false color representations of the structure.</p>
+<p>This is an example of how to create the distributions:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pysic</span>
+<span class="kn">from</span> <span class="nn">pysic.utility.outliers</span> <span class="kn">import</span> <span class="o">*</span>
+<span class="kn">from</span> <span class="nn">ase.io</span> <span class="kn">import</span> <span class="n">read</span>
+
+<span class="k">def</span> <span class="nf">do_everything</span><span class="p">(</span><span class="n">inputfile</span><span class="p">,</span> <span class="n">outputfile</span><span class="p">,</span> <span class="n">radii</span><span class="p">,</span> <span class="n">periodic_directions</span><span class="p">,</span> <span class="n">cell_lengths</span><span class="p">):</span>
+   <span class="sd">&quot;&quot;&quot;Stitch everything together.</span>
+<span class="sd">   &quot;&quot;&quot;</span>
+
+   <span class="n">system</span> <span class="o">=</span> <span class="n">read</span><span class="p">(</span><span class="n">inputfile</span><span class="p">)</span>
+   <span class="n">system</span><span class="o">.</span><span class="n">set_pbc</span><span class="p">(</span><span class="n">periodic_directions</span><span class="p">)</span>
+   <span class="n">system</span><span class="o">.</span><span class="n">set_cell</span><span class="p">(</span><span class="n">cell_lengths</span><span class="p">)</span>
+   <span class="n">structure</span> <span class="o">=</span> <span class="n">Structure</span><span class="p">(</span><span class="n">system</span><span class="p">)</span>
+
+   <span class="n">structure</span><span class="o">.</span><span class="n">add_bond</span><span class="p">([</span><span class="s">&#39;Si&#39;</span><span class="p">,</span><span class="s">&#39;Si&#39;</span><span class="p">],</span> <span class="n">radii</span><span class="p">[</span><span class="s">&#39;Si&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="mf">0.6</span><span class="p">)</span>
+   <span class="n">structure</span><span class="o">.</span><span class="n">add_bond</span><span class="p">([</span><span class="s">&#39;Si&#39;</span><span class="p">,</span><span class="s">&#39;O&#39;</span><span class="p">],</span> <span class="p">(</span><span class="n">radii</span><span class="p">[</span><span class="s">&#39;Si&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">radii</span><span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">])</span><span class="o">*</span><span class="mf">0.6</span><span class="p">)</span>
+   <span class="n">structure</span><span class="o">.</span><span class="n">add_bond</span><span class="p">([</span><span class="s">&#39;O&#39;</span><span class="p">,</span><span class="s">&#39;O&#39;</span><span class="p">],</span> <span class="n">radii</span><span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span><span class="o">*</span><span class="mf">0.6</span><span class="p">)</span>
+   <span class="n">structure</span><span class="o">.</span><span class="n">add_bond</span><span class="p">([</span><span class="s">&#39;Si&#39;</span><span class="p">,</span><span class="s">&#39;H&#39;</span><span class="p">],</span> <span class="p">(</span><span class="n">radii</span><span class="p">[</span><span class="s">&#39;Si&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">radii</span><span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">])</span><span class="o">*</span><span class="mf">0.6</span><span class="p">)</span>
+   <span class="n">structure</span><span class="o">.</span><span class="n">add_bond</span><span class="p">([</span><span class="s">&#39;H&#39;</span><span class="p">,</span><span class="s">&#39;O&#39;</span><span class="p">],</span> <span class="p">(</span><span class="n">radii</span><span class="p">[</span><span class="s">&#39;H&#39;</span><span class="p">]</span><span class="o">+</span><span class="n">radii</span><span class="p">[</span><span class="s">&#39;O&#39;</span><span class="p">])</span><span class="o">*</span><span class="mf">0.6</span><span class="p">)</span>
+   <span class="n">structure</span><span class="o">.</span><span class="n">create_neighbor_lists</span><span class="p">()</span>
+   <span class="n">angles</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">get_all_angles</span><span class="p">()</span>
+   <span class="n">distances</span> <span class="o">=</span> <span class="n">structure</span><span class="o">.</span><span class="n">get_all_distances</span><span class="p">()</span>
+   <span class="n">max_n</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">system</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+   <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">angles</span><span class="p">:</span>
+       <span class="k">print</span> <span class="s">&quot;a&quot;</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">center_index</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">type1</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">type2</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">type3</span><span class="p">,</span> <span class="n">a</span><span class="o">.</span><span class="n">value</span>
+
+   <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">distances</span><span class="p">:</span>
+       <span class="k">print</span> <span class="s">&quot;d&quot;</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">primary_index</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">type1</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">type2</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">value</span>
+
+   <span class="n">angle_distribs</span><span class="p">,</span> <span class="n">dist_distribs</span> <span class="o">=</span> <span class="n">get_distributions</span><span class="p">(</span><span class="n">angles</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">radii</span><span class="p">)</span>
+   <span class="n">a_logls</span><span class="p">,</span> <span class="n">d_logls</span> <span class="o">=</span> <span class="n">get_log_likelihoods</span><span class="p">(</span><span class="n">angles</span><span class="p">,</span> <span class="n">distances</span><span class="p">,</span> <span class="n">angle_distribs</span><span class="p">,</span>
+                                          <span class="n">dist_distribs</span><span class="p">,</span> <span class="n">max_n</span><span class="p">)</span>
+   <span class="n">write_to_file</span><span class="p">(</span><span class="n">outputfile</span><span class="p">,</span> <span class="n">cell_lengths</span><span class="p">,</span> <span class="n">system</span><span class="o">.</span><span class="n">get_chemical_symbols</span><span class="p">(),</span>
+                   <span class="n">system</span><span class="o">.</span><span class="n">get_positions</span><span class="p">(),</span> <span class="n">a_logls</span><span class="p">,</span> <span class="n">d_logls</span><span class="p">)</span>
+
+
+<span class="n">inputfile</span>           <span class="o">=</span> <span class="s">&#39;sio2.xyz&#39;</span>
+<span class="n">outputfile</span>          <span class="o">=</span> <span class="s">&#39;sio2_analysis.txt&#39;</span>
+<span class="n">periodic_directions</span> <span class="o">=</span> <span class="p">[</span><span class="bp">True</span><span class="p">,</span> <span class="bp">True</span><span class="p">,</span> <span class="bp">True</span><span class="p">]</span>
+<span class="n">cell_lengths</span> <span class="o">=</span> <span class="p">[</span><span class="mf">14.835</span><span class="p">,</span> <span class="mf">14.835</span><span class="p">,</span> <span class="mf">14.835</span><span class="p">]</span>
+
+<span class="n">radii</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;O&#39;</span> <span class="p">:</span> <span class="mf">1.52</span><span class="p">,</span>
+         <span class="s">&#39;Si&#39;</span><span class="p">:</span> <span class="mf">2.10</span><span class="p">}</span>
+
+
+<span class="c"># All set? Run.</span>
+<span class="n">do_everything</span><span class="p">(</span><span class="n">inputfile</span><span class="p">,</span> <span class="n">outputfile</span><span class="p">,</span> <span class="n">radii</span><span class="p">,</span> <span class="n">periodic_directions</span><span class="p">,</span> <span class="n">cell_lengths</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The atomic system is first read from an xyz file using ASE read method.
+It is then translated to a Structure class, which the outliers tools use,
+and bonding rules are created based on element types. Once bonding has been defined,
+bond lengths, bond angles, and their distributions are calculated with the
+outliers tools. The results are printed in a file in this example, but it would
+of course be possible to access them directly in the script for further analysis.</p>
+<div class="section" id="structure-class">
+<h3>Structure class<a class="headerlink" href="#structure-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="pysic.utility.outliers.Structure">
+<em class="property">class </em><tt class="descclassname">pysic.utility.outliers.</tt><tt class="descname">Structure</tt><big>(</big><em>atoms</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#Structure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.Structure" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="method">
+<dt id="pysic.utility.outliers.Structure.add_bond">
+<tt class="descname">add_bond</tt><big>(</big><em>elements</em>, <em>cutoff</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#Structure.add_bond"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.Structure.add_bond" title="Permalink to this definition">¶</a></dt>
+<dd><p>Adds a bond between atoms of the given elements, up to the cutoff separation.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.outliers.Structure.create_neighbor_lists">
+<tt class="descname">create_neighbor_lists</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#Structure.create_neighbor_lists"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.Structure.create_neighbor_lists" title="Permalink to this definition">¶</a></dt>
+<dd><p>Creates neighbor lists for the structure.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.outliers.Structure.get_all_angles">
+<tt class="descname">get_all_angles</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#Structure.get_all_angles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.Structure.get_all_angles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of all 3-atom angles as Angle objects.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.outliers.Structure.get_all_distances">
+<tt class="descname">get_all_distances</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#Structure.get_all_distances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.Structure.get_all_distances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of all 2-atom distances as Distance objects.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.outliers.Structure.get_bond_length">
+<tt class="descname">get_bond_length</tt><big>(</big><em>elements</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#Structure.get_bond_length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.Structure.get_bond_length" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the stored bond length for the given pair of elements.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.outliers.Structure.get_distances">
+<tt class="descname">get_distances</tt><big>(</big><em>index</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#Structure.get_distances"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.Structure.get_distances" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the distances between a given atom and its neighbors. (Sorted.)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.outliers.Structure.get_neighbors">
+<tt class="descname">get_neighbors</tt><big>(</big><em>index</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#Structure.get_neighbors"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.Structure.get_neighbors" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the indices of neighboring atoms for the given atom. (Sorted according to distance.)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pysic.utility.outliers.Structure.get_separations">
+<tt class="descname">get_separations</tt><big>(</big><em>index</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#Structure.get_separations"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.Structure.get_separations" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the separation vectors from a given atom to its neighbors. (Sorted according to distance.)</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="distance-class">
+<h3>Distance class<a class="headerlink" href="#distance-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="pysic.utility.outliers.Distance">
+<em class="property">class </em><tt class="descclassname">pysic.utility.outliers.</tt><tt class="descname">Distance</tt><big>(</big><em>primary_index</em>, <em>type1</em>, <em>type2</em>, <em>distance</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#Distance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.Distance" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="angle-class">
+<h3>Angle class<a class="headerlink" href="#angle-class" title="Permalink to this headline">¶</a></h3>
+<dl class="class">
+<dt id="pysic.utility.outliers.Angle">
+<em class="property">class </em><tt class="descclassname">pysic.utility.outliers.</tt><tt class="descname">Angle</tt><big>(</big><em>center_index</em>, <em>type1</em>, <em>type2</em>, <em>type3</em>, <em>angle</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#Angle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.Angle" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-pysic.utility.outliers">
+<span id="outliers-module"></span><h3>Outliers module<a class="headerlink" href="#module-pysic.utility.outliers" title="Permalink to this headline">¶</a></h3>
+<p>Detection of irregular atomic neighborhoods by bond distance and angle analysis.</p>
+<dl class="function">
+<dt id="pysic.utility.outliers.angle">
+<tt class="descclassname">pysic.utility.outliers.</tt><tt class="descname">angle</tt><big>(</big><em>A</em>, <em>O</em>, <em>B</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#angle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.angle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the angle between vectors OA and OB</p>
+<p>Parameters O, A, B: coordinates in 3d-space</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.outliers.get_distributions">
+<tt class="descclassname">pysic.utility.outliers.</tt><tt class="descname">get_distributions</tt><big>(</big><em>angles</em>, <em>distances</em>, <em>radii</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#get_distributions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.get_distributions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return observed log-distributions of angles and distances</p>
+<p>Distributions are obtained for all combinations of observed atom types.
+They are histogram-based, using the breakpoints specified by parameters
+&#8216;angle.grid&#8217; and &#8216;dist.grid&#8217;. The distributions are represented by
+vectors giving the log-probability of each &#8220;bin&#8221;. These are not normalized
+by the &#8220;bin&#8221; widths. This is not a problem as these would cancel out later.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.outliers.get_log_likelihoods">
+<tt class="descclassname">pysic.utility.outliers.</tt><tt class="descname">get_log_likelihoods</tt><big>(</big><em>angles</em>, <em>distances</em>, <em>angle_distribs</em>, <em>dist_distribs</em>, <em>n_atoms</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#get_log_likelihoods"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.get_log_likelihoods" title="Permalink to this definition">¶</a></dt>
+<dd><p>Calculate log-likelihoods of each atom</p>
+<p>All observed angles and distances are considered independent.
+Parameters &#8216;angles&#8217; and .distances&#8217; supplie the observations,
+&#8216;angle_distribs&#8217; and &#8216;dist_distribs&#8217;&#8217; the histogram-based distributions
+and &#8216;angle.grid&#8217; &amp; &#8216;dist.grid&#8217; the breakpoints of these histograms.
+Parameter &#8216;n_atoms&#8217; gives the number of atoms in the original data.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.outliers.vec_angle">
+<tt class="descclassname">pysic.utility.outliers.</tt><tt class="descname">vec_angle</tt><big>(</big><em>A</em>, <em>B</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#vec_angle"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.vec_angle" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the angle between vectors A and B</p>
+<p>Parameters A, B: coordinates in 3d-space</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pysic.utility.outliers.write_to_file">
+<tt class="descclassname">pysic.utility.outliers.</tt><tt class="descname">write_to_file</tt><big>(</big><em>filename</em>, <em>boxsize</em>, <em>atoms</em>, <em>coordinates</em>, <em>a_logls</em>, <em>d_logls</em><big>)</big><a class="reference internal" href="_modules/pysic/utility/outliers.html#write_to_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pysic.utility.outliers.write_to_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write original data + results into a file</p>
+<p>Creates/overwrites an xyz-like file with two additional columns. These
+additional columns will contain the log-likelihood contributions from
+(1) angles and (2) distances.</p>
+</dd></dl>
+
+</div>
 </div>
 <div class="section" id="mpi">
 <span id="mpi-utility"></span><h2>MPI<a class="headerlink" href="#mpi" title="Permalink to this headline">¶</a></h2>
