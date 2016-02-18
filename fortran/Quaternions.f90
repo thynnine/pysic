@@ -371,7 +371,7 @@ CONTAINS
     double precision :: u(3), normer
     TYPE(qtrn), INTENT(IN) :: q
 
-    normer = 1.d0/sin(q2angle(q))
+    normer = 1.d0/sin(q2angle(q)/2.d0)
     u(1) = q%x*normer
     u(2) = q%y*normer
     u(3) = q%z*normer
